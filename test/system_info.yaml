@@ -52,6 +52,8 @@ key_genes: ~/Dropbox/az/reference_data/az_key_genes.txt
 suppressors: ~/Dropbox/az/reference_data/suppressors.txt
 oncogenes: ~/Dropbox/az/reference_data/oncogenes.txt
 
+tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
+
 queue: ngs.q
 
 qsub_runner: test/qsub_runner_local.sh

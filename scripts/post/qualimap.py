@@ -38,7 +38,7 @@ def main():
     if not isfile(cnf.bam + '.bai'):
         info('Indexing bam ' + cnf.bam)
         index_bam(cnf, cnf.bam)
-    info('Using alignement ' + cnf.bam)
+    info('Using alignment ' + cnf.bam)
 
     bed = ''
     if cnf.bed:

@@ -5,6 +5,7 @@ from os.path import relpath, join, exists, dirname, basename
 from collections import OrderedDict, defaultdict
 
 import source
+from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import verify_bed
 from source.reporting.reporting import FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, PerRegionSampleReport, BaseReport
 from source.logger import step_greetings, info, warn, err
@@ -14,11 +15,11 @@ from source.targetcov.cov import get_detailed_metric_storage, get_header_metric_
 
 
 # from source.targetcov.flag_regions import DepthsMetric
-from source.targetcov.flag_regions import DepthsMetric
+from source.targetcov.flag_regions import DepthsMetric, _intersect_with_tricky_regions
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path, \
-    file_transaction
+    file_transaction, add_suffix
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.variants.vcf_processing import bgzip_and_tabix
 
@@ -218,6 +219,138 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
 
     return html_fpath
 
+
+def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations):
+    region_types = ['exons', 'amplicons']
+    coverage_types = ['low', 'high']
+    flagged_regions_metrics = [
+            Metric('Gene'),
+            Metric('Chr', with_heatmap=False, max_width=20, align='right'),
+            Metric('Position', td_class='td_position'),
+            Metric('Strand', align='right'),
+            Metric('Feature'),
+            Metric('Biotype'),
+            Metric('Ave depth', align='right'),
+            Metric('# HS & Del', quality='Less is better', align='right'),
+            Metric('Hotspots & Deleterious', td_class='long_expanded_line', max_width=300),
+            Metric('Found mutations', td_class='long_expanded_line', max_width=250),
+            Metric('Samples', td_class='long_expanded_line', max_width=150),
+            Metric('Possible reasons', td_class='long_expanded_line', max_width=120)]
+    flagged_regions_metric_storage = MetricStorage(sections=[ReportSection(metrics=flagged_regions_metrics)])
+    flagged_regions_report_dirpath = join(output_dir, source.flag_regions_name)
+    safe_mkdir(flagged_regions_report_dirpath)
+    for coverage_type in coverage_types:
+        for region_type in region_types:
+            regions_by_gene = {}
+            for sample in samples:
+                selected_regions_bed_fpath = join(sample.flagged_regions_dirpath, coverage_type + '_cov_' + region_type + '.bed')
+                regions_by_reasons = {}
+                if verify_file(selected_regions_bed_fpath, is_critical=False):
+                    regions_by_reasons = _intersect_with_tricky_regions(cnf, selected_regions_bed_fpath, sample.name)
+                total_report_fpath = add_suffix(add_suffix(sample.flagged_tsv, region_type), coverage_type)
+                if verify_file(total_report_fpath, is_critical=False):
+                    with open(total_report_fpath) as f:
+                        for l in f:
+                            l = l.strip()
+                            if not l or l.startswith('#'):
+                                continue
+                            fs = l.split('\t')
+                            (chrom, start, end, size, gene, strand, feature, biotype, min_depth, avg_depth) = fs[:10]
+                            regions_by_gene.setdefault(gene, [])
+                            cur_region = Region(sample_name=[sample.name], avg_depth=avg_depth, gene_name=gene, strand=strand, feature=feature,
+                                                biotype=biotype, chrom=chrom, start=start, end=end)
+                            if start in regions_by_reasons:
+                                cur_region.extra_fields = regions_by_reasons[start]
+                            cur_region.missed_by_db = []
+                            was_added = False
+                            for r in regions_by_gene[gene]:
+                                if r.start == cur_region.start and r.end == cur_region.end:
+                                    was_added = True
+                                    if sample.name not in r.sample_name:
+                                        r.sample_name.append(sample.name)
+                            if not was_added:
+                                regions_by_gene[gene].append(cur_region)
+                report_fpath = join(sample.flagged_regions_dirpath, coverage_type + '_cov_' + region_type + '.oncomine.tsv')
+                if verify_file(report_fpath, is_critical=False):
+                    with open(report_fpath) as f:
+                        for l in f:
+                            l = l.strip()
+                            if not l or l.startswith('#'):
+                                continue
+                            fs = l.split('\t')
+                            hotspots = []
+                            (gene, chrom, start, end, strand, feature, biotype, id_, num_hotspots) = fs[:9]
+                            if int(num_hotspots) != 0:
+                                hotspots = fs[9].split()
+
+                            regions_by_gene.setdefault(gene, [])
+                            cur_region = Region(sample_name=[sample.name], gene_name=gene, strand=strand, feature=feature,
+                                                biotype=biotype, chrom=chrom, start=start, end=end)
+                            cur_region.missed_by_db = hotspots
+                            was_added = False
+                            for r in regions_by_gene[gene]:
+                                if r.start == cur_region.start and r.end == cur_region.end:
+                                    was_added = True
+                                    if sample.name not in r.sample_name:
+                                        r.sample_name.append(sample.name)
+                                    new_hotspots = [hs for hs in hotspots if hs not in r.missed_by_db]
+                                    r.missed_by_db.extend(new_hotspots)
+                            if not was_added:
+                                regions_by_gene[gene].append(cur_region)
+            flagged_regions_report = PerRegionSampleReport(name='Flagged regions', metric_storage=flagged_regions_metric_storage)
+            num_regions = 0
+            for gene in regions_by_gene.keys():
+                if regions_by_gene[gene]:
+                    num_regions += len(regions_by_gene[gene])
+                    row_class = ' expandable_row collapsed'
+                    if len(regions_by_gene[gene]) > 1:
+                        reg = flagged_regions_report.add_row()
+                        reg.class_ = ' expandable_gene_row collapsed'
+                        chr = regions_by_gene[gene][0].chrom
+                        num_hotspots = [len(r.missed_by_db) for r in regions_by_gene[gene]]
+                        all_samples = sorted(set([sample for r in regions_by_gene[gene] for sample in r.sample_name]))
+                        all_tricky_regions = sorted(set([tricky_region for r in regions_by_gene[gene] for tricky_region in r.extra_fields]))
+                        reg.add_record('Gene', gene)
+                        reg.add_record('Chr', chr.replace('chr', ''))
+                        reg.add_record('# HS & Del', str(sum(num_hotspots)))
+                        reg.add_record('Position', str(len(regions_by_gene[gene])) + ' regions')
+                        reg.add_record('Ave depth', '')
+                        reg.add_record('Strand', '')
+                        reg.add_record('Feature', '')
+                        reg.add_record('Biotype', '')
+                        reg.add_record('Hotspots & Deleterious', '')
+                        reg.add_record('Possible reasons', ', '.join(all_tricky_regions))
+                        reg.add_record('Samples', '\n'.join(all_samples))
+                        reg.add_record('Found mutations', '')
+                        row_class += ' row_to_hide row_hidden'
+                    else:
+                        row_class += ' not_to_hide'
+                    for r in regions_by_gene[gene]:
+                        reg = flagged_regions_report.add_row()
+                        reg.class_ = row_class
+                        reg.add_record('Gene', r.gene_name)
+                        reg.add_record('Chr', r.chrom.replace('chr', ''))
+                        reg.add_record('Ave depth', r.avg_depth)
+                        reg.add_record('Strand', r.strand)
+                        reg.add_record('Feature', r.feature)
+                        reg.add_record('Biotype', r.biotype)
+                        reg.add_record('Position', str(r.start) + '-' + str(r.end))
+                        reg.add_record('# HS & Del', str(len(r.missed_by_db)))
+                        reg.add_record('Hotspots & Deleterious', '\n'.join(r.missed_by_db))
+                        reg.add_record('Possible reasons', ', '.join(r.extra_fields))
+                        reg.add_record('Samples', '\n'.join(r.sample_name))
+                        found_mutations = []
+                        for sample in samples:
+                            if sample.name in r.sample_name:
+                                for mut in mutations[sample.name]:
+                                    if mut.gene.name == r.gene_name and mut.pos == r.start:
+                                        found_mutations.append(str(mut.pos) + ':' + mut.ref + '>' + mut.alt + '(' + sample.name +')')
+                        reg.add_record('Found mutations', '\n'.join(found_mutations))
+            flagged_report_fpath = join(flagged_regions_report_dirpath, region_type + '.' + coverage_type + '_cov.html')
+            BaseReport.save_html(flagged_regions_report, cnf, flagged_report_fpath, caption='Flagged regions')
+            info('')
+            info(coverage_type + ' covered ' + region_type + '(total ' + str(num_regions) + ') saved into:')
+            info('  ' + flagged_report_fpath)
 
 # def _generate_flagged_regions_report(output_dir, sample, genes, depth_threshs):
 #     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))

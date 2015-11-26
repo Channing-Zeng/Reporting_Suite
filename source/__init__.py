@@ -17,6 +17,7 @@ detail_gene_report_baseending = '.details.gene'
 varfilter_name           = 'varFilter'
 varannotate_name         = 'varAnnotate'
 targetseq_name           = 'targetSeq'
+flag_regions_name        = 'flaggedRegions'
 cnv_dir                  = 'cnv'
 
 varqc_name               = 'varQC'
@@ -62,6 +63,7 @@ class BaseSample:
     def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None,
                  targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None,
                  fastqc_dirpath=None, picard_dirpath=None, clinical_report_dirpath=None,
+                 flagged_regions_dirpath=None,
                  normal_match=None):
         self.name = name
         self.bam = bam
@@ -86,7 +88,11 @@ class BaseSample:
             self.targetcov_detailed_tsv       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
             self.targetcov_norm_depth_vcf_txt = None
             self.targetcov_norm_depth_vcf_tsv = None
-            self.flagged_regions_tsv          = join(self.targqc_dirpath, name + '.flagged.tsv')
+
+        if flagged_regions_dirpath:
+            self.flagged_regions_dirpath = flagged_regions_dirpath
+            self.flagged_tsv          = join(self.flagged_regions_dirpath, name + '.' + flag_regions_name + '.tsv')
+            self.flagged_txt          = join(self.flagged_regions_dirpath, name + '.' + flag_regions_name + '.txt')
 
         if clinical_report_dirpath:
             self.clinical_report_dirpath = clinical_report_dirpath
@@ -178,7 +184,8 @@ class TargQC_Sample(BaseSample):
             targqc_dirpath=dirpath,
             ngscat_dirpath=join(dirpath, ngscat_name),
             qualimap_dirpath=join(dirpath, qualimap_name),
-            picard_dirpath=join(dirpath, picard_name))
+            picard_dirpath=join(dirpath, picard_name),
+            flagged_regions_dirpath=join(dirpath, flag_regions_name))
         self.bam = bam
         self.bed = bed
         self.vcf = vcf

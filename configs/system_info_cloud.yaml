@@ -88,6 +88,8 @@ genomes:
     actionable:                   /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
+tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
+
 queue: all.q
 
 qsub_runner: scripts/runner_cloud.sh

@@ -428,6 +428,19 @@ jQuery.fn.exists = function(){
     return jQuery(this).length > 0;
 };
 
+$(function() {
+    $('.expandable_row').click(function () {
+        $(this).toggleClass('collapsed').toggleClass('expanded');
+    });
+    $('.expandable_gene_row').click(function () {
+        $(this).toggleClass('collapsed').toggleClass('expanded');
+        var nextRow = $(this).next('.row_to_hide');
+        while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {
+            nextRow.toggleClass('row_hidden');
+            nextRow = nextRow.next('.row_to_hide');
+        }
+    });
+});
 
 // http://krijnhoetmer.nl/stuff/javascript/table-align-char/
 //function make_table_align_char() {

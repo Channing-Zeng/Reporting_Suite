@@ -111,7 +111,7 @@ def main(args):
     else:
         genes_fpath = None
 
-    info('Using alignement ' + cnf['bam'])
+    info('Using alignment ' + cnf['bam'])
 
     bed_fpath = cnf.bed
     if bed_fpath:
@@ -180,7 +180,6 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
         try:
             info('Generating flagged regions report...')
             flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name)
-            reports.append(flagged_report)
         except:
             err(format_exc())
 

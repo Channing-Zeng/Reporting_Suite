@@ -1,10 +1,11 @@
 # coding=utf-8
 
 from collections import defaultdict
-from os.path import join, splitext, basename
+import os
+from os.path import join, splitext, basename, dirname, abspath
 
 from source.calling_process import call
-from source.file_utils import intermediate_fname
+from source.file_utils import intermediate_fname, verify_file, add_suffix, safe_mkdir
 from source.logger import info, err, step_greetings
 from source.reporting.reporting import Metric, MetricStorage, ReportSection, PerRegionSampleReport, load_records
 import source
@@ -14,7 +15,7 @@ from source.targetcov.cov import get_detailed_metric_storage, make_flat_region_r
 from source.tools_from_cnf import get_system_path
 from source.variants.vcf_processing import bgzip_and_tabix
 
-DEPTH_THRESH_FROM_AVE_COV = 0.5
+DEPTH_THRESH_FROM_AVE_COV = 0.8
 MIN_DEPTH_PERCENT_AT_THRESH = 0.8
 
 
@@ -35,7 +36,7 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     depth_threshs = cnf.coverage_reports.depth_thresholds
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
     report.add_record('Sample', sample.name)
-
+    safe_mkdir(sample.flagged_regions_dirpath)
     ''' 1. Detect depth threshold (ave sample coverage * DEPTH_THRESH_FROM_AVE_COV)
         2. Select regions covered in less than MIN_DEPTH_PERCENT_AT_THRESH at threshold
         3. Sort by % at threshold
@@ -46,48 +47,68 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
         For each gene where are regions with parts % = 0:
             sort them by part where % = 0
     '''
+    vcf_dbs = ['oncomine', 'dbsnp', 'cosmic']
 
+    from source.clinical_reporting.clinical_parser import get_key_genes
+    key_genes = get_key_genes(cnf.key_genes)
     depth_cutoff = get_depth_cutoff(ave_depth, depth_threshs)
+    genes_sorted = sorted(gene_by_name.values())
 
-    # for gene in gene_by_name.values():
-    #     total_size = 0
-    #     total_bases_at_thresh = 0
-    #     for r in gene.get_exons():
-    #         total_size += r.get_size()
-    #         total_bases_at_thresh += r.bases_within_threshs[depth_cutoff]
-    #     if total_size:
-    #         gene = float(total_bases_at_thresh) / total_size
+    for coverage_type in ['low', 'high']:
+        info('Selecting and saving ' + coverage_type + ' covered genes')
+        if coverage_type == 'low':
+            selected_genes = [g for g in genes_sorted if g.gene_name in key_genes and (
+                any(e.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for e in g.get_exons()) or
+                any(a.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for a in g.get_amplicons()))]
+        else:
+            min_cov, max_cov = min_and_max_based_on_outliers(genes_sorted)
+            selected_genes = [g for g in genes_sorted if g.gene_name in key_genes and (
+                any(e.avg_depth > max_cov for e in g.get_exons()) or
+                any(a.avg_depth > max_cov for a in g.get_amplicons()))]
+        for region_type in ['exons', 'amplicons']:
+            selected_regions = []
+            for gene in selected_genes:
+                if coverage_type == 'low':
+                    cur_regions = [a for a in (gene.get_amplicons() if region_type == 'amplicons' else gene.get_exons())
+                                   if a.rates_within_threshs[10] < 1 and 'Multi' not in a.feature]
+                else:
+                    cur_regions = [a for a in (gene.get_amplicons() if region_type == 'amplicons' else gene.get_exons())
+                                   if a.avg_depth > max_cov and 'Multi' not in a.feature]
+                selected_regions.extend(cur_regions)
 
-    genes_sorted = sorted(gene_by_name.values(), key=lambda g: [g.rates_within_threshs[t] for t in depth_threshs])
+            if selected_regions:
+                selected_regions_bed_fpath = join(sample.flagged_regions_dirpath, coverage_type + '_cov_' + region_type + '.bed')
+                save_regions_to_bed(cnf, selected_regions, selected_regions_bed_fpath)
 
-    info('Selecting and saving low-covereg genes')
-    low_cov_genes = [g for g in genes_sorted if
-        any(e.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for e in g.get_exons()) or \
-        any(a.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for a in g.get_amplicons())]
+                # Report cov for Hotspots
+                for db in vcf_dbs:
+                    _report_normalize_coverage_for_variant_sites(cnf, sample, ave_depth, db, selected_regions_bed_fpath, selected_regions,
+                                                                 depth_cutoff, region_type, coverage_type)
 
-    final_regions = []
-    for gene in low_cov_genes:
-        final_regions.extend(gene.get_amplicons())
-        final_regions.extend(gene.get_exons())
-        final_regions.append(gene)
+            report = make_flat_region_report(sample, selected_regions, depth_threshs)
+            flagged_txt_fpath = add_suffix(add_suffix(sample.flagged_txt, region_type), coverage_type)
+            flagged_tsv_fpath = add_suffix(add_suffix(sample.flagged_tsv, region_type), coverage_type)
+            report.save_txt(flagged_txt_fpath)
+            report.save_tsv(flagged_tsv_fpath)
 
-    selected_regions_bed_fpath = join(cnf.work_dir, 'selected_regions.bed')
-    save_regions_to_bed(cnf, final_regions, selected_regions_bed_fpath)
-    # TODO: extract only those subregions where cov is 0
-
-    # Roport cov for Hotspots
-    _report_normalize_coverage_for_variant_sites(
-        cnf, output_dir, sample, ave_depth, 'oncomine', selected_regions_bed_fpath, depth_cutoff)
-
-    report = make_flat_region_report(sample, final_regions, depth_threshs)
-
-    report.save_tsv(sample.flagged_regions_tsv)
-    info('')
-    info('Selected regions (total ' + str(len(final_regions)) + ') saved into:')
-    info('  ' + report.txt_fpath)
+            info('')
+            info(coverage_type + ' covered ' + region_type + '(total ' + str(len(selected_regions)) + ') for sample ' + sample.name + ' saved into:')
+            info('  ' + flagged_txt_fpath + ', ' + flagged_tsv_fpath)
 
     return report
 
+def min_and_max_based_on_outliers(regions):
+    rs_by_depth = sorted(regions, key=lambda r: r.avg_depth)
+    l = len(rs_by_depth)
+    q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
+    q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
+    d = q3 - q1
+    _min_cov = q1 - 3 * d
+    _max_cov = q1 + 3 * d
+
+    info('Using outliers mechanism. l = {}, q1 = {}, q3 = {}, d = {},'
+         'min_cov = {}, max_cov = {}'.format(l, q1, q3, d, _min_cov, _max_cov))
+    return _min_cov, _max_cov
 
 # sample_depths = [100, 120, 110, 130, 100, 90, 110, 200]
 # med_sample_depth = median(sample_depths)
@@ -187,13 +208,13 @@ def _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpat
     info('Depth of coverage for regions in BED ' + bed_fpath)
     cov_bg = join(cnf.work_dir, 'coverage.bg')
     cmdline = '{samtools} view -L {bed_fpath} -b {bam_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
-    call(cnf, cmdline, output_fpath=cov_bg)
+    call(cnf, cmdline, output_fpath=cov_bg, exit_on_error=False)
 
     info()
     info('Intersecting depth regions with VCF ' + clipped_gz_vcf_fpath)
     vcf_depth_numbers_fpath = join(cnf.work_dir, 'vcf_bg.intersect')
     cmdline = '{bedtools} intersect -a {clipped_gz_vcf_fpath} -b {cov_bg} -wao'.format(**locals())
-    res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath)
+    res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath, exit_on_error=False)
     # if res != oncomine_depth_numbers_fpath:
     #     info()
     #     info('Trying with uncompressed VCF')
@@ -214,21 +235,21 @@ def _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpat
                 for i in range(overlap):
                     depths_per_var[(chrom, pos, ref, alt)].append(depth)
 
-    # Getting avarage depth of coverage of each variant (exactly for those parts that were in BED)
+    # Getting average depth of coverage of each variant (exactly for those parts that were in BED)
     depth_by_var = {var: (sum(depths) / len(depths)) if len(depths) != 0 else None
                     for var, depths in depths_per_var.iteritems()}
 
     return depth_by_var
 
 
-def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath):
+def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath, region_type, sample):
     info()
     info('Intersecting VCF ' + vcf_fpath + ' using BED ' + bed_fpath)
 
     vcf_columns_num = count_bed_cols(vcf_fpath)
     bed_columns_num = count_bed_cols(bed_fpath)
 
-    vcf_bed_intersect = join(cnf.work_dir, splitext(basename(vcf_fpath))[0] + '_vcf_bed.intersect')
+    vcf_bed_intersect = join(cnf.work_dir, splitext(basename(vcf_fpath))[0] + '_' + region_type + '_vcf_bed.intersect')
     bedtools = get_system_path(cnf, 'bedtools')
     cmdline = '{bedtools} intersect -header -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
     res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
@@ -238,7 +259,7 @@ def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath):
     vars_by_region = defaultdict(dict)
     var_by_site = dict()
 
-    clipped_vcf_fpath = intermediate_fname(cnf, vcf_fpath, 'clip')
+    clipped_vcf_fpath = intermediate_fname(cnf, vcf_fpath, '_' + region_type + '_clip')
 
     with open(vcf_bed_intersect) as f, open(clipped_vcf_fpath, 'w') as clip_vcf:
         for l in f:
@@ -249,12 +270,12 @@ def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath):
             fs = l.split('\t')
             chrom, pos, id_, ref, alt, qual, filt, info_fields = fs[:8]
             chrom_b, start_b, end_b, symbol, strand, feature, biotype = None, None, None, None, None, None, None
-            if bed_columns_num == 8:
-                chrom_b, start_b, end_b, symbol, _, strand, feature, biotype, _ = fs[-9:]
-            if bed_columns_num == 4:
-                chrom_b, start_b, end_b, symbol, _ = fs[-5:]
+            if bed_columns_num >= 8:
+                chrom_b, start_b, end_b, symbol, _, strand, feature, biotype, _ = fs[-(bed_columns_num+1):][:9]
+            elif bed_columns_num >= 4:
+                chrom_b, start_b, end_b, symbol, _ = fs[-(bed_columns_num+1):][:5]
             assert chrom == chrom_b, l
-            r = chrom, start_b, end_b, symbol, strand, feature, biotype
+            r = chrom, id_, start_b, end_b, symbol, strand, feature, biotype
             if r not in regions_set:
                 regions_set.add(r)
                 regions_in_order.append(r)
@@ -289,6 +310,18 @@ class Variant(object):
         return '{pos} {var.ref}/{var.alt} {var.cls[0]}'.format(pos=fmt_pos(int(self.pos)), var=self)
 
 
+class LowCoveredRegion(object):
+    def __init__(self, gene, chrom, ave_depth, exon_amplicone=None, start=None, end=None, mut=None, sample=None):
+        self.gene = gene
+        self.chrom = chrom
+        self.ave_depth = ave_depth
+        self.exon_amplicone = exon_amplicone
+        self.start = start
+        self.end = end
+        self.mut = mut
+        self.sample = sample
+
+
 class VariantsMetric(Metric):
     def format(self, value, human_readable=True):
         variants = value
@@ -308,13 +341,14 @@ class DepthsMetric(Metric):
 
 
 shared_metrics = [
+    Metric('Gene'),
     Metric('Chr'),
     Metric('Start'),
     Metric('End'),
     Metric('Strand'),
     Metric('Feature'),
     Metric('Biotype'),
-    Metric('Symbol'),
+    Metric('ID'),
     Metric('Hotspots num', short_name='#HS'),
     VariantsMetric('Hotspots list', short_name='Hotspots')]
 
@@ -329,22 +363,52 @@ single_report_metric_storage = MetricStorage(
     ])])
 
 
-def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sample_depth, vcf_key,
-                                                 bed_fpath, depth_cutoff):
-    step_greetings('Normalized coverage for ' + vcf_key + ' hotspots')
+def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
+    info()
+    info('Detecting problematic regions for ' + sample)
+    tricky_regions = {'low_gc.bed': 'Low GC', 'high_gc.bed': 'High GC', 'low_complexity.bed': 'Low complexity',
+                    'bad_promoter.bed': 'Bad promoter'}
+    bed_filenames = tricky_regions.keys()
+
+    bed_fpaths = [join(cnf.tricky_regions, bed_filename) for bed_filename in bed_filenames]
+    info()
+    info('Intersecting BED ' + selected_bed_fpath + ' using BED files with tricky regions')
+
+    vcf_bed_intersect = join(cnf.work_dir, splitext(basename(selected_bed_fpath))[0] + '_tricky_vcf_bed.intersect')
+    bedtools = get_system_path(cnf, 'bedtools')
+    cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wa -wb -filenames'
+    call(cnf, cmdline, output_fpath=vcf_bed_intersect, exit_on_error=False)
+
+    regions_by_reasons = {}
+
+    with open(vcf_bed_intersect) as f:
+        for l in f:
+            l = l.strip()
+            if not l or l.startswith('#'):
+                continue
+            fs = l.split('\t')
+            pos = fs[1]
+            filename = fs[-4]
+            regions_by_reasons.setdefault(pos, set()).add(tricky_regions[os.path.basename(filename)])
+
+    return regions_by_reasons
+
+def _report_normalize_coverage_for_variant_sites(cnf, sample, ave_sample_depth, vcf_key, bed_fpath, selected_regions,
+                                                 depth_cutoff, region_type, coverage_type):
+    info()
+    info('Normalized coverage for ' + vcf_key + ' hotspots (' + region_type + ')')
     vcf_fpath = cnf.genome.get(vcf_key)
     if not vcf_fpath:
         err('Error: no ' + vcf_key + ' for ' + cnf.genome.name + ' VCF fpath specified in ' + cnf.sys_cnf)
         return None
 
     clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site = \
-        _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath)
+        _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath, region_type, sample)
 
     depth_by_var = _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpath, sample.bam)
 
     info()
-    info('Saving report for sample ' + sample.name)
-
+    info('Saving report for ' + coverage_type + ' covered ' + region_type + ' for sample ' + sample.name)
     report = PerRegionSampleReport(sample=sample, metric_storage=single_report_metric_storage)
     report.add_record('Sample', sample.name)
     report.add_record('Average sample depth', ave_sample_depth)
@@ -355,22 +419,29 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sa
     for r in regions_in_order:
         total_regions += 1
 
-        (chrom, start, end, symbol, strand, feature, biotype) = r
-        rep_region = sample.report.add_row()
+        (chrom, id_, start, end, gene, strand, feature, biotype) = r
+        for region in selected_regions:
+            if region.start == int(start) and region.end == int(end):
+                strand = region.strand
+                feature = region.feature
+                biotype = region.biotype
+                break
+
+        rep_region = report.add_row()
+        rep_region.add_record('Gene', gene)
         rep_region.add_record('Chr', chrom)
         rep_region.add_record('Start', start)
         rep_region.add_record('End', end)
-        rep_region.add_record('Symbol', symbol)
         rep_region.add_record('Strand', strand)
         rep_region.add_record('Feature', feature)
         rep_region.add_record('Biotype', biotype)
-
+        rep_region.add_record('ID', id_)
         variants, depths = [], []
         for var in sorted(vars_by_region[r].values(), key=lambda v: v.pos):
             total_variants += 1
 
             depth = depth_by_var.get((var.get_site()))
-            if depth_cutoff >= depth_cutoff:
+            if depth >= depth_cutoff:
                 continue
 
             total_variants_below_cutoff += 1
@@ -383,16 +454,15 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sa
             if total_variants % 10000 == 0:
                 info('Processed {0:,} variants, {0:,} regions.'.format(total_variants, total_regions))
 
-        rep_region.add_record('Total hotspots num in regions', len(variants))
-        rep_region.add_record('Hotspots num with depth less than ' + total_variants_below_cutoff)
+        rep_region.add_record('Hotspots num', len(variants))
         rep_region.add_record('Hotspots list', variants)
         rep_region.add_record('Hotspots depths/norm depths', depths)
 
-    best_report_basename = sample.name + '.' + source.targetseq_name  + '_' + vcf_key
-    report.save_txt(join(sample.dirpath, source.targetseq_name, best_report_basename + '.txt'))
-    report.save_tsv(join(sample.dirpath, source.targetseq_name, best_report_basename + '.tsv'))
+    best_report_basename = coverage_type + '_cov_' + region_type + '.' + vcf_key
+    report.save_txt(join(sample.flagged_regions_dirpath, best_report_basename + '.txt'))
+    report.save_tsv(join(sample.flagged_regions_dirpath, best_report_basename + '.tsv'))
     info('')
-    info('Oncomine variants coverage report (total: {0:,} variants, {0:,} variants below cut-off {0}, {0:,} regions) '
+    info(vcf_key + ' variants coverage report (total: {0:,} variants, {1:,} variants below cut-off {2}, {3:,} regions) '
          'saved into:'.format(total_variants, total_variants_below_cutoff, depth_cutoff, total_regions))
     info('  ' + report.txt_fpath)
 
@@ -555,153 +625,6 @@ def _report_normalize_coverage_for_variant_sites(cnf, output_dir, sample, ave_sa
 #                     caller_name, vcf_fpath, report_base_name, abnormal_regions_bed_fpath)
 #
 #             report = _make_flagged_region_report(cnf, sample, regions, vcf_fpath, caller_name, vcf_dbs)
-#
-#             regions_html_rep_fpath = report.save_html(cnf.output_dir, report_base_name,
-#                 caption='Regions with ' + kind + ' coverage for ' + caller_name)
-#
-#             regions_txt_rep_fpath = report.save_txt(cnf.output_dir, report_base_name,
-#                 [report.metric_storage.sections_by_name[kind + '_cov']])
-#
-#             abnormal_regions_report_fpaths.append(regions_txt_rep_fpath)
-#             info('Too ' + kind + ' covered regions (total ' + str(len(regions)) + ') saved into:')
-#             info('  HTML: ' + str(regions_html_rep_fpath))
-#             info('  TXT:  ' + regions_txt_rep_fpath)
-#
-#     return abnormal_regions_report_fpaths
-#
-#
-# class VCFDataBase():
-#     def __init__(self, name, descriptive_name, genome_cnf):
-#         self.name = name
-#         self.descriptive_name = descriptive_name
-#         self.vcf_fpath = genome_cnf.get(name)
-#         self.annotated_bed = None
-#         self.missed_vars_by_region_info = OrderedDict()
-#
-#
-# def _make_flagged_region_report(cnf, sample, regions, filtered_vcf_fpath, caller_name, vcf_dbs):
-#     regions_metrics = [
-#         Metric('Sample'),
-#         Metric('Chr'),
-#         Metric('Start'),
-#         Metric('End'),
-#         Metric('Gene'),
-#         Metric('Feature'),
-#         Metric('Size'),
-#         Metric('AvgDepth'),
-#         Metric('StdDev', description='Coverage depth standard deviation'),
-#         Metric('Wn 20% of Mean', unit='%', description='Persentage of the region that lies within 20% of an avarage depth.'),
-#         Metric('Depth/Median', description='Average depth of coveraege of the region devided by median coverage of the sample'),
-#         Metric('Total variants'),
-#     ]
-#     for vcf_db in vcf_dbs:
-#         regions_metrics.append(Metric(vcf_db.descriptive_name + ' missed'))
-#
-#     for thres in cnf.coverage_reports.depth_thresholds:
-#         regions_metrics.append(Metric('{}x'.format(thres), unit='%',
-#             description='Bases covered by at least {} reads'.format(thres)))
-#
-#     general_metrics = [
-#         Metric('Median depth'),
-#         Metric('Variants'),
-#     ]
-#     for vcf_db in vcf_dbs:
-#         general_metrics.append(
-#             Metric(vcf_db.descriptive_name + ' missed variants'))
-#
-#     region_metric_storage = MetricStorage(
-#         general_section=ReportSection(metrics=general_metrics),
-#         sections_by_name=OrderedDict(
-#             low_cov=ReportSection('Low covered regions', 'Low covered regions', regions_metrics[:]),
-#             high_cov=ReportSection('Regions', 'Amplcons and exons coverage depth statistics', regions_metrics[:],
-#         )))
-#
-#     report = PerRegionSampleReport(sample, metric_storage=region_metric_storage)
-#
-#     for vcf_db in vcf_dbs:
-#         if not vcf_db.annotated_bed:
-#             report.add_record(vcf_db.descriptive_name + ' missed variants', None)
-#             continue
-#
-#         with open(vcf_db.annotated_bed) as f:
-#             for line in f:
-#                 if not line.startswith('#'):
-#                     tokens = line.strip().split('\t')
-#                     chrom, start, end, gene, feature, missed_vars = tokens[:9]
-#                     vcf_db.missed_vars_by_region_info[(chrom, int(start), int(end), feature)] = int(missed_vars)
-#
-#         info('Missed variants from ' + vcf_db.descriptive_name + ': ' +
-#              str(sum(vcf_db.missed_vars_by_region_info.values())))
-#         report.add_record(vcf_db.descriptive_name + ' missed variants', vcf_db.missed_vcf_fpath)
-#
-#         info()
-#
-#     # cosmic_missed_vcf_fpath = add_suffix(filtered_vcf_fpath, 'cosmic')
-#     # shutil.copy(filtered_vcf_fpath, cosmic_missed_vcf_fpath)
-#
-#     report.add_record('Median depth', sample.median_cov)
-#     report.add_record('Variants', filtered_vcf_fpath)
-#
-#     for r in regions:
-#         for vcf_db in vcf_dbs:
-#             if vcf_db.descriptive_name not in r.missed_by_db:
-#                 r.missed_by_db[vcf_db.descriptive_name] = 0
-#             r.missed_by_db[vcf_db.descriptive_name] += \
-#                 vcf_db.missed_vars_by_region_info.get((r.chrom, r.start, r.end, r.feature)) or 0
-#
-#     rec_by_name = {metric.name: Record(metric, []) for metric in regions_metrics}
-#     for rec in rec_by_name.values():
-#         report.records.append(rec)
-#
-#     proc_regions(regions, _fill_in_record_info, rec_by_name, sample.median_cov)
-#
-#     return report
-#
-#
-# def _add_vcf_header(source_vcf_fpath, dest_vcf_fpath):
-#     with open(source_vcf_fpath) as inp, open(dest_vcf_fpath, 'w') as out:
-#         for line in inp:
-#             if line.startswith('#'):
-#                 out.write(line)
-#     with open(dest_vcf_fpath + '_tmp') as inp, open(dest_vcf_fpath, 'a') as out:
-#         for line in inp:
-#             out.write(line)
-#     os.remove(dest_vcf_fpath + '_tmp')
-#     info(dest_vcf_fpath)
-#
-#
-# def _find_missed_variants(cnf, vcf_db, caller_name, input_vcf_fpath, report_base_name, bed_fpath):
-#     if not vcf_db.vcf_fpath and not verify_file(vcf_db.vcf_fpath, vcf_db.descriptive_name):
-#         info('Skipping counting variants from ' + vcf_db.descriptive_name)
-#         return None, None
-#
-#     info('Counting missed variants from ' + vcf_db.descriptive_name)
-#     db_in_roi_vcf_fpath = join(cnf.work_dir, report_base_name + '_' + vcf_db.name + '_roi.vcf')
-#     missed_vcf_fpath = join(cnf.output_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '_missed.vcf')
-#     annotated_regions_bed_fpath = join(cnf.work_dir, report_base_name + '_' + caller_name + '_' + vcf_db.name + '.bed')
-#
-#     bedtools = get_system_path(cnf, 'bedtools')
-#
-#     db_vcf_fpath = vcf_db.vcf_fpath
-#     # Take variants from DB VCF that lie in BED
-#     # (-wa means to take whole regions from a, not the parts that overlap)
-#     cmdline = '{bedtools} intersect -wa -a {db_vcf_fpath} -b {bed_fpath}'.format(**locals())
-#     call(cnf, cmdline, output_fpath=db_in_roi_vcf_fpath + '_tmp')
-#     _add_vcf_header(db_vcf_fpath, db_in_roi_vcf_fpath)
-#     info()
-#
-#     # Take variants from VCF missed in DB (but only in the regions from BED)
-#     cmdline = '{bedtools} intersect -v -a {input_vcf_fpath} -b {db_in_roi_vcf_fpath}'.format(**locals())
-#     call(cnf, cmdline, output_fpath=missed_vcf_fpath + '_tmp')
-#     _add_vcf_header(input_vcf_fpath, missed_vcf_fpath)
-#     info()
-#
-#     # Take variants from VCF missed in DB (but only in the regions from BED)
-#     cmdline = '{bedtools} intersect -c -a {bed_fpath} -b {missed_vcf_fpath}'.format(**locals())
-#     call(cnf, cmdline, output_fpath=annotated_regions_bed_fpath)
-#     info()
-#
-#     return missed_vcf_fpath, annotated_regions_bed_fpath
 #
 #
 # # def _count_variants(region, vcf_fpath):

@@ -186,6 +186,8 @@ suppressors: /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes: /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
+tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
+
 queue: batch.q
 
 qsub_runner: scripts/runner_Waltham.sh

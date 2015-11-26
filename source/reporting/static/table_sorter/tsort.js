@@ -15,7 +15,7 @@ Array - Specifc table
 */
 
 (function( $ ){
-	$.fn.tableSort = function( options ) {  
+	$.fn.tableSort = function( options ) {
 
 		// Create some defaults, extending them with any options that were provided
 		var settings = $.extend( {
@@ -88,14 +88,21 @@ Array - Specifc table
 			function getTableData() {
 
 				/* PUT TABLE DATA INTO AN OBJECT ARRAY */
-				$(table).find('tr').each(function(index) {
+				$(table).find('tr').not('.row_to_hide').each(function(index) {
 					if (index > 0) $(this).addClass('tsort_id-' + (index - 1)); // Add a class to each tr that corresponds with the object id (tsortid-0)
+					  var child_rows = [];
+					  var nextRow = $(this).next('.row_to_hide');
+					  while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {
+						  child_rows.push(nextRow);
+						  nextRow = nextRow.next('.row_to_hide');
+						}
 					$(this).find('td').each(function (td_index) {
 						if ($(this).is(":first-child")) {
 							table_data.push(new Object());
 							table_data[table_data.length - 1].id = index - 1;
 							table_data[table_data.length - 1].td = new Array();
 							table_data[table_data.length - 1].height = $(this).parent().height();
+			  				table_data[table_data.length - 1].child_rows = child_rows;
 						}
 
 						if ( $(this).attr('data-sortAs') != undefined ) {
@@ -189,9 +196,10 @@ Array - Specifc table
 			});
 
 			// Set table cells position to absolute
+			/*
 			$(table).find('tr').each(function(index,el) {
 				$(this).css('position', 'absolute');
-			});
+			});*/
 
 			// Set th hover cursor to pointer
 			$(table).find('tr th').each(function(index) {
@@ -278,7 +286,7 @@ Array - Specifc table
 //				}
 
 				// Call the display_table function with the data array and direction requested
-				display_table(sorted_table_data[th_index_selected]);
+				display_table(sorted_table_data[th_index_selected], th_index_selected);
 				display_arrow(th_index_selected);
 			});
 
@@ -305,16 +313,26 @@ Array - Specifc table
             display_arrow(0);
 
 			// This function receives the new sorted table data array and displays it
-			function display_table(data) {
-                var data = data.concat(); // .concat() fixes function scope issues with references by saving a copy of it (function within function loading old data)
+			function display_table(data, column_index) {
+				var data = data.concat(); // .concat() fixes function scope issues with references by saving a copy of it (function within function loading old data)
 
 				vertical_offset = $(table).find('tr').height(); // Start at header height
+
+				function add_child_rows(table, child_rows) {
+					  if (child_rows.length > 0) {
+						  for (var num_row = 0; num_row < child_rows.length; num_row++) {
+							child_rows[num_row].appendTo(table);
+						  }
+						}
+					  return table;
+				}
 
 				if ( settings['animation'] == 'none') {
 
 					for ( index = 0; index < data.length; index++ ) {
 						var el = data[index];
 						$(table).find('tr.tsort_id-' + el.id).css({ top: vertical_offset }).appendTo(table);
+						table = add_child_rows(table, el.child_rows);
 						vertical_offset += el.height;
 					}
 
@@ -323,6 +341,7 @@ Array - Specifc table
 					for ( index = 0; index < data.length; index++) {
 						var el = data[index];
 						$(table).find('tr.tsort_id-' + el.id).stop().delay(settings['delay'] * index).animate({ top: vertical_offset}, settings['speed'], 'swing').appendTo(table);
+						table = add_child_rows(table, el.child_rows);
 						vertical_offset += el.height;
 					}
 
@@ -342,6 +361,7 @@ Array - Specifc table
 
 								});
 							}
+			  				table = add_child_rows(table, el.child_rows);
 						};
 					});
 
@@ -367,6 +387,7 @@ Array - Specifc table
 
 							});
 							vertical_offset += data[index]['height'];
+			  				table = add_child_rows(table, data[index].child_rows);
 						});
 					});
 
@@ -382,12 +403,13 @@ Array - Specifc table
 									var el = data[index];
 									$(table).find('tr.tsort_id-' + el.id).css({ top: vertical_offset, left: '', right: "-" + settings['distance'] }).appendTo(table).delay(index * settings['delay']).animate({ right: "0px", opacity: 1 }, settings['speed'], 'swing', function() {
 
-										$(this).css('right','auto')
+										$(this).css('right','auto');
 
 										if ($(this).is('tr')) {
 											animating = false;
 										}
 									});
+				  					table = add_child_rows(table, el.child_rows);
 
 									vertical_offset += el.height;
 
@@ -421,8 +443,9 @@ Array - Specifc table
 							vertical_offset += data[index]['height'];
 
 						});
+						table = add_child_rows(table, el.child_rows)
 					});
-
+					table = add_child_rows(table, data[0].child_rows)
 				}
 
 			}

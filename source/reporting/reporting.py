@@ -352,12 +352,13 @@ class BaseReport:
 
 
 class Row:
-    def __init__(self, parent_report, records=None, highlighted=False, highlighted_green=False, color=None, hidden=False):
+    def __init__(self, parent_report, records=None, highlighted=False, highlighted_green=False, color=None, class_ = None, hidden=False):
         self.__parent_report = parent_report
         self.records = records or []
         self.highlighted = highlighted
         self.highlighted_green = highlighted_green
         self.color = color
+        self.class_ = class_
         self.hidden = hidden
 
     def add_record(self, metric_name, value, **kwargs):
@@ -1210,6 +1211,8 @@ def build_section_html(report, section, sortable=True):
             tr_class_ += ' highlighted_row'
         elif row.highlighted_green:
             tr_class_ += ' highlighted_green_row'
+        if row.class_:
+            tr_class_ += row.class_
 
         tr = '<tr class="' + tr_class_ + '" style="' + tr_style + '">'
         for col_num, rec in enumerate(row.records):

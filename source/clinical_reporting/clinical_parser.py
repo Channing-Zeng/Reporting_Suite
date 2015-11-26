@@ -182,7 +182,7 @@ class ClinicalExperimentInfo:
 
         info('Parsing mutations...')
         self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
-        self.mutations = self.parse_mutations(mutations_fpath)
+        self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath)
         for mut in self.mutations:
             self.key_gene_by_name[mut.gene.name].mutations.append(mut)
 
@@ -281,85 +281,87 @@ class ClinicalExperimentInfo:
                 del self.key_gene_by_name[gene.name]
 
 
-    def parse_mutations(self, mutations_fpath):
-        mutations = []
-
+def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, for_flagged_report=False):
+    mutations = []
+    if for_flagged_report:
+        info('Preparing mutations stats for flagged regions report')
+    else:
         info('Preparing mutations stats for key gene tables')
+    info('Checking ' + mutations_fpath)
+    if not verify_file(mutations_fpath):
+        mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
+        mut_basename = mutations_fpath.split('.' + mut_pass_ending)[0]
+        if sample.normal_match:
+            mutations_fpath = mut_basename + '.' + source.mut_paired_suffix + '.' + mut_pass_ending
+        else:
+            mutations_fpath = mut_basename + '.' + source.mut_single_suffix + '.' + mut_pass_ending
         info('Checking ' + mutations_fpath)
         if not verify_file(mutations_fpath):
-            mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
-            mut_basename = mutations_fpath.split('.' + mut_pass_ending)[0]
-            if self.sample.normal_match:
-                mutations_fpath = mut_basename + '.' + source.mut_paired_suffix + '.' + mut_pass_ending
+            err('Cannot find PASSed mutations fpath')
+            return []
+
+    info('Reading mutations from ' + mutations_fpath)
+    alts_met_before = set()
+    with open(mutations_fpath) as f:
+        for i, l in enumerate(f):
+            if i == 0:
+                continue
+            fs = l.strip().split('\t')
+            reason = None
+            if len(fs) >= 67:
+                sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
+                    aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
+                    cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
+                    mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
+                    m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
+                    n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:67]  # 67 of them
+                if len(fs) == 68:
+                    reason = fs[67]
             else:
-                mutations_fpath = mut_basename + '.' + source.mut_single_suffix + '.' + mut_pass_ending
-            info('Checking ' + mutations_fpath)
-            if not verify_file(mutations_fpath):
-                err('Cannot find PASSed mutations fpath')
-                return []
+                sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
+                    aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
+                    cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
+                    mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
+                    n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:50]  # 50 of them
+                if len(fs) == 52:  # this is just for buggy local data
+                    reason = fs[51]
+                if len(fs) == 51:
+                    reason = fs[50]
 
-        info('Reading mutations from ' + mutations_fpath)
-        alts_met_before = set()
-        with open(mutations_fpath) as f:
-            for i, l in enumerate(f):
-                if i == 0:
+            if sample_name == sample.name and gname in key_gene_by_name:
+                if (chrom, start, ref, alt) in alts_met_before:
                     continue
-                fs = l.strip().split('\t')
-                reason = None
-                if len(fs) >= 67:
-                    sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
-                        aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
-                        cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
-                        mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
-                        m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
-                        n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:67]  # 67 of them
-                    if len(fs) == 68:
-                        reason = fs[67]
-                else:
-                    sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
-                        aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
-                        cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
-                        mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
-                        n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:50]  # 50 of them
-                    if len(fs) == 52:  # this is just for buggy local data
-                        reason = fs[51]
-                    if len(fs) == 51:
-                        reason = fs[50]
+                alts_met_before.add((chrom, start, ref, alt))
 
-                if sample_name == self.sample.name and gname in self.key_gene_by_name:
-                    if (chrom, start, ref, alt) in alts_met_before:
-                        continue
-                    alts_met_before.add((chrom, start, ref, alt))
+                mut = Mutation(chrom=chrom, genome=cnf.genome.name)
+                mut.gene = KeyGene(gname)
+                mut.transcript = transcript
+                mut.codon_change = codon_change
+                mut.aa_change = aa_change
+                mut.aa_len = aa_len
+                mut.pos = int(start)
+                mut.ref = ref
+                mut.alt = alt
+                mut.depth = int(depth)
+                mut.freq = float(af)
+                mut.dbsnp_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
+                mut.cosmic_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
+                mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
+                mut.var_type = var_type
+                mut.var_class = var_class
+                mut.status = status
+                if reason:
+                    reason = reason.replace('_', ' ')
+                    if reason == 'actionable somatic':
+                        reason = 'actionable som.'
+                    if reason == 'actionable germline':
+                        reason = 'actionable germ.'
+                    reason = reason.replace('change', 'chg.')
+                mut.reason = reason
 
-                    mut = Mutation(chrom=chrom, genome=self.cnf.genome.name)
-                    mut.gene = self.key_gene_by_name[gname]
-                    mut.transcript = transcript
-                    mut.codon_change = codon_change
-                    mut.aa_change = aa_change
-                    mut.aa_len = aa_len
-                    mut.pos = int(start)
-                    mut.ref = ref
-                    mut.alt = alt
-                    mut.depth = int(depth)
-                    mut.freq = float(af)
-                    mut.dbsnp_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
-                    mut.cosmic_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
-                    mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
-                    mut.var_type = var_type
-                    mut.var_class = var_class
-                    mut.status = status
-                    if reason:
-                        reason = reason.replace('_', ' ')
-                        if reason == 'actionable somatic':
-                            reason = 'actionable som.'
-                        if reason == 'actionable germline':
-                            reason = 'actionable germ.'
-                        reason = reason.replace('change', 'chg.')
-                    mut.reason = reason
-
-                    mutations.append(mut)
-        info('Found ' + str(len(mutations)) + ' mutations in key genes')
-        return mutations
+                mutations.append(mut)
+    info('Found ' + str(len(mutations)) + ' mutations in key genes')
+    return mutations
 
 
 def parse_broad_actionable():

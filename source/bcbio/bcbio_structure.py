@@ -268,6 +268,7 @@ class BCBioSample(BaseSample):
             ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
             qualimap_dirpath=join(targqc_dirpath, BCBioStructure.qualimap_name),
             picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
+            flagged_regions_dirpath=join(targqc_dirpath, source.flag_regions_name),
             clinical_report_dirpath=join(dirpath, source.clinreport_dir),
             **kwargs)
 

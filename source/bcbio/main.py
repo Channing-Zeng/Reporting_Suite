@@ -26,6 +26,7 @@ def main():
     parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='Re-annotate BED file with gene names')
+    parser.add_option('--extended', dest='extended', action='store_true', default=False, help='Count flagged regions and missed variants')
     parser.add_option('--dedup', dest='dedup', action='store_true', default=False, help='Count duplicates in coverage metrics')
     parser.add_option('--seq2c-opts', dest='seq2c_opts', help='Options for the final lr2gene.pl script.')
     parser.add_option('--seq2c-controls', dest='seq2c_controls', help='Additional controls for Seq2C.')

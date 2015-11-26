@@ -5,52 +5,45 @@ import bcbio_postproc
 import sys
 import shutil
 from source import BaseSample
+from source.bcbio.bcbio_structure import summary_script_proc_params, BCBioStructure
+from source.clinical_reporting.clinical_parser import clinical_sample_info_from_cnf, get_ave_coverage, get_key_genes, \
+    KeyGene, parse_mutations
 from source.file_utils import adjust_path
 from source.prepare_args_and_cnf import check_system_resources
 from source.main import read_opts_and_cnfs
 from source.targetcov.flag_regions import generate_flagged_regions_report
+from source.targetcov.summarize_targetcov import _generate_summary_flagged_regions_report
 from source.utils import info
 
 
 def main(args):
-    cnf = read_opts_and_cnfs(
+    cnf, bcbio_structure = summary_script_proc_params(
+        BCBioStructure.targqc_name,
+        BCBioStructure.targqc_summary_dir,
         extra_opts=[
-            (['--caller-names'], dict(
-                dest='caller_names',
-                help='names of variant callers used to create vcfs provided by --vcf')
-             ),
-            (['--vcfs'], dict(
-                dest='vcfs',
-                help='filteted variants in VCF, comma-separate, must correspond to caller-names')
-             ),
-            # (['--region-report'], dict(
-            #     dest='vcfs',
-            #     help='filteted variants in VCF, comma-separate, must correspond to caller-names')
-            #  ),
-        ],
-        required_keys=[],
-        file_keys=[],
-        key_for_sample_name=None
-    )
+            (['--mutations'], dict(
+                dest='mutations_fpath',
+            )),
+        ])
 
     check_system_resources(
         cnf,
         required=['samtools', 'bedtools'],
         optional=[])
-
-    cnf.vcfs = map(adjust_path, cnf.vcfs.split(',') if cnf.vcfs else [])
-    cnf.caller_names = cnf.caller_names.split(',') if cnf.caller_names else []
-    cnf.vcfs_by_callername = zip(cnf.caller_names, cnf.vcfs)
-
-    process_all(cnf.output_dir)
-
+    process_all(cnf, bcbio_structure.samples)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_all(targetcov_dirpath):
-    generate_flagged_regions_report()
+def process_all(cnf, samples):
+    key_gene_by_name = dict()
+    for gene_name in get_key_genes(cnf.key_genes):
+        key_gene_by_name[gene_name] = KeyGene(gene_name)
+    mutations = {}
+    for sample in samples:
+        mutations[sample.name] = parse_mutations(cnf, sample, key_gene_by_name, cnf.mutations_fpath, for_flagged_report=True)
+    _generate_summary_flagged_regions_report(cnf.output_dir, samples, cnf, mutations)
     pass
     # read all detail reports
     # normalize

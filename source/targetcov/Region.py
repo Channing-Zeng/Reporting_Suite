@@ -354,6 +354,7 @@ def save_regions_to_bed(cnf, regions, bed_fpath, save_original_fields=False):
 
     with file_transaction(cnf.work_dir, bed_fpath) as tx_fpath:
         save_regions_to_bed_nocnf(regions, tx_fpath, save_original_fields)
+    return bed_fpath
 
 
 def save_regions_to_bed_nocnf(regions, bed_fpath, save_original_fields=False):
