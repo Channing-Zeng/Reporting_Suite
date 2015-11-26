@@ -417,7 +417,7 @@ def _snpeff(cnf, input_fpath):
     if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
         opts += ' -canon '
     else:
-        custom_transcripts = cnf.genome.snpeff.transcripts
+        custom_transcripts = cnf.genome.snpeff.transcripts or cnf.snpeff_transcripts
         if custom_transcripts:
             if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
                 return None, None, None

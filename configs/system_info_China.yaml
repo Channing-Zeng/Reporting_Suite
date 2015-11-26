@@ -43,7 +43,6 @@ genomes:
 
     snpeff:
       reference: hg19
-      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
@@ -85,6 +84,7 @@ genomes:
 key_genes: /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
 suppressors: /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes: /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
+snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
 queue: all.q
 
