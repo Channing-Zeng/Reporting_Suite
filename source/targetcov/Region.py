@@ -34,7 +34,7 @@ class SortableByChrom:
             elif chr_remainder.startswith(c):
                 return i + 25
 
-        err('Cannot parse chromosome ' + self.chrom + '\n')
+        err('Warning: cannot parse chromosome ' + self.chrom + '\n')
         return 99
 
     def get_key(self):

@@ -21,11 +21,11 @@ configs_dirpath = abspath(join(this_script_dirpath, pardir, 'configs'))
 
 defaults = dict(
     sys_cnfs = dict(
-        us=join(configs_dirpath, 'system_info_Waltham.yaml'),
-        uk=join(configs_dirpath, 'system_info_AP.yaml'),
-        china=join(configs_dirpath, 'system_info_China.yaml'),
-        cloud=join(configs_dirpath, 'system_info_cloud.yaml'),
-        local=abspath(join(this_script_dirpath, pardir, 'test', 'system_info.yaml')),
+        us = join(configs_dirpath, 'system_info_Waltham.yaml'),
+        uk = join(configs_dirpath, 'system_info_AP.yaml'),
+        china = join(configs_dirpath, 'system_info_China.yaml'),
+        cloud = join(configs_dirpath, 'system_info_cloud.yaml'),
+        local = abspath(join(this_script_dirpath, pardir, 'test', 'system_info.yaml')),
     ),
     run_cnf_exome_seq = join(configs_dirpath,  'run_info_ExomeSeq.yaml'),
     run_cnf_wgs = join(configs_dirpath, 'run_info_WGS.yaml'),
@@ -36,7 +36,9 @@ defaults = dict(
 
     default_min_freq = 0.05,
 
-    genome='hg19',
+    genome = 'hg19',
+
+    threads = 25
 )
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 

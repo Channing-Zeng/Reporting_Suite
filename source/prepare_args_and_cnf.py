@@ -23,12 +23,12 @@ from source.utils import is_local
 def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
-    parser.add_option('-t', dest='threads', type='int', help='Max number of threads', default=40)
+    parser.add_option('-t', dest='threads', type='int', help='Max number of slots, default is %d' % defaults['threads'])
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
     parser.add_option('--project-name', '--project', dest='project_name', help='Project name. If not set, it gets parsed from JIRA or from the location path.')
     parser.add_option('--done-marker', dest='done_marker')
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help='Default is temporary directory')
-    parser.add_option('--genome', dest='genome', help='Genome build.', default='hg19')
+    parser.add_option('--genome', dest='genome', help='Genome build, default is %s ' % defaults['genome'])
     parser.add_option('--debug', dest='debug', help='Debug mode; keep work directory.', action='store_true', default=False)
 
 
