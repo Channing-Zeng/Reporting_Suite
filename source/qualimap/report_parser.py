@@ -137,16 +137,16 @@ def parse_qualimap_sample_report(report_fpath):
                         rec = Record(metric_storage.find_metric(metric_name + ' %'), val)
                         records.append(rec)
 
-    sections = {'start':                             'Summary',
-                'globals (on target)':               'Globals (inside of regions)',
-                'globals':                           'Globals',
-                'coverage (on target)':              'Coverage (inside of regions)',
-                'coverage':                          'Coverage',
-                'mq':                                'Mapping Quality (inside of regions)',
-                'mq (on target)':                    'Mapping Quality',
-                'mismatches and indels (on target)': 'Mismatches and indels (inside of regions)',
-                'mismatches and indels':             'Mismatches and indels',
-                'finish':                            'Coverage across reference'}  # plots are starting from this line
+    sections = [['start',                             'Summary'],
+                ['globals',                           'Globals'],
+                ['globals (on target)',               'Globals (inside of regions)'],
+                ['coverage',                          'Coverage'],
+                ['coverage (on target)',              'Coverage (inside of regions)'],
+                ['mq',                                'Mapping Quality (inside of regions)'],
+                ['mq (on target)',                    'Mapping Quality'],
+                ['mismatches and indels',             'Mismatches and indels'],
+                ['mismatches and indels (on target)', 'Mismatches and indels (inside of regions)'],
+                ['finish',                            'Coverage across reference']]  # plots are starting from this line
     on_target_stats_suffix = ' (on target)'
     coverage_stats_prefix = 'Coverage '
     with open(report_fpath) as f:
@@ -161,7 +161,7 @@ def parse_qualimap_sample_report(report_fpath):
                 continue
 
             if cur_section is None:
-                for name, pattern in sections.items():
+                for name, pattern in sections:
                     if pattern in line:
                         cur_section = name
                         break
