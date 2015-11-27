@@ -213,7 +213,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
 
         if len(approved_genes) == 1:
             if _check_gene_symbol(approved_genes[0], gene_symbol, db_id, db_chrom):
-                sys.stderr.write('  Found approved gene for ' + gene_symbol + ' (as ' + kind + ')\n')
+                sys.stderr.write('  Found approved gene symbol ' + approved_genes[0] + ' for ' + gene_symbol + ' (as ' + kind + ')\n')
                 return approved_genes[0].name
 
         return 'NOT FOUND'
