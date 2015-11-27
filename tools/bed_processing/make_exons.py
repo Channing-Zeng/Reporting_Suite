@@ -9,7 +9,7 @@ from source.logger import err
 
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
 
-DO_APPROVE = True
+DO_APPROVE = False
 ALL_EXONS = True
 
 
@@ -168,12 +168,12 @@ def _check_gene_symbol(approved_gene, gene_symbol, db_id, chrom):
 
 
 def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
-                              gene_symbol, db_id='', db_chrom=''):
+                              gene_symbol, db_id='', db_chrom='', indent=''):
     if gene_symbol in approved_gene_by_name:
         if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, db_id, db_chrom):
             return approved_gene_by_name[gene_symbol].name, None
 
-    err('Gene name ' + gene_symbol + ' is not approved, searching for an approved version.')
+    err(indent + 'Gene name ' + gene_symbol + ' is not approved, searching for an approved version... ', ending='', print_date=False)
 
     def _get_approved_genes_by_kind(approved_genes, kind):
         if not approved_genes:
@@ -183,12 +183,13 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
             approved_genes_same_ucsc = [g for g in approved_genes if g.db_id == db_id]
 
             if len(approved_genes_same_ucsc) > 1:
-                sys.stderr.write('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + ': ' + ', '.join(g.name for g in approved_genes_same_ucsc) + '')
+                err(' ERROR: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' +
+                    db_id + ': ' + ', '.join(g.name for g in approved_genes_same_ucsc) + '', print_date=False)
                 return 'AMBIGUOUS'
 
             if len(approved_genes_same_ucsc) == 1:
                 if _check_gene_symbol(approved_genes_same_ucsc[0], gene_symbol, db_id, db_chrom):
-                    sys.stderr.write('  Found approved gene for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id + '\n')
+                    err(' found approved gene for ' + gene_symbol + ' (as ' + kind + ') with ucsc_id ' + db_id, print_date=False)
                     return approved_genes_same_ucsc[0].name
 
             # Ok, no genes with same ucsc id, or not the same chromosome for them.
@@ -196,24 +197,25 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
             approved_genes_same_chrom = [g for g in approved_genes if g.chrom == db_chrom]
 
             if len(approved_genes_same_chrom) > 1:
-                err('  Error: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' + db_chrom + ', '.join(g.name for g in approved_genes_same_ucsc) + '')
+                err(' ERROR: multiple approved gene names for ' + gene_symbol + ' (as ' + kind + ') with chrom ' +
+                    db_chrom + ', '.join(g.name for g in approved_genes_same_ucsc) + '', print_date=False)
                 return 'AMBIGUOUS'
 
             if len(approved_genes_same_chrom) == 1:
                 g = approved_genes_same_chrom[0]
-                err('  Only ' + g.name + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + db_chrom + ', picking it')
+                err(' only ' + g.name + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom ' + db_chrom + ', picking it', print_date=False)
                 if _check_gene_symbol(g, gene_symbol, db_id, db_chrom):
                     return g.name
                 else:
                     return 'NOT FOUND'
 
             if len(approved_genes_same_chrom) == 0:
-                err('  Error: no approved gene names for ' + gene_symbol + ' (as ' + kind + ') with same chrom ' + db_chrom + '')
+                err(' ERROR: no approved gene names for ' + gene_symbol + ' (as ' + kind + ') with same chrom ' + db_chrom + '', print_date=False)
                 return 'NOT FOUND'
 
         if len(approved_genes) == 1:
             if _check_gene_symbol(approved_genes[0], gene_symbol, db_id, db_chrom):
-                sys.stderr.write('  Found approved gene symbol ' + approved_genes[0] + ' for ' + gene_symbol + ' (as ' + kind + ')\n')
+                err(' found approved gene symbol for ' + gene_symbol + ': ' + approved_genes[0].name + ' (as ' + kind + ')', print_date=False)
                 return approved_genes[0].name
 
         return 'NOT FOUND'
@@ -226,12 +228,13 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
         if res == 'AMBIGUOUS':
             return None, res + '\tAS SYNONYM'
         if res == 'NOT FOUND':
+            err(' not found.', print_date=False)
             return None, res
         else:
-            err('  Finally found approved gene for ' + gene_symbol + ' (as synonym): ' + res)
+            err(indent + 'Finally found approved gene for ' + gene_symbol + ' (as synonym): ' + res, print_date=False)
             return res, None
     else:
-        err('  Finally found approved gene for ' + gene_symbol + ' (as prev): ' + res)
+        err(indent + 'Finally found approved gene for ' + gene_symbol + ' (as prev): ' + res, print_date=False)
         return res, None
 
 
@@ -240,7 +243,7 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
 
     for l in inp:
         if l and not l.startswith('#'):
-            ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, geneSymbol = l[:-1].split('\t')
+            ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, gene_symbol = l[:-1].split('\t')
             cdsStart = int(cdsStart)
             cdsEnd = int(cdsEnd)
             exonCount = int(exonCount)
@@ -249,29 +252,33 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
 
             approved_gene_symbol, status = get_approved_gene_symbol(
                 approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
-                geneSymbol, ucsc_id, ucsc_chrom)
+                gene_symbol, ucsc_id, ucsc_chrom)
 
-            if approved_gene_symbol:
-                txStart = exonStarts[0] - 1
-                txEnd = exonEnds[exonCount - 1]
-                out.write('\t'.join([ucsc_chrom, str(min(txStart, cdsStart)), str(max(txEnd, cdsEnd)), approved_gene_symbol, '.', strand, 'Gene', '.']) + '\n')
-                for j, eStart, eEnd in zip(
-                       range(exonCount),
-                       [s for s in exonStarts if s],
-                       [e for e in exonEnds if e]):
-                    eStart -= 1
+            if not approved_gene_symbol:
+                not_approved_gene_names.append(gene_symbol + '\t' + status)
+                if DO_APPROVE:
+                    continue
+                else:
+                    approved_gene_symbol = gene_symbol
 
-                    if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0, no CDS for this gene, thus reporting exons
-                        out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), approved_gene_symbol, '.', strand, 'Exon', '.']) + '\n')
+            txStart = exonStarts[0] - 1
+            txEnd = exonEnds[exonCount - 1]
+            out.write('\t'.join([ucsc_chrom, str(min(txStart, cdsStart)), str(max(txEnd, cdsEnd)), approved_gene_symbol, '.', strand, 'Gene', '.']) + '\n')
+            for j, eStart, eEnd in zip(
+                   range(exonCount),
+                   [s for s in exonStarts if s],
+                   [e for e in exonEnds if e]):
+                eStart -= 1
+
+                if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0, no CDS for this gene, thus reporting exons
+                    out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), approved_gene_symbol, '.', strand, 'Exon', '.']) + '\n')
+                else:
+                    if cdsStart <= eStart:
+                        out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
+                    elif eEnd > cdsStart:
+                        out.write('\t'.join([ucsc_chrom, str(cdsStart), str(eEnd), approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
                     else:
-                        if cdsStart <= eStart:
-                            out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
-                        elif eEnd > cdsStart:
-                            out.write('\t'.join([ucsc_chrom, str(cdsStart), str(eEnd), approved_gene_symbol, '.', strand, 'CDS', '.']) + '\n')
-                        else:
-                            err('Error: exon ' + str(eStart) + ':' + str(eEnd) + ' does not contain CDS, CDS start = ' + str(cdsStart))
-            else:
-                not_approved_gene_names.append(geneSymbol + '\t' + status)
+                        err('Error: exon ' + str(eStart) + ':' + str(eEnd) + ' does not contain CDS, CDS start = ' + str(cdsStart))
 
     return not_approved_gene_names
 
