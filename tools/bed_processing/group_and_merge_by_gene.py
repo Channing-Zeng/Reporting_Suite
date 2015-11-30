@@ -83,7 +83,6 @@ def main():
             sys.stderr.write('  ' + ft + ': ' + str(cnt) + '\n')
     sys.stderr.write('\n')
 
-    sys.stderr.write('Sorting regions...\n')
     genes = []
     for gene in gene_by_chrom_and_name.values():
         if gene.sort_regions() is not None:
