@@ -163,7 +163,7 @@ def main():
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')
             bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
-            if samtools and bwa and seqtk:
+            if samtools and bwa and seqtk and bammarkduplicates:
                 info()
                 info('Alignming ' + str(downsample_to) + ' random reads to the reference')
                 aligned = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
@@ -299,7 +299,7 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates
     call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
 
     if not is_pcr:
-        markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath)
+        markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath, bammarkduplicates)
         if markdup_bam_fpath:
             sorted_bam_fpath = markdup_bam_fpath
 
