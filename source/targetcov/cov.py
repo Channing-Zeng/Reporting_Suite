@@ -321,12 +321,14 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
+    info()
     per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed,
                                            exons_no_genes_bed, output_dir, gene_by_name)
 
     # key_genes_report = make_key_genes_reports(cnf, sample, gene_by_name, depth_stats['ave_depth'])
 
     info()
+    info('-' * 70)
     return depth_stats['ave_depth'], gene_by_name, [summary_report, per_gene_report]
 
 
@@ -458,6 +460,18 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
 
 def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no_genes_bed, output_dir, gene_by_name):
+    info('-' * 70)
+    info('Detailed exon-level report')
+
+    if cnf.reuse_intermediate and verify_file(sample.targetcov_detailed_tsv, silent=True):
+        info(sample.targetcov_detailed_tsv + ' exists, reusing')
+        rep = PerRegionSampleReport()
+        rep.txt_fpath = sample.targetcov_detailed_txt
+        rep.tsv_fpath = sample.targetcov_detailed_tsv
+        with open(sample.targetcov_detailed_tsv) as f:
+            rep.rows = [1 for l in f]
+        return rep
+
     targets_or_exons = []
 
     # Need to convert BAM to BED to make bedtools histogram
@@ -536,6 +550,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
 
 def _generate_report_from_regions(cnf, sample, output_dir, genes, un_annotated_amplicons):
     final_regions = []
+
     info('Combining all regions for final report...')
     i = 0
     for gene in genes:
@@ -549,7 +564,6 @@ def _generate_report_from_regions(cnf, sample, output_dir, genes, un_annotated_a
 
     for ampl in un_annotated_amplicons:
         final_regions.append(ampl)
-
     info('Processed {0:,} genes.'.format(i))
 
     info()

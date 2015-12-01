@@ -131,7 +131,6 @@ def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
     if picard:
         safe_mkdir(dirname(sample.picard_ins_size_hist_txt_fpath))
         safe_mkdir(dirname(sample.picard_ins_size_hist_pdf_fpath))
-        info()
         info('Picard ins size hist for "' + basename(bam_fpath) + '"')
         cmdline = '{picard} CollectInsertSizeMetrics' \
                   ' I={bam_fpath}' \
