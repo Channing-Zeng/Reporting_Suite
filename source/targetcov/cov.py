@@ -284,6 +284,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
 
     sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
     remove_dups(cnf, bam_fpath, sample.dedup_bam)
+
     _run_qualimap(cnf, sample, bam_fpath, target_bed, pcr=(getsize(bam_fpath) == getsize(sample.dedup_bam)))
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
@@ -293,13 +294,13 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
             depth_stats['bases_by_depth'],
-            target_stats['target_size'] or target_stats['reference_size'],
+            target_stats['target_size'] if target_bed else target_stats['reference_size'],
             cnf.coverage_reports.depth_thresholds)
 
         depth_stats['wn_20_percent'] = calc_rate_within_normal(
             depth_stats['bases_by_depth'],
             depth_stats['ave_depth'],
-            target_stats['target_size'] or target_stats['reference_size'])
+            target_stats['target_size'] if target_bed else target_stats['reference_size'])
 
     if target_stats['target_size']:
         target_info.bases_num = target_stats['target_size']
@@ -432,10 +433,10 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     if 'bases_within_threshs' in depth_stats:
         for depth, bases in depth_stats['bases_within_threshs'].items():
-            percent_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
-            if percent_val > 0:
-                report.add_record('Part of ' + trg_type + ' covered at least by ' + str(depth) + 'x', percent_val)
-            assert percent_val <= 1.0 or percent_val is None, str(percent_val)
+            fraction_val = 1.0 * (bases or 0) / target_info.bases_num if target_info.bases_num else 0
+            if fraction_val > 0:
+                report.add_record('Part of ' + trg_type + ' covered at least by ' + str(depth) + 'x', fraction_val)
+            assert fraction_val <= 1.0 or fraction_val is None, str(fraction_val)
     info()
 
     report.add_record('Read mean length', reads_stats['ave_len'])

@@ -30,8 +30,10 @@ metric_storage = MetricStorage(
         # ]),
 
         ReportSection('depth_metrics', 'Target coverage depth', [
-            Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean, inside of regions'),
-            Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev., inside of regions',  quality='Less is better')
+            Metric('Coverage Mean',                                 'Cov. mean',                   'Coverage mean'),
+            Metric('Coverage Mean (on target)',                     'Cov. mean (on trg)',          'Coverage mean, inside of regions'),
+            Metric('Coverage Standard Deviation',                   'Cov. std. dev.',              'Coverage std. dev.', quality='Less is better'),
+            Metric('Coverage Standard Deviation (on target)',       'Cov. std. dev. (on trg)',     'Coverage std. dev., inside of regions', quality='Less is better')
         ]),
 
         ReportSection('reads', 'Reads', [
@@ -52,13 +54,17 @@ metric_storage = MetricStorage(
             Metric('Read mean length',                              'Ave len',                     'Read mean length'),
         ]),
 
-        ReportSection('qualimap', 'Qualimap metrics, inside the regions (unless it is a WGS study)', [
+        ReportSection('qualimap', 'Qualimap metrics', [
+            Metric('Mean Mapping Quality (on target)',              'Mean MQ (on trg)',            'Mean mapping quality, inside of regions'),
+            Metric('Mismatches (on target)',                        'Mismatches (on trg)',         'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
+            Metric('Insertions (on target)',                        'Insertions (on trg)',         'Insertions, inside of regions', quality='Less is better'),
+            Metric('Deletions (on target)',                         'Deletions (on trg)',          'Deletions, inside of regions', quality='Less is better'),
+            Metric('Homopolymer indels (on target)',                'Homopol indels (on trg)',     'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
             Metric('Mean Mapping Quality',                          'Mean MQ',                     'Mean mapping quality, inside of regions'),
             Metric('Mismatches',                                    'Mismatches',                  'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
             Metric('Insertions',                                    'Insertions',                  'Insertions, inside of regions', quality='Less is better'),
             Metric('Deletions',                                     'Deletions',                   'Deletions, inside of regions', quality='Less is better'),
             Metric('Homopolymer indels',                            'Homopol indels',              'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
-            # Metric('Duplication rate',                              'Duplication rate',            'Duplication rate (inside of regions)')
         ])
     ]
 )
@@ -138,14 +144,14 @@ def parse_qualimap_sample_report(report_fpath):
                         records.append(rec)
 
     sections = [['start',                             'Summary'],
-                ['globals',                           'Globals'],
                 ['globals (on target)',               'Globals (inside of regions)'],
-                ['coverage',                          'Coverage'],
+                ['globals',                           'Globals'],
                 ['coverage (on target)',              'Coverage (inside of regions)'],
-                ['mq',                                'Mapping Quality (inside of regions)'],
-                ['mq (on target)',                    'Mapping Quality'],
-                ['mismatches and indels',             'Mismatches and indels'],
+                ['coverage',                          'Coverage'],
+                ['mq (on target)',                    'Mapping Quality (inside of regions)'],
+                ['mq',                                'Mapping Quality'],
                 ['mismatches and indels (on target)', 'Mismatches and indels (inside of regions)'],
+                ['mismatches and indels',             'Mismatches and indels'],
                 ['finish',                            'Coverage across reference']]  # plots are starting from this line
     on_target_stats_suffix = ' (on target)'
     coverage_stats_prefix = 'Coverage '
