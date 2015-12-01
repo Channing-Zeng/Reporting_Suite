@@ -149,16 +149,20 @@ def exons_for_gene_list(exons_fpath, gnames):
         for l in f:
             if not l.startswith('#'):
                 fs = l.strip().split('\t')
-                if len(fs) < 4:
+                if len(fs) < 7:
                     pass
                 else:
-                    gname = fs[3]
-                    if gname not in gnames:
+                    feature = fs[6]
+                    if feature in ['Gene', 'Multi_Gene']:
                         pass
-                        # genes_not_found_in_ref.add(gname)
                     else:
-                        genes_found_in_ref.add(gname)
-                        lines.append('\t'.join(fs))
+                        gname = fs[3]
+                        if gname not in gnames:
+                            pass
+                            # genes_not_found_in_ref.add(gname)
+                        else:
+                            genes_found_in_ref.add(gname)
+                            lines.append('\t'.join(fs))
 
     return genes_found_in_ref, lines
 
