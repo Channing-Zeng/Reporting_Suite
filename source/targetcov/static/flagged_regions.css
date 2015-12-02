@@ -34,3 +34,7 @@ table.report_table {
   margin-left: -1px;
   background: white; }
 
+.expandable_row.collapsed td.long_expanded_line.right_aligned:hover >span, .expandable_gene_row td.long_expanded_line.right_aligned:hover >span {
+  margin-left: 1px;
+  transform: translate(-100%, 0%);
+  background: white; }

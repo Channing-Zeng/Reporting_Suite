@@ -231,7 +231,7 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
             Metric('Strand', align='right'),
             Metric('Feature'),
             Metric('Biotype'),
-            Metric('Ave depth', align='right'),
+            Metric('Ave depth', td_class='long_expanded_line right_aligned'),
             Metric('# HS & Del', quality='Less is better', align='right'),
             Metric('Hotspots & Deleterious', td_class='long_expanded_line', max_width=300),
             Metric('Found mutations', td_class='long_expanded_line', max_width=250),
@@ -301,6 +301,7 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
             flagged_regions_report = PerRegionSampleReport(name='Flagged regions', metric_storage=flagged_regions_metric_storage)
             num_regions = 0
             non_hs_class = ' no_hotspots'
+            slash_with_zero_space = '/&#x200b;'
             for gene in regions_by_gene.keys():
                 if regions_by_gene[gene]:
                     num_regions += len(regions_by_gene[gene])
@@ -314,15 +315,18 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
                         all_unique_samples = []
                         all_unique_samples = [sample for sample in all_samples if sample not in all_unique_samples and not all_unique_samples.append(sample)]
                         all_tricky_regions = sorted(set([tricky_region for r in regions_by_gene[gene] for tricky_region in r.extra_fields]))
-                        all_depths = []
-                        for sample_num in range(len(r.sample_name)):
-                            all_depths.append([float(r.avg_depth[sample_num]) for r in regions_by_gene[gene] if r.avg_depth and sample_num < len(r.avg_depth)])
+                        all_depths = [[] for x in range(len(all_unique_samples))]
+                        for r in regions_by_gene[gene]:
+                            for sample_num, sample in enumerate(all_unique_samples):
+                                if sample in r.sample_name:
+                                    cur_sample_index = r.sample_name.index(sample)
+                                    all_depths[sample_num].append(float(r.avg_depth[cur_sample_index]))
                         avg_depth_per_samples = [sum(all_depths[i])/len(all_depths[i]) for i in range(len(all_depths))]
                         reg.add_record('Gene', gene)
                         reg.add_record('Chr', chr.replace('chr', ''))
                         reg.add_record('# HS & Del', sum(num_hotspots))
                         reg.add_record('Position', str(len(regions_by_gene[gene])) + ' regions')
-                        reg.add_record('Ave depth', '/'.join([format(depth, '.2f') for depth in avg_depth_per_samples]),
+                        reg.add_record('Ave depth', slash_with_zero_space.join([format(depth, '.2f') for depth in avg_depth_per_samples]),
                                        num=sum(avg_depth_per_samples)/len(avg_depth_per_samples))
                         reg.add_record('Strand', '')
                         reg.add_record('Feature', '')
@@ -342,7 +346,7 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
                         reg.add_record('Gene', r.gene_name)
                         reg.add_record('Chr', r.chrom.replace('chr', ''))
                         avg_depths = [float(depth) for depth in r.avg_depth]
-                        reg.add_record('Ave depth', '/'.join([format(depth, '.2f') for depth in avg_depths]), num=sum(avg_depths)/len(avg_depths))
+                        reg.add_record('Ave depth', slash_with_zero_space.join([format(depth, '.2f') for depth in avg_depths]), num=sum(avg_depths)/len(avg_depths))
                         reg.add_record('Strand', r.strand)
                         reg.add_record('Feature', r.feature)
                         reg.add_record('Biotype', r.biotype)
@@ -350,7 +354,8 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
                         reg.add_record('# HS & Del', len(r.missed_by_db))
                         if len(r.missed_by_db) == 0:
                             reg.class_ += non_hs_class
-                        reg.add_record('Hotspots & Deleterious', '\n'.join(r.missed_by_db))
+                        hs_breakable = [hotspot.replace('/', slash_with_zero_space) for hotspot in r.missed_by_db]
+                        reg.add_record('Hotspots & Deleterious', '\n'.join(hs_breakable))
                         reg.add_record('Possible reasons', ', '.join(r.extra_fields))
                         reg.add_record('Samples', '\n'.join(r.sample_name))
                         found_mutations = []

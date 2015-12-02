@@ -89,35 +89,48 @@ Array - Specifc table
 
 				/* PUT TABLE DATA INTO AN OBJECT ARRAY */
 				$(table).find('tr').not('.row_to_hide').each(function(index) {
-					if (index > 0) $(this).addClass('tsort_id-' + (index - 1)); // Add a class to each tr that corresponds with the object id (tsortid-0)
-					  var child_rows = [];
-					  var nextRow = $(this).next('.row_to_hide');
-					  while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {
-						  child_rows.push(nextRow);
-						  nextRow = nextRow.next('.row_to_hide');
+					if (index > 0) {
+						$(this).addClass('tsort_id-' + (index - 1)); // Add a class to each tr that corresponds with the object id (tsortid-0)
+						var child_rows = [];
+						var child_rows_sortable = [];
+						var child_number = 0;
+						var nextRow = $(this).next('.row_to_hide');
+						while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {
+							nextRow.addClass('tsort_child_id-' + child_number );
+							child_rows.push(nextRow);
+							child_rows_sortable = addTdData(nextRow, child_number, child_rows_sortable);
+							nextRow = nextRow.next('.row_to_hide');
+                      		child_number++;
 						}
-					$(this).find('td').each(function (td_index) {
-						if ($(this).is(":first-child")) {
-							table_data.push(new Object());
-							table_data[table_data.length - 1].id = index - 1;
-							table_data[table_data.length - 1].td = new Array();
-							table_data[table_data.length - 1].height = $(this).parent().height();
-			  				table_data[table_data.length - 1].child_rows = child_rows;
-						}
-
-						if ( $(this).attr('data-sortAs') != undefined ) {
-							table_data[table_data.length - 1].td.push($(this).attr('data-sortAs'));
-						} else if ( typeof settings['sortAs'] != undefined && settings['sortAs'][$(this).text()] != undefined ) {
-							table_data[table_data.length - 1].td.push(settings['sortAs'][$(this).text()]);
-						} else if (sorting_criteria[td_index] == 'numeric') {
-							table_data[table_data.length - 1].td.push(getNumber($(this).text()));
-						} else {
-							table_data[table_data.length - 1].td.push($(this).text());
-						}
-					});
+						table_data = addTdData($(this), index - 1, table_data);
+						table_data[table_data.length - 1].child_rows = child_rows;
+						table_data[table_data.length - 1].child_rows_sortable = child_rows_sortable;
+					}
 				});
 			}
 
+			function addTdData(tr, index, table_data) {
+				tr.find('td').each(function (td_index) {
+
+					if ($(this).is(":first-child")) {
+						table_data.push(new Object());
+						table_data[table_data.length - 1].id = index;
+						table_data[table_data.length - 1].td = new Array();
+						table_data[table_data.length - 1].height = $(this).parent().height();
+					}
+
+					if ($(this).attr('data-sortAs') != undefined ) {
+						table_data[table_data.length - 1].td.push($(this).attr('data-sortAs'));
+					} else if (typeof settings['sortAs'] != undefined && settings['sortAs'][$(this).text()] != undefined ) {
+						table_data[table_data.length - 1].td.push(settings['sortAs'][$(this).text()]);
+					} else if (sorting_criteria[td_index] == 'numeric') {
+						table_data[table_data.length - 1].td.push(getNumber($(this).text()));
+					} else {
+						table_data[table_data.length - 1].td.push($(this).text());
+					}
+				});
+				return table_data;
+			}
 			// Auto detect whether the column should be treated as text or numeric.
 			// Uses the most used values (numbers include separators such as , and .)
 			// Returns 'numeric' or 'text'
@@ -259,6 +272,10 @@ Array - Specifc table
 					}
 
                     sorted_table_data[th_index_selected].sort(sort_fn);
+					for (var tr_index = 0; tr_index < sorted_table_data.length; tr_index++) {
+						if (sorted_table_data[th_index_selected][tr_index])
+							sorted_table_data[th_index_selected][tr_index].child_rows_sortable.sort(sort_fn);
+					}
 				}
 
 				// sorting_history keeps track of all the columns the user selected to sort, and their order
@@ -318,13 +335,14 @@ Array - Specifc table
 
 				vertical_offset = $(table).find('tr').height(); // Start at header height
 
-				function add_child_rows(table, child_rows) {
-					  if (child_rows.length > 0) {
-						  for (var num_row = 0; num_row < child_rows.length; num_row++) {
-							child_rows[num_row].appendTo(table);
-						  }
-						}
-					  return table;
+				function add_child_rows(table, child_rows, sorted_data) {
+				  if (child_rows.length > 0) {
+					  for (var num_row = 0; num_row < child_rows.length; num_row++) {
+						var child_el = sorted_data[num_row];
+						child_rows[child_el.id].appendTo(table);
+					  }
+					}
+				  return table;
 				}
 
 				if ( settings['animation'] == 'none') {
@@ -332,7 +350,7 @@ Array - Specifc table
 					for ( index = 0; index < data.length; index++ ) {
 						var el = data[index];
 						$(table).find('tr.tsort_id-' + el.id).css({ top: vertical_offset }).appendTo(table);
-						table = add_child_rows(table, el.child_rows);
+						table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 						vertical_offset += el.height;
 					}
 
@@ -341,7 +359,7 @@ Array - Specifc table
 					for ( index = 0; index < data.length; index++) {
 						var el = data[index];
 						$(table).find('tr.tsort_id-' + el.id).stop().delay(settings['delay'] * index).animate({ top: vertical_offset}, settings['speed'], 'swing').appendTo(table);
-						table = add_child_rows(table, el.child_rows);
+						table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 						vertical_offset += el.height;
 					}
 
@@ -361,7 +379,7 @@ Array - Specifc table
 
 								});
 							}
-			  				table = add_child_rows(table, el.child_rows);
+			  				table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 						};
 					});
 
@@ -387,7 +405,7 @@ Array - Specifc table
 
 							});
 							vertical_offset += data[index]['height'];
-			  				table = add_child_rows(table, data[index].child_rows);
+			  				table = add_child_rows(table, data[index].child_rows, data[index].child_rows_sortable);
 						});
 					});
 
@@ -409,7 +427,7 @@ Array - Specifc table
 											animating = false;
 										}
 									});
-				  					table = add_child_rows(table, el.child_rows);
+				  					table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 
 									vertical_offset += el.height;
 
@@ -443,9 +461,9 @@ Array - Specifc table
 							vertical_offset += data[index]['height'];
 
 						});
-						table = add_child_rows(table, el.child_rows)
+						table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 					});
-					table = add_child_rows(table, data[0].child_rows)
+					table = add_child_rows(table, data[0].child_rows, data[0].child_rows_sortable);
 				}
 
 			}
