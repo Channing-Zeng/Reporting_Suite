@@ -42,8 +42,8 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
             ReportSection('target_metrics', 'Target coverage', [
                 Metric('Covered bases in target', short_name='Trg covered', unit='bp'),
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on target', short_name='% dedup reads mapped on trg (of total)', unit='%', description='Percentage of dedupped mapped reads overlapping target at least by 1 base (shows how wasteful is the experiment'),
-                Metric('Percentage of reads mapped off target', short_name='% dedup reads mapped off trg (of total)', unit='%', quality='Less is better', description='Percentage of dedupped mapped reads that don\'t overlap target even by 1 base'),
+                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%', description='Percentage of dedupped mapped reads overlapping target at least by 1 base'),
+                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better', description='Percentage of dedupped mapped reads that don\'t overlap target even by 1 base'),
                 Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%', description='Percentage of reads that overlap target at least by 1 base. Should be 1-2% higher.'),
                 Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
             ]),
@@ -312,13 +312,13 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     reads_stats['mapped_dedup'] = number_of_mapped_reads(cnf, bam_fpath)
 
     if target_info.bed:
-        reads_stats['mapped_dedup_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath)
+        reads_stats['mapped_dedup_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath) or 0
 
     if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
-        reads_stats['mapped_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath)
+        reads_stats['mapped_dedup_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath) or 0
     elif exons_no_genes_bed:
-        reads_stats['mapped_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath)
+        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath) or 0
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
@@ -343,7 +343,8 @@ def get_records_by_metrics(records, metrics):
 
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
-    report = SampleReport(sample, metric_storage=get_header_metric_storage(cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
+    report = SampleReport(sample, metric_storage=get_header_metric_storage(
+        cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
     report.add_record('Qualimap', value='Qualimap', url=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
     if reads_stats.get('gender') is not None:
         report.add_record('Gender', reads_stats['gender'], silent=True)
@@ -401,24 +402,24 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         # mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
         if 'mapped_dedup_on_target' in reads_stats:
             # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
-            percent_mapped_dedup_on_target = 1.0 * (reads_stats['mapped_dedup_on_target'] or 0) / reads_stats['total'] if reads_stats['total'] != 0 else None
+            percent_mapped_dedup_on_target = 1.0 * reads_stats['mapped_dedup_on_target'] / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] != 0 else None
             report.add_record('Percentage of reads mapped on target', percent_mapped_dedup_on_target)
             assert percent_mapped_dedup_on_target <= 1.0 or percent_mapped_dedup_on_target is None, str(percent_mapped_dedup_on_target)
-            percent_mapped_dedup_off_target = 1.0 * (reads_stats['mapped_dedup'] - (reads_stats['mapped_dedup_on_target'] or 0)) / reads_stats['total'] if reads_stats['total'] != 0 else None
+            percent_mapped_dedup_off_target = 1.0 * (reads_stats['mapped_dedup'] - reads_stats['mapped_dedup_on_target']) / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] != 0 else None
             report.add_record('Percentage of reads mapped off target ', percent_mapped_dedup_off_target)
 
         read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
         report.add_record('Read bases mapped on target', read_bases_on_targ)
 
-        if 'mapped_on_padded_target' in reads_stats:
+        if 'mapped_dedup_on_padded_target' in reads_stats:
             # report.add_record('Reads mapped on padded target', reads_stats['mapped_reads_on_padded_target'])
-            percent_mapped_on_padded_target = 1.0 * (reads_stats['mapped_on_padded_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] else None
+            percent_mapped_on_padded_target = 1.0 * reads_stats['mapped_dedup_on_padded_target'] / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] else None
             report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
             assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
-    elif 'mapped_on_exome' in reads_stats:
+    elif 'mapped_dedup_on_exome' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
-        percent_mapped_on_exome = 1.0 * (reads_stats['mapped_on_exome'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
+        percent_mapped_on_exome = 1.0 * reads_stats['mapped_dedup_on_exome'] / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] != 0 else None
         if percent_mapped_on_exome:
             report.add_record('Percentage of reads mapped on exome', percent_mapped_on_exome)
             assert percent_mapped_on_exome <= 1.0 or percent_mapped_on_exome is None, str(percent_mapped_on_exome)
