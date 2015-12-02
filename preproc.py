@@ -47,6 +47,7 @@ def proc_opts():
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
     parser.add_option('--bed', dest='bed', help='BED file (used for downsampled TargQC reports)')
+    parser.add_option('--samplesheet', dest='samplesheet', help='Sample sheet (default is located under the dataset root as SampleSheet.csv')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
 
@@ -115,6 +116,10 @@ def proc_opts():
     if cnf.project_name:
         info('Project name: ' + cnf.project_name)
 
+    if cnf.samplesheet:
+        cnf.samplesheet = verify_file(cnf.samplesheet, is_critical=True)
+        info('Using custom sample sheet ' + cnf.samplesheet)
+
     return cnf, dataset_dirpath, jira_url
 
 
@@ -135,7 +140,7 @@ def main():
 
     info()
     info('*' * 60)
-    ds = DatasetStructure.create(project_dirpath, cnf.project_name)
+    ds = DatasetStructure.create(project_dirpath, cnf.project_name, cnf.samplesheet)
     if not ds.project_by_name:
         critical('No projects found')
     for project in ds.project_by_name.values():

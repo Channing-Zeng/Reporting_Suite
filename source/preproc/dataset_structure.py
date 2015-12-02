@@ -14,20 +14,20 @@ class DatasetStructure:
     downsample_targqc_repr = 'TargQC downsampled'
 
     @staticmethod
-    def create(dir_path, project_name):
+    def create(dir_path, project_name, samplesheet=None):
         if 'datasets/miseq/' in dir_path.lower():
-            return MiSeqStructure(dir_path, project_name)
+            return MiSeqStructure(dir_path, project_name, samplesheet)
 
         elif 'datasets/hiseq/' in dir_path.lower():
-            return HiSeqStructure(dir_path, project_name)
+            return HiSeqStructure(dir_path, project_name, samplesheet)
 
         elif 'datasets/hiseq4000/' in dir_path.lower():
-            return HiSeq4000Structure(dir_path, project_name)
+            return HiSeq4000Structure(dir_path, project_name, samplesheet)
 
         else:
             critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/. Found ' + dir_path)
 
-    def __init__(self, dirpath, az_project_name):
+    def __init__(self, dirpath, az_project_name, samplesheet=None):
         self.az_project_name = az_project_name
 
         illumina_project_name = None
@@ -46,14 +46,18 @@ class DatasetStructure:
         self.bcl2fastq_dirpath = None
         self.source_fastq_dirpath = None
 
-        self.samplesheet_fpath = self.__find_sample_sheet()
+        if samplesheet:
+            self.samplesheet_fpath = samplesheet
+        else:
+            self.samplesheet_fpath = self.__find_sample_sheet()
         self.project_by_name = self._parse_sample_sheet(self.samplesheet_fpath)
 
         if illumina_project_name:  # we want only a specific project
             if illumina_project_name not in self.project_by_name:
                 info()
-                err('Warning: Project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
-            self.project_by_name = {illumina_project_name: self.project_by_name[illumina_project_name]}
+                err('Warning: project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
+            else:
+                self.project_by_name = {illumina_project_name: self.project_by_name[illumina_project_name]}
 
     def __find_unaligned_dir(self):
         unaligned_dirpath = join(self.dirpath, 'Unalign')
@@ -119,10 +123,10 @@ class DatasetStructure:
 
 
 class HiSeqStructure(DatasetStructure):
-    def __init__(self, dirpath, az_project_name=None):
+    def __init__(self, dirpath, az_project_name=None, samplesheet=None):
         info('Parsing the HiSeq project structure')
         self.kind = 'hiseq'
-        DatasetStructure.__init__(self, dirpath, az_project_name)
+        DatasetStructure.__init__(self, dirpath, az_project_name, samplesheet=samplesheet)
 
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
@@ -157,10 +161,10 @@ class HiSeqStructure(DatasetStructure):
 
 
 class MiSeqStructure(DatasetStructure):
-    def __init__(self, dirpath, az_project_name):
+    def __init__(self, dirpath, az_project_name, samplesheet=None):
         info('Parsing the MiSeq project structure')
         self.kind = 'miseq'
-        DatasetStructure.__init__(self, dirpath, az_project_name)
+        DatasetStructure.__init__(self, dirpath, az_project_name, samplesheet=samplesheet)
 
         base_dirpath = self.unaligned_dirpath
         if not verify_dir(base_dirpath, silent=True):
@@ -182,10 +186,10 @@ class MiSeqStructure(DatasetStructure):
                 return dpath
 
 class HiSeq4000Structure(DatasetStructure):
-    def __init__(self, dirpath, az_project_name):
+    def __init__(self, dirpath, az_project_name, samplesheet=None):
         info('Parsing the HiSeq4000 project structure - same as MiSeq')
         self.kind = 'hiseq4000'
-        DatasetStructure.__init__(self, dirpath, az_project_name)
+        DatasetStructure.__init__(self, dirpath, az_project_name, samplesheet=samplesheet)
 
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
