@@ -259,7 +259,7 @@ class BaseReport:
     def __init__(self, sample=None, html_fpath=None, url=None, json_fpath=None,
                  records=None, plots=None, metric_storage=None, display_name='',
                  report_name='', caller_tag=None, project_tag=None, expandable=False,
-                 **kwargs):
+                 unique=False, **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
@@ -282,6 +282,8 @@ class BaseReport:
         self.set_project_tag(project_tag)
 
         self.expandable = expandable
+
+        self.unique = unique
 
     def set_project_tag(self, tag):
         if not self.project_tag and tag:
@@ -1183,7 +1185,7 @@ def build_section_html(report, section, sortable=True):
     if report.expandable:
         table_class += ' table_short'
 
-    table = '\n<table cellspacing="0" class="' + table_class + ' id="report_table_' + section.name + '">'
+    table = '\n<table cellspacing="0" class="' + table_class + '" id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
 
     # spanning = 0
@@ -1198,7 +1200,7 @@ def build_section_html(report, section, sortable=True):
     table += '\n</tr>\n</thead>\n<tbody>'
 
     full_table = None
-    if report.expandable:
+    if report.expandable and not report.unique:
         full_table = table.replace('table_short', 'table_full')
 
     for row_num, row in enumerate(rows):
@@ -1220,7 +1222,7 @@ def build_section_html(report, section, sortable=True):
             tr += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')
         tr += '\n</tr>'
 
-        if report.expandable:
+        if report.expandable and not report.unique:
             full_table += '\n' + tr
             if not row.hidden:
                 table += '\n' + tr

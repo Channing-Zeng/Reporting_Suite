@@ -70,7 +70,7 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
             for gene in selected_genes:
                 if coverage_type == 'low':
                     cur_regions = [a for a in (gene.get_amplicons() if region_type == 'amplicons' else gene.get_exons())
-                                   if a.rates_within_threshs[10] < 1 and 'Multi' not in a.feature]
+                                   if a.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH and 'Multi' not in a.feature]
                 else:
                     cur_regions = [a for a in (gene.get_amplicons() if region_type == 'amplicons' else gene.get_exons())
                                    if a.avg_depth > max_cov and 'Multi' not in a.feature]
@@ -371,13 +371,14 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
     bed_filenames = tricky_regions.keys()
 
     bed_fpaths = [join(cnf.tricky_regions, bed_filename) for bed_filename in bed_filenames]
-    info()
+
     info('Intersecting BED ' + selected_bed_fpath + ' using BED files with tricky regions')
 
     vcf_bed_intersect = join(cnf.work_dir, splitext(basename(selected_bed_fpath))[0] + '_tricky_vcf_bed.intersect')
-    bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wa -wb -filenames'
-    call(cnf, cmdline, output_fpath=vcf_bed_intersect, exit_on_error=False)
+    if not cnf.reuse_intermediate or not verify_file(vcf_bed_intersect, silent=True, is_critical=False):
+        bedtools = get_system_path(cnf, 'bedtools')
+        cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wa -wb -filenames'
+        call(cnf, cmdline, output_fpath=vcf_bed_intersect, exit_on_error=False)
 
     regions_by_reasons = {}
 

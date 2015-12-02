@@ -1,0 +1,89 @@
+<!--<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">-->
+<!doctype html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8">
+
+    <link rel="stylesheet" type="text/css" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="common.css" />
+    <link rel="stylesheet" type="text/css" href="report.css" />
+    <link rel="stylesheet" type="text/css" href="table_sorter/style.css" />
+    <link rel="stylesheet" type="text/css" href="flagged_regions.css" />
+
+    <!--[if IE]>
+        <style>
+            table.report_table {
+                table-layout: fixed;
+                width: 100%;
+            }
+            table.report_table td {
+            }
+        </style>
+    <![endif]-->
+
+    <script type="text/javascript" src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+    <script type="text/javascript" src="flot/jquery.flot.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
+    <script type="text/javascript" src="scripts/utils.js"></script>
+    <script type="text/javascript" src="table_sorter/tsort.js"></script>
+    <script type="text/javascript" src="flagged_regions.js"></script>
+
+</head>
+
+<body>
+
+<div class="content">
+    <div style="margin-top: -30px;">
+        <h1 style="">Flagged regions report</h1>
+    </div>
+
+    <div id='report' class="report">
+
+        {.section flagged_low}
+        <h1>Low covered {region_type}</h1>
+            <div id="flagged_low_div">
+                <p style="margin-top: -5px;">{total_regions} regions with too low coverage were detected in
+                    {total_key_genes} key genes that have been previously implicated in various cancers.
+                </p>
+                <p id="hotspots_low_switch">
+                    <span>Regions with hotpots & deleterious</span>
+                    /
+                    <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">
+                        all regions</a>
+                </p>
+                <div id="flagged_low_table_div">
+                    {table}
+                </div>
+            </div>
+        {.or}
+        <h1>Low covered {region_type}</h1>
+            <p>No regions with too low coverage detected in key genes.</p>
+        {.end}
+
+        {.section flagged_high}
+        <h1>High covered {region_type}</h1>
+            <div id="flagged_high_div">
+                <p style="margin-top: -5px;">{total_regions} regions with too high coverage were detected in
+                    {total_key_genes} key genes that have been previously implicated in various cancers.
+                </p>
+                <p id="hotspots_high_switch">
+                    <span>Regions with hotpots & deleterious</span>
+                    /
+                    <a class="dotted-link" id="extend_link_high" onclick="extendClick($(this))">
+                        all regions</a>
+                </p>
+                <div id="flagged_high_table_div">
+                    {table}
+                </div>
+            </div>
+        {.or}
+            <h1>High covered {region_type}</h1>
+            <p>No regions with too high coverage detected in key genes.</p>
+        {.end}
+    </div>
+</div>
+</body>
+
+</html>

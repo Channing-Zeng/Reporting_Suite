@@ -266,7 +266,7 @@ class BCBioRunner:
             targetcov_params += '--exons {cnf.exons} '
         if cnf.reannotate:
             targetcov_params += '--reannotate '
-        if cnf.extended:
+        if cnf.steps and 'AbnormalCovReport' in cnf.steps:
             targetcov_params += '--extended '
         self.targetcov = Step(cnf, run_id,
             name=BCBioStructure.targqc_name, short_name='tc',

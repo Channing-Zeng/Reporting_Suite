@@ -155,30 +155,4 @@ table.draggable {
 .qc_meta_table td {
   padding-right: 5px; }
 
-.expandable_gene_row.collapsed td.td_position:after {
-  content: ' (click to expand)'; }
-
-.expandable_row.expanded td {
-  vertical-align:top; }
-
-.expandable_row.collapsed td.long_expanded_line, .expandable_gene_row td.long_expanded_line {
-  overflow: hidden;
-  -o-text-overflow: ellipsis;
-  text-overflow: ellipsis; }
-
-.expandable_row.collapsed td.long_expanded_line:hover, .expandable_gene_row td.long_expanded_line:hover {
-  overflow: visible;
-  -o-text-overflow: unset;
-  text-overflow: unset; }
-
-.expandable_row.collapsed td.long_expanded_line:hover >span, .expandable_gene_row td.long_expanded_line:hover >span {
-  border: 1px solid black;
-  position: absolute;
-  margin-top: -8px;
-  margin-left: -1px;
-  background: white; }
-
-.expandable_row.expanded span {
-  white-space: normal; }
-
 /*# sourceMappingURL=report.css.map */
