@@ -243,7 +243,7 @@ class DatasetProject:
         self.downsample_targqc_report_fpath = join(self.downsample_targqc_dirpath, 'targQC.html')
         self.project_report_html_fpath = join(self.dirpath, az_project_name + '.html')
 
-    def concat_fastqs(self, work_dir):
+    def concat_fastqs(self, cnf):
         info('Concatenating fastqc files for ' + self.name)
         if self.mergred_dir_found:
             info('  found already merged fastq dir, skipping.')
@@ -253,8 +253,8 @@ class DatasetProject:
             return
         safe_mkdir(self.fastq_dirpath)
         for s in self.sample_by_name.values():
-            _concat_fastq(work_dir, s.find_raw_fastq('R1'), s.l_fpath)
-            _concat_fastq(work_dir, s.find_raw_fastq('R2'), s.r_fpath)
+            _concat_fastq(cnf, s.find_raw_fastq('R1'), s.l_fpath)
+            _concat_fastq(cnf, s.find_raw_fastq('R2'), s.r_fpath)
         info()
 
 class DatasetSample:
@@ -315,11 +315,14 @@ class DatasetSample:
                 return None
 
 
-def _concat_fastq(work_dir, fastq_fpaths, output_fpath):
+def _concat_fastq(cnf, fastq_fpaths, output_fpath):
     info('  merging ' + ', '.join(fastq_fpaths))
-    with file_transaction(work_dir, output_fpath) as tx:
-        with open(tx, 'w') as out:
-            for fq_fpath in fastq_fpaths:
-                with open(fq_fpath, 'r') as inp:
-                    shutil.copyfileobj(inp, out)
+    if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+        info(output_fpath + ' exists, reusing')
+    else:
+        with file_transaction(cnf.work_dir, output_fpath) as tx:
+            with open(tx, 'w') as out:
+                for fq_fpath in fastq_fpaths:
+                    with open(fq_fpath, 'r') as inp:
+                        shutil.copyfileobj(inp, out)
     return output_fpath

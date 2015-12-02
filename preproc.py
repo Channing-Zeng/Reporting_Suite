@@ -146,7 +146,7 @@ def main():
         samples = project.sample_by_name.values()
         threads = len(samples) if not is_local() else 1
         info('Threads number: ' + str(threads))
-        project.concat_fastqs(cnf.work_dir)
+        project.concat_fastqs(cnf)
 
         if cnf.targqc or cnf.metamapping:
             info()

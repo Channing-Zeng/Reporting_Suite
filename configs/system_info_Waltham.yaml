@@ -70,7 +70,7 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
   hg38-noalt:
-    seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
+    seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
 
     dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf
