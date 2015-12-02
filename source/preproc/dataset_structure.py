@@ -52,7 +52,7 @@ class DatasetStructure:
         if illumina_project_name:  # we want only a specific project
             if illumina_project_name not in self.project_by_name:
                 info()
-                critical('ERROR: Project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
+                err('Warning: Project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
             self.project_by_name = {illumina_project_name: self.project_by_name[illumina_project_name]}
 
     def __find_unaligned_dir(self):

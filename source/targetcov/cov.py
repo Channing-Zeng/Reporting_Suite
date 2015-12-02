@@ -17,7 +17,7 @@ from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
     remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
-    intersect_bed, calc_sum_of_regions, bam_to_bed
+    intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
@@ -309,9 +309,10 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
         target_info.bases_num = target_stats['reference_size']
 
     bam_fpath = sample.dedup_bam
+    reads_stats['mapped_dedup'] = number_of_mapped_reads(cnf, bam_fpath)
 
     if target_info.bed:
-        reads_stats['mapped_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath)
+        reads_stats['mapped_dedup_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath)
 
     if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
@@ -398,13 +399,13 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     if target_info.bed:
         info('Getting number of mapped reads on target...')
         # mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
-        if 'mapped_on_target' in reads_stats:
+        if 'mapped_dedup_on_target' in reads_stats:
             # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
-            percent_mapped_on_target = 1.0 * (reads_stats['mapped_on_target'] or 0) / reads_stats['mapped'] if reads_stats['mapped'] != 0 else None
-            report.add_record('Percentage of reads mapped on target', percent_mapped_on_target)
-            assert percent_mapped_on_target <= 1.0 or percent_mapped_on_target is None, str(percent_mapped_on_target)
-            percent_mapped_off_target = 1.0 - percent_mapped_on_target
-            report.add_record('Percentage of reads mapped off target ', percent_mapped_off_target)
+            percent_mapped_dedup_on_target = 1.0 * (reads_stats['mapped_dedup_on_target'] or 0) / reads_stats['total'] if reads_stats['total'] != 0 else None
+            report.add_record('Percentage of reads mapped on target', percent_mapped_dedup_on_target)
+            assert percent_mapped_dedup_on_target <= 1.0 or percent_mapped_dedup_on_target is None, str(percent_mapped_dedup_on_target)
+            percent_mapped_dedup_off_target = 1.0 * (reads_stats['mapped_dedup'] - (reads_stats['mapped_dedup_on_target'] or 0)) / reads_stats['total'] if reads_stats['total'] != 0 else None
+            report.add_record('Percentage of reads mapped off target ', percent_mapped_dedup_off_target)
 
         read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
         report.add_record('Read bases mapped on target', read_bases_on_targ)
