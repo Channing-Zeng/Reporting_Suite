@@ -130,7 +130,7 @@ def main():
     if is_az() and jira_url:
         info('Getting info from JIRA...')
         jira_case = retrieve_jira_info(jira_url)
-        if not cnf.project_name:
+        if not cnf.project_name and jira_case:
             cnf.project_name = jira_case.project_name
             info('Setting project name from JIRA: ' + cnf.project_name)
     elif not cnf.project_name:
