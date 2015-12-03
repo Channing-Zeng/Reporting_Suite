@@ -152,7 +152,7 @@ def main():
         samples = project.sample_by_name.values()
         threads = len(samples)
         info('Threads number: ' + str(threads))
-        project.concat_fastqs(cnf)
+        project.concat_fastqs(ds.get_fastq_regexp_fn, cnf)
 
         if cnf.targqc or cnf.metamapping:
             info()

@@ -9,6 +9,19 @@ from source.logger import critical, err, info, warn
 from source.file_utils import verify_dir, verify_file, splitext_plus, safe_mkdir, file_transaction
 
 
+def get_hiseq4000_miseq_regexp(sample, suf):
+    return sample.name.replace('-', '.').replace('_', '.').replace(' ', '.') + \
+        '_S\d+_L\d\d\d_' + suf + '.*\.fastq\.gz'
+
+def get_hiseq_regexp(sample, suf):
+    return sample.name.replace('-', '.').replace('_', '.').replace(' ', '.') + \
+        '_' + sample.index + '_L\d\d\d_' + suf + '.*\.fastq\.gz'
+
+def get_nextseq500_regexp(sample, suf):
+    return sample.name.replace('-', '.').replace('_', '.').replace(' ', '.') + \
+        '_S\d+_' + suf + '.*\.fastq\.gz'
+
+
 class DatasetStructure:
     pre_fastqc_repr =        'Preproc FastQC'
     downsample_targqc_repr = 'TargQC downsampled'
@@ -145,6 +158,8 @@ class HiSeqStructure(DatasetStructure):
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
 
+        self.get_fastq_regexp_fn = get_hiseq_regexp
+
     # def __get_bcl2fastq_dirpath(self):
     #     # Reading project name
     #     bcl2fastq_dirpath = None
@@ -185,11 +200,14 @@ class MiSeqStructure(DatasetStructure):
 
         self.basecall_stat_html_reports = []
 
+        self.get_fastq_regexp_fn = get_hiseq4000_miseq_regexp
+
     def __find_fastq_dir(self):
         for dname in os.listdir(self.unaligned_dirpath):
             dpath = join(self.unaligned_dirpath, dname)
             if isdir(dpath) and any(f.endswith('.fastq.gz') for f in os.listdir(dpath)):
                 return dpath
+
 
 class HiSeq4000Structure(DatasetStructure):
     def __init__(self, dirpath, az_project_name, samplesheet=None):
@@ -210,6 +228,8 @@ class HiSeq4000Structure(DatasetStructure):
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+
+        self.get_fastq_regexp_fn = get_hiseq4000_miseq_regexp
 
     def __find_fastq_dir(self):
         for dname in os.listdir(self.unaligned_dirpath):
@@ -239,6 +259,8 @@ class NextSeq500Structure(DatasetStructure):
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+
+        self.get_fastq_regexp_fn = get_nextseq500_regexp
 
     def __find_fastq_dir(self):
         for dname in os.listdir(self.unaligned_dirpath):
@@ -283,7 +305,7 @@ class DatasetProject:
         self.downsample_targqc_report_fpath = join(self.downsample_targqc_dirpath, 'targQC.html')
         self.project_report_html_fpath = join(self.dirpath, az_project_name + '.html')
 
-    def concat_fastqs(self, cnf):
+    def concat_fastqs(self, get_fastq_regexp, cnf):
         info('Concatenating fastqc files for ' + self.name)
         if self.mergred_dir_found:
             info('  found already merged fastq dir, skipping.')
@@ -293,14 +315,15 @@ class DatasetProject:
             return
         safe_mkdir(self.fastq_dirpath)
         for s in self.sample_by_name.values():
-            _concat_fastq(cnf, s.find_raw_fastq('R1'), s.l_fpath)
-            _concat_fastq(cnf, s.find_raw_fastq('R2'), s.r_fpath)
+            _concat_fastq(cnf, s.find_raw_fastq(get_fastq_regexp, 'R1'), s.l_fpath)
+            _concat_fastq(cnf, s.find_raw_fastq(get_fastq_regexp, 'R2'), s.r_fpath)
         info()
 
 class DatasetSample:
     def __init__(self, name, index=None, source_fastq_dirpath=None):
         self.name = name
-        self.index = None
+        self.index = index
+
         self.lane_numbers = set()
         self.fcid = None  # for HiSeq
 
@@ -329,19 +352,6 @@ class DatasetSample:
         self.ngscat_html_fpath    = self.targqc_sample.ngscat_html_fpath
         self.qualimap_html_fpath  = self.targqc_sample.qualimap_html_fpath
 
-    def find_raw_fastq(self, suf='R1'):
-        fastq_fpaths = [
-            join(self.source_fastq_dirpath, fname)
-                for fname in os.listdir(self.source_fastq_dirpath)
-                if re.match(self.name.replace('-', '.').replace('_', '.').replace(' ', '.') +
-                            '_.*_' + suf + '.*\.fastq\.gz', fname)]
-        fastq_fpaths = sorted(fastq_fpaths)
-        if not fastq_fpaths:
-            critical('Error: no fastq files for the sample ' + self.name +
-                     ' were found inside ' + self.source_fastq_dirpath)
-        info(self.name + ': found raw fastq files ' + ', '.join(fastq_fpaths))
-        return fastq_fpaths
-
     def find_fastqc_html(self, end_name):
         sample_fastqc_dirpath = join(self.fastqc_dirpath, end_name + '_fastqc')
         fastqc_html_fpath = join(self.fastqc_dirpath, end_name + '_fastqc.html')
@@ -353,6 +363,18 @@ class DatasetSample:
                 return fastqc_html_fpath
             else:
                 return None
+
+    def find_raw_fastq(self, get_regexp, suf='R1'):
+        fastq_fpaths = [
+            join(self.source_fastq_dirpath, fname)
+                for fname in os.listdir(self.source_fastq_dirpath)
+                if re.match(get_regexp(self, suf), fname)]
+        fastq_fpaths = sorted(fastq_fpaths)
+        if not fastq_fpaths:
+            critical('Error: no fastq files for the sample ' + self.name +
+                     ' were found inside ' + self.source_fastq_dirpath)
+        info(self.name + ': found raw fastq files ' + ', '.join(fastq_fpaths))
+        return fastq_fpaths
 
 
 def _concat_fastq(cnf, fastq_fpaths, output_fpath):
