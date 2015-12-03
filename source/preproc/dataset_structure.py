@@ -24,6 +24,9 @@ class DatasetStructure:
         elif 'datasets/hiseq4000/' in dir_path.lower():
             return HiSeq4000Structure(dir_path, project_name, samplesheet)
 
+        elif 'datasets/nextseq500' in dir_path.lower():
+            return NextSeq500Structure(dir_path, project_name, samplesheet)
+
         else:
             critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/. Found ' + dir_path)
 
@@ -100,8 +103,9 @@ class DatasetStructure:
         for i, info_d in enumerate(sample_infos):
             proj_name = info_d.get('Sample_Project', info_d.get('SampleProject'))
             if not proj_name:
-                critical('No SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
-            if proj_name not in project_by_name:
+                warn('No SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
+                proj_name = self.az_project_name
+            if proj_name is not None not in project_by_name:
                 project_by_name[proj_name] = DatasetProject(proj_name)
             project = project_by_name[proj_name]
 
@@ -187,7 +191,7 @@ class MiSeqStructure(DatasetStructure):
 
 class HiSeq4000Structure(DatasetStructure):
     def __init__(self, dirpath, az_project_name, samplesheet=None):
-        info('Parsing the HiSeq4000 project structure - same as MiSeq')
+        info('Parsing the HiSeq4000 project structure')
         self.kind = 'hiseq4000'
         DatasetStructure.__init__(self, dirpath, az_project_name, samplesheet=samplesheet)
 
@@ -216,6 +220,36 @@ class HiSeq4000Structure(DatasetStructure):
         index_html_fpath = join(dirpath, 'index.html')
         if verify_dir(dirpath) and verify_file(index_html_fpath):
             return [index_html_fpath]
+
+
+class NextSeq500Structure(DatasetStructure):
+    def __init__(self, dirpath, az_project_name, samplesheet=None):
+        info('Parsing the NextSeq500 project structure')
+        self.kind = 'nextseq500'
+        DatasetStructure.__init__(self, dirpath, az_project_name, samplesheet=samplesheet)
+
+        verify_dir(self.unaligned_dirpath, is_critical=True)
+
+        for proj_name, project in self.project_by_name.items():
+            project.set_dirpath(self.unaligned_dirpath, self.az_project_name)
+            for sample in project.sample_by_name.values():
+                sample.source_fastq_dirpath = project.dirpath
+                sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
+
+        self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+
+    def __find_fastq_dir(self):
+        for dname in os.listdir(self.unaligned_dirpath):
+            dpath = join(self.unaligned_dirpath, dname)
+            if isdir(dpath) and any(f.endswith('.fastq.gz') for f in os.listdir(dpath)):
+                return dpath
+
+    def __get_basecall_stats_reports(self):
+        dirpath = join(self.unaligned_dirpath, 'Reports', 'html')
+        index_html_fpath = join(dirpath, 'index.html')
+        if verify_dir(dirpath) and verify_file(index_html_fpath):
+            return [index_html_fpath]
+
 
 class DatasetProject:
     def __init__(self, name):

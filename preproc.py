@@ -155,7 +155,7 @@ def main():
 
         if cnf.targqc or cnf.metamapping:
             info()
-            downsample_to = 1e6
+            downsample_to = 5e5
             info('Downsampling the reads to ' + str(downsample_to))
             bam_by_sample = dict()
             fastqs = Parallel(n_jobs=threads) \

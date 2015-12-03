@@ -30,6 +30,8 @@ resources:
     path: /apps/sge61/bin/lx24-amd64/qsub
   qdel:
     path: /apps/sge61/bin/lx24-amd64/qdel
+  bwa:    /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/bwa
+    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/bwa
 
 genomes:
   hg38:
