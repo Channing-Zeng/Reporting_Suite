@@ -42,9 +42,14 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
             ReportSection('target_metrics', 'Target coverage', [
                 Metric('Covered bases in target', short_name='Trg covered', unit='bp'),
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%', description='Percentage of dedupped mapped reads overlapping target at least by 1 base'),
-                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better', description='Percentage of dedupped mapped reads that don\'t overlap target even by 1 base'),
-                Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%', description='Percentage of reads that overlap target at least by 1 base. Should be 1-2% higher.'),
+                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%',
+                       description='Percentage of unique mapped reads overlapping target at least by 1 base'),
+                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better',
+                       description='Percentage of unique mapped reads that don\'t overlap target even by 1 base'),
+                Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%',
+                       description='Percentage of reads that overlap target at least by 1 base. Should be 1-2% higher.'),
+                Metric('Percentage of usable reads', short_name='% usable reads', unit='%',
+                       description='Fraction of unique reads mapped on target to the total number of original reads (reported in the very first column "Reads"'),
                 Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
             ]),
         ])
@@ -56,6 +61,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
                 Metric('Covered bases in exome', short_name='Exome covered', unit='bp'),
                 Metric('Percentage of exome covered by at least 1 read', short_name='%', unit='%'),
                 Metric('Percentage of reads mapped on exome', short_name='% reads on exome', unit='%'),
+                Metric('Percentage of usable reads', short_name='% usable reads', unit='%'),
                 Metric('Percentage of reads mapped off exome', short_name='% off exome', unit='%', quality='Less is better'),
             ]),
         ])
@@ -402,11 +408,18 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         # mapped_reads_on_target = number_mapped_reads_on_target(cnf, target_info.bed, bam_fpath)
         if 'mapped_dedup_on_target' in reads_stats:
             # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
+            info('Unique mapped on target: ' + str(reads_stats['mapped_dedup_on_target']))
             percent_mapped_dedup_on_target = 1.0 * reads_stats['mapped_dedup_on_target'] / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] != 0 else None
             report.add_record('Percentage of reads mapped on target', percent_mapped_dedup_on_target)
             assert percent_mapped_dedup_on_target <= 1.0 or percent_mapped_dedup_on_target is None, str(percent_mapped_dedup_on_target)
+
             percent_mapped_dedup_off_target = 1.0 * (reads_stats['mapped_dedup'] - reads_stats['mapped_dedup_on_target']) / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] != 0 else None
-            report.add_record('Percentage of reads mapped off target ', percent_mapped_dedup_off_target)
+            report.add_record('Percentage of reads mapped off target', percent_mapped_dedup_off_target)
+            assert percent_mapped_dedup_off_target <= 1.0 or percent_mapped_dedup_off_target is None, str(percent_mapped_dedup_off_target)
+
+            percent_usable = 1.0 * reads_stats['mapped_dedup_on_target'] / reads_stats['total'] if reads_stats['total'] != 0 else None
+            report.add_record('Percentage of usable reads', percent_usable)
+            assert percent_usable <= 1.0 or percent_usable is None, str(percent_usable)
 
         read_bases_on_targ = int(target_info.bases_num * depth_stats['ave_depth'])  # sum of all coverages
         report.add_record('Read bases mapped on target', read_bases_on_targ)
@@ -416,6 +429,8 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
             percent_mapped_on_padded_target = 1.0 * reads_stats['mapped_dedup_on_padded_target'] / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] else None
             report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
             assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
+
+
 
     elif 'mapped_dedup_on_exome' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])

@@ -153,16 +153,16 @@ def exons_for_gene_list(exons_fpath, gnames):
                     pass
                 else:
                     feature = fs[6]
-                    if feature in ['Gene', 'Multi_Gene']:
+                    # if feature in ['Gene', 'Multi_Gene']:
+                    #     pass
+                    # else:
+                    gname = fs[3]
+                    if gname not in gnames:
                         pass
+                        # genes_not_found_in_ref.add(gname)
                     else:
-                        gname = fs[3]
-                        if gname not in gnames:
-                            pass
-                            # genes_not_found_in_ref.add(gname)
-                        else:
-                            genes_found_in_ref.add(gname)
-                            lines.append('\t'.join(fs))
+                        genes_found_in_ref.add(gname)
+                        lines.append('\t'.join(fs))
 
     return genes_found_in_ref, lines
 
