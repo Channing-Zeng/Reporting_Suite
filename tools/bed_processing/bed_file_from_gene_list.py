@@ -56,6 +56,7 @@ def main():
     original_by_approved = defaultdict(list)
     corrected_genes = set()
     corrected_not_found_in_HGNC_genes = set()
+    not_corrected = set()
     if not_found_in_reference:
         log()
         log('Correcting genes not found in Exons DB')
@@ -76,7 +77,8 @@ def main():
 
             if approved_gname:
                 if gname == approved_gname:
-                    log('    Gene name ' + gname + ' is already approved')
+                    log('    Gene name ' + gname + ' is already approved. Skipping.')
+                    not_corrected.add(gname)
                 else:
                     log('    Found as ' + approved_gname)
 
@@ -123,6 +125,7 @@ def main():
         log('    ' + str(len(doublicated_after_approving_approved)) + ' duplicated approved names' + ((': ' + ', '.join(doublicated_after_approving_approved)) if doublicated_after_approving_approved else ''))
         log('    ' + str(len(corrected_not_found_in_HGNC_genes)) + ' not found in HGNC' + (': ' + ', '.join(corrected_not_found_in_HGNC_genes) if corrected_not_found_in_HGNC_genes else ''))
         log('    ' + str(sum([len(original_by_approved[c]) for c in corrected_genes])) + ' gene names corrected by HGNC into new names: ' + ', '.join([':'.join(original_by_approved[c]) + '->' + c for c in corrected_genes]))
+        log('    ' + str(len(not_corrected)) + ' not corrected gene names.')
 
         log('Writing exons for the approved version of gene names originally not found in the Exons DB')
         corrected_genes_found_in_ref, lines_2 = exons_for_gene_list(exons_fpath, corrected_genes)
@@ -136,6 +139,8 @@ def main():
         str(len(genes_found_in_ref | corrected_genes_found_in_ref)) + ' unique genes after correcting with HGNC')
     genes_found_in_ref, lines = exons_for_gene_list(exons_fpath, genes_found_in_ref | corrected_genes_found_in_ref)
     log('    Written ' + str(len(lines)) + ' lines for ' + str(len(genes_found_in_ref)) + ' genes')
+    missed_genes = not_corrected | corrected_not_found_in_HGNC_genes
+    log('    Missed ' + str(len(missed_genes)) + ' genes: ' + ', '.join(missed_genes))
 
     for l in lines:
         print l
