@@ -32,6 +32,7 @@ resources:
 genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 #    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
@@ -60,6 +61,7 @@ genomes:
 
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
 
     dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf.gz
     cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_v68.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf

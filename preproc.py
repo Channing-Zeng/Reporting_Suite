@@ -143,13 +143,14 @@ def main():
     ds = DatasetStructure.create(project_dirpath, cnf.project_name, cnf.samplesheet)
     if not ds.project_by_name:
         critical('No projects found')
+    info('Projects: ' + ', '.join([p.name + ' (' + str(len(p.sample_by_name)) + ')' for p in  ds.project_by_name.values()]))
     for project in ds.project_by_name.values():
         if not project.sample_by_name:
             critical('No samples for project ' + project.name + ' found')
 
     for project in ds.project_by_name.values():
         samples = project.sample_by_name.values()
-        threads = len(samples) if not is_local() else 1
+        threads = len(samples)
         info('Threads number: ' + str(threads))
         project.concat_fastqs(cnf)
 
@@ -176,7 +177,7 @@ def main():
                     bwa,
                     seqtk,
                     bammarkduplicates,
-                    cnf.genome.seq,
+                    cnf.genome.bwa,
                     cnf.is_pcr) for s, l, r in zip(samples, lefts, rights))
                 for sample, bam_fpath in zip(samples, aligned):
                     bam_by_sample[sample.name] = bam_fpath
@@ -286,12 +287,12 @@ def downsample_fastq(cnf, sample, reads_num=5e5):
     return l_fpath, r_fpath
 
 
-def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates, ref, is_pcr=False):
+def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
 
-    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {ref} -'.format(**locals())
+    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {bwa_prefix} -'.format(**locals())
     res = call(cnf, bwa_cmdline, output_fpath=sam_fpath, exit_on_error=False)
     if not res:
         return None

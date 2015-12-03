@@ -60,6 +60,7 @@ resources:
 genomes:
   hg38:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
     dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf
@@ -71,6 +72,7 @@ genomes:
 
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bwa/hg38-noalt.fa
 
     dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf
@@ -83,6 +85,7 @@ genomes:
 
   mm10:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
+    seq: /ngs/reference_data/genomes/Mmusculus/mm10/bwa/mm10.fa
 
     dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf
     snpeff:
@@ -90,6 +93,7 @@ genomes:
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
@@ -124,6 +128,7 @@ genomes:
 
   hg19-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/seq/hg19-noalt.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bwa/hg19-noalt.fa
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_latest.vcf.gz
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/Cosmic-Coding_latest.vcf.gz
@@ -158,6 +163,7 @@ genomes:
 
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_latest.vcf.gz
     cosmic:      /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/Cosmic-Coding_latest.vcf.gz

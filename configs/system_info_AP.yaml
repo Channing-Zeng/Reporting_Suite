@@ -36,6 +36,7 @@ resources:
 genomes:
   hg38:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
     dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf
@@ -48,6 +49,7 @@ genomes:
 
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
     dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbsnp_latest.vcf
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf
@@ -60,6 +62,7 @@ genomes:
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
     # chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf
@@ -88,6 +91,7 @@ genomes:
 
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf
     cosmic:      /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf

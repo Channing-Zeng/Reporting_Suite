@@ -36,6 +36,7 @@ resources:
 genomes:
   hg19:
     seq: /nfs/glusterfs/ref/genomes/Hsapiens/hg19/seq/hg19.fa
+    bwa: /nfs/glusterfs/ref/genomes/Hsapiens/hg19/bwa/hg19.fa
 #    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp:       /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf.gz
@@ -64,6 +65,7 @@ genomes:
 
   GRCh37:
     seq: /nfs/glusterfs/ref/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+    bwa: /nfs/glusterfs/ref/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
 
     dbsnp:       /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/dbsnp_138.vcf.gz
     cosmic:      /nfs/glusterfs/ref/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v68_hg19.vcf.gz

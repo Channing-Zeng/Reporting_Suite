@@ -39,6 +39,7 @@ class DatasetStructure:
             self.unaligned_dirpath = self.__find_unaligned_dir()
             verify_dir(self.unaligned_dirpath, description='Unalign dir', is_critical=True)
             illumina_project_name = dirpath.split('/Unalign/')[1]  # something like AURA.FFPE.AZ300, in contast with project_name which is something like Bio_123_AURA_FFPE_AZ300
+            info('Processing sub-project ' + illumina_project_name)
         else:
             self.dirpath = dirpath
             self.unaligned_dirpath = self.__find_unaligned_dir()
@@ -58,7 +59,7 @@ class DatasetStructure:
         if illumina_project_name:  # we want only a specific project
             if illumina_project_name not in self.project_by_name:
                 info()
-                err('Warning: project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
+                critical('Err: project ' + illumina_project_name + ' not in the SampleSheet ' + self.samplesheet_fpath)
             else:
                 self.project_by_name = {illumina_project_name: self.project_by_name[illumina_project_name]}
 
@@ -103,9 +104,10 @@ class DatasetStructure:
         for i, info_d in enumerate(sample_infos):
             proj_name = info_d.get('Sample_Project', info_d.get('SampleProject'))
             if not proj_name:
-                warn('No SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
+                warn('  no SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath +
+                     ', using ' + self.az_project_name)
                 proj_name = self.az_project_name
-            if proj_name is not None not in project_by_name:
+            if proj_name is not None and proj_name not in project_by_name:
                 project_by_name[proj_name] = DatasetProject(proj_name)
             project = project_by_name[proj_name]
 
@@ -115,10 +117,10 @@ class DatasetStructure:
                 s.lane_numbers.add(info_d.get('Lane', 1))  # lanes are in HiSeq and HiSeq4000 (not in MiSeq!)
             else:
                 s = DatasetSample(sname, index=info_d.get('index', info_d.get('Index')))
+                info('  ' + proj_name + ': ' + s.name)
                 s.lane_numbers.add(info_d.get('Lane', 1))  # lanes are in HiSeq and HiSeq4000 (not in MiSeq!)
                 if 'FCID' in info_d:
                     s.fcid = info_d['FCID']  # HiSeq only
-                info('Sample ' + sname)
                 project.sample_by_name[sname] = s
                 # sample_names.append(info_d[key].replace(' ', '-') + '_' + info_d['Index'] + '_L%03d' % lane)
                 # sample_names.append(info_d[key].replace(' ', '-').replace('_', '-') + '_S' + str(i + 1) + '_L001')
