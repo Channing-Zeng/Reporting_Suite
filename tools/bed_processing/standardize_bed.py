@@ -42,13 +42,11 @@ def _read_args(args_list):
          ),
         (['-e', '--ensembl-bed'], dict(
             dest='ensembl_bed_fpath',
-            help='reference BED file for annotation (Ensembl)',
-            default='/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed')
+            help='reference BED file for annotation (Ensembl)')
          ),
         (['-r', '--refseq-bed'], dict(
             dest='refseq_bed_fpath',
-            help='reference BED file for annotation (RefSeq)',
-            default='/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq.bed')
+            help='reference BED file for annotation (RefSeq)')
          ),
         (['-b', '--bedtools'], dict(
             dest='bedtools',
@@ -75,7 +73,11 @@ def _read_args(args_list):
             help='output chromosome names in GRCh-style (1, .., 22, X, Y, MT)',
             default=False,
             action='store_true')
-         )
+         ),
+        (['--genome'], dict(
+            dest='genpome',
+            default='hg19')
+         ),
     ]
 
     parser = OptionParser(usage='usage: %prog [options] Input_BED_file -o Standardized_BED_file',
@@ -120,6 +122,12 @@ def _read_args(args_list):
         for k, v in opts.__dict__.iteritems():
             log('\t' + k + ': ' + str(v))
     log()
+
+    opts.ensembl_bed_fpath = opts.ensembl_bed_fpath or \
+        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed')
+
+    opts.refseq_bed_fpath = opts.refseq_bed_fpath or \
+        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq.bed')
 
     return input_bed_fpath, output_bed_fpath, work_dirpath, opts
 
