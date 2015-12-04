@@ -27,7 +27,7 @@ class DatasetStructure:
     downsample_targqc_repr = 'TargQC downsampled'
 
     @staticmethod
-    def create(dir_path, project_name, samplesheet=None):
+    def create(dir_path, project_name=None, samplesheet=None):
         if 'datasets/miseq/' in dir_path.lower():
             return MiSeqStructure(dir_path, project_name, samplesheet)
 
@@ -44,7 +44,7 @@ class DatasetStructure:
             critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/. Found ' + dir_path)
 
     def __init__(self, dirpath, az_project_name, samplesheet=None):
-        self.az_project_name = az_project_name
+        self.az_project_name = az_project_name or ''
 
         illumina_project_name = None
         if '/Unalign/' in dirpath:

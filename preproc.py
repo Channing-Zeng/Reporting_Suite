@@ -105,20 +105,22 @@ def proc_opts():
         err(traceback.format_exc())
         pass
 
+    if cnf.samplesheet:
+        cnf.samplesheet = verify_file(cnf.samplesheet, is_critical=True)
+
     info(' '.join(sys.argv))
     info()
     info('Created a temporary working directory: ' + cnf.work_dir)
-
-    # check_genome_resources(cnf)
-    check_system_resources(cnf, optional=['fastq'])
-    check_genome_resources(cnf)
 
     if cnf.project_name:
         info('Project name: ' + cnf.project_name)
 
     if cnf.samplesheet:
-        cnf.samplesheet = verify_file(cnf.samplesheet, is_critical=True)
         info('Using custom sample sheet ' + cnf.samplesheet)
+
+    # check_genome_resources(cnf)
+    check_system_resources(cnf, optional=['fastq'])
+    check_genome_resources(cnf)
 
     return cnf, dataset_dirpath, jira_url
 
@@ -143,7 +145,7 @@ def main():
     ds = DatasetStructure.create(project_dirpath, cnf.project_name, cnf.samplesheet)
     if not ds.project_by_name:
         critical('No projects found')
-    info('Projects: ' + ', '.join([p.name + ' (' + str(len(p.sample_by_name)) + ')' for p in  ds.project_by_name.values()]))
+    info('Projects: ' + ', '.join([p.name + ' (' + ', '.join(p.sample_by_name) + ')' for p in ds.project_by_name.values()]))
     for project in ds.project_by_name.values():
         if not project.sample_by_name:
             critical('No samples for project ' + project.name + ' found')

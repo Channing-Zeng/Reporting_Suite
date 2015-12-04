@@ -36,7 +36,7 @@ defaults = dict(
 
     default_min_freq = 0.05,
 
-    genome = 'hg38-noalt',
+    genome = 'hg19',  #'hg38-noalt',
 
     threads = 25
 )
