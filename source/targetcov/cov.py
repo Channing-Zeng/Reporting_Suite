@@ -122,8 +122,8 @@ class TargetInfo:
 
 
 def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None, pcr=False):
-    safe_mkdir(dirname(sample.qualimap_dirpath))  # do not create the directory itself!!! it will be check for reuse
-
+    safe_mkdir(dirname(sample.qualimap_dirpath))
+    
     bed = ''
     if bed_fpath:
         qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')

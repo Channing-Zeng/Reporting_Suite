@@ -33,33 +33,33 @@ usage = """
 """ % __file__
 
 
-def _read_args(args):
-    if len(args) < 1:
-        sys.exit(['Usage:',
-        '  ' + __file__ + ' Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file'])
-
-    input_bed_fpath = abspath(args[0])
-    log('Input: ' + input_bed_fpath)
-
-    # work_dirpath = abspath(args[1])
-    work_dirpath = tempfile.mkdtemp()
-    log('Creating a temporary working directory ' + work_dirpath)
-    if not exists(work_dirpath):
-        os.mkdir(work_dirpath)
-
-    ref_bed_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed'
-    bedtools = 'bedtools'
-    if len(args) > 2:
-        if args[2]:
-            ref_bed_fpath = abspath(args[2])
-            log('Over-set reference fpath: ' + ref_bed_fpath)
-
-    if len(args) > 3:
-        bedtools = args[3]
-        log('Over-set bedtools: ' + bedtools)
-    log()
-
-    return input_bed_fpath, work_dirpath, ref_bed_fpath, bedtools
+# def _read_args(args):
+#     if len(args) < 1:
+#         sys.exit(['Usage:',
+#         '  ' + __file__ + ' Input_BED_file [Reference_BED_file] [bedtools_tool_path] -o Annotated_BED_file'])
+#
+#     input_bed_fpath = abspath(args[0])
+#     log('Input: ' + input_bed_fpath)
+#
+#     # work_dirpath = abspath(args[1])
+#     work_dirpath = tempfile.mkdtemp()
+#     log('Creating a temporary working directory ' + work_dirpath)
+#     if not exists(work_dirpath):
+#         os.mkdir(work_dirpath)
+#
+#     ref_bed_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed'
+#     bedtools = 'bedtools'
+#     if len(args) > 2:
+#         if args[2]:
+#             ref_bed_fpath = abspath(args[2])
+#             log('Over-set reference fpath: ' + ref_bed_fpath)
+#
+#     if len(args) > 3:
+#         bedtools = args[3]
+#         log('Over-set bedtools: ' + bedtools)
+#     log()
+#
+#     return input_bed_fpath, work_dirpath, ref_bed_fpath, bedtools
 
 
 def main():

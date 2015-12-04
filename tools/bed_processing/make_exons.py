@@ -368,37 +368,45 @@ def _proc_ucsc(inp, out):  #, approved_gene_by_name, approved_gnames_by_prev_gna
             txStart = exonStarts[0] - 1
             txEnd = exonEnds[exonCount - 1]
 
-            out.write('\t'.join([ucsc_chrom, str(min(txStart, cdsStart)), str(max(txEnd, cdsEnd)),
-                                 gene_symbol, '.', strand, 'Gene', '.']) + '\n')
+            # out.write('\t'.join([ucsc_chrom, str(min(txStart, cdsStart)), str(max(txEnd, cdsEnd)),
+            #                      gene_symbol, '.', strand, 'Gene', '.']) + '\n')
             if gene_symbol not in gene_by_name:
-                gene = Gene(gene_symbol, ucsc_chrom, )
-                
+                gene = Gene(gene_symbol, ucsc_chrom, min(txStart, cdsStart), str(max(txEnd, cdsEnd)), strand)
+                gene_by_name[gene_symbol] = gene
+            gene = gene_by_name[gene_symbol]
+
             for j, eStart, eEnd in zip(
                    range(exonCount),
                    [s for s in exonStarts if s],
                    [e for e in exonEnds if e]):
                 eStart -= 1
 
+                exon = None
                 if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0,
                                                          # no CDS for this gene, thus reporting exons
-                    out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), gene_symbol, '.',
-                                         strand, 'Exon', '.']) + '\n')
+                    exon = Exon(gene, eStart, eEnd, '', 'Exon')
+                    # out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), gene_symbol, '.',
+                    #                      strand, 'Exon', '.']) + '\n')
                 else:
                     if cdsStart <= eStart:
-                        return out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), gene_symbol, '.',
-                                                    strand, 'CDS', '.']) + '\n')
+                        exon = Exon(gene, eStart, eEnd, '', 'CDS')
+                        # out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), gene_symbol, '.',
+                        #                      strand, 'CDS', '.']) + '\n')
                     elif eEnd > cdsStart:
-                        out.write('\t'.join([ucsc_chrom, str(cdsStart), str(eEnd), gene_symbol, '.',
-                                             strand, 'CDS', '.']) + '\n')
+                        exon = Exon(gene, cdsStart, eEnd, '', 'CDS')
+                        # out.write('\t'.join([ucsc_chrom, str(cdsStart), str(eEnd), gene_symbol, '.',
+                        #                      strand, 'CDS', '.']) + '\n')
                     else:
-                        err('Error: exon ' + str(eStart) + ':' + str(eEnd) +
+                        err('Warn: exon ' + str(eStart) + ':' + str(eEnd) +
                             ' does not contain CDS, CDS start = ' + str(cdsStart))
+                if exon:
+                    gene.exons.append(exon)
 
-    return not_approved_gene_names
+    return gene_by_name
 
 
 class Gene:
-    def __init__(self, name, chrom, start, end, strand, biotype, db_id, source):
+    def __init__(self, name, chrom, start, end, strand, biotype='', db_id='', source=''):
         self.name = name
         self.chrom = chrom
         self.start = start
@@ -427,7 +435,7 @@ class Gene:
 
 
 class Exon:
-    def __init__(self, gene, start, end, biotype, feature):
+    def __init__(self, gene, start, end, biotype=None, feature=None):
         self.gene = gene
         self.start = start
         self.end = end
@@ -533,7 +541,8 @@ def _proc_ensembl(inp, out, additional_feature_list=None):
                 # assert gene_biotype == biotype, 'Gene: gene_biotype "' + gene_biotype + '"
                 # do not match biotype "' + biotype + '" for ' + gene_symbol
 
-                gene = Gene(gene_symbol, chrom, start, end, strand, gene_biotype, gene_id, gene_source)
+                gene = Gene(gene_symbol, chrom, start, end, strand,
+                            gene_biotype, gene_id, gene_source)
 
                 if gene.name in gene_by_name:
                     prev_gene = gene_by_name[gene.name]
@@ -580,9 +589,9 @@ def _proc_ensembl(inp, out, additional_feature_list=None):
                 assert gene_symbol in gene_by_name, 'Error: ' + feature + ' record before gene record ' + \
                         gene_symbol + ', ' + gene_id + '; gene_by_name: ' + str(gene_by_name.keys())
                 gene = gene_by_name[gene_symbol]
-                if gene.db_id == gene_id:
+                if gene.gene_id == gene_id:
                     assert gene_biotype == gene.biotype, feature + ': gene_biotype "' + gene_biotype + \
-                                     '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
+                         '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
                     exon = Exon(gene, start, end, gene_biotype, feature)
                     gene.exons.append(exon)
 

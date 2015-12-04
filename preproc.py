@@ -328,7 +328,10 @@ def run_targqc(cnf, project, bam_by_sample):
     targqc_log_dir = join(cnf.log_dir, 'TargQC')
     safe_mkdir(targqc_work_dir)
     safe_mkdir(targqc_log_dir)
-    cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} --bed {cnf.bed} ' \
+    bed_cmdl = ''
+    if cnf.bed:
+        bed_cmdl = '--bed ' + cnf.bed
+    cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} {bed_cmdl} ' \
            '--work-dir {targqc_work_dir} --log-dir {targqc_log_dir} --project-name {cnf.project_name} ' \
            '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
     if cnf.reuse_intermediate:
