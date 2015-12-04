@@ -17,7 +17,7 @@ else:
 
 this_script_dirpath = dirname(abspath(__file__))
 
-configs_dirpath = abspath(join(this_script_dirpath, pardir, 'configs'))
+configs_dirpath = abspath(join(abspath(this_script_dirpath), pardir, 'configs'))
 
 defaults = dict(
     sys_cnfs = dict(

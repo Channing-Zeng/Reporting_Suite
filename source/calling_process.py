@@ -209,10 +209,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             # ERR FILE TO STORE STDERR. IF SUBPROCESS FAIL, STDERR PRINTED
             hasher = hashlib.sha1(str(cmdline))
             cmdl_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
-            _err_fpath = join(cnf.work_dir, cmdl_hash + '.subprocess_stderr.txt')
-            to_remove.append(_err_fpath)
-            if exists(_err_fpath):
-                os.remove(_err_fpath)
+            err_fpath_ = join(cnf.work_dir, cmdl_hash + '.subprocess_stderr.txt')
+            to_remove.append(err_fpath_)
+            if exists(err_fpath_):
+                os.remove(err_fpath_)
 
             if out_fpath:
                 # STDOUT TO TO FILE
@@ -220,7 +220,12 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else '') + ' > ' + out_fpath)
                     stdout = open(out_fpath, 'w')
-                    stderr = open(_err_fpath, 'a') if _err_fpath else open('/dev/null')
+                    if err_fpath_:
+                        stderr = open(err_fpath_, 'a')
+                        info('Writing err to ' + err_fpath_)
+                    else:
+                        info('Writing err to /dev/null')
+                        stderr = open('/dev/null')
                 else:
                 # STDOUT TO PIPE
                     if output_fpath:
@@ -228,10 +233,17 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if not silent:
                         info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
                     stdout = subprocess.STDOUT
-                    stderr = open(_err_fpath, 'a') if _err_fpath else open('/dev/null')
+                    if err_fpath_:
+                        stderr = open(err_fpath_, 'a')
+                        info('Writing err to ' + err_fpath_)
+                    else:
+                        info('Writing err to /dev/null')
+                        stderr = open('/dev/null')
             else:
                 if not silent:
                     info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
+                    stderr = None
+                    stdout = None    # goes to proc.stdout
 
             ret_code = subprocess.call(
                 cmdl, shell=True, stdout=stdout, stderr=stderr,
@@ -240,8 +252,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
             # PRINT STDOUT AND STDERR
             if ret_code != 0:
-                if _err_fpath:
-                    with open(_err_fpath) as err_f:
+                if err_fpath_ and isfile(err_fpath_):
+                    with open(err_fpath_) as err_f:
                         stderr_dump = err_f.read()
 
                     info('')
@@ -252,25 +264,25 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
                 err()
-                err('Command returned status ' + str(ret_code) +
-                    ('. Log saved to ' + cnf.log if 'log' in cnf else '.'))
-
-                msg = 'Command returned status. ' + str(ret_code)
-                if cnf.log: msg += '. Log saved to ' + cnf.log
-                msg += '\n'
-                msg += '\n'
-                if stderr_dump:
-                    msg += 'Stderr:\n'
-                    msg += stderr_dump
-
+                msg = ('Command returned status ' + str(ret_code) +
+                       (('. Log saved to ' + cnf.log) if 'log' in cnf else '.'))
+                if exit_on_error:
+                    if cnf.log:
+                        msg += '. Log saved to ' + cnf.log
+                    msg += '\n'
+                    msg += '\n'
+                    if stderr_dump:
+                        msg += 'Stderr:\n'
+                        msg += stderr_dump
                 if exit_on_error:
                     clean()
                     critical(msg)
                 else:
+                    err(msg)
                     return None
             else:
-                if cnf.log and _err_fpath:
-                    with open(_err_fpath) as err_f, \
+                if cnf.log and err_fpath_ and isfile(err_fpath_):
+                    with open(err_fpath_) as err_f, \
                          open(cnf.log, 'a') as log_f:
                         log_f.write('')
                         log_f.write(err_f.read())
