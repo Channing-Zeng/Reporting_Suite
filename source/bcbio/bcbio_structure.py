@@ -789,6 +789,7 @@ class BCBioStructure(BaseProjectStructure):
 
     def _set_bed_file(self, sample, sample_info):
         bed = None
+
         if self.cnf.bed:  # Custom BED provided in command line?
             sample.bed = verify_bed(self.cnf.bed, is_critical=True)
             info('BED file for ' + sample.name + ': ' + str(sample.bed))

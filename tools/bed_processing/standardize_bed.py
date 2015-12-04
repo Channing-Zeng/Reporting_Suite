@@ -75,7 +75,7 @@ def _read_args(args_list):
             action='store_true')
          ),
         (['--genome'], dict(
-            dest='genpome',
+            dest='genome',
             default='hg19')
          ),
     ]
@@ -108,9 +108,9 @@ def _read_args(args_list):
     log('Writing to: ' + output_bed_fpath)
 
     # process configuration
-    for k, v in opts.__dict__.iteritems():
-        if k.endswith('fpath') and verify_file(v, is_critical=True):
-            opts.__dict__[k] = verify_file(v)
+    # for k, v in opts.__dict__.iteritems():
+    #     if k.endswith('fpath') and verify_file(v, is_critical=True):
+    #         opts.__dict__[k] = verify_file(v, k)
     if opts.output_grch and opts.output_hg:
         err('you cannot specify --output-hg and --output-grch simultaneously!')
     if not which(opts.bedtools):
@@ -123,11 +123,11 @@ def _read_args(args_list):
             log('\t' + k + ': ' + str(v))
     log()
 
-    opts.ensembl_bed_fpath = opts.ensembl_bed_fpath or \
-        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed')
+    opts.ensembl_bed_fpath = verify_file(opts.ensembl_bed_fpath or \
+        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed'))
 
-    opts.refseq_bed_fpath = opts.refseq_bed_fpath or \
-        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq.bed')
+    opts.refseq_bed_fpath = verify_file(opts.refseq_bed_fpath or \
+        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq.bed'))
 
     return input_bed_fpath, output_bed_fpath, work_dirpath, opts
 
@@ -337,7 +337,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
                 annotated_regions.append(Region(line))
 
     # starting to output result
-    with open(output_bed_fpath) as f:
+    with open(output_bed_fpath, 'w') as f:
         for line in bed_params.header:
             f.write(line)
 
