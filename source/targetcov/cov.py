@@ -23,56 +23,60 @@ from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath
 
 
-def get_header_metric_storage(depth_thresholds, is_wgs=False):
+def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
     sections = [
         ReportSection('reads', 'Reads', [
-            Metric('Reads'),
-            Metric('Mapped reads', short_name='Mapped', description='samtools view -c -F 4', ok_threshold='Percentage of mapped reads', bottom=0),
-            Metric('Percentage of mapped reads', short_name='Mapped %', unit='%', ok_threshold=0.98, bottom=0),
-            Metric('Properly paired reads percent', short_name='Paired %', unit='%', description='Pecent of properly paired mapped reads (-f 2).', ok_threshold=0.9, bottom=0),
-            Metric('Duplication rate', short_name='Dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
-            Metric('Read min length',  'Min len', 'Read min length'),
-            Metric('Read max length',  'Max len', 'Read max length'),
-            Metric('Read mean length', 'Ave len', 'Read mean length'),
+            Metric('Reads', short_name='reads'),
+            Metric('Mapped reads', short_name='mapped', description='samtools view -c -F 4', ok_threshold='Percentage of mapped reads', bottom=0),
+            Metric('Percentage of mapped reads', short_name='%', unit='%', ok_threshold=0.98, bottom=0),
+            Metric('Properly paired reads percent', short_name='paired', unit='%', description='Pecent of properly paired mapped reads (-f 2).', ok_threshold=0.9, bottom=0),
+            Metric('Duplication rate', short_name='dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
+            Metric('Read min length', short_name='min len', description='Read minimum length'),
+            Metric('Read max length', short_name='max len', description='Read maximum length'),
+            Metric('Read mean length', short_name='ave len', description='Read average length'),
             Metric('Gender', is_hidden=True),
         ]),
     ]
     if not is_wgs:
         sections.extend([
             ReportSection('target_metrics', 'Target coverage', [
-                Metric('Covered bases in target', short_name='Trg covered', unit='bp'),
+                Metric('Covered bases in target', short_name='trg covered', unit='bp'),
                 Metric('Percentage of target covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on target', short_name='% reads on trg', unit='%',
+                Metric('Percentage of reads mapped on target', short_name='reads on trg', unit='%',
                        description='Percentage of unique mapped reads overlapping target at least by 1 base'),
-                Metric('Percentage of reads mapped off target', short_name='% reads off trg', unit='%', quality='Less is better',
+                Metric('Percentage of reads mapped off target', short_name='reads off trg', unit='%',
+                       quality='Less is better',
                        description='Percentage of unique mapped reads that don\'t overlap target even by 1 base'),
-                Metric('Percentage of reads mapped on padded target', short_name='% reads on padded trg', unit='%',
+                Metric('Percentage of reads mapped on padded target',
+                       short_name='reads on trg' + (' %dbp pad' % padding if padding is not None else ' w/ padding'),
+                       unit='%',
                        description='Percentage of reads that overlap target at least by 1 base. Should be 1-2% higher.'),
-                Metric('Percentage of usable reads', short_name='% usable reads', unit='%',
-                       description='Fraction of unique reads mapped on target to the total number of original reads (reported in the very first column "Reads"'),
-                Metric('Read bases mapped on target', short_name='Read bp on trg', unit='bp'),
+                Metric('Percentage of usable reads', short_name='usable reads', unit='%',
+                       description='Fraction of unique reads mapped on target to the total number of original reads '
+                                   '(reported in the very first column "Reads"'),
+                Metric('Read bases mapped on target', short_name='read bp on trg', unit='bp'),
             ]),
         ])
     else:
         sections.extend([
             ReportSection('target_metrics_wgs', 'Genome coverage', [
-                Metric('Covered bases in genome', short_name='Genome covered', unit='bp'),
-                Metric('Percentage of genome covered by at least 1 read', short_name='Genome cvrd %', unit='%'),
-                Metric('Covered bases in exome', short_name='Exome covered', unit='bp'),
+                Metric('Covered bases in genome', short_name='genome covered', unit='bp'),
+                Metric('Percentage of genome covered by at least 1 read', short_name='%', unit='%'),
+                Metric('Covered bases in exome', short_name='exome covered', unit='bp'),
                 Metric('Percentage of exome covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on exome', short_name='% reads on exome', unit='%'),
-                Metric('Percentage of usable reads', short_name='% usable reads', unit='%'),
-                Metric('Percentage of reads mapped off exome', short_name='% off exome', unit='%', quality='Less is better'),
+                Metric('Percentage of reads mapped on exome', short_name='reads on exome', unit='%'),
+                Metric('Percentage of usable reads', short_name='usable reads', unit='%'),
+                Metric('Percentage of reads mapped off exome', short_name='off exome', unit='%', quality='Less is better'),
             ]),
         ])
 
     trg_name = 'target' if not is_wgs else 'genome'
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
-        Metric('Average ' + trg_name + ' coverage depth', short_name='Ave'),
-        Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='Std dev', quality='Less is better'),
+        Metric('Average ' + trg_name + ' coverage depth', short_name='ave'),
+        Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='std dev', quality='Less is better'),
         # Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
         # Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max', is_hidden=True),
-        Metric('Percentage of ' + trg_name + ' within 20% of mean depth', short_name='&#177;20% avg', unit='%')
+        Metric('Percentage of ' + trg_name + ' within 20% of mean depth', short_name='&#177;20% ave', unit='%')
     ])
     for depth in depth_thresholds:
         name = 'Part of ' + trg_name + ' covered at least by ' + str(depth) + 'x'
@@ -81,13 +85,13 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False):
 
     sections.append(
         ReportSection('qualimap', 'Qualimap stats' + ('' if is_wgs else ' within the target'), [
-            Metric('Mean Mapping Quality',  'Mean MQ',            'Mean mapping quality, inside of regions'),
-            Metric('Mismatches',            'Mismatches',         'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
-            Metric('Insertions',            'Insertions',         'Insertions, inside of regions', quality='Less is better'),
-            Metric('Deletions',             'Deletions',          'Deletions, inside of regions', quality='Less is better'),
-            Metric('Homopolymer indels',    'Homopolymer indels', 'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
-            Metric('Qualimap',              'Qualimap',           'Qualimap report'),
-            Metric('ngsCAT',                'ngsCAT',             'ngsCAT report')
+            Metric('Mean Mapping Quality',  'mean MQ',            'Mean mapping quality, inside of regions'),
+            Metric('Mismatches',            'miosmatches',         'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
+            Metric('Insertions',            'insertions',         'Insertions, inside of regions', quality='Less is better'),
+            Metric('Deletions',             'deletions',          'Deletions, inside of regions', quality='Less is better'),
+            Metric('Homopolymer indels',    'homopolymer indels', 'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
+            Metric('Qualimap',              'Qualimap report',           'Qualimap report'),
+            Metric('ngsCAT',                'ngsCAT report',             'ngsCAT report')
         ])
     )
 
@@ -350,7 +354,7 @@ def get_records_by_metrics(records, metrics):
 
 def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info):
     report = SampleReport(sample, metric_storage=get_header_metric_storage(
-        cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None))
+        cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None, padding=cnf.coverage_reports.padding))
     report.add_record('Qualimap', value='Qualimap', url=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
     if reads_stats.get('gender') is not None:
         report.add_record('Gender', reads_stats['gender'], silent=True)
