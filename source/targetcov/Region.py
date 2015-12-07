@@ -294,7 +294,7 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
     # info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
     gene_by_name = OrderedDict()
 
-    info('Building the Gene objects list')
+    info('Building the Gene objects list based on target')
     if gene_names_list:
         info()
         info('Init the Gene object dict')
@@ -310,7 +310,7 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
         # info('Saved genes to ' + exons_only_genes_bed)
 
         info()
-        info('Setting start and end for the genes')
+        info('Setting start and end for the genes (based only on the target gene names found in the Exons list)')
         i = 0
         with open(exons_bed) as f:
             for l in f:

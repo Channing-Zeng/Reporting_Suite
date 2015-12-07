@@ -495,12 +495,12 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                 line = l.strip().split('\t')
                 if len(line) < 11 or l.startswith('#'):
                     continue
-                chrom, start, end, size, gene, strand, feature, biotype, min_depth, avg_depth, std_dev = line[:11]
-                region = Region(gene_name=gene, exon_num=None, strand=strand, biotype=biotype,
+                chrom, start, end, size, gene_name, strand, feature, biotype, min_depth, avg_depth, std_dev = line[:11]
+                region = Region(gene_name=gene_name, exon_num=None, strand=strand, biotype=biotype,
                      feature=feature, extra_fields=list(),
                      chrom=chrom, start=int(start), end=int(end), size=int(size), min_depth=float(min_depth),
                      avg_depth=float(avg_depth), std_dev=float(std_dev))
-                region.sample_name = gene_by_name[gene].sample_name
+                region.sample_name = gene_by_name[gene_name].sample_name
                 depth_thresholds = cnf.coverage_reports.depth_thresholds
                 rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
                 rates = line[-(len(depth_thresholds)):]
@@ -508,15 +508,15 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                     rates_within_threshs[t] = float(rates[i])
                 region.rates_within_threshs = rates_within_threshs
                 if 'Capture' in feature:
-                    gene_by_name[gene].add_amplicon(region)
+                    gene_by_name[gene_name].add_amplicon(region)
                 elif 'Gene' not in feature:
-                    gene_by_name[gene].add_exon(region)
+                    gene_by_name[gene_name].add_exon(region)
                 else:
-                    gene_by_name[gene].chrom = region.chrom
-                    gene_by_name[gene].strand = region.strand
-                    gene_by_name[gene].avg_depth = region.avg_depth
-                    gene_by_name[gene].min_depth = region.min_depth
-                    gene_by_name[gene].rates_within_threshs = region.rates_within_threshs
+                    gene_by_name[gene_name].chrom = region.chrom
+                    gene_by_name[gene_name].strand = region.strand
+                    gene_by_name[gene_name].avg_depth = region.avg_depth
+                    gene_by_name[gene_name].min_depth = region.min_depth
+                    gene_by_name[gene_name].rates_within_threshs = region.rates_within_threshs
         return rep
 
     targets_or_exons = []
@@ -569,10 +569,10 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                     exon_or_gene.biotype = ef[3]
 
             if exon_or_gene.gene_name in gene_by_name:
-                gene = gene_by_name[exon_or_gene.gene_name]
-                gene.chrom = exon_or_gene.chrom
-                gene.strand = exon_or_gene.strand
-                gene.add_exon(exon_or_gene)
+                gene_name = gene_by_name[exon_or_gene.gene_name]
+                gene_name.chrom = exon_or_gene.chrom
+                gene_name.strand = exon_or_gene.strand
+                gene_name.add_exon(exon_or_gene)
 
         if target_bed:
             for ampl in targets_or_exons:
@@ -580,8 +580,8 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                 ampl.sample_name = sample.name
 
                 if ampl.gene_name != '.':
-                    gene = gene_by_name[ampl.gene_name]
-                    gene.add_amplicon(ampl)
+                    gene_name = gene_by_name[ampl.gene_name]
+                    gene_name.add_amplicon(ampl)
                 else:
                     un_annotated_amplicons.append(ampl)
 

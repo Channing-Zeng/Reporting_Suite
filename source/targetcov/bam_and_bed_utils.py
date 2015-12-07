@@ -213,10 +213,9 @@ def get_gene_names(bed_fpath, gene_index=3):
                 continue
 
             for gn in tokens[gene_index].split(','):
-                if gn != '.':
-                    if gn not in gene_names_set:
-                        gene_names_set.add(gn)
-                        gene_names_list.append(gn)
+                if gn not in gene_names_set:
+                    gene_names_set.add(gn)
+                    gene_names_list.append(gn)
 
     return gene_names_set, gene_names_list
 
