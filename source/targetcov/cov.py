@@ -14,7 +14,7 @@ from source.file_utils import intermediate_fname, verify_file, safe_mkdir, split
 from source.logger import critical, info, err
 from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
 from source.targetcov.Region import calc_bases_within_threshs, \
-    calc_rate_within_normal, build_gene_objects_list
+    calc_rate_within_normal, build_gene_objects_list, Region
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
     remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
     intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads
@@ -490,7 +490,33 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
         rep.txt_fpath = sample.targetcov_detailed_txt
         rep.tsv_fpath = sample.targetcov_detailed_tsv
         with open(sample.targetcov_detailed_tsv) as f:
-            rep.rows = [1 for l in f]
+            for l in f:
+                rep.rows.append(1)
+                line = l.strip().split('\t')
+                if len(line) < 11 or l.startswith('#'):
+                    continue
+                chrom, start, end, size, gene, strand, feature, biotype, min_depth, avg_depth, std_dev = line[:11]
+                region = Region(gene_name=gene, exon_num=None, strand=strand, biotype=biotype,
+                     feature=feature, extra_fields=list(),
+                     chrom=chrom, start=int(start), end=int(end), size=int(size), min_depth=float(min_depth),
+                     avg_depth=float(avg_depth), std_dev=float(std_dev))
+                region.sample_name = gene_by_name[gene].sample_name
+                depth_thresholds = cnf.coverage_reports.depth_thresholds
+                rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
+                rates = line[-(len(depth_thresholds)):]
+                for i, t in enumerate(rates_within_threshs):
+                    rates_within_threshs[t] = float(rates[i])
+                region.rates_within_threshs = rates_within_threshs
+                if 'Capture' in feature:
+                    gene_by_name[gene].add_amplicon(region)
+                elif 'Gene' not in feature:
+                    gene_by_name[gene].add_exon(region)
+                else:
+                    gene_by_name[gene].chrom = region.chrom
+                    gene_by_name[gene].strand = region.strand
+                    gene_by_name[gene].avg_depth = region.avg_depth
+                    gene_by_name[gene].min_depth = region.min_depth
+                    gene_by_name[gene].rates_within_threshs = region.rates_within_threshs
         return rep
 
     targets_or_exons = []

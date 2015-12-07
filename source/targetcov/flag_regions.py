@@ -103,7 +103,7 @@ def min_and_max_based_on_outliers(regions):
     q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
     q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
     d = q3 - q1
-    _min_cov = q1 - 3 * d
+    _min_cov = max(0, q1 - 3 * d)
     _max_cov = q1 + 3 * d
 
     info('Using outliers mechanism. l = {}, q1 = {}, q3 = {}, d = {},'
