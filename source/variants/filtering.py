@@ -12,7 +12,7 @@ from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call, call_check_output
 from source.config import defaults
 from source.profiling import fn_timer
-from source.tools_from_cnf import get_script_cmdline
+from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.logger import err, warn, send_email
 from source.utils import is_us
 from source.variants.tsv import make_tsv
@@ -93,7 +93,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
                 msg += 'Line numbers is equal: ' + str(pl_line_num) + '\n'
             else:
                 msg += 'Line numbers differ: perl (' + str(pl_line_num) + '), py (' + str(py_line_num) + ')\n'
-            diff_res = call_check_output(cnf, 'diff -q ' + pl_mut_fpath + ' ' + py_mut_fpath)
+            diff_res = call_check_output(cnf, get_system_path(cnf, 'diff') + ' -q ' + pl_mut_fpath + ' ' + py_mut_fpath, exit_on_error=False)
             if diff_res:
                 msg += 'Differ found.\n'
             else:
