@@ -7,7 +7,9 @@ import vardict2mut_config as config
 
 
 long_options = "help depth= reads= min-freq= min-freq-hs= max-rate= output= " \
-               "rule-dir= annotation-dir= suppressors= oncogenes= report_reason".split()
+               "ruledir= filter_common_snp= snpeffect_export_polymorphic= filter_common_artifacts= " \
+               "actionable_hotspot= actionable= compendia_ms7_hotspot= " \
+               "annotation-dir= suppressors= oncogenes= report_reason".split()
 short_options = "hD:V:f:F:R:o:n:"
 
 aa_chg_pattern = re.compile('^([A-Z]\d+)\D+$')
@@ -16,85 +18,29 @@ fs_pattern = re.compile('^[A-Z](\d+)fs')
 
 statuses = ['unknown', 'likely', 'known']
 
-def parse_mut_tp53(mut_fpath):
-    mut_tp53 = []
-    with open(mut_fpath) as f:
-        for l in f:
-            l = l.strip()
-            if not l:
-                continue
-            line = l.split('\t')
-            if not line[19] or 'p.' not in line[19]:
-                continue
-            prot = line[19].replace('p.', '')
-            mut_tp53.append(prot)
 
-    return mut_tp53
+def usage():
+    print >> sys.stderr, "Usage: 0 [-n reg_name] input"
+    print >> sys.stderr, "The program will filter the VarDict output after vcf2txt.pl " \
+                         "to candidate interpretable mutations, somatic or germline."
 
+    print >> sys.stderr, "Options:"
+    print >> sys.stderr, "-h  --help                Print this usage"
+    print >> sys.stderr, "-M                        Output in FM's format"
+    print >> sys.stderr, "-D  --depth <int>         The minimum total depth"
+    print >> sys.stderr, "-V  --reads <int>         The minimum reads supporting variant"
+    print >> sys.stderr, "-n  <regexp>              The regular expression to extract sample name."
+    print >> sys.stderr, "                          Default: Use as it is. For TCGA, '(TCGA-..-....)-01' is preferred for tumor sample."
+    print >> sys.stderr, "-f --min-freq <double>    The minimum allele frequency for regular variants. Default: 0.05"
+    print >> sys.stderr, "-R --max-rate <double>    If a variant is present in > [double] fraction of samples, it's deemed not a mutation."
+    print >> sys.stderr, "                          [default: 1.0, or no filtering]."
+    print >> sys.stderr, "                          Use with caution.  It'll filter even if it's in COSMIC, unless if actionable. "
+    print >> sys.stderr, "                          Don't use it if the sample is homogeneous. Use only in heterogeneous samples."
 
-def update_status(cur_status, reasons, new_status, new_reason):
-    if statuses.index(new_status) < statuses.index(cur_status):
-        return cur_status, reasons
-    if cur_status != new_status:
-        reasons = [new_reason]
-    else:
-        reasons.append(new_reason)
-    return new_status, reasons
+    print >> sys.stderr, "-F --min-freq-hs <double> The minimum allele frequency hotspot somatic mutations, typically lower then -f."
+    print >> sys.stderr, "                          Default: 0.01 or half -f, whichever is less"
+    sys.exit(0)
 
-
-def is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
-    if len(ref) > len(alt) and alt != '-':
-        ref = ref[1:]
-        if len(alt) > 1:
-            alt = alt[1:]
-        else:
-            alt = '-'
-    elif len(alt) > len(ref) and ref != "-":
-        alt = alt[1:]
-        if len(ref) > 1:
-            ref = ref[1:]
-        else:
-            ref = '-'
-    key = '-'.join([chr, pos, ref, alt])
-    return key in hotspot_nucleotides
-
-
-def is_hotspot_prot(gene, pchg, hotspot_proteins):
-    pchg = pchg.replace('p.', '')
-    key = '-'.join([gene, pchg])
-    return key in hotspot_proteins
-
-
-def classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups):
-    ref = ref.replace(' ', '')
-    alt = alt.replace(' ', '')
-    pos = pos.replace(' ', '')
-    aa_chg = aa_chg.replace(' ', '')
-    if pos in tp53_hg19_pos and len(ref) == 1 and len(alt) == 1:
-        return 'Group 6'
-    aa_chg = aa_chg.replace('p.', '')
-    aa_num = 0
-    if aa_chg:
-        aa_num = int(re.sub('[^0-9]', '', aa_chg))
-    if fs_pattern.match(aa_chg):
-        if aa_num < 359:
-            return 'Group 5'
-    elif stop_gain_pattern.match(aa_chg):
-        if aa_num < 359:
-            return 'Group 4'
-    elif aa_chg_pattern.match(aa_chg):
-        if aa_chg in tp53_groups['Group 1']:
-            return 'Group 1'
-        if aa_chg in tp53_groups['Group 2']:
-            return 'Group 2'
-        if aa_chg in tp53_groups['Group 3']:
-            return 'Group 3'
-    return 'NA'
-
-
-def parse_genes_list(fpath):
-    genes = [line.strip() for line in open(fpath)]
-    return genes
 
 def main(args):
     if not args:
@@ -140,14 +86,28 @@ def main(args):
             sys.stdout = open(arg, 'w')
         elif opt == '--report_reason':
             config.report_reason = True
-        elif opt == '--rule-dir':
+        elif opt == '--ruledir':
             config.rule_dirpath = arg
+        elif opt == '--filter_common_snp':
+            config.filter_common_snp_fpath = arg
+        elif opt == '--snpeffect_export_polymorphic':
+            config.snpeffect_export_polymorphic_fpath = arg
+        elif opt == '--filter_common_artifacts':
+            config.filter_common_artifacts_fpath = arg
+        elif opt == '--filter_common_snp':
+            config.filter_common_snp_fpath = arg
+        elif opt == '--actionable_hotspot':
+            config.actionable_hotspot_txt_fpath = arg
+        elif opt == '--actionable':
+            config.actionable_txt_fpath = arg
+        elif opt == '--compendia_ms7_hotspot':
+            config.compendia_ms7_hotspot_fpath = arg
         elif opt == '--annotation-dir':
-            config.annotation_dirpath = arg
+            config.annotation_dirpath_fpath = arg
         elif opt == '--suppressors':
-            config.suppressors_fpath = arg
+            config.suppressors_fpath_fpath = arg
         elif opt == '--oncogenes':
-            config.oncogenes_fpath = arg
+            config.oncogenes_fpath_fpath = arg
 
     if not config.min_allele_freq_hotspot:
         config.min_allele_freq_hotspot = min(0.01, config.min_allele_freq / 2)
@@ -158,11 +118,16 @@ def main(args):
         oncogenes = parse_genes_list(config.oncogenes_fpath)
 
     tp53_groups = {}
-    tp53_groups['Group 1'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules/DNE.txt'))
-    tp53_groups['Group 2'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules/TA0-25.txt'))
-    tp53_groups['Group 3'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules/TA25-50_SOM_10x.txt'))
+    tp53_groups['Group 1'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'DNE.txt'))
+    tp53_groups['Group 2'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'TA0-25.txt'))
+    tp53_groups['Group 3'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'TA25-50_SOM_10x.txt'))
 
-    tp53_hg19_pos = ('7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 7578371 7579312 7579700 7579839').split()
+    tp53_hg19_pos = (
+        '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
+        '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
+        '7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 '
+        '7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 '
+        '7578371 7579312 7579700 7579839').split()
 
     # Set up common SNP filter
     filter_snp = {}
@@ -393,29 +358,86 @@ def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, ac
     return False
 
 
-def usage():
-    print >> sys.stderr, "Usage: 0 [-n reg_name] input"
-    print >> sys.stderr, "The program will filter the VarDict output after vcf2txt.pl " \
-                         "to candidate interpretable mutations, somatic or germline."
+def parse_mut_tp53(mut_fpath):
+    mut_tp53 = []
+    with open(mut_fpath) as f:
+        for l in f:
+            l = l.strip()
+            if not l:
+                continue
+            line = l.split('\t')
+            if not line[19] or 'p.' not in line[19]:
+                continue
+            prot = line[19].replace('p.', '')
+            mut_tp53.append(prot)
 
-    print >> sys.stderr, "Options:"
-    print >> sys.stderr, "-h  --help                                Print this usage"
-    print >> sys.stderr, "-M                                        Output in FM's format"
-    print >> sys.stderr, "-D  --depth <int>                         The minimum total depth"
-    print >> sys.stderr, "-V  --reads <int>                         The minimum reads supporting variant"
-    print >> sys.stderr, "-n  <regexp>                              The regular expression to extract sample name."
-    print >> sys.stderr, "                                          Default: Use as it is. For TCGA, '(TCGA-..-....)-01' is preferred for tumor sample."
-    print >> sys.stderr, "-f --min-freq <double>                    The minimum allele frequency for regular variants. Default: 0.05"
-    print >> sys.stderr, "-R --max-rate <double>                    If a variant is present in > [double] fraction of samples, it's deemed not a mutation."
-    print >> sys.stderr, "                                          [default: 1.0, or no filtering]."
-    print >> sys.stderr, "                                          Use with caution.  It'll filter even if it's in COSMIC, unless if actionable. "
-    print >> sys.stderr, "                                          Don't use it if the sample is homogeneous. Use only in heterogeneous samples."
+    return mut_tp53
 
-    print >> sys.stderr, "-F --min-freq-hs <double>                 The minimum allele frequency hotspot somatic mutations, typically lower then -f."
-    print >> sys.stderr, "                                          Default: 0.01 or half -f, whichever is less"
 
-    sys.exit(0)
+def update_status(cur_status, reasons, new_status, new_reason):
+    if statuses.index(new_status) < statuses.index(cur_status):
+        return cur_status, reasons
+    if cur_status != new_status:
+        reasons = [new_reason]
+    else:
+        reasons.append(new_reason)
+    return new_status, reasons
+
+
+def is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
+    if len(ref) > len(alt) and alt != '-':
+        ref = ref[1:]
+        if len(alt) > 1:
+            alt = alt[1:]
+        else:
+            alt = '-'
+    elif len(alt) > len(ref) and ref != "-":
+        alt = alt[1:]
+        if len(ref) > 1:
+            ref = ref[1:]
+        else:
+            ref = '-'
+    key = '-'.join([chr, pos, ref, alt])
+    return key in hotspot_nucleotides
+
+
+def is_hotspot_prot(gene, pchg, hotspot_proteins):
+    pchg = pchg.replace('p.', '')
+    key = '-'.join([gene, pchg])
+    return key in hotspot_proteins
+
+
+def classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups):
+    ref = ref.replace(' ', '')
+    alt = alt.replace(' ', '')
+    pos = pos.replace(' ', '')
+    aa_chg = aa_chg.replace(' ', '')
+    if pos in tp53_hg19_pos and len(ref) == 1 and len(alt) == 1:
+        return 'Group 6'
+    aa_chg = aa_chg.replace('p.', '')
+    aa_num = 0
+    if aa_chg:
+        aa_num = int(re.sub('[^0-9]', '', aa_chg))
+    if fs_pattern.match(aa_chg):
+        if aa_num < 359:
+            return 'Group 5'
+    elif stop_gain_pattern.match(aa_chg):
+        if aa_num < 359:
+            return 'Group 4'
+    elif aa_chg_pattern.match(aa_chg):
+        if aa_chg in tp53_groups['Group 1']:
+            return 'Group 1'
+        if aa_chg in tp53_groups['Group 2']:
+            return 'Group 2'
+        if aa_chg in tp53_groups['Group 3']:
+            return 'Group 3'
+    return 'NA'
+
+
+def parse_genes_list(fpath):
+    genes = [line.strip() for line in open(fpath)]
+    return genes
+
 
 if __name__ == '__main__':
-    return_code = main(sys.argv[1:])
-    exit(return_code)
+    main(sys.argv[1:])

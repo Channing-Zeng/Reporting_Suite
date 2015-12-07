@@ -3,6 +3,7 @@ steps:
 - TargQC
 - Seq2C
 - ClinicalReport
+- AbnormalCovReport
 
 
 # reuse_intermediate: True

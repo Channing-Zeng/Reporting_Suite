@@ -9,14 +9,18 @@ import shutil
 from joblib import Parallel, delayed
 import source
 from source.bcbio.bcbio_structure import BCBioStructure
-from source.calling_process import call
+from source.calling_process import call, call_check_output
 from source.config import defaults
+from source.profiling import fn_timer
 from source.tools_from_cnf import get_script_cmdline
 from source.logger import err, warn, send_email
+from source.utils import is_us
 from source.variants.tsv import make_tsv
 from source.variants.vcf_processing import iterate_vcf, get_sample_column_index
-from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus, file_transaction
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, symlink_plus, file_transaction, \
+    num_lines
 from source.logger import info
+from source.webserver.exposing import convert_path_to_url
 
 
 def prep_vcf(vcf_fpath, sample_name, caller_name):
@@ -38,21 +42,7 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
 
 def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sample_by_name, caller_name,
                         sample_min_freq, threads_num):
-    # info()
-    # info('Keeping only first sample info in VCFs...')
-    # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(leave_main_sample)(cnf, fpath, s) for fpath, s in zip(vcf_fpaths, sample_names))
-
-    # info()
-    # info('Indexing with tabix ')
-    # vcf_fpaths = Parallel(n_jobs=n_threads)(delayed(tabix_vcf)(cnf, vcf_fpath) for vcf_fpath in vcf_fpaths)
-
     safe_mkdir(bcbio_structure.var_dirpath)
-
-    # combined_vcf_fpath = join(bcbio_structure.var_dirpath, caller.name + '.vardict.vcf')
-    #
-    # info()
-    # info('Merging VCFs...')
-    # vcf_merge(cnf, vcf_fpaths, combined_vcf_fpath)
 
     global glob_cnf
     glob_cnf = cnf
@@ -68,12 +58,50 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
         err('vcf2txt run returned non-0')
         return None
 
-    res = run_vardict2mut(cnf, vcf2txt_out_fpath, sample_by_name, sample_min_freq)
+    vardict2mut_perl = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
+    vardict2mut_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
+
+    res = run_vardict2mut(cnf, vcf2txt_out_fpath, sample_by_name, add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
+                          sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_perl)
     if not res:
         err('vardict2mut.pl run returned non-0')
         return None
+    mut_fpath = pl_mut_fpath = res
 
-    mut_fpath = res
+    if vardict2mut_py:
+        info('Running python version ' + vardict2mut_py)
+        res = run_vardict2mut(cnf, vcf2txt_out_fpath, sample_by_name, add_suffix(vcf2txt_out_fpath, 'py.' + source.mut_pass_suffix),
+                              sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_py)
+        if not res:
+            err('vardict2mut.py run returned non-0')
+        else:
+            py_mut_fpath = res
+            pl_mut_url = convert_path_to_url(pl_mut_fpath)
+            py_mut_url = convert_path_to_url(py_mut_fpath)
+
+            # Compare results, send email
+            msg = ('VarDict2mut comparison\nPerl:\n\t' + pl_mut_fpath + '\n')
+            if pl_mut_url:
+                msg += '\t' + pl_mut_url + '\n'
+            msg += 'Python:\n\t' + py_mut_fpath + '\n'
+            if py_mut_url:
+                msg += '\t' + py_mut_url + '\n\n'
+
+            py_line_num = num_lines(py_mut_fpath)
+            pl_line_num = num_lines(pl_mut_fpath)
+            if py_line_num == pl_line_num:
+                msg += 'Line numbers is equal: ' + str(pl_line_num) + '\n'
+            else:
+                msg += 'Line numbers differ: perl (' + str(pl_line_num) + '), py (' + str(py_line_num) + ')\n'
+            diff_res = call_check_output(cnf, 'diff -q ' + pl_mut_fpath + ' ' + py_mut_fpath)
+            if diff_res:
+                msg += 'Differ found.\n'
+            else:
+                msg += 'Files equal.\n'
+
+            info(msg)
+            send_email(msg_other=msg, only_me=True)
+    info()
 
     # symlinking
     pass_txt_basefname = basename(mut_fpath)
@@ -94,22 +122,26 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
     except OSError:
         err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
 
-    write_vcfs(cnf, sample_by_name.keys(), bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
+    write_vcfs(cnf, sample_by_name.keys(), bcbio_structure.samples,
+               vcf_fpaths, caller_name, vcf2txt_out_fpath, mut_fpath, threads_num)
     info('Done filtering with vcf2txt/vardict2mut.')
     return res
 
 
-def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None):
-    vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
+@fn_timer
+def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, vardict2mut_res_fpath=None,
+                    sample_min_freq=None, vardict2mut_executable=None):
     cmdline = None
+    if vardict2mut_res_fpath is None:
+        vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
-    # if not is_local():
-    vardict2mut = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
+    if not vardict2mut_executable:
+        vardict2mut_executable = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
 
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
 
-    cmdline = '{vardict2mut} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} --report_reason '
+    cmdline = '{vardict2mut_executable} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} --report_reason '
     if cnf.min_hotspot_freq is not None and cnf.min_hotspot_freq != 'default':
         cmdline += '-F ' + str(cnf.min_hotspot_freq)
     cmdline += ' {vcf2txt_res_fpath} '
@@ -123,25 +155,6 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, sample_min_freq=None
 
     # if cnf.suppressors: cmdline += '--suppressors {cnf.suppressors} '
     # if cnf.oncogenes: cmdline += '--oncogenes {cnf.oncogenes} '
-
-    # else:
-    #     pick_line = get_script_cmdline(cnf, 'perl', join('VarDict', 'pickLine'), is_critical=True)
-    #
-    #     with open(vcf2txt_res_fpath) as f:
-    #         try:
-    #             pass_col_num = f.readline().split().index('PASS') + 1
-    #         except ValueError:
-    #             critical('No PASS column in the vcf2txt result ' + vcf2txt_res_fpath)
-    #
-    #     cmdline = '{pick_line} -l PASS:TRUE -c {pass_col_num} {vcf2txt_res_fpath} | grep -vw dbSNP | ' \
-    #               'grep -v UTR_ | grep -vw SILENT | grep -v intron_variant | grep -v upstream_gene_variant | ' \
-    #               'grep -v downstream_gene_variant | grep -v intergenic_region | grep -v intragenic_variant | ' \
-    #               'grep -v NON_CODING'
-    #
-    #     polymorphic_variants = cnf.genomes[sample_by_name.values()[0].genome].polymorphic_variants
-    #     if polymorphic_variants:
-    #         poly_vars = abspath(polymorphic_variants)
-    #         cmdline += ' | {pick_line} -v -i 12:3 -c 14:11 {poly_vars}'
 
     cmdline = cmdline.format(**locals())
     res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
@@ -438,6 +451,7 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
             res = __run_vcf2txt(cnf, cmdline + ' ' + vcf_fpath, sample_output_fpath)
             if res:
                 vcf2txt_outputs_by_vcf_fpath[vcf_fpath] = sample_output_fpath
+            info()
 
         info('Joining vcf2txt ouputs... (' + str(len(vcf2txt_outputs_by_vcf_fpath)) +
              ' out of ' + str(len(vcf_fpaths)) + ' successful), ' +

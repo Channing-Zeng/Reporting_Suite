@@ -18,7 +18,7 @@ from source.file_utils import safe_mkdir
 from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam
 from source.utils import is_us
-from source.webserver.exposing import sync_with_ngs_server
+from source.webserver.exposing import sync_with_ngs_server, convert_path_to_url
 from source.config import defaults
 
 
@@ -906,6 +906,7 @@ def _final_email_notification(html_report_url, jira_url, bs):
     txt = 'Post-processing finished for ' + bs.project_name + '\n'
     txt += '\n'
     txt += 'Path: ' + bs.final_dirpath + '\n'
+    txt += 'URL: ' + convert_path_to_url(bs.final_dirpath) + '\n'
     txt += 'Report: ' + (html_report_url or bs.project_report_html_fpath) + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url

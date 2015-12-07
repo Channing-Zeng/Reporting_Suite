@@ -111,6 +111,7 @@ def send_email(msg_other='', subj='', only_me=False):
             msg_me += '  ' + m + '\n'
 
     if not subj:
+        subj = ''
         if project_name:
             subj += project_name
         else:

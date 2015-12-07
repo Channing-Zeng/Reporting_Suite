@@ -4,7 +4,7 @@ import os
 from os.path import join, isfile, basename, dirname, abspath, isdir, relpath, realpath, pardir
 from traceback import print_exc, format_exc
 from source import verify_file
-from source.file_utils import file_transaction, safe_mkdir
+from source.file_utils import file_transaction, safe_mkdir, adjust_path
 from source.logger import info, critical, err, is_local, warn
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import is_uk, is_us, is_az
@@ -293,4 +293,11 @@ def __re_quote(s):
         s = s[:-1]
     s = s.replace('"', "'")
     return '"' + s + '"'
+
+
+def convert_path_to_url(path):
+    if is_us():
+        return adjust_path(path).replace('/gpfs/ngs/', 'http://blue.usbod.astrazeneca.net/~klpf990/ngs/')
+    else:
+        return ''
 
