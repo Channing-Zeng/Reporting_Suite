@@ -490,7 +490,7 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
 def __prepare_analysis_directory(work_dir, project_name, project_dirpath, samples):
     kind = next((kind for pref, kind in source.project_kind_by_prefix.items() if project_name.startswith(pref)), None)
     if kind:
-        analysis_proj_dirpath = adjust_path(join(project_dirpath.split('/datasets/')[0], 'analysis', kind, project_name))
+        analysis_proj_dirpath = adjust_path(join(adjust_path(project_dirpath).split('/Datasets/')[0], 'Analysis', kind, project_name))
         if not exists(analysis_proj_dirpath):
             info('Analysis directory ' + analysis_proj_dirpath + ' does not exist. Creating and preparing...')
             safe_mkdir(analysis_proj_dirpath)

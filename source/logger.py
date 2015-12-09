@@ -31,7 +31,7 @@ def is_local():
 
 
 def timestamp():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S  ")
+    return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 def step_greetings(name):
@@ -172,7 +172,7 @@ def _log(out, msg='', ending='\n', print_date=True, severity=None):
     msg = str(msg)
 
     if print_date:
-        msg = timestamp() + msg
+        msg = timestamp() + '  ' + msg
 
     out.write(msg + ending)
 

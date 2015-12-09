@@ -4,6 +4,7 @@ import re
 import os
 from os.path import join, isfile, isdir, basename
 import shutil
+import traceback
 from source import TargQC_Sample
 from source.logger import critical, err, info, warn
 from source.file_utils import verify_dir, verify_file, splitext_plus, safe_mkdir, file_transaction
@@ -149,6 +150,8 @@ class HiSeqStructure(DatasetStructure):
 
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
+        self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+
         for pname, project in self.project_by_name.items():
             proj_dirpath = join(self.unaligned_dirpath, 'Project_' + pname.replace(' ', '-'))  #.replace('-', '_').replace('.', '_'))
             project.set_dirpath(proj_dirpath, self.az_project_name)
@@ -156,7 +159,16 @@ class HiSeqStructure(DatasetStructure):
                 sample.source_fastq_dirpath = join(project.dirpath, 'Sample_' + sname.replace(' ', '-'))  #.replace('-', '_').replace('.', '_'))
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
-        self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+            basecalls_symlink = join(project.dirpath, 'BaseCallsReports')
+            info('Creating BaseCalls symlink ' + self.basecalls_dirpath + ' -> ' + basecalls_symlink)
+            try:
+                os.symlink(self.basecalls_dirpath, basecalls_symlink)
+            except OSError:
+                err('Cannot crate symlink')
+                traceback.print_exc()
+            else:
+                info('Created')
+                self.basecalls_dirpath = basecalls_symlink
 
         self.get_fastq_regexp_fn = get_hiseq_regexp
 
@@ -228,6 +240,8 @@ class HiSeq4000Structure(DatasetStructure):
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
+        info('basecall_stat_html_reports: ' + str(self.basecall_stat_html_reports))
+        symlink()
 
         self.get_fastq_regexp_fn = get_hiseq4000_miseq_regexp
 
@@ -238,9 +252,9 @@ class HiSeq4000Structure(DatasetStructure):
                 return dpath
 
     def __get_basecall_stats_reports(self):
-        dirpath = join(self.unaligned_dirpath, 'Reports', 'html')
-        index_html_fpath = join(dirpath, 'index.html')
-        if verify_dir(dirpath) and verify_file(index_html_fpath):
+        self.basecalles_reports_dirpath = join(self.unaligned_dirpath, 'Reports', 'html')
+        index_html_fpath = join(self.basecalles_reports_dirpath, 'index.html')
+        if verify_dir(self.dirpath) and verify_file(index_html_fpath):
             return [index_html_fpath]
 
 
