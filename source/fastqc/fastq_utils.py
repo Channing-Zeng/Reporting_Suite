@@ -14,6 +14,12 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
     quick=True will just grab the first N reads rather than do a true
     downsampling
     """
+    outf1 = intermediate_fname(cnf, fastq_L_fpath, 'subset')
+    outf2 = intermediate_fname(cnf, fastq_R_fpath, 'subset')
+    if cnf.reuse_intermediate and verify_file(outf1, silent=True) and verify_file(outf2, silent=True):
+        info(outf1 + ' and ' + outf2 + ' exist, reusing.')
+        return outf1, outf2
+
     N = int(N)
     if quick:
         rand_records = range(N)
@@ -24,12 +30,6 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
 
     fh1 = open_gzipsafe(fastq_L_fpath)
     fh2 = open_gzipsafe(fastq_R_fpath) if fastq_R_fpath else None
-    outf1 = intermediate_fname(cnf, fastq_L_fpath, 'subset')
-    outf2 = intermediate_fname(cnf, fastq_R_fpath, 'subset')
-
-    if cnf.reuse_intermediate and verify_file(outf1, silent=True) and verify_file(outf2, silent=True):
-        info(outf1 + ' and ' + outf2 + ' exist, reusing.')
-        return outf1, outf2
 
     out_files = (outf1, outf2) if outf2 else (outf1)
 

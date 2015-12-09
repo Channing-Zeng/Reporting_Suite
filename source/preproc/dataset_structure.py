@@ -241,7 +241,6 @@ class HiSeq4000Structure(DatasetStructure):
 
         self.basecall_stat_html_reports = self.__get_basecall_stats_reports()
         info('basecall_stat_html_reports: ' + str(self.basecall_stat_html_reports))
-        symlink()
 
         self.get_fastq_regexp_fn = get_hiseq4000_miseq_regexp
 
