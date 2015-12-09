@@ -104,8 +104,10 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
 
         info()
         info('Filtering exon bed file to have only non-gene records...')
-        exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes_cut')
-        call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
+        exons_no_genes_bed_1 = intermediate_fname(cnf, exons_bed, 'no_genes_cut')
+        exons_no_genes_bed = intermediate_fname(cnf, exons_no_genes_bed_1, 'no_mgenes_cut')
+        call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed_1)
+        call(cnf, 'grep -vw Multi_Gene ' + exons_no_genes_bed_1, output_fpath=exons_no_genes_bed)
 
     if target_bed:
         info()
