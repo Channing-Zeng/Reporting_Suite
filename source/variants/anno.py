@@ -11,7 +11,7 @@ from ext_modules.vcf_parser.parser import _Info
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction
 from source.logger import step_greetings, critical, info, err, warn
-from source.tools_from_cnf import get_system_path, get_java_tool_cmdline
+from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index
 
@@ -402,7 +402,7 @@ def _snpeff(cnf, input_fpath):
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
-    stats_fpath = join(cnf.work_dir, cnf.sample + '-' + cnf.caller + '.snpEff_summary.html')
+    stats_fpath = join(cnf.work_dir, cnf.sample + '-' + cnf.caller + '.snpEff_summary.csv')
 
     ref_name = cnf.annotation.snpeff.reference or cnf.genome.name
     # if ref_name == 'GRCh37': ref_name += '.75'
@@ -440,9 +440,15 @@ def _snpeff(cnf, input_fpath):
         return None, None, None
     input_fpath = res
 
-    cmdline = ('{snpeff} eff {opts} -stats {stats_fpath} '
-               '-csvStats -noLog -i vcf -o vcf {ref_name} '
+    snpeff_type = get_snpeff_type(snpeff)
+    if snpeff_type == "old":
+        opts += ' -stats ' + stats_fpath + ' -csvStats'
+    else:
+        opts += ' -csvStats ' + stats_fpath
+
+    cmdline = ('{snpeff} eff {opts} -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
+
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True)

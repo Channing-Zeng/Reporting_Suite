@@ -122,3 +122,23 @@ def _get_qualimap_version(tool_cmdline):
     if version.split('.') > 2:  # only major version
         version = '.'.join(version.split('.')[:2])
     return version
+
+
+def get_snpeff_type(tool_cmdline):
+    """New options format since v4.2
+    """
+    if LooseVersion(_get_snpeff_version(tool_cmdline)) >= LooseVersion("4.2"):
+        return "new"
+    else:
+        return "old"
+
+
+def _get_snpeff_version(tool_cmdline):
+    cmdline = tool_cmdline + ' -version'
+
+    with subprocess.Popen(cmdline,
+                          stdout=subprocess.PIPE,
+                          stderr=subprocess.STDOUT,
+                          shell=True).stdout as stdout:
+        version = stdout.read().strip()
+    return version
