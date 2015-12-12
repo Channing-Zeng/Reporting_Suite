@@ -56,7 +56,7 @@ class Config(object):
 
         self.level = 0
 
-        if sys_cnf and run_cnf:
+        if sys_cnf:  # Improtant if! Do no delete because __init__ called recursivly (implicitly)
             sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
             loaded_dict = _load(sys_cnf_fpath, run_cnf_fpath)
             for k, v in loaded_dict.items():
@@ -67,12 +67,12 @@ class Config(object):
                     self[k] = v
 
             self.sys_cnf = sys_cnf_fpath
-            self.run_cnf = run_cnf_fpath
+            if run_cnf_fpath:
+                self.run_cnf = run_cnf_fpath
             self.tmp_base_dir = self.work_dir
         else:
             for k, v in cmd_line_opts.items():
                 self[k] = v
-
 
     def get(self, key, d=None):
         assert 'Please, use [] or . instead'
@@ -159,15 +159,16 @@ def load_yaml_config(fpath):
         return dic
 
 
-def _load(sys_cnf_fpath, run_cnf_fpath):
+def _load(sys_cnf_fpath=None, run_cnf_fpath=None):
     sys_dict = load_yaml(open(sys_cnf_fpath), Loader=Loader)
-    run_dict = load_yaml(open(run_cnf_fpath), Loader=Loader)
+    info('Loaded system config ' + sys_cnf_fpath)
+    run_dict = dict()
+    if run_cnf_fpath:
+        run_dict = load_yaml(open(run_cnf_fpath), Loader=Loader)
+        info('Loaded run config ' + run_cnf_fpath)
 
     loaded_dict = dict(run_dict.items() + sys_dict.items())
     loaded_dict = fill_dict_from_defaults(loaded_dict, defaults)
-
-    info('Loaded system config ' + sys_cnf_fpath)
-    info('Loaded run config ' + run_cnf_fpath)
     info()
     return loaded_dict
 
@@ -182,27 +183,27 @@ def fill_dict_from_defaults(cur_cnf, defaults_dict):
     return cur_cnf
 
 
-def _check_paths(sys_cnf, run_cnf):
+def _check_paths(sys_cnf=None, run_cnf=None):
     to_exit = False
 
-    info('System configuration file: ' + sys_cnf)
-    info('Run configuration file:    ' + run_cnf)
+    info('System configuration file: ' + str(sys_cnf))
+    if run_cnf:
+        info('Run configuration file: ' + str(run_cnf))
     info()
 
-    verify_file(sys_cnf, 'System config', is_critical=True)
-    verify_file(run_cnf, 'Run config', is_critical=True)
-
-    sys_cnf_path = adjust_path(sys_cnf)
-    run_cnf_path = adjust_path(run_cnf)
+    run_cnf = None
+    sys_cnf = verify_file(sys_cnf, 'System config', is_critical=True)
+    if run_cnf:
+        run_cnf = verify_file(run_cnf, 'Run config', is_critical=True)
 
     errors = []
-    for fn in [sys_cnf_path, run_cnf_path]:
-        if not fn.endswith('.yaml'):
+    for fn in [sys_cnf, run_cnf]:
+        if fn and not fn.endswith('.yaml'):
             errors.append(fn + ' does not end with .yaml, maybe incorrect parameter?')
     if errors:
         critical(errors)
 
-    return sys_cnf_path, run_cnf_path
+    return sys_cnf, run_cnf
 
 
 def join_parent_conf(child_conf, parent_conf):

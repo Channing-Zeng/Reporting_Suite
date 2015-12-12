@@ -233,10 +233,10 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
 
 
 def determine_sys_cnf(opts):
-    if opts.sys_cnf:
+    if 'sys_cnf' in opts.__dict__ and opts.sys_cnf:
         return verify_file(opts.sys_cnf, is_critical=True)
     else:
-        opts.sys_cnf = verify_file(detect_sys_cnf_by_location(), is_critical=True)
+        opts.__dict__['sys_cnf'] = verify_file(detect_sys_cnf_by_location(), is_critical=True)
 
     info('Using ' + opts.sys_cnf)
     return opts.sys_cnf
