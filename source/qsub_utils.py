@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from datetime import datetime
 
 import os
 from os.path import join, isfile, basename, splitext
@@ -6,7 +7,7 @@ from time import sleep
 
 from source.calling_process import call
 from source.tools_from_cnf import get_system_path
-from source.logger import info, err, warn
+from source.logger import info, err, warn, timestamp
 from source.file_utils import make_tmpfile, adjust_system_path, verify_file
 from source.utils import is_us
 
@@ -48,8 +49,12 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
-    f, done_marker_fpath = make_tmpfile(cnf, prefix=str(cnf.project_name) + '_' + job_name + '_', suffix='.done')
-    f, error_marker_fpath = make_tmpfile(cnf, prefix=str(cnf.project_name) + '_' + job_name + '_', suffix='.error')
+    prefix = str(cnf.project_name) + '_'
+    if job_name:
+        prefix += job_name + '_'
+    prefix += datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + '_'
+    f, done_marker_fpath = make_tmpfile(cnf, prefix=prefix, suffix='.done')
+    f, error_marker_fpath = make_tmpfile(cnf, prefix=prefix, suffix='.error')
     if isfile(done_marker_fpath): os.remove(done_marker_fpath)
     if isfile(error_marker_fpath): os.remove(error_marker_fpath)
     job_id = basename(splitext(done_marker_fpath)[0])
