@@ -191,7 +191,6 @@ def _check_paths(sys_cnf=None, run_cnf=None):
         info('Run configuration file: ' + str(run_cnf))
     info()
 
-    run_cnf = None
     sys_cnf = verify_file(sys_cnf, 'System config', is_critical=True)
     if run_cnf:
         run_cnf = verify_file(run_cnf, 'Run config', is_critical=True)
