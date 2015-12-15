@@ -93,11 +93,15 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
                 msg += 'Line numbers is equal: ' + str(pl_line_num) + '\n'
             else:
                 msg += 'Line numbers differ: perl (' + str(pl_line_num) + '), py (' + str(py_line_num) + ')\n'
-            diff_res = call_check_output(cnf, get_system_path(cnf, 'diff') + ' -q ' + pl_mut_fpath + ' ' + py_mut_fpath, exit_on_error=False)
-            if diff_res:
-                msg += 'Differ found.\n'
-            else:
-                msg += 'Files equal.\n'
+
+            try:
+                if call(cnf, get_system_path(cnf, 'diff') + ' -q ' + pl_mut_fpath + ' ' + py_mut_fpath, exit_on_error=False, return_err_code=True) != 0:
+                    msg += 'Differ found.\n'
+                else:
+                    msg += 'Files equal.\n'
+            except:
+                traceback.print_exc()
+                msg += 'Diff failed with exception.\n'
 
             info(msg)
             send_email(msg_other=msg, only_me=True)
