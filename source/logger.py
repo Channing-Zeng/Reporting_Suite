@@ -132,7 +132,7 @@ def send_email(msg_other='', subj='', only_me=False):
         s = smtplib.SMTP(host)
         s.sendmail(msg_['From'], msg_['To'].split(','), msg_.as_string())
         s.quit()
-        info('Mail sent to ' + msg_['To'] + ' using ' + host)
+        # info('Mail sent to ' + msg_['To'] + ' using ' + host)
 
     def print_msg():
         for line in msg_other.as_string().split('\n'):
