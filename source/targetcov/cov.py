@@ -327,7 +327,11 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
         reads_stats['mapped_dedup_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath) or 0
-    elif exons_no_genes_bed:
+    elif cnf.genome.refseq:
+        info('Using refseq ' + cnf.genome.refseq + ' to calc reads on exome')
+        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, cnf.genome.refseq, bam_fpath) or 0
+    else:
+        info('Using ensemble ' + cnf.genome.refseq + ' to calc reads on exome')
         reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath) or 0
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)

@@ -24,9 +24,9 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
     if quick:
         rand_records = range(N)
     else:
-        records = sum(1 for _ in open(fastq_L_fpath)) / 4
-        N = records if N > records else N
-        rand_records = random.sample(xrange(records), N)
+        records_num = sum(1 for _ in open(fastq_L_fpath)) / 4
+        N = records_num if N > records_num else N
+        rand_records = random.sample(xrange(records_num), N)
 
     fh1 = open_gzipsafe(fastq_L_fpath)
     fh2 = open_gzipsafe(fastq_R_fpath) if fastq_R_fpath else None
@@ -40,7 +40,7 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
             tx_out_f1, tx_out_f2 = tx_out_files
         sub1 = open_gzipsafe(tx_out_f1, "w")
         sub2 = open_gzipsafe(tx_out_f2, "w") if outf2 else None
-        rec_no = - 1
+        rec_no = -1
         for rr in rand_records:
             while rec_no < rr:
                 rec_no += 1
