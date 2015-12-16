@@ -201,13 +201,13 @@ def _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpat
     # samtools view -b TRF004223.sorted.bam -L Exons.az_key.bed | bedtools genomecov -ibam stdin -bg > coverage.bg
     # bedtools intersect -a oncomine.az_key.vcf.gz -b coverage.bg -wa | cut -f1,2,4,5,8,11,12,13,14 > oncomine.az_key.depth_numbers.vcf
 
-    samtools = get_system_path(cnf, 'samtools')
+    sambamba = get_system_path(cnf, 'sambamba')
     bedtools = get_system_path(cnf, 'bedtools')
 
     info()
     info('Depth of coverage for regions in BED ' + bed_fpath)
     cov_bg = join(cnf.work_dir, 'coverage.bg')
-    cmdline = '{samtools} view -L {bed_fpath} -b {bam_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
+    cmdline = '{sambamba} view -t {cnf.threads} -L {bed_fpath} {bam_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
     call(cnf, cmdline, output_fpath=cov_bg, exit_on_error=False)
 
     info()

@@ -25,7 +25,7 @@ import bed_file
 
 # aux function
 def bam_has_unmapped_reads(cnf, bam_fpath):
-    command = "%s view -cf 4 %s" % (get_system_path(cnf, 'samtools'), bam_fpath)
+    command = '%s view -t %s -c -F "unmapped" %s' % (get_system_path(cnf, 'sambamba'), str(cnf.threads), bam_fpath)
     info("Checking whether bam has unmapped reads:" + command)
     num_unmapped_reads = int(call_check_output(cnf, command))
     if num_unmapped_reads == 0:
@@ -36,7 +36,7 @@ def bam_has_unmapped_reads(cnf, bam_fpath):
 def filter_unmapped_reads(cnf, bam_fpath):
     if bam_has_unmapped_reads(cnf, bam_fpath):
         output_fpath = intermediate_fname(cnf, bam_fpath, 'mapped')
-        cmdline = "%s view -b -F 4 %s" % (get_system_path(cnf, 'samtools'), bam_fpath)
+        cmdline = '%s view -t %s -f bam -F "not unmapped" %s' % (get_system_path(cnf, 'sambamba'), str(cnf.threads), bam_fpath)
         info("Filtering unmapped reads from input bam: " + cmdline)
         call(cnf, cmdline, output_fpath)
     else:

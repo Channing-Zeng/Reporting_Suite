@@ -167,15 +167,15 @@ def main():
             lefts = [l for l, r in fastqs]
             rights = [r for l, r in fastqs]
 
-            samtools = get_system_path(cnf, 'samtools')
+            sambamba = get_system_path(cnf, 'sambamba')
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')
             bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
-            if samtools and bwa and seqtk and bammarkduplicates:
+            if sambamba and bwa and seqtk and bammarkduplicates:
                 info()
                 info('Alignming ' + str(downsample_to) + ' random reads to the reference')
                 aligned = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
-                    samtools,
+                    sambamba,
                     bwa,
                     seqtk,
                     bammarkduplicates,
@@ -289,7 +289,7 @@ def downsample_fastq(cnf, sample, reads_num=5e5):
     return l_fpath, r_fpath
 
 
-def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):
+def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
@@ -299,11 +299,11 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates
     if not res:
         return None
 
-    cmdline = '{samtools} view -Sb {sam_fpath}'.format(**locals())
+    cmdline = '{sambamba} view -t {cnf.threads} -S -f bam {sam_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=bam_fpath)
 
     prefix = splitext(sorted_bam_fpath)[0]
-    cmdline = '{samtools} sort {bam_fpath} {prefix}'.format(**locals())
+    cmdline = '{sambamba} sort -t {cnf.threads} {bam_fpath} -o {sorted_bam_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
 
     if not is_pcr:
@@ -311,7 +311,7 @@ def align(cnf, sample, l_fpath, r_fpath, samtools, bwa, seqtk, bammarkduplicates
         if markdup_bam_fpath:
             sorted_bam_fpath = markdup_bam_fpath
 
-    index_bam(cnf, sorted_bam_fpath, samtools=samtools)
+    index_bam(cnf, sorted_bam_fpath)
     return sorted_bam_fpath
 
 
