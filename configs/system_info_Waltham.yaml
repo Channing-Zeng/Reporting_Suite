@@ -67,8 +67,10 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf
     snpeff:
       reference: GRCh38.78
+
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
+    refseq: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq.no_genes.cut4.merge.bed
 
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
@@ -80,8 +82,10 @@ genomes:
     snpeff:
       reference: GRCh38.78
     # the rest is taken from hg19 crossmap
+
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
+    refseq: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq.no_genes.cut4.merge.bed
 
   mm10:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
