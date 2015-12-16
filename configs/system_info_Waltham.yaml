@@ -23,7 +23,7 @@ resources:
   java:
     path: /usr/bin/java
   python:
-    path: /group/ngs/src/bcbio-nextgen/0.8.7/rhel6-x64/anaconda/bin/python
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/anaconda/bin/python
     # path: /opt/az/local/psf/python/64_2.7.3/python
     # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
   igvtools:
@@ -48,14 +48,16 @@ resources:
   bwa:
     path: /opt/az/local/bwa/0.7.12/bwa-0.7.12/bwa
   seqtk:
-    path: /group/ngs/src/bcbio-nextgen/0.9.3/rhel6-x64/bin/seqtk
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/bin/seqtk
 #    path: /opt/az/local/seqtk/seqtk-master/seqtk
   bamtools:
     path: /opt/az/local/bamtools/bamtools-master/bin/bamtools
   bammarkduplicates:
-    path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/Cellar/biobambam/2.0.14/bin/bammarkduplicates
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/Cellar/biobambam/2.0.14/bin/bammarkduplicates
   bamdownsamplerandom:
-    path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/Cellar/biobambam/2.0.14/bin/bamdownsamplerandom
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/Cellar/biobambam/2.0.14/bin/bamdownsamplerandom
+  sambamba:
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/bin/sambamba
 
 genomes:
   hg38:

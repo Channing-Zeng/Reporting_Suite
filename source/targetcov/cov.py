@@ -33,7 +33,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
             Metric('Duplication rate', short_name='dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
             Metric('Read min length', short_name='min len', description='Read minimum length'),
             Metric('Read max length', short_name='max len', description='Read maximum length'),
-            Metric('Read mean length', short_name='ave len', description='Read average length'),
+            Metric('Read mean length', short_name='avg len', description='Read average length'),
             Metric('Gender', is_hidden=True),
         ]),
     ]
@@ -52,8 +52,8 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
                        unit='%',
                        description='Percentage of reads that overlap target at least by 1 base. Should be 1-2% higher.'),
                 Metric('Percentage of usable reads', short_name='usable reads', unit='%',
-                       description='Fraction of unique reads mapped on target to the total number of original reads '
-                                   '(reported in the very first column "Reads"'),
+                       description='Share of unique reads mapped on target in the total number of original reads '
+                                   '(reported in the very first column Reads'),
                 Metric('Read bases mapped on target', short_name='read bp on trg', unit='bp'),
             ]),
         ])
@@ -64,19 +64,21 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
                 Metric('Percentage of genome covered by at least 1 read', short_name='%', unit='%'),
                 Metric('Covered bases in exome', short_name='exome covered', unit='bp'),
                 Metric('Percentage of exome covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on exome', short_name='reads on exome', unit='%'),
-                Metric('Percentage of usable reads', short_name='usable reads', unit='%'),
+                Metric('Percentage of reads mapped on exome', short_name='reads on exome', unit='%',
+                       description='Percentage of reads mapped on regions coding a protein or ncRNA, based on RefSeq.'),
                 Metric('Percentage of reads mapped off exome', short_name='off exome', unit='%', quality='Less is better'),
+                Metric('Percentage of usable reads', short_name='usable reads', unit='%',
+                       description='Share of mapped unique reads in all reads (reported in the very first column Reads)'),
             ]),
         ])
 
     trg_name = 'target' if not is_wgs else 'genome'
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
-        Metric('Average ' + trg_name + ' coverage depth', short_name='ave'),
+        Metric('Average ' + trg_name + ' coverage depth', short_name='avg'),
         Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='std dev', quality='Less is better'),
         # Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
         # Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max', is_hidden=True),
-        Metric('Percentage of ' + trg_name + ' within 20% of mean depth', short_name='&#177;20% ave', unit='%')
+        Metric('Percentage of ' + trg_name + ' within 20% of mean depth', short_name='&#177;20% avg', unit='%')
     ])
     for depth in depth_thresholds:
         name = 'Part of ' + trg_name + ' covered at least by ' + str(depth) + 'x'
@@ -86,7 +88,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
     sections.append(
         ReportSection('qualimap', 'Qualimap stats' + ('' if is_wgs else ' within the target'), [
             Metric('Mean Mapping Quality',  'mean MQ',            'Mean mapping quality, inside of regions'),
-            Metric('Mismatches',            'miosmatches',         'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
+            Metric('Mismatches',            'mismatches',         'Mismatches, inside of regions', quality='Less is better'),  # added in Qualimap v.2.0
             Metric('Insertions',            'insertions',         'Insertions, inside of regions', quality='Less is better'),
             Metric('Deletions',             'deletions',          'Deletions, inside of regions', quality='Less is better'),
             Metric('Homopolymer indels',    'homopolymer indels', 'Percentage of homopolymer indels, inside of regions', quality='Less is better'),
@@ -438,8 +440,6 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
             report.add_record('Percentage of reads mapped on padded target', percent_mapped_on_padded_target)
             assert percent_mapped_on_padded_target <= 1.0 or percent_mapped_on_padded_target is None, str(percent_mapped_on_padded_target)
 
-
-
     elif 'mapped_dedup_on_exome' in reads_stats:
         # report.add_record('Reads mapped on target', reads_stats['mapped_on_target'])
         percent_mapped_on_exome = 1.0 * reads_stats['mapped_dedup_on_exome'] / reads_stats['mapped_dedup'] if reads_stats['mapped_dedup'] != 0 else None
@@ -448,6 +448,10 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
             assert percent_mapped_on_exome <= 1.0 or percent_mapped_on_exome is None, str(percent_mapped_on_exome)
             percent_mapped_off_exome = 1.0 - percent_mapped_on_exome
             report.add_record('Percentage of reads mapped off exome ', percent_mapped_off_exome)
+
+        percent_usable = 1.0 * reads_stats['mapped_dedup'] / reads_stats['total'] if reads_stats['total'] != 0 else None
+        report.add_record('Percentage of usable reads', percent_usable)
+        assert percent_usable <= 1.0 or percent_usable is None, str(percent_usable)
 
     info('')
     report.add_record('Average ' + trg_type + ' coverage depth', depth_stats['ave_depth'])

@@ -6,8 +6,6 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /ngs/RDI/PROGRAMS/snpEff/SnpSift.jar
-  vcfannotate:
-    path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/bin/vcfannotate
   qualimap:
     path: /ngs/RDI/SCRIPTS/qualimap/qualimap
   samtools:
@@ -19,11 +17,11 @@ resources:
   java:
     path: /apps/java/x64/jdk1.7.0_45/bin/java
   python:
-    path: /apps/bcbio-nextgen/0.7.9/rhel6-x64/anaconda/bin/python
+    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/anaconda/bin/python.py
   tabix:
-    path: /apps/bcbio-nextgen/0.9.0/rhel6-x64/bin/tabix
+    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/tabix
   bgzip:
-    path: /apps/bcbio-nextgen/0.9.0/rhel6-x64/bin/bgzip
+    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/bgzip
   picard:
     path: ext_tools/picard/picard.jar
   qsub:
@@ -32,6 +30,8 @@ resources:
     path: /apps/sge61/bin/lx24-amd64/qdel
   bwa:
     path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/bwa
+  sambamba:
+    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/sambamba
 
 genomes:
   hg38:
