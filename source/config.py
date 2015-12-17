@@ -146,6 +146,7 @@ class CallCnf:
         self.reuse_intermediate = dict_cnf['reuse_intermediate']
         self.keep_intermediate = dict_cnf['keep_intermediate']
         self.verbose = dict_cnf.get('verbose')
+        self.threads = dict_cnf.get('threads')
 
 
 def load_yaml_config(fpath):
