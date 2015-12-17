@@ -311,7 +311,7 @@ def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates
         if markdup_bam_fpath:
             sorted_bam_fpath = markdup_bam_fpath
 
-    index_bam(cnf, sorted_bam_fpath)
+    index_bam(cnf, sorted_bam_fpath, sambamba=sambamba)
     return sorted_bam_fpath
 
 

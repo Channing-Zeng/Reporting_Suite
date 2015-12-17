@@ -11,19 +11,23 @@ from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 
 
-def index_bam(cnf, bam_fpath):
+def index_bam(cnf, bam_fpath, sambamba=None):
     indexed_bam = bam_fpath + '.bai'
     if not isfile(bam_fpath + '.bai'):
         info('Indexing to ' + indexed_bam + '...')
-        sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
+        sambamba = sambamba or get_system_path(cnf, 'sambamba')
+        if sambamba is None:
+            sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
         cmdline = '{sambamba} index -t {cnf.threads} {bam_fpath}'.format(**locals())
         call(cnf, cmdline)
     info('Index: ' + indexed_bam)
 
 
-def index_bam_grid(cnf, bam):
+def index_bam_grid(cnf, bam, sambamba=None):
     info('Indexing to ' + bam + '...')
-    sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
+    sambamba = sambamba or get_system_path(cnf, 'sambamba')
+    if sambamba is None:
+        sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
     cmdline = '{sambamba} index -t {cnf.threads} {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
     j = submit_job(cnf, cmdline, basename(bam) + '_index', output_fpath=bam + '.bai', stdout_to_outputfile=False)
     info()
@@ -391,16 +395,18 @@ def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
             out.write('\t'.join(fields) + '\n')
 
 
-def remove_dups(cnf, bam, output_fpath, use_grid=False):
-    sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
-    cmdline = '{sambamba} markdup -r -t {cnf.threads} {bam} {output_fpath}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+def remove_dups(cnf, bam, output_fpath, sambamba=None, use_grid=False):
+    sambamba = sambamba or get_system_path(cnf, 'sambamba')
+    if sambamba is None:
+        sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
+    cmdline = '{sambamba} view --format=bam -F "not duplicate" -t {cnf.threads} {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
     if use_grid:
         j = submit_job(cnf, cmdline, 'DEDUP__' + cnf.project_name + '__' + basename(bam).split('.')[0],
-                       output_fpath=output_fpath, stdout_to_outputfile=False)
+                       output_fpath=output_fpath)
         info()
         return j
     else:
-        call(cnf, cmdline, output_fpath=output_fpath, stdout_to_outputfile=False)
+        call(cnf, cmdline, output_fpath=output_fpath)
         return None
 
     # TODO: index bams
