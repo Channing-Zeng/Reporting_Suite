@@ -306,6 +306,8 @@ class ClinicalReporting(BaseClinicalReporting):
         info('')
 
         write_static_html_report(self.cnf, {
+            'key_or_target': self.experiment.key_or_target_genes,
+            'genes_description': self.experiment.genes_description,
             'sample': self.sample_section(self.experiment),
             'variants': self.__mutations_section(),
             'seq2c': {'plot_data': self.seq2c_plot_data},
@@ -357,7 +359,7 @@ class ClinicalReporting(BaseClinicalReporting):
         return actionable_genes_dict
 
     def make_key_genes_cov_report(self, key_gene_by_name, ave_depth):
-        info('Making key genes coverage report...')
+        info('Making ' + self.experiment.key_or_target_genes + ' genes coverage report...')
         clinical_cov_metrics = [
             Metric('Gene'),
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
@@ -382,7 +384,7 @@ class ClinicalReporting(BaseClinicalReporting):
         return key_genes_report
 
     def make_actionable_genes_report(self, actionable_genes_dict):
-        info('Preparing mutations stats for key gene tables')
+        info('Preparing mutations stats for ' + self.experiment.key_or_target_genes + ' gene tables')
 
         clinical_action_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[

@@ -223,7 +223,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples,
     return html_fpath
 
 
-def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations):
+def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations, key_or_target_genes):
     region_types = ['exons', 'amplicons']
     coverage_types = ['low', 'high']
     flagged_regions_metrics = [
@@ -242,6 +242,10 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
     flagged_regions_metric_storage = MetricStorage(sections=[ReportSection(metrics=flagged_regions_metrics)])
     flagged_regions_report_dirpath = join(output_dir, source.flag_regions_name)
     safe_mkdir(flagged_regions_report_dirpath)
+    if key_or_target_genes == 'target':
+        genes_description = 'genes'
+    else:
+        genes_description = 'genes that have been previously implicated in various cancers'
     for region_type in region_types:
         regions_dict = {}
         total_regions = 0
@@ -298,6 +302,7 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
                                 if r.start == cur_region.start and r.end == cur_region.end:
                                     if sample.name not in r.sample_name:
                                         r.sample_name.append(sample.name)
+                                    r.avg_depth.append(avg_depth)
                                     new_hotspots = [hs for hs in hotspots if hs not in r.missed_by_db]
                                     r.missed_by_db.extend(new_hotspots)
             flagged_regions_report = PerRegionSampleReport(name='Flagged regions', metric_storage=flagged_regions_metric_storage)
@@ -373,6 +378,8 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
             total_regions += num_regions
         flagged_report_fpath = join(flagged_regions_report_dirpath, 'flagged_' + region_type + '.html')
         write_static_html_report(cnf, {
+            'key_or_target': key_or_target_genes,
+            'genes_description': genes_description,
             'flagged_low': regions_dict['low'],
             'flagged_high': regions_dict['high'],
         }, flagged_report_fpath, tmpl_fpath=join(dirname(abspath(__file__)), 'template_flagged_regions.html'),

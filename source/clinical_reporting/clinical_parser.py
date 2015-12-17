@@ -10,6 +10,7 @@ from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import SortableByChrom
+from source.targetcov.bam_and_bed_utils import get_gene_names
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 
@@ -115,7 +116,7 @@ class Target:
         self.bed_fpath = bed_fpath
 
 
-def clinical_sample_info_from_bcbio_structure(cnf, bs, sample):
+def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_comparison=False):
     clinical_report_caller = \
         bs.variant_callers.get('vardict') or \
         bs.variant_callers.get('vardict-java')
@@ -130,7 +131,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample):
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
-        project_report_path=bs.project_report_html_fpath)
+        project_report_path=bs.project_report_html_fpath, is_target2wqs_comparison=is_target2wqs_comparison)
 
 
 def clinical_sample_info_from_cnf(cnf):
@@ -148,7 +149,8 @@ def clinical_sample_info_from_cnf(cnf):
 class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
                  bed_fpath, mutations_fpath, varqc_json_fpath,
-                 project_report_path, project_name, seq2c_tsv_fpath=None):
+                 project_report_path, project_name, seq2c_tsv_fpath=None,
+                 is_target2wqs_comparison=False):
         self.cnf = cnf
         self.sample = sample
         self.project_report_path = project_report_path
@@ -159,9 +161,23 @@ class ClinicalExperimentInfo:
         info('Match sample name: ' + str(sample.normal_match))
         info()
 
-        info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
+        if not is_target2wqs_comparison:  # use all genes from bed instead of key genes if bed exists and number of genes < 2000
+            key_gene_names, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes)
+        else:
+            use_custom_panel = False
+            key_gene_names = get_key_genes(key_genes)
+
+        if use_custom_panel:
+            self.key_or_target_genes = 'target'
+            self.genes_description = 'target genes'
+            info('Preparing data for a clinical report for ' + str(len(key_gene_names)) + ' target genes from ' + str(bed_fpath) + ', sample ' + self.sample.name)
+        else:
+            self.key_or_target_genes = 'key'
+            self.genes_description = 'genes that have been previously implicated in various cancers'
+            info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
+
         self.key_gene_by_name = dict()
-        for gene_name in get_key_genes(key_genes):
+        for gene_name in key_gene_names:
             self.key_gene_by_name[gene_name] = KeyGene(gene_name)
 
         info('Parsing target and patient info...')
@@ -172,7 +188,7 @@ class ClinicalExperimentInfo:
             coverage_percent=get_target_fraction(self.sample, self.sample.targetcov_json_fpath),
             bed_fpath=bed_fpath)
 
-        info('Parsing TargetCov key genes stats...')
+        info('Parsing TargetCov ' + self.key_or_target_genes + ' genes stats...')
         self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
         self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
         self.parse_targetseq_detailed_report()
@@ -182,7 +198,7 @@ class ClinicalExperimentInfo:
 
         info('Parsing mutations...')
         self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
-        self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath)
+        self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.key_or_target_genes)
         for mut in self.mutations:
             self.key_gene_by_name[mut.gene.name].mutations.append(mut)
 
@@ -235,7 +251,7 @@ class ClinicalExperimentInfo:
         return seq2c_events_by_gene_name
 
     def parse_targetseq_detailed_report(self):
-        info('Preparing coverage stats key gene tables')
+        info('Preparing coverage stats ' + self.key_or_target_genes + ' gene tables')
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):
@@ -281,12 +297,12 @@ class ClinicalExperimentInfo:
                 del self.key_gene_by_name[gene.name]
 
 
-def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, for_flagged_report=False):
+def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_or_target_genes, for_flagged_report=False):
     mutations = []
     if for_flagged_report:
         info('Preparing mutations stats for flagged regions report')
     else:
-        info('Preparing mutations stats for key gene tables')
+        info('Preparing mutations stats for ' + key_or_target_genes + ' gene tables')
     info('Checking ' + mutations_fpath)
     if not verify_file(mutations_fpath):
         mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
@@ -360,7 +376,7 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, for_flagged_
                 mut.reason = reason
 
                 mutations.append(mut)
-    info('Found ' + str(len(mutations)) + ' mutations in key genes')
+    info('Found ' + str(len(mutations)) + ' mutations in ' + key_or_target_genes + ' genes')
     return mutations
 
 
@@ -432,3 +448,14 @@ def get_total_variants_number(sample, varqc_json_fpath):
     sr = SampleReport.load(data, sample, None)
     r = sr.find_record(sr.records, 'Total with rejected')
     return r.value if r else None
+
+
+def get_key_or_target_bed_genes(bed_fpath, key_genes):
+    use_custom_panel = False
+    if bed_fpath:
+        key_gene_names, gene_names_list = get_gene_names(bed_fpath)
+        if len(key_gene_names) < 2000:
+            use_custom_panel = True
+    if not use_custom_panel:
+        key_gene_names = get_key_genes(key_genes)
+    return key_gene_names, use_custom_panel

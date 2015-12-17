@@ -49,8 +49,8 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     '''
     vcf_dbs = ['oncomine', 'dbsnp', 'cosmic']
 
-    from source.clinical_reporting.clinical_parser import get_key_genes
-    key_genes = get_key_genes(cnf.key_genes)
+    from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes
+    key_genes, _ = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
     depth_cutoff = get_depth_cutoff(ave_depth, depth_threshs)
     genes_sorted = sorted(gene_by_name.values())
 

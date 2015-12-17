@@ -45,7 +45,7 @@
         <h1>Low covered {region_type}</h1>
             <div id="flagged_low_div">
                 <p style="margin-top: -5px;">{total_regions} regions with too low coverage were detected in
-                    {total_key_genes} key genes that have been previously implicated in various cancers.
+                    {total_key_genes} {key_or_target} {genes_description}.
                 </p>
                 <p id="hotspots_low_switch">
                     <span>Regions with hotpots & deleterious</span>
@@ -59,14 +59,14 @@
             </div>
         {.or}
         <h1>Low covered {region_type}</h1>
-            <p>No regions with too low coverage detected in key genes.</p>
+            <p>No regions with too low coverage detected in {key_or_target} genes.</p>
         {.end}
 
         {.section flagged_high}
         <h1>High covered {region_type}</h1>
             <div id="flagged_high_div">
                 <p style="margin-top: -5px;">{total_regions} regions with too high coverage were detected in
-                    {total_key_genes} key genes that have been previously implicated in various cancers.
+                    {total_key_genes} {key_or_target} {genes_description}.
                 </p>
                 <p id="hotspots_high_switch">
                     <span>Regions with hotpots & deleterious</span>
@@ -80,7 +80,7 @@
             </div>
         {.or}
             <h1>High covered {region_type}</h1>
-            <p>No regions with too high coverage detected in key genes.</p>
+            <p>No regions with too high coverage detected in {key_or_target} genes.</p>
         {.end}
     </div>
 </div>

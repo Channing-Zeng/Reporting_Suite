@@ -282,7 +282,7 @@ class BCBioRunner:
             script=join('scripts', 'post', 'abnormal_regions.py'),
             dir_name=BCBioStructure.targqc_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
-            paramln=summaries_cmdline_params + ' --mutations {mutations_fpath}' + ' ' + self.final_dir
+            paramln=summaries_cmdline_params + ' --mutations {mutations_fpath} {bed} ' + self.final_dir
         )
         self.ngscat = Step(cnf, run_id,
             name=BCBioStructure.ngscat_name, short_name='nc',
@@ -681,6 +681,7 @@ class BCBioRunner:
                         self.abnormal_regions, sample.name,
                         wait_for_steps=wait_for_steps,
                         sample=sample, threads=self.threads_per_sample, genome=sample.genome, mutations_fpath=mutations_fpath,
+                        bed=(('--bed ' + self.bcbio_structure.bed) if self.bcbio_structure.bed else ''),
                         caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
                         vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
 

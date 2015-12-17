@@ -21,10 +21,10 @@ def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dir
         wgs_sample = next(s for s in wgs_bs.samples if s.name == sname)
 
         info('-' * 70)
-        clin_trg_info = clinical_sample_info_from_bcbio_structure(cnf, trg_bs, trg_sample)
+        clin_trg_info = clinical_sample_info_from_bcbio_structure(cnf, trg_bs, trg_sample, is_target2wqs_comparison=True)
         info('')
         info('-' * 70)
-        clin_wgs_info = clinical_sample_info_from_bcbio_structure(cnf, wgs_bs, wgs_sample)
+        clin_wgs_info = clinical_sample_info_from_bcbio_structure(cnf, wgs_bs, wgs_sample, is_target2wqs_comparison=True)
 
         info('')
         info('*' * 70)
@@ -92,6 +92,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info('')
 
         data = {
+            'key_or_target': self.experiment.key_or_target_genes,
+            'genes_description': self.experiment.genes_description,
             'sample': {
                 'experiments': [self.sample_section(e)
                                 for k, e in self.experiment_by_key.items()],

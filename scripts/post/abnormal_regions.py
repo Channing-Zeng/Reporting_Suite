@@ -6,12 +6,8 @@ import sys
 import shutil
 from source import BaseSample
 from source.bcbio.bcbio_structure import summary_script_proc_params, BCBioStructure
-from source.clinical_reporting.clinical_parser import clinical_sample_info_from_cnf, get_ave_coverage, get_key_genes, \
-    KeyGene, parse_mutations
-from source.file_utils import adjust_path
+from source.clinical_reporting.clinical_parser import parse_mutations, get_key_or_target_bed_genes
 from source.prepare_args_and_cnf import check_system_resources
-from source.main import read_opts_and_cnfs
-from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.targetcov.summarize_targetcov import _generate_summary_flagged_regions_report
 from source.utils import info
 
@@ -24,6 +20,10 @@ def main(args):
             (['--mutations'], dict(
                 dest='mutations_fpath',
             )),
+            (['--bed', '--capture', '--amplicons'], dict(
+                dest='bed',
+                help='a BED file for capture panel or amplicons')
+             ),
         ])
 
     check_system_resources(
@@ -37,13 +37,13 @@ def main(args):
 
 
 def process_all(cnf, samples):
-    key_gene_by_name = dict()
-    for gene_name in get_key_genes(cnf.key_genes):
-        key_gene_by_name[gene_name] = KeyGene(gene_name)
+    key_gene_by_name, use_custom_panel = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
+    key_or_target_genes = 'target' if use_custom_panel else 'key'
     mutations = {}
     for sample in samples:
-        mutations[sample.name] = parse_mutations(cnf, sample, key_gene_by_name, cnf.mutations_fpath, for_flagged_report=True)
-    _generate_summary_flagged_regions_report(cnf.output_dir, samples, cnf, mutations)
+        mutations[sample.name] = parse_mutations(cnf, sample, key_gene_by_name, cnf.mutations_fpath, key_or_target_genes,
+                                                 for_flagged_report=True)
+    _generate_summary_flagged_regions_report(cnf.output_dir, samples, cnf, mutations, key_or_target_genes)
     pass
     # read all detail reports
     # normalize

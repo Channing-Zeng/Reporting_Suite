@@ -108,20 +108,20 @@
         <div class="space_8px"></div>
         <div class="space_8px"></div>
         <div>
-            <a class="dotted-link" href="#variants">Mutations in key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#actionable">Actionable key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#variants">Mutations in {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#actionable">Actionable {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#coverage">Coverage analysis for the key genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#coverage">Coverage analysis for the {key_or_target} genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="space_4px"></div>
 
         <a name="variants"></a>
-        <h1>Mutations in key genes</h1>
+        <h1>Mutations in {key_or_target} genes</h1>
         {.section variants}
             <div id="variants_div">
                 <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>
                     These data were analyzed to identify previously reported and novel variants
-                    in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
+                    in {total_key_genes} {genes_description} (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
                 <p id="variants_switch">
                     <span>Likely pathogenic</span>
@@ -134,11 +134,11 @@
                 </div>
             </div>
         {.or}
-            <p>No variants detected in key regions.</p>
+            <p>No variants detected in {key_or_target} regions.</p>
         {.end}
 
         <a name="actionable"></a>
-        <h1>Actionable key genes</h1>
+        <h1>Actionable {key_or_target} genes</h1>
         {.section actionable_genes}
             <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
             <div class="actionable_table">
@@ -181,10 +181,10 @@
 
         <a name="coverage"></a>
         {.section coverage}
-        <h1>Coverage analysis for the key genes</h1>
+        <h1>Coverage analysis for the {key_or_target} genes</h1>
         <div class="coverage_plot">
             <p style="margin-top: -5px;">
-                Height inidicates gene average coverage,
+                Height indicates gene average coverage,
                 <span style="color: green;">green</span> means that > 90% gene is covered at {depth_cutoff}x (half of global average coverage).
             </p>
             <div class="js_plot" id="gene_plot">
