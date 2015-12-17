@@ -107,7 +107,9 @@ def _seq2c(cnf, bcbio_structure):
     # safe_mkdir(dedup_bam_dirpath)
     dedupped_bam_by_sample = dict()
     dedup_jobs = []
+    ori_work_dir = cnf.work_dir
     for s in bcbio_structure.samples:
+        cnf.work_dir = join(ori_work_dir, source.targqc_name + '_' + s.name)
         s.dedup_bam = intermediate_fname(cnf, s.bam, source.dedup_bam)
         # s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
         dedupped_bam_by_sample[s.name] = s.dedup_bam
@@ -116,6 +118,7 @@ def _seq2c(cnf, bcbio_structure):
         else:
             info('Deduplicating bam file ' + s.dedup_bam)
             dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
+    cnf.work_dir = ori_work_dir
     dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
 
     info('Getting reads and cov stats')
