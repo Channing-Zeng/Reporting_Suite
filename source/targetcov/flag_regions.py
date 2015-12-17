@@ -207,14 +207,15 @@ def _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpat
     info()
     info('Depth of coverage for regions in BED ' + bed_fpath)
     cov_bg = join(cnf.work_dir, 'coverage.bg')
-    cmdline = '{sambamba} view -t {cnf.threads} -L {bed_fpath} {bam_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
+    cmdline = '{sambamba} view -f bam -t {cnf.threads} -L {bed_fpath} {bam_fpath} | {bedtools} genomecov -ibam stdin -bg'.format(**locals())
     call(cnf, cmdline, output_fpath=cov_bg, exit_on_error=False)
 
     info()
     info('Intersecting depth regions with VCF ' + clipped_gz_vcf_fpath)
     vcf_depth_numbers_fpath = join(cnf.work_dir, 'vcf_bg.intersect')
-    cmdline = '{bedtools} intersect -a {clipped_gz_vcf_fpath} -b {cov_bg} -wao'.format(**locals())
-    res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath, exit_on_error=False)
+    if not cnf.reuse_intermediate or not verify_file(vcf_depth_numbers_fpath, silent=True, is_critical=False):
+        cmdline = '{bedtools} intersect -a {clipped_gz_vcf_fpath} -b {cov_bg} -wao'.format(**locals())
+        res = call(cnf, cmdline, output_fpath=vcf_depth_numbers_fpath, exit_on_error=False)
     # if res != oncomine_depth_numbers_fpath:
     #     info()
     #     info('Trying with uncompressed VCF')
