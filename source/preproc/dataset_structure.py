@@ -205,7 +205,10 @@ class MiSeqStructure(DatasetStructure):
         verify_dir(base_dirpath, description='Source fastq dir')
 
         for proj_name, project in self.project_by_name.items():
-            project.set_dirpath(base_dirpath, self.az_project_name)
+            proj_dirpath = join(base_dirpath, proj_name)
+            if not verify_dir(proj_dirpath, silent=True):
+                proj_dirpath = base_dirpath
+            project.set_dirpath(proj_dirpath, self.az_project_name)
             for sample in project.sample_by_name.values():
                 sample.source_fastq_dirpath = project.dirpath
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
@@ -319,7 +322,7 @@ class DatasetProject:
         self.project_report_html_fpath = join(self.dirpath, az_project_name + '.html')
 
     def concat_fastqs(self, get_fastq_regexp, cnf):
-        info('Concatenating fastqc files for ' + self.name)
+        info('Concatenating fastq files for ' + self.name)
         if self.mergred_dir_found:
             info('  found already merged fastq dir, skipping.')
             return

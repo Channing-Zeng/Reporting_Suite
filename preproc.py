@@ -201,7 +201,7 @@ def main():
                         project.downsample_targqc_report_fpath = run_targqc(cnf, project, bam_by_sample)
                         cnf.work_dir = dirname(cnf.work_dir)
             else:
-                err('For downsampled targqc and metamappint, bwa, samtools and seqtk are required.')
+                err('For downsampled targqc and metamappint, bwa, sambamba, bammarkduplicates and seqtk are required.')
 
         if cnf.fastqc:
             if not cnf.expose_to_ngs_server_only:
@@ -223,7 +223,7 @@ def main():
 
         # Exposing
         info()
-        info('Synking with the NGS webserver')
+        info('Syncing with the NGS webserver')
         html_report_url = sync_with_ngs_server(cnf,
             jira_url=cnf.jira,
             project_name=project.az_project_name,

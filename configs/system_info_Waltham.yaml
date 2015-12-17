@@ -53,9 +53,9 @@ resources:
   bamtools:
     path: /opt/az/local/bamtools/bamtools-master/bin/bamtools
   bammarkduplicates:
-    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/Cellar/biobambam/2.0.14/bin/bammarkduplicates
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/bin/bammarkduplicates
   bamdownsamplerandom:
-    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/Cellar/biobambam/2.0.14/bin/bamdownsamplerandom
+    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/bin/bamdownsamplerandom
   sambamba:
     path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/bin/sambamba
 
