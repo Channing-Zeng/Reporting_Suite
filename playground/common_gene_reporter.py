@@ -123,11 +123,17 @@ def find_suitable_genes_for_group(samples_per_gene, group, samples_per_group, li
     info('  %d remained after removing genes with mutations in >%d samples of other group (out of %d)' %
          (len(suitable_genes), limit, ns_other_group))
     #info(str(suitable_genes))
+    info('   detailed:')
+    for gene in suitable_genes:
+        in_this_group = len([s for s in samples if __is_sample_in_group(s, group)])
+        in_other_group = len([s for s in samples if not __is_sample_in_group(s, group)])
+        info('      %s present in %d samples of this group and in %d samples of another group' %
+             (gene, in_this_group, in_other_group))
     return suitable_genes
 
 
 def main():
-    opt, groups, variants_fpaths = proc_args(sys.argv)
+    opt, groups, variants_fpaths = proc_args(sys.argv[1:])
     if opt.ns < 0:
         opt.ns = 0
 
