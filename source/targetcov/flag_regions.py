@@ -368,7 +368,7 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
     info()
     info('Detecting problematic regions for ' + sample)
     tricky_regions = {'low_gc.bed': 'Low GC', 'high_gc.bed': 'High GC', 'low_complexity.bed': 'Low complexity',
-                    'bad_promoter.bed': 'Bad promoter'}
+                      'bad_promoter.bed': 'Bad promoter'}
     bed_filenames = tricky_regions.keys()
 
     bed_fpaths = [join(cnf.tricky_regions, bed_filename) for bed_filename in bed_filenames]
