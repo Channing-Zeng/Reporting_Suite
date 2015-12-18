@@ -120,14 +120,15 @@ def find_suitable_genes_for_group(samples_per_gene, group, samples_per_group, li
         samples = samples_per_gene[gene]
         if len([s for s in samples if not __is_sample_in_group(s, group)]) > limit:
             suitable_genes.remove(gene)
-    info('  %d remained after removing genes with mutations in >%d samples of other group (out of %d)' %
+    info('  %d remained after removing genes with mutations in >%d samples of another group (out of %d)' %
          (len(suitable_genes), limit, ns_other_group))
     #info(str(suitable_genes))
-    info('   detailed:')
+    info('  detailed:')
     for gene in suitable_genes:
+        samples = samples_per_gene[gene]
         in_this_group = len([s for s in samples if __is_sample_in_group(s, group)])
         in_other_group = len([s for s in samples if not __is_sample_in_group(s, group)])
-        info('      %s present in %d samples of this group and in %d samples of another group' %
+        info('     %s present in %d samples of this group and in %d samples of another group' %
              (gene, in_this_group, in_other_group))
     return suitable_genes
 
