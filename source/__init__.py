@@ -80,46 +80,79 @@ class BaseSample:
         self.normal_match = normal_match
         self.min_af = None
 
-        if targqc_dirpath:
-            self.targqc_dirpath = targqc_dirpath
-            self.targetcov_html_fpath         = join(self.targqc_dirpath, name + '.' + targetseq_name +  '.html')
-            self.targetcov_json_fpath         = join(self.targqc_dirpath, name + '.' + targetseq_name +  '.json')
-            self.targetcov_detailed_txt       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.txt')
-            self.targetcov_detailed_tsv       = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
-            self.targetcov_norm_depth_vcf_txt = None
-            self.targetcov_norm_depth_vcf_tsv = None
+        self.targqc_dirpath                  = None
+        self.targetcov_html_fpath            = None
+        self.targetcov_json_fpath            = None
+        self.targetcov_detailed_txt          = None
+        self.targetcov_detailed_tsv          = None
+        self.targetcov_norm_depth_vcf_txt    = None
+        self.targetcov_norm_depth_vcf_tsv    = None
+
+        self.flagged_regions_dirpath         = None
+        self.flagged_tsv                     = None
+        self.flagged_txt                     = None
+
+        self.clinical_report_dirpath         = None
+        self.clinical_targqc_tsv             = None
+        self.clinical_mutation_tsv           = None
+        self.clinical_target_tsv             = None
+        self.clinical_html                   = None
+
+        self.ngscat_dirpath                  = None
+        self.ngscat_html_fpath               = None
+
+        self.qualimap_dirpath                = None
+        self.qualimap_html_fpath             = None
+        self.qualimap_genome_results_fpath   = None
+        self.qualimap_ins_size_hist_fpath    = None
+        self.qualimap_cov_hist_fpath         = None
+
+        self.fastqc_dirpath                  = None
+        self.fastqc_html_fpath               = None
+
+        self.picard_dirpath                  = None
+        self.picard_ins_size_hist_txt_fpath  = None
+        self.picard_ins_size_hist_pdf_fpath  = None
+
+        self.targqc_dirpath                  = None
+        self.targetcov_html_fpath            = None
+        self.targetcov_json_fpath            = None
+        self.targetcov_detailed_txt          = None
+        self.targetcov_detailed_tsv          = None
+        self.targetcov_norm_depth_vcf_txt    = None
+        self.targetcov_norm_depth_vcf_tsv    = None
 
         if flagged_regions_dirpath:
-            self.flagged_regions_dirpath = flagged_regions_dirpath
-            self.flagged_tsv          = join(self.flagged_regions_dirpath, name + '.' + flag_regions_name + '.tsv')
-            self.flagged_txt          = join(self.flagged_regions_dirpath, name + '.' + flag_regions_name + '.txt')
+            self.flagged_regions_dirpath        = flagged_regions_dirpath
+            self.flagged_tsv                    = join(self.flagged_regions_dirpath, name + '.' + flag_regions_name + '.tsv')
+            self.flagged_txt                    = join(self.flagged_regions_dirpath, name + '.' + flag_regions_name + '.txt')
 
         if clinical_report_dirpath:
-            self.clinical_report_dirpath = clinical_report_dirpath
-            self.clinical_targqc_tsv          = join(self.clinical_report_dirpath, name + '.coverage.tsv')
-            self.clinical_mutation_tsv        = join(self.clinical_report_dirpath, name + '.mutations.tsv')
-            self.clinical_target_tsv          = join(self.clinical_report_dirpath, name + '.target.tsv')
-            self.clinical_html                = join(self.clinical_report_dirpath, name + '.html')
+            self.clinical_report_dirpath        = clinical_report_dirpath
+            self.clinical_targqc_tsv            = join(self.clinical_report_dirpath, name + '.coverage.tsv')
+            self.clinical_mutation_tsv          = join(self.clinical_report_dirpath, name + '.mutations.tsv')
+            self.clinical_target_tsv            = join(self.clinical_report_dirpath, name + '.target.tsv')
+            self.clinical_html                  = join(self.clinical_report_dirpath, name + '.html')
 
         if ngscat_dirpath:
-            self.ngscat_dirpath = ngscat_dirpath
-            self.ngscat_html_fpath = join(self.ngscat_dirpath, ngscat_report_fname)
-
+            self.ngscat_dirpath                 = ngscat_dirpath
+            self.ngscat_html_fpath              = join(self.ngscat_dirpath, ngscat_report_fname)
+ 
         if qualimap_dirpath:
-            self.qualimap_dirpath              = qualimap_dirpath
-            self.qualimap_html_fpath           = join(self.qualimap_dirpath, qualimap_report_fname)
-            self.qualimap_genome_results_fpath = join(self.qualimap_dirpath, qualimap_report_fname)
-            self.qualimap_ins_size_hist_fpath  = join(self.qualimap_dirpath, qualimap_ishist_fsubpath)
-            self.qualimap_cov_hist_fpath       = join(self.qualimap_dirpath, qualimap_covhist_fsubpath)
+            self.qualimap_dirpath               = qualimap_dirpath
+            self.qualimap_html_fpath            = join(self.qualimap_dirpath, qualimap_report_fname)
+            self.qualimap_genome_results_fpath  = join(self.qualimap_dirpath, qualimap_report_fname)
+            self.qualimap_ins_size_hist_fpath   = join(self.qualimap_dirpath, qualimap_ishist_fsubpath)
+            self.qualimap_cov_hist_fpath        = join(self.qualimap_dirpath, qualimap_covhist_fsubpath)
 
         if fastqc_dirpath:
-            self.fastqc_dirpath = fastqc_dirpath
-            self.fastqc_html_fpath = join(self.fastqc_dirpath, fastqc_report_fname)
+            self.fastqc_dirpath                 = fastqc_dirpath
+            self.fastqc_html_fpath              = join(self.fastqc_dirpath, fastqc_report_fname)
 
         if picard_dirpath:
-            self.picard_dirpath = picard_dirpath
-            self.picard_ins_size_hist_txt_fpath   = join(self.picard_dirpath, picard_ishist_fname)
-            self.picard_ins_size_hist_pdf_fpath   = join(self.picard_dirpath, splitext(picard_ishist_fname)[0] + '.pdf')
+            self.picard_dirpath                 = picard_dirpath
+            self.picard_ins_size_hist_txt_fpath = join(self.picard_dirpath, picard_ishist_fname)
+            self.picard_ins_size_hist_pdf_fpath = join(self.picard_dirpath, splitext(picard_ishist_fname)[0] + '.pdf')
 
         # # Only for Bcbio and TargQC:
         # self.ngscat_html_fpath                 = self.make_fpath(path_base + 'captureQC.html', name=ngscat_name)

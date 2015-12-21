@@ -20,7 +20,7 @@ from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
 from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log, set_up_work_dir, \
-    detect_sys_cnf_by_location, check_genome_resources, check_inputs
+    detect_sys_cnf_by_location, check_genome_resources, check_dirs_and_files
 from source.tools_from_cnf import get_system_path
 from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
@@ -117,7 +117,7 @@ def process_post_bcbio_args(parser):
 
             if 'qsub_runner' in cnf:
                 cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
-            errors = check_inputs(cnf, file_keys=['qsub_runner'])
+            errors = check_dirs_and_files(cnf, file_keys=['qsub_runner'])
             if errors:
                 critical(errors)
 

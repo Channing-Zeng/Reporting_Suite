@@ -8,7 +8,7 @@ from traceback import format_exc
 from source.file_utils import remove_quotes
 from source.config import Config, defaults
 from source.logger import info, err, critical
-from source.prepare_args_and_cnf import set_up_dirs, check_inputs, check_keys, determine_run_cnf, \
+from source.prepare_args_and_cnf import set_up_dirs, check_dirs_and_files, check_keys_presence, determine_run_cnf, \
     determine_sys_cnf
 
 
@@ -114,11 +114,13 @@ def read_opts_and_cnfs(extra_opts,
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
-    errors = check_keys(cnf, required_keys)
+    errors = check_keys_presence(cnf, required_keys)
     if errors:
         parser.print_help()
         critical(errors)
-    errors = check_inputs(cnf, file_keys, dir_keys)
+    file_keys = [k for k in file_keys if k in required_keys]
+    dir_keys = [k for k in dir_keys if k in required_keys]
+    errors = check_dirs_and_files(cnf, file_keys, dir_keys)
     if errors:
         critical(errors)
 

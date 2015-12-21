@@ -295,12 +295,22 @@ class ClinicalReporting(BaseClinicalReporting):
         self.experiment = clinical_experiment_info
         self.sample = clinical_experiment_info.sample
 
+        self.mutations_report = None
+        self.actionable_genes_report = None
+        self.seq2c_plot_data = None
+        self.key_genes_report = None
+        self.cov_plot_data = None
+
         info('Preparing data...')
-        self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
-        self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
-        self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment}) if self.experiment.seq2c_events_by_gene_name is not None else None
-        self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name, self.experiment.ave_depth)
-        self.cov_plot_data = self.make_key_genes_cov_json({self.experiment.key: self.experiment})
+        if self.experiment.mutations:
+            self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
+        if self.experiment.actionable_genes_dict:
+            self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
+        if self.experiment.seq2c_events_by_gene_name:
+            self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
+        if self.experiment.ave_depth:
+            self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name, self.experiment.ave_depth)
+            self.cov_plot_data = self.make_key_genes_cov_json({self.experiment.key: self.experiment})
 
     def write_report(self, output_fpath):
         info('')

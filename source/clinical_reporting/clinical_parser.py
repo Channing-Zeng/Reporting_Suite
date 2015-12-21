@@ -155,7 +155,18 @@ class ClinicalExperimentInfo:
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
+        self.key_gene_by_name = dict()
+        self.key_or_target_genes = ''
+        self.genes_description = ''
         self.key = ''
+        self.patient = None
+        self.target = None
+        self.ave_depth = None
+        self.depth_cutoff = None
+        self.actionable_genes_dict = None
+        self.total_variants = None
+        self.mutations = None
+        self.seq2c_events_by_gene_name = None
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
@@ -176,41 +187,42 @@ class ClinicalExperimentInfo:
             self.genes_description = 'genes that have been previously implicated in various cancers'
             info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
 
-        self.key_gene_by_name = dict()
         for gene_name in key_gene_names:
             self.key_gene_by_name[gene_name] = KeyGene(gene_name)
 
-        info('Parsing target and patient info...')
-        self.depth_cutoff = None
-        self.patient = Patient(gender=get_gender(self.sample, self.sample.targetcov_json_fpath))
-        self.target = Target(
-            type_=target_type,
-            coverage_percent=get_target_fraction(self.sample, self.sample.targetcov_json_fpath),
-            bed_fpath=bed_fpath)
-
-        info('Parsing TargetCov ' + self.key_or_target_genes + ' genes stats...')
-        self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
-        self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
-        self.parse_targetseq_detailed_report()
+        if self.sample.targqc_dirpath and self.sample.targetcov_json_fpath:
+            info('Parsing target and patient info...')
+            self.patient = Patient(gender=get_gender(self.sample, self.sample.targetcov_json_fpath))
+            self.target = Target(
+                type_=target_type,
+                coverage_percent=get_target_fraction(self.sample, self.sample.targetcov_json_fpath),
+                bed_fpath=bed_fpath)
+            info('Parsing TargetCov ' + self.key_or_target_genes + ' genes stats...')
+            self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
+            self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
+            self.parse_targetseq_detailed_report()
+        else:
+            warn('No targetcov_json_fpath provided, skipping key genes coverage stats.')
 
         info('Parsing actionable genes...')
         self.actionable_genes_dict = parse_broad_actionable()
 
-        info('Parsing mutations...')
-        self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
-        self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.key_or_target_genes)
-        for mut in self.mutations:
-            self.key_gene_by_name[mut.gene.name].mutations.append(mut)
-
-        info('Retrieving SolveBio...')
-        self.get_mut_info_from_solvebio()
+        if varqc_json_fpath and mutations_fpath:
+            info('Parsing mutations...')
+            self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
+            self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.key_or_target_genes)
+            for mut in self.mutations:
+                self.key_gene_by_name[mut.gene.name].mutations.append(mut)
+            info('Retrieving SolveBio...')
+            self.get_mut_info_from_solvebio()
+        else:
+            warn('No varqc_json_fpath or mutations_fpath provided, skipping mutation stats.')
 
         info('Parsing Seq2C...')
-        self.seq2c_events_by_gene_name = None
-        if not seq2c_tsv_fpath:
-            warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
-        else:
+        if seq2c_tsv_fpath:
             self.seq2c_events_by_gene_name = self.parse_seq2c_report(seq2c_tsv_fpath)
+        else:
+            warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
 
         info()
         info('Done parsing data.')
@@ -452,6 +464,7 @@ def get_total_variants_number(sample, varqc_json_fpath):
 
 def get_key_or_target_bed_genes(bed_fpath, key_genes):
     use_custom_panel = False
+    key_gene_names = None
     if bed_fpath:
         key_gene_names, gene_names_list = get_gene_names(bed_fpath)
         if len(key_gene_names) < 2000:

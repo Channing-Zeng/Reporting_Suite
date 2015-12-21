@@ -109,6 +109,9 @@ def _seq2c(cnf, bcbio_structure):
     dedup_jobs = []
     ori_work_dir = cnf.work_dir
     for s in bcbio_structure.samples:
+        if not s.bam:
+            err('No BAM file for ' + s.name)
+            continue
         cnf.work_dir = join(ori_work_dir, source.targqc_name + '_' + s.name)
         s.dedup_bam = intermediate_fname(cnf, s.bam, source.dedup_bam)
         # s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
@@ -118,6 +121,10 @@ def _seq2c(cnf, bcbio_structure):
         else:
             info('Deduplicating bam file ' + s.dedup_bam)
             dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
+    if not dedup_jobs:
+        err('No BAM files found for any sample, cannot run Seq2C.')
+        return None
+
     cnf.work_dir = ori_work_dir
     dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
 

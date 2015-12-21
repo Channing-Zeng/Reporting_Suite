@@ -70,7 +70,7 @@ def check_genome_resources(cnf):
     info()
 
 
-def check_keys(cnf, required_keys):
+def check_keys_presence(cnf, required_keys):
     errors = []
 
     for key in required_keys:
@@ -81,7 +81,7 @@ def check_keys(cnf, required_keys):
     return errors
 
 
-def check_inputs(cnf, file_keys=list(), dir_keys=list()):
+def check_dirs_and_files(cnf, file_keys=list(), dir_keys=list()):
     errors = []
 
     def _verify_input_file(_key):

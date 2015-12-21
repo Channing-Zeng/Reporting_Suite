@@ -42,15 +42,21 @@ def main():
                 dest='match_sample_name',
             )),
         ],
-        required_keys=['targqc_dirpath', 'mutations_fpath', 'varqc_json_fpath'],
-        file_keys=['varqc_json_fpath', 'varqc_after_json_fpath', 'seq2c_tsv_fpath'],
+        key_for_sample_name=None,
+        required_keys=[],
+        file_keys=['mutations_fpath',
+                   'varqc_json_fpath',
+                   'varqc_after_json_fpath',
+                   'bed_fpath',
+                   'seq2c_tsv_fpath',
+                   'project_report_path',
+                   ],
             # do not check mutations_fpath! could be either of:
             #   vardict.PASS.txt,
             #   vardict-java.PASS.txt,
             #   vardict.single.PASS.txt,
             #   vardict.paired.PASS.txt,
         dir_keys=['targqc_dirpath'],
-        key_for_sample_name=None
     )
 
     check_genome_resources(cnf)
