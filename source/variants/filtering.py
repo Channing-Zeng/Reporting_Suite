@@ -129,7 +129,7 @@ def filter_with_vcf2txt(cnf, bcbio_structure, vcf_fpaths, vcf2txt_out_fpath, sam
     write_vcfs(cnf, sample_by_name.keys(), bcbio_structure.samples,
                vcf_fpaths, caller_name, vcf2txt_out_fpath, mut_fpath, threads_num)
     info('Done filtering with vcf2txt/vardict2mut.')
-    return res
+    return mut_fpath
 
 
 @fn_timer

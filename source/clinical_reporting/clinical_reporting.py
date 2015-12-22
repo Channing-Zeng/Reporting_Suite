@@ -207,25 +207,35 @@ class BaseClinicalReporting:
 
     def sample_section(self, experiment):
         d = dict()
+        d['patient'] = {'sex': 'unknown'}
+        d['project_report_rel_path'] = 'not generagted'
+        d['panel'] = 'unknown'
+        d['bed_path'] = 'unknown'
+        d['target_type'] = 'unknown'
+        d['target_fraction'] = 'unknown'
+        d['ave_depth'] = 'unknown'
+
         d['key'] = experiment.key
         d['sample'] = experiment.sample.name.replace('_', ' ')
-        if experiment.patient.gender:
+        if experiment.patient and experiment.patient.gender:
             d['patient'] = {'sex': experiment.patient.gender}
         d['project_name'] = experiment.project_name.replace('_', ' ')
         if experiment.project_report_path:
             d['project_report_rel_path'] = relpath(experiment.project_report_path, dirname(experiment.sample.clinical_html))
-        d['panel'] = experiment.target.type
-        d['bed_path'] = experiment.target.bed_fpath or ''
-        if self.cnf.debug:
-            d['panel'] = experiment.target.type + ', AZ300 IDT panel'
-            d['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+        if experiment.target:
+            d['panel'] = experiment.target.type
+            d['bed_path'] = experiment.target.bed_fpath or ''
+            d['target_type'] = experiment.target.type
+            d['target_fraction'] = Metric.format_value(experiment.target.coverage_percent, is_html=True, unit='%')
+            if self.cnf.debug:
+                d['panel'] = experiment.target.type + ', AZ300 IDT panel'
+                d['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
         d['sample_type'] = experiment.sample.normal_match if experiment.sample.normal_match else 'unpaired'  # plasma, unpaired'
         d['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
-        d['target_type'] = experiment.target.type
-        d['target_fraction'] = Metric.format_value(experiment.target.coverage_percent, is_html=True, unit='%')
         # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
-        d['ave_depth'] = Metric.format_value(experiment.ave_depth, is_html=True)
+        if experiment.ave_depth is not None:
+            d['ave_depth'] = Metric.format_value(experiment.ave_depth, is_html=True)
         return d
 
     @staticmethod
@@ -338,7 +348,7 @@ class ClinicalReporting(BaseClinicalReporting):
 
     def __mutations_section(self):
         mutations_dict = dict()
-        if self.mutations_report.rows:
+        if self.mutations_report and self.mutations_report.rows:
             # if cnf.debug:
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
@@ -347,28 +357,34 @@ class ClinicalReporting(BaseClinicalReporting):
         return mutations_dict
 
     def __coverage_section(self):
-        coverage_dict = dict(depth_cutoff=self.experiment.depth_cutoff, columns=[])
-        GENE_COL_NUM = 3
-        genes_in_col = len(self.key_genes_report.rows) / GENE_COL_NUM
-        calc_cell_contents(self.key_genes_report, self.key_genes_report.get_rows_of_records())
-        for i in range(GENE_COL_NUM):
-            column_dict = dict()
-            # column_dict['table'] = build_report_html(coverage_report)
-            column_dict['metric_names'] = [make_cell_th(m) for m in self.key_genes_report.metric_storage.get_metrics()]
-            column_dict['rows'] = [
-                dict(records=[make_cell_td(r) for r in region.records])
-                    for region in self.key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
-            coverage_dict['columns'].append(column_dict)
-        coverage_dict['plot_data'] = self.cov_plot_data
-        return coverage_dict
+        if self.experiment.depth_cutoff is not None:
+            coverage_dict = dict(depth_cutoff=self.experiment.depth_cutoff, columns=[])
+            GENE_COL_NUM = 3
+            genes_in_col = len(self.key_genes_report.rows) / GENE_COL_NUM
+            calc_cell_contents(self.key_genes_report, self.key_genes_report.get_rows_of_records())
+            for i in range(GENE_COL_NUM):
+                column_dict = dict()
+                # column_dict['table'] = build_report_html(coverage_report)
+                column_dict['metric_names'] = [make_cell_th(m) for m in self.key_genes_report.metric_storage.get_metrics()]
+                column_dict['rows'] = [
+                    dict(records=[make_cell_td(r) for r in region.records])
+                        for region in self.key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
+                coverage_dict['columns'].append(column_dict)
+            coverage_dict['plot_data'] = self.cov_plot_data
+            return coverage_dict
+        else:
+            return dict()
 
     def __actionable_genes_section(self):
         actionable_genes_dict = dict()
-        if self.actionable_genes_report.rows:
+        if self.actionable_genes_report and self.actionable_genes_report.rows:
             actionable_genes_dict['table'] = build_report_html(self.actionable_genes_report, sortable=False)
         return actionable_genes_dict
 
     def make_key_genes_cov_report(self, key_gene_by_name, ave_depth):
+        if self.experiment.depth_cutoff is None:
+            return None
+
         info('Making ' + self.experiment.key_or_target_genes + ' genes coverage report...')
         clinical_cov_metrics = [
             Metric('Gene'),

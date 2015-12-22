@@ -62,6 +62,7 @@ genomes:
     compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering/Compendia.MS7.Hotspot.txt
 
   hg38:
+    seq: ~/Dropbox/az/reference_data/hg38.fa
     exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.with_genes.chr21.bed
 
 
