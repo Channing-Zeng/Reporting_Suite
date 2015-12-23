@@ -10,7 +10,7 @@ hostname >&2
 source /etc/profile.d/modules.sh >&2
 module unload python >&2 2>&2
 module unload gcc >&2 2>&2
-module load gcc/4.9.2 sge bedtools/2.24.0 bcbio bedops >&2 2>&2
+module load gcc/4.9.2 sge bedtools/2.24.0 bcbio bedops aws/2.7.8 >&2 2>&2
 echo >&2
 echo "${CMDLINE}" >&2
 echo >&2

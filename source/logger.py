@@ -83,7 +83,7 @@ def send_email(msg_other='', subj='', only_me=False):
             other_addresses.append(cnf_address)
         if prid in email_by_prid:
             other_addresses.append(email_by_prid[prid])
-    other_addresses = [a for a in other_addresses if a !=  me_address]
+    other_addresses = [a for a in other_addresses if a != me_address]
 
     msg_other += '\n'
     msg_other += '\n'

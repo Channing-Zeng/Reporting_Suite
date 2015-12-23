@@ -730,10 +730,7 @@ class BCBioRunner:
                 wait_for_steps += [self.varfilter.job_name(caller=variant_caller.name)] if self.varfilter in self.steps else []
                 wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
 
-                self._submit_job(
-                    self.abnormal_regions,
-                    wait_for_steps=wait_for_steps,
-                    threads=self.max_threads, mutations_fpath=mutations_fpath)
+                self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
 
             if self.varqc_after in self.steps:
                 info('VarQC_postVarFilter:')
