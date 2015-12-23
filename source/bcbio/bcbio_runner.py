@@ -404,7 +404,7 @@ class BCBioRunner:
             run_on_chara=True
         )
 
-        targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --no-prep-bed '
+        targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if target_bed:
             targqc_summary_cmdline += ' --bed ' + target_bed
         if exons_bed:
