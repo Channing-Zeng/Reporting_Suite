@@ -179,12 +179,12 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
 
     picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 
-    if cnf.extended:
-        try:
-            info('Generating flagged regions report...')
-            flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name)
-        except:
-            err(format_exc())
+    #if cnf.extended:
+    try:
+        info('Generating flagged regions report...')
+        flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name)
+    except:
+        err(format_exc())
 
     return reports
 

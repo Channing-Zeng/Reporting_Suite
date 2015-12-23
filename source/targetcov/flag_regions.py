@@ -47,7 +47,8 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
         For each gene where are regions with parts % = 0:
             sort them by part where % = 0
     '''
-    vcf_dbs = ['oncomine', 'dbsnp', 'cosmic']
+    #vcf_dbs = ['oncomine', 'dbsnp', 'cosmic']
+    vcf_dbs = ['oncomine']
 
     from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes
     key_genes, _ = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
@@ -252,8 +253,9 @@ def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath, reg
 
     vcf_bed_intersect = join(cnf.work_dir, splitext(basename(vcf_fpath))[0] + '_' + region_type + '_vcf_bed.intersect')
     bedtools = get_system_path(cnf, 'bedtools')
-    cmdline = '{bedtools} intersect -header -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
-    res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
+    if not cnf.reuse_intermediate or not verify_file(vcf_bed_intersect, silent=True, is_critical=False):
+        cmdline = '{bedtools} intersect -header -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
+        res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
 
     regions_in_order = []
     regions_set = set()

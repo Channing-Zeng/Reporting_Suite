@@ -159,8 +159,8 @@ class BCBioRunner:
 
         if Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
-        if Steps.contains(cnf.steps, 'AbnormalCovReport'):
-            self.steps.append(self.abnormal_regions)
+        #if Steps.contains(cnf.steps, 'AbnormalCovReport'):
+        #    self.steps.append(self.abnormal_regions)
 
         if Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
@@ -725,28 +725,15 @@ class BCBioRunner:
                 vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
                 mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
 
-                for sample in self.bcbio_structure.samples:
-                    if not self.cnf.verbose:
-                        info(ending='')
+                wait_for_steps = []
+                wait_for_steps += [self.varqc.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varqc in self.steps else []
+                wait_for_steps += [self.varfilter.job_name(caller=variant_caller.name)] if self.varfilter in self.steps else []
+                wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
 
-                    callers_and_filtered_vcfs = [(c, f) for c, f in ((c.name, c.get_filt_vcf_by_sample().get(sample.name)) for c in callers) if f]
-                    if callers_and_filtered_vcfs:
-                        caller_names, filtered_vcfs = zip(*callers_and_filtered_vcfs)
-                    else:
-                        caller_names, filtered_vcfs = [], []
-
-                    wait_for_steps = []
-                    if self.varfilter in self.steps:
-                        wait_for_steps.extend([self.varfilter.job_name(caller=caller.name)])
-                    if self.targetcov in self.steps:
-                        wait_for_steps.extend([self.targetcov.job_name(sample.name)])
-
-                    self._submit_job(
-                        self.abnormal_regions, sample.name,
-                        wait_for_steps=wait_for_steps,
-                        sample=sample, threads=self.threads_per_sample, genome=sample.genome, mutations_fpath=mutations_fpath,
-                        caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
-                        vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
+                self._submit_job(
+                    self.abnormal_regions,
+                    wait_for_steps=wait_for_steps,
+                    threads=self.max_threads, mutations_fpath=mutations_fpath)
 
             if self.varqc_after in self.steps:
                 info('VarQC_postVarFilter:')

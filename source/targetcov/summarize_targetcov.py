@@ -378,6 +378,7 @@ def _generate_summary_flagged_regions_report(output_dir, samples, cnf, mutations
         flagged_report_fpath = join(flagged_regions_report_dirpath, 'flagged_' + region_type + '.html')
         write_static_html_report(cnf, {
             'key_or_target': key_or_target_genes,
+            'region_type': region_type,
             'genes_description': genes_description,
             'flagged_low': regions_dict['low'],
             'flagged_high': regions_dict['high'],
