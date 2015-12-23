@@ -374,6 +374,18 @@ class BCBioSample(BaseSample):
     #         (k, (v if k != 'vcf_by_caller' else (dict((c.name, v) for c, v in v.items()))))
     #         for k, v in self.__dict__.items())
 
+    def get_rawest_sv_fpath(self):
+        return join(self.dirpath, self.name + '-sv-prioritize.tsv')
+
+    def get_sv_fpath(self):
+        return join(self.dirpath, BCBioStructure.cnv_dir, self.name + '-sv-prioritize.tsv')
+
+    def find_sv_fpath(self):
+        fpath = self.get_sv_fpath()
+        if not isfile(fpath):
+            fpath = self.get_rawest_sv_fpath()
+        return verify_file(fpath)
+
     @staticmethod
     def load(data, bcbio_structure=None):
         if bcbio_structure:

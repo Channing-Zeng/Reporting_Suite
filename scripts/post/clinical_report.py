@@ -20,6 +20,9 @@ def main():
             (['--mutations'], dict(
                 dest='mutations_fpath',
             )),
+            (['--sv'], dict(
+                dest='sv_fpath',
+            )),
             (['--varqc'], dict(
                 dest='varqc_json_fpath',
             )),
@@ -49,6 +52,7 @@ def main():
                    'varqc_after_json_fpath',
                    'bed_fpath',
                    'seq2c_tsv_fpath',
+                   'sv_fpath',
                    'project_report_path',
                    ],
             # do not check mutations_fpath! could be either of:

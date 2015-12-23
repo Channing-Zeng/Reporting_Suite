@@ -113,6 +113,9 @@ class BaseClinicalReporting:
 
         return report
 
+    def make_sv_report(self, svs_by_experiment):
+        return None
+
     def make_seq2c_plot_json(self, experiment_by_key):
         data = dict()
 
@@ -306,6 +309,7 @@ class ClinicalReporting(BaseClinicalReporting):
         self.sample = clinical_experiment_info.sample
 
         self.mutations_report = None
+        self.sv_report = None
         self.actionable_genes_report = None
         self.seq2c_plot_data = None
         self.key_genes_report = None
@@ -314,6 +318,8 @@ class ClinicalReporting(BaseClinicalReporting):
         info('Preparing data...')
         if self.experiment.mutations:
             self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
+        if self.experiment.sv_events_by_gene_name:
+            self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events_by_gene_name})
         if self.experiment.seq2c_events_by_gene_name:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
         if self.experiment.actionable_genes_dict and (self.experiment.mutations or self.experiment.seq2c_events_by_gene_name):

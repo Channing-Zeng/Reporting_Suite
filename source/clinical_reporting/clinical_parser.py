@@ -128,7 +128,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_com
 
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes=cnf.key_genes,
-        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,
+        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, sv_fpath=sample.find_sv_fpath(),
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
         project_report_path=bs.project_report_html_fpath, is_target2wqs_comparison=is_target2wqs_comparison)
@@ -141,14 +141,14 @@ def clinical_sample_info_from_cnf(cnf):
 
     return ClinicalExperimentInfo(cnf, sample=sample,
         key_genes=cnf.key_genes, target_type=cnf.target_type,
-        bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath,
+        bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath, sv_fpath=cnf.sv_fpath,
         varqc_json_fpath=cnf.varqc_json_fpath, seq2c_tsv_fpath=cnf.seq2c_tsv_fpath,
         project_name=cnf.project_name, project_report_path=cnf.project_report_path)
 
 
 class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
-                 bed_fpath, mutations_fpath, varqc_json_fpath,
+                 bed_fpath, mutations_fpath, sv_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None,
                  is_target2wqs_comparison=False):
         self.cnf = cnf
@@ -166,6 +166,7 @@ class ClinicalExperimentInfo:
         self.actionable_genes_dict = None
         self.total_variants = None
         self.mutations = None
+        self.sv_events_by_gene_name = None
         self.seq2c_events_by_gene_name = None
 
         info('Sample: ' + str(sample.name))
@@ -215,6 +216,10 @@ class ClinicalExperimentInfo:
         else:
             warn('No varqc_json_fpath or mutations_fpath provided, skipping mutation stats.')
 
+        if sv_fpath:
+            info('Parsing prioritized SV...')
+            self.sv_events_by_gene_name = self.parse_sv(sv_fpath)
+
         info('Parsing Seq2C...')
         if seq2c_tsv_fpath:
             self.seq2c_events_by_gene_name = self.parse_seq2c_report(seq2c_tsv_fpath)
@@ -229,6 +234,9 @@ class ClinicalExperimentInfo:
 
     def get_mut_info_from_solvebio(self):
         query_mutations(self.cnf, self.mutations)
+
+    def parse_sv(self, sv_fpath):
+        return None
 
     def parse_seq2c_report(self, seq2c_tsv_fpath):
         seq2c_events_by_gene_name = dict()

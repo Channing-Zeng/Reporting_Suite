@@ -63,8 +63,7 @@ class BaseSample:
     def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None,
                  targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None,
                  fastqc_dirpath=None, picard_dirpath=None, clinical_report_dirpath=None,
-                 flagged_regions_dirpath=None,
-                 normal_match=None):
+                 flagged_regions_dirpath=None, normal_match=None, sv_fpath=None):
         self.name = name
         self.bam = bam
         self.dedup_bam = None
@@ -79,6 +78,7 @@ class BaseSample:
         self.var_dirpath = None
         self.normal_match = normal_match
         self.min_af = None
+        self.sv_fpath = sv_fpath
 
         self.targqc_dirpath                  = None
         self.targetcov_html_fpath            = None
@@ -114,13 +114,14 @@ class BaseSample:
         self.picard_ins_size_hist_txt_fpath  = None
         self.picard_ins_size_hist_pdf_fpath  = None
 
-        self.targqc_dirpath                  = None
-        self.targetcov_html_fpath            = None
-        self.targetcov_json_fpath            = None
-        self.targetcov_detailed_txt          = None
-        self.targetcov_detailed_tsv          = None
-        self.targetcov_norm_depth_vcf_txt    = None
-        self.targetcov_norm_depth_vcf_tsv    = None
+        if targqc_dirpath:
+            self.targqc_dirpath = targqc_dirpath
+            self.targetcov_html_fpath           = join(self.targqc_dirpath, name + '.' + targetseq_name +  '.html')
+            self.targetcov_json_fpath           = join(self.targqc_dirpath, name + '.' + targetseq_name +  '.json')
+            self.targetcov_detailed_txt         = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.txt')
+            self.targetcov_detailed_tsv         = join(self.targqc_dirpath, name + '.' + targetseq_name +  detail_gene_report_baseending + '.tsv')
+            self.targetcov_norm_depth_vcf_txt   = None
+            self.targetcov_norm_depth_vcf_tsv   = None
 
         if flagged_regions_dirpath:
             self.flagged_regions_dirpath        = flagged_regions_dirpath
