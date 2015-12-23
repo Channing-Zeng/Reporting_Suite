@@ -63,7 +63,7 @@ genomes:
 
   hg38:
     seq: ~/Dropbox/az/reference_data/hg38.fa
-    exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.with_genes.chr21.bed
+    exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.hg38.bed
 
 
 polymorphic_variants:         ~/Dropbox/az/reference_data/filtering/snpeffect_export_Polymorphic.txt

@@ -159,8 +159,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
     return txt_fpath, tsv_fpath, html_fpath
 
 
-def summarize_targqc(cnf, summary_threads, output_dir, samples,
-        bed_fpath=None, exons_fpath=None, genes_fpath=None, tag_by_sample=None):
+def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, tag_by_sample=None):
     step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
 
     correct_samples = []
@@ -872,7 +871,8 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
 
 
 def get_bed_targqc_inputs(cnf, bed_fpath=None):
-    bed_fpath = verify_bed(bed_fpath, description='input bed file')
+    if bed_fpath:
+        bed_fpath = verify_bed(bed_fpath, description='input bed file')
 
     exons_bed_fpath = adjust_path(cnf.exons if cnf.exons else cnf.genome.exons)
     if exons_bed_fpath:

@@ -28,14 +28,17 @@ def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
     parser.add_option('--project-name', '--project', dest='project_name', help='Project name. If not set, it gets parsed from JIRA or from the location path.')
     parser.add_option('--done-marker', dest='done_marker')
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help='Default is temporary directory')
-    parser.add_option('--genome', dest='genome', help='Genome build, default is %s ' % defaults['genome'])
+    parser.add_option('--genome', dest='genome', help='Genome build')
     parser.add_option('--debug', dest='debug', help='Debug mode; keep work directory.', action='store_true', default=False)
     parser.add_option('--queue', dest='queue', help='Queue for qsub')
 
 
 def check_genome_resources(cnf):
+    if cnf.genome is None:
+        critical('Please, specify genome build using the --genome option.')
+
     if not cnf.genomes:
-        critical('"genomes" section is not specgetified in system config.')
+        critical('"genomes" section is not specgetified in system config ' + cnf.sys_cnf)
 
     info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
     info()

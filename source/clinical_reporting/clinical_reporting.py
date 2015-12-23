@@ -314,10 +314,10 @@ class ClinicalReporting(BaseClinicalReporting):
         info('Preparing data...')
         if self.experiment.mutations:
             self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
-        if self.experiment.actionable_genes_dict:
-            self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
         if self.experiment.seq2c_events_by_gene_name:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
+        if self.experiment.actionable_genes_dict and (self.experiment.mutations or self.experiment.seq2c_events_by_gene_name):
+            self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
         if self.experiment.ave_depth:
             self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name, self.experiment.ave_depth)
             self.cov_plot_data = self.make_key_genes_cov_json({self.experiment.key: self.experiment})
@@ -439,12 +439,13 @@ class ClinicalReporting(BaseClinicalReporting):
             variants = []
             types = []
 
-            vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
-            if vardict_mut_types:
-                for mut in self.experiment.mutations:
-                    if mut.gene.name == gene.name:
-                        variants.append(mut.aa_change if mut.aa_change else '.')
-                        types.append(mut.var_type)
+            if self.experiment.mutations:
+                vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
+                if vardict_mut_types:
+                    for mut in self.experiment.mutations:
+                        if mut.gene.name == gene.name:
+                            variants.append(mut.aa_change if mut.aa_change else '.')
+                            types.append(mut.var_type)
 
             if cnv_mutation_types and gene.seq2c_event:
                 if 'Amplification' in possible_mutation_types and gene.seq2c_event.amp_del == 'Amp' or \

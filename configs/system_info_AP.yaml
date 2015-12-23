@@ -17,7 +17,7 @@ resources:
   java:
     path: /apps/java/x64/jdk1.7.0_45/bin/java
   python:
-    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/anaconda/bin/python.py
+    path: /apps/bcbio-nextgen/0.9.5/rhel6-x64/anaconda/bin/python
   tabix:
     path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/tabix
   bgzip:

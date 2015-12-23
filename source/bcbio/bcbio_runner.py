@@ -13,13 +13,14 @@ from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
 from source.bcbio.project_level_report import make_project_level_report
 from source.qsub_utils import del_jobs
+from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import safe_mkdir
 from source.logger import info, err, critical, send_email, warn, is_local
-from source.targetcov.bam_and_bed_utils import verify_bam
-from source.utils import is_us
+from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons
+from source.utils import is_us, md5
 from source.webserver.exposing import sync_with_ngs_server, convert_path_to_url
-from source.config import defaults
+from source.config import defaults, with_cnf
 
 
 class Step:
@@ -260,12 +261,23 @@ class BCBioRunner:
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
 
-        targetcov_params = params_for_one_sample + ' --bam \'{bam}\' {bed} -o \'{output_dir}\' ' \
+        self.is_wgs = False
+        target_bed, exons_bed, exons_no_genes_bed, genes_fpath = self.prep_bed()
+        if not target_bed:
+            self.is_wgs = True
+
+        targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
-        if cnf.exons:
-            targetcov_params += '--exons {cnf.exons} '
-        if cnf.reannotate:
-            targetcov_params += '--reannotate '
+        if exons_bed:
+            targetcov_params += '--exons ' + exons_bed + ' '
+        if exons_no_genes_bed:
+            targetcov_params += '--exons-no-genes ' + exons_no_genes_bed + ' '
+        if target_bed:
+            targetcov_params += '--bed ' + target_bed + ' '
+        if genes_fpath:
+            targetcov_params += '--genes ' + genes_fpath + ' '
+
+        targetcov_params += '--no-prep-bed '
         if cnf.steps and 'AbnormalCovReport' in cnf.steps:
             targetcov_params += '--extended '
         self.targetcov = Step(cnf, run_id,
@@ -276,23 +288,27 @@ class BCBioRunner:
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
             paramln=targetcov_params,
         )
+        abnormal_regions_cmdl = summaries_cmdline_params + ' --mutations {mutations_fpath} ' + self.final_dir
+        if target_bed:
+            abnormal_regions_cmdl += ' --bed ' + target_bed
         self.abnormal_regions = Step(cnf, run_id,
             name='AbnormalCovReport', short_name='acr',
             interpreter='python',
             script=join('scripts', 'post', 'abnormal_regions.py'),
             dir_name=BCBioStructure.targqc_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
-            paramln=summaries_cmdline_params + ' --mutations {mutations_fpath} {bed} ' + self.final_dir
+            paramln=abnormal_regions_cmdl
         )
-        self.ngscat = Step(cnf, run_id,
-            name=BCBioStructure.ngscat_name, short_name='nc',
-            interpreter='python',
-            script=join('scripts', 'post', 'ngscat.py'),
-            dir_name=BCBioStructure.ngscat_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.ngscat_name + '.log'),
-            paramln=params_for_one_sample + ' --bam \'{bam}\' --bed \'{bed}\' -o \'{output_dir}\' -s \'{sample}\' '
-                    '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
-        )
+        if target_bed:
+            self.ngscat = Step(cnf, run_id,
+                name=BCBioStructure.ngscat_name, short_name='nc',
+                interpreter='python',
+                script=join('scripts', 'post', 'ngscat.py'),
+                dir_name=BCBioStructure.ngscat_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.ngscat_name + '.log'),
+                paramln=params_for_one_sample + ' --bam \'{bam}\' --bed ' + target_bed + ' -o \'{output_dir}\' -s \'{sample}\' '
+                        '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
+            )
         # self.qualimap = Step(cnf, run_id,
         #     name=BCBioStructure.qualimap_name, short_name='qm',
         #     interpreter='python',
@@ -345,7 +361,7 @@ class BCBioRunner:
            ' {match_cmdl}' +
            ' {seq2c_cmdl}' +
            ' --target-type ' + self.bcbio_structure.target_type +
-          (' --bed ' + self.bcbio_structure.bed if self.bcbio_structure.bed else '') +
+          (' --bed ' + target_bed if target_bed else '') +
            ' -o {output_dir} ' +
            ' --project-level-report {project_report_path}' +
            ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
@@ -368,8 +384,8 @@ class BCBioRunner:
         )
 
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
-        if self.bcbio_structure.bed:
-            seq2c_cmdline += ' --bed ' + self.bcbio_structure.bed
+        if target_bed:
+            seq2c_cmdline += ' --bed ' + target_bed
         normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
         if normal_snames or cnf.seq2c_controls:
             controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
@@ -388,9 +404,11 @@ class BCBioRunner:
             run_on_chara=True
         )
 
-        targqc_cmdline = summaries_cmdline_params + ' ' + self.final_dir
-        if self.bcbio_structure.bed:
-            targqc_cmdline += ' --bed ' + self.bcbio_structure.bed
+        targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --no-prep-bed '
+        if target_bed:
+            targqc_summary_cmdline += ' --bed ' + target_bed
+        if exons_bed:
+            targqc_summary_cmdline += ' --exons ' + exons_bed
 
         self.targqc_summary = Step(cnf, run_id,
             name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
@@ -398,7 +416,7 @@ class BCBioRunner:
             script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.targqc_name + '_summary.log'),
             dir_name=BCBioStructure.targqc_summary_dir,
-            paramln=targqc_cmdline
+            paramln=targqc_summary_cmdline
         )
         self.fastqc_summary = Step(cnf, run_id,
             name=BCBioStructure.fastqc_name, short_name='fastqc',
@@ -409,6 +427,36 @@ class BCBioRunner:
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
 
+    def prep_bed(self):
+        target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(self.cnf, self.bcbio_structure.bed)
+
+        bed_md5_fpath = join(self.cnf.work_dir, 'bed_md5.txt')
+
+        new_md5 = md5(target_bed)
+        prev_md5 = None
+        if isfile(bed_md5_fpath):
+            with open(bed_md5_fpath) as f:
+                prev_md5 = f.read()
+
+        reuse = False
+        if prev_md5 == new_md5:
+            info('Reusing previous BED files.')
+            reuse = True
+        else:
+            info('Annotating BED file')
+            if prev_md5:
+                info('Prev BED md5: ' + str(prev_md5))
+                info('New BED md5: ' + str(new_md5))
+
+            with open(bed_md5_fpath, 'w') as f:
+                f.write(str(new_md5))
+
+        with with_cnf(self.cnf, reuse=reuse) as cnf:
+            exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+            _, _, target_bed, exons_bed, exons_no_genes_bed = \
+                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+
+        return target_bed, exons_bed, exons_no_genes_bed, genes_fpath
 
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
         if sample_name:
@@ -551,7 +599,7 @@ class BCBioRunner:
                             info('Target coverage for "' + sample.name + '"')
                             self._submit_job(
                                 self.targetcov, sample.name,
-                                bam=sample.bam, bed=(('--bed ' + self.bcbio_structure.bed) if self.bcbio_structure.bed else ''), sample=sample.name, genome=sample.genome,
+                                bam=sample.bam, sample=sample.name, genome=sample.genome,
                                 caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps)
                             # if not sample.bed:  # WGS
                             #     targqc_wait_for_steps.append(self.targetcov.job_name(sample.name))
@@ -562,7 +610,7 @@ class BCBioRunner:
                         else:
                             if self.ngscat in self.steps:
                                 self._submit_job(
-                                    self.ngscat, sample.name, bam=sample.bam, bed=self.bcbio_structure.bed or self.cnf.genomes[sample.genome].exons,
+                                    self.ngscat, sample.name, bam=sample.bam,
                                     sample=sample.name, genome=sample.genome, threads=self.threads_per_sample)
 
                 # Processing VCFs: QC, annotation
@@ -622,7 +670,7 @@ class BCBioRunner:
                             if self.varannotate in self.steps] + wait_for_callers_steps,
                         create_dir=False,
                         threads=self.filtering_threads)
-                    if not self.bcbio_structure.bed:  # WGS
+                    if self.is_wgs:  # WGS
                         wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
             if self.clin_report in self.steps:
@@ -697,7 +745,6 @@ class BCBioRunner:
                         self.abnormal_regions, sample.name,
                         wait_for_steps=wait_for_steps,
                         sample=sample, threads=self.threads_per_sample, genome=sample.genome, mutations_fpath=mutations_fpath,
-                        bed=(('--bed ' + self.bcbio_structure.bed) if self.bcbio_structure.bed else ''),
                         caller_names='--caller-names ' + ','.join(caller_names) if caller_names else '',
                         vcfs='--vcfs ' + ','.join(filtered_vcfs) if filtered_vcfs else '')
 

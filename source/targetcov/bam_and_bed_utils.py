@@ -128,7 +128,9 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
         if cnf.reannotate or cols < 4:
             info()
             if not exons_bed:
-                critical(str(cols) + ' columns (less than 4), and no Ensembl exons to annotate regions.')
+                critical(str(cols) + ' columns (less than 4), and no exons to annotate regions '
+                                     '(please make sure you have set the "exons" key in the corresponding genomes section '
+                                     '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
             info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in amplicons bed is ' + str(cols) +
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)

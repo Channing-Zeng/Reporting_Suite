@@ -104,22 +104,31 @@ def process_post_bcbio_args(parser):
         bcbio_project_dirpaths.append(bcbio_project_dirpath)
         final_dirpaths.append(final_dirpath)
 
-        bcbio_cnf = load_bcbio_cnf(config_dirpath)
+        bcbio_cnf, bcbio_cnf_fpath = load_bcbio_cnf(config_dirpath)
         bcbio_cnfs.append(bcbio_cnf)
 
-        if cnf is None:
-            _detect_sys_config(config_dirpath, opts)
-            is_wgs = not opts.__dict__.get('bed') and not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
-            _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs)
+        _detect_sys_config(config_dirpath, opts)
+        is_wgs = not opts.__dict__.get('bed') and not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
+        _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs)
 
-            cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
-            check_genome_resources(cnf)
+        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
 
-            if 'qsub_runner' in cnf:
-                cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
-            errors = check_dirs_and_files(cnf, file_keys=['qsub_runner'])
-            if errors:
-                critical(errors)
+        if not cnf.genome:
+            bcbio_yaml_genomes = set([d.get('genome_build') for d in bcbio_cnf['details']])
+            if len(bcbio_yaml_genomes) != 1:
+                critical('Got different genome_build values in bcbio YAML ' + bcbio_cnf_fpath)
+            bcbio_yaml_genome = bcbio_yaml_genomes.pop()
+            if bcbio_yaml_genome is None:
+                critical('genome_build is not present for any sample in bcbio YAML ' + bcbio_cnf_fpath)
+            cnf.genome = bcbio_yaml_genome
+
+        check_genome_resources(cnf)
+
+        if 'qsub_runner' in cnf:
+            cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
+        errors = check_dirs_and_files(cnf, file_keys=['qsub_runner'])
+        if errors:
+            critical(errors)
 
     if cnf.project_name:
         cnf.project_name = ''.join((c if (c.isalnum() or c in '-') else '_') for c in cnf.project_name)
@@ -934,7 +943,7 @@ def load_bcbio_cnf(config_dirpath):
 
     info('Using bcbio YAML config ' + yaml_file)
 
-    return load_yaml_config(yaml_file)
+    return load_yaml_config(yaml_file), yaml_file
 
 
 def _normalize(name):

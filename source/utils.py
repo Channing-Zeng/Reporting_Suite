@@ -1,3 +1,4 @@
+import hashlib
 from os import environ
 import socket
 import re
@@ -180,3 +181,10 @@ def is_cloud():
     hostname = socket.gethostname()
     return 'starcluster' in hostname
 
+
+def md5(fpath):
+    hash = hashlib.md5()
+    with open(fpath, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash.update(chunk)
+    return hash.hexdigest()

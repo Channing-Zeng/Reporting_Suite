@@ -159,8 +159,8 @@ class ClinicalExperimentInfo:
         self.key_or_target_genes = ''
         self.genes_description = ''
         self.key = ''
-        self.patient = None
-        self.target = None
+        self.patient = Patient()
+        self.target = Target(type_=target_type, bed_fpath=bed_fpath)
         self.ave_depth = None
         self.depth_cutoff = None
         self.actionable_genes_dict = None
@@ -192,11 +192,8 @@ class ClinicalExperimentInfo:
 
         if self.sample.targqc_dirpath and self.sample.targetcov_json_fpath:
             info('Parsing target and patient info...')
-            self.patient = Patient(gender=get_gender(self.sample, self.sample.targetcov_json_fpath))
-            self.target = Target(
-                type_=target_type,
-                coverage_percent=get_target_fraction(self.sample, self.sample.targetcov_json_fpath),
-                bed_fpath=bed_fpath)
+            self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
+            self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
             info('Parsing TargetCov ' + self.key_or_target_genes + ' genes stats...')
             self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
             self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)

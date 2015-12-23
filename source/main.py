@@ -88,7 +88,7 @@ def read_opts_and_cnfs(extra_opts,
         (['--log-dir'], dict(dest='log_dir', metavar='DIR')),
         (['--proc-name'], dict(dest='proc_name')),
         (['--project-name'], dict(dest='project_name')),
-        (['--genome'], dict(dest='genome', default=defaults['genome'])),
+        (['--genome'], dict(dest='genome')),
         (['--email'], dict(dest='email')),
         (['--done-marker'], dict(dest='done_marker')),
     ]

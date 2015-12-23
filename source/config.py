@@ -1,4 +1,5 @@
 import sys
+from contextlib import contextmanager
 from os import getcwd
 from os.path import abspath, expanduser, join, dirname, pardir
 from traceback import format_exc
@@ -35,8 +36,6 @@ defaults = dict(
     qsub_runner = 'runner_Waltham.sh',
 
     default_min_freq = 0.05,
-
-    genome = 'hg19',  #'hg38-noalt',
 
     threads = 25
 )
@@ -212,3 +211,13 @@ def join_parent_conf(child_conf, parent_conf):
     return child_conf
 
 
+@contextmanager
+def with_cnf(cnf, **kwargs):
+    prev_opts = {k: cnf[k] for k in kwargs.keys()}
+    try:
+        for k, v in kwargs.items():
+            cnf[k] = v
+        yield cnf
+    finally:
+        for k, v in prev_opts.items():
+            cnf[k] = v
