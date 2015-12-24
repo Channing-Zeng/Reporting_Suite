@@ -4,6 +4,7 @@ steps:
 - Seq2C
 - ClinicalReport
 - AbnormalCovReport
+- Summary
 
 
 variant_filtering:

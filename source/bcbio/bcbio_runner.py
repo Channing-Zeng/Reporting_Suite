@@ -175,7 +175,7 @@ class BCBioRunner:
         if set(defaults['steps']) == set(cnf.steps):
             self.steps.extend([self.fastqc_summary, self.clin_report])
 
-        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary])
+        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
 
         # self.vardict_steps.extend(
         #     [s for s in [

@@ -121,12 +121,18 @@ def _seq2c(cnf, bcbio_structure):
         else:
             info('Deduplicating bam file ' + s.dedup_bam)
             dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
-    if not dedup_jobs:
-        err('No BAM files found for any sample, cannot run Seq2C.')
-        return None
 
     cnf.work_dir = ori_work_dir
     dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
+
+    ok = True
+    for s in bcbio_structure.samples:
+        if not dedupped_bam_by_sample.get(s.name) or not verify_bam(dedupped_bam_by_sample[s.name]):
+            err('No BAM file for ' + s.name)
+            ok = False
+    if not ok:
+        err('No BAM files found for any sample, cannot run Seq2C.')
+        return None
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(cnf.output_dir, 'mapped_reads_by_sample.tsv')
