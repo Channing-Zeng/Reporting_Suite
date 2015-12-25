@@ -105,9 +105,9 @@ def main(args):
         elif opt == '--annotation-dir':
             config.annotation_dirpath_fpath = arg
         elif opt == '--suppressors':
-            config.suppressors_fpath_fpath = arg
+            config.suppressors_fpath = arg
         elif opt == '--oncogenes':
-            config.oncogenes_fpath_fpath = arg
+            config.oncogenes_fpath = arg
 
     if not config.min_allele_freq_hotspot:
         config.min_allele_freq_hotspot = min(0.01, config.min_allele_freq / 2)
@@ -117,10 +117,9 @@ def main(args):
     if config.oncogenes_fpath:
         oncogenes = parse_genes_list(config.oncogenes_fpath)
 
-    tp53_groups = {}
-    tp53_groups['Group 1'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'DNE.txt'))
-    tp53_groups['Group 2'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'TA0-25.txt'))
-    tp53_groups['Group 3'] = parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'TA25-50_SOM_10x.txt'))
+    tp53_groups = {'Group 1': parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'DNE.txt')),
+                   'Group 2': parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'TA0-25.txt')),
+                   'Group 3': parse_mut_tp53(join(config.rule_dirpath, 'Rules', 'TA25-50_SOM_10x.txt'))}
 
     tp53_hg19_pos = (
         '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
@@ -130,17 +129,17 @@ def main(args):
         '7578371 7579312 7579700 7579839').split()
 
     # Set up common SNP filter
-    filter_snp = {}
+    filter_snp = set()
     with open(config.filter_common_snp_fpath) as f:
         for l in f:
             l = l.strip()
             if not l:
                 continue
             line = l.split('\t')
-            filter_snp['-'.join(line[1:5])] = 1
+            filter_snp.add('-'.join(line[1:5]))
 
-    snpeff_snp = {}
-    snpeff_snp_ids = {}
+    snpeff_snp = set()
+    snpeff_snp_ids = set()
     with open(config.snpeffect_export_polymorphic_fpath) as f:
         for l in f:
             l = l.strip()
@@ -148,18 +147,18 @@ def main(args):
                 continue
             line = l.split('\t')
             if len(line) > 11 and line[11]:
-               snpeff_snp['-'.join([line[11], line[2]])] = 1
+                snpeff_snp.add('-'.join([line[11], line[2]]))
             elif line[5] != '-':
-                snpeff_snp_ids[line[5]] = 1
+                snpeff_snp_ids.add(line[5])
 
-    filter_artifacts = {}
+    filter_artifacts = set()
     with open(config.filter_common_artifacts_fpath) as f:
         for l in f:
             l = l.strip()
             if not l:
                 continue
             line = l.split('\t')
-            filter_artifacts['-'.join(line[1:5])] = 1
+            filter_artifacts.add('-'.join(line[1:5]))
 
     actionable_hotspots = {}
     with open(config.actionable_hotspot_txt_fpath) as f:
@@ -168,10 +167,10 @@ def main(args):
             if not l:
                 continue
             line = l.split('\t')
-            actionable_hotspots['-'.join([line[0], line[1]])] = 1
+            actionable_hotspots.setdefault(line[0], set()).add(line[1])
 
-    act_somatic = {}
-    act_germline = {}
+    act_somatic = set()
+    act_germline = set()
 
     rules = {}
     inframe_del = 'inframe-del'
@@ -186,29 +185,29 @@ def main(args):
             line = l.split('\t')
             if line[7] == 'germline':
                 key = '-'.join(line[1:5])
-                act_germline[key] = 1
+                act_germline.add(key)
             elif line[7] == 'somatic':
                 if line[6] == 'rule':
                     if line[4] == '*' and len(line[3]) == 1:
                         key = '-'.join(line[1:4])
-                        act_somatic[key] = 1
+                        act_somatic.add(key)
                     elif line[5] == inframe_del:
                         rules[inframe_del].setdefault(line[0], []).append(line[1:5])
                     elif line[5] == inframe_ins:
                         rules[inframe_ins].setdefault(line[0], []).append(line[1:5])
                 else:
                     key = '-'.join(line[1:5])
-                    act_somatic[key] = line[8] if line[8] else 1
-    hotspot_nucleotides = {}
-    hotspot_proteins = {}
+                    act_somatic.add(key)
+    hotspot_nucleotides = set()
+    hotspot_proteins = set()
     with open(config.compendia_ms7_hotspot_fpath) as f:
         for l in f:
             l = l.strip()
             if not l:
                 continue
             line = l.split('\t')
-            hotspot_nucleotides['-'.join(line[1:5])] = 1
-            hotspot_proteins['-'.join([line[0], line[6]])] = 1
+            hotspot_nucleotides.add('-'.join(line[1:5]))
+            hotspot_proteins.add('-'.join([line[0], line[6]]))
 
     if config.is_output_fm:
         print 'SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n'
@@ -243,7 +242,7 @@ def main(args):
             if line[pass_col] != 'TRUE':
                 continue
             sample, chr, pos, ref, alt, aa_chg, gene, depth = line[sample_col], line[chr_col], line[pos_col], line[ref_col], \
-                                                             line[alt_col], line[aa_chg_col], line[gene_col], float(line[depth_col])
+                                                                line[alt_col], line[aa_chg_col], line[gene_col], float(line[depth_col])
             aa_chg = line[aa_chg_col]
             gene = line[gene_col]
             if 'chr' not in chr:
@@ -268,30 +267,11 @@ def main(args):
                     continue
             status = 'unknown'
             reasons = []
-            var_class, type, fclass, gene_coding = line[class_col], line[type_col], line[func_col], line[gene_code_col]
-            type = type.upper()
-            if var_class == 'ClnSNP':
-                status, reasons = update_status(status, reasons, 'likely', 'clin_SNP')
-            elif var_class == 'dbSNP_del':
-                status, reasons = update_status(status, reasons, 'likely', 'dbSNP_del')
-            elif var_class == 'ClnSNP_known':
-                status, reasons = update_status(status, reasons, 'known', 'clin_SNP_known')
-            elif var_class == 'ClnSNP_unknown':
-                status, reasons = update_status(status, reasons, 'unknown', 'clin_SNP_unknown')
-            elif 'FRAME_SHIFT' in type or 'FRAMESHIFT' in type:
-                status, reasons = update_status(status, reasons, 'likely', 'frame_shift')
-            elif stop_gain_pattern.match(aa_chg):
-                status, reasons = update_status(status, reasons, 'likely', 'stop_gained')
-            if len(aa_chg) == 0 and 'SPLICE' in type and 'REGION_VARIANT' not in type:
-                status, reasons = update_status(status, reasons, 'likely', 'splice_site')
-            elif 'SPLICE_DONOR' in type or 'SPLICE_ACCEPTOR' in type:
-                status, reasons = update_status(status, reasons, 'likely', 'splice_site')
-            if var_class == 'COSMIC':
-                if 'COSMIC_Cnt' in header:
-                    if int(line[header.index('COSMIC_Cnt')]) >= 5:
-                        status, reasons = update_status(status, reasons, 'likely', 'COSMIC_5+')
-                else:
-                    status, reasons = update_status(status, reasons, 'likely', 'COSMIC')
+            var_class, var_type, fclass, gene_coding = line[class_col], line[type_col], line[func_col], line[gene_code_col]
+            var_type = var_type.upper()
+            status, reasons = check_by_var_class(var_class, status, reasons, line, header)
+            status, reasons = check_by_type(var_type, status, reasons, aa_chg)
+
             if is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
                 status, reasons = update_status(status, reasons, 'likely', 'hotspot_nucl_change')
             elif is_hotspot_prot(gene, aa_chg, hotspot_proteins):
@@ -306,12 +286,12 @@ def main(args):
                 if allele_freq < config.min_allele_freq_hotspot or (allele_freq < 0.2 and key in act_germline):
                     continue
             else:
-                if allele_freq < config.min_allele_freq or type.startswith('INTRON') or type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
-                        or (type == 'SPLICE_REGION_VARIANT' and aa_chg == ''):
+                if allele_freq < config.min_allele_freq or var_type.startswith('INTRON') or var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
+                        or (var_type == 'SPLICE_REGION_VARIANT' and not aa_chg):
                         continue
-            if status != 'known' and (type.startswith('UPSTREAM') or type.startswith('DOWNSTREAM') or type.startswith('INTERGENIC') or
-                                          type.startswith('INTRAGENIC') or ('UTR_' in type and 'CODON' not in type)
-                                      or 'NON_CODING' in gene_coding.upper() or fclass.upper().startswith('NON_CODING')):
+            if status != 'known' and (var_type.startswith('UPSTREAM') or var_type.startswith('DOWNSTREAM') or var_type.startswith('INTERGENIC') or
+                                          var_type.startswith('INTRAGENIC') or ('UTR_' in var_type and 'CODON' not in var_type) or
+                                              'NON_CODING' in gene_coding.upper() or fclass.upper().startswith('NON_CODING')):
                 continue
             if status != 'known' and var_class == 'dbSNP':
                 continue
@@ -334,29 +314,30 @@ def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, ac
         key = '-'.join([chr, pos, ref])
         if key in act_som:
             return act_som[key]
-    if aa_chg_pattern.match(aa_chg):
-        if '-'.join([gene, aa_chg]) in act_hotspots:
-            return 1
+    if aa_chg_pattern.match(aa_chg) and gene in act_hotspots:
+        act_hotspots = act_hotspots[gene]
+        if aa_chg in act_hotspots:
+            return True
         aa_chg_trim = re.findall(aa_chg_pattern, aa_chg)[0]
-        if '-'.join([gene, aa_chg_trim]) in act_hotspots:
-            return 1
+        if aa_chg_trim in act_hotspots:
+            return True
     if gene == 'TP53':
         tp53_group = classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups)
         if tp53_group != 'NA':
             return 'somatic'
-    if gene in rules['inframe-del'] and len(ref) > len(alt) and (len(ref)-len(alt)) % 3 == 0:
+    if gene in rules['inframe-del'] and len(ref) > len(alt) and (len(ref) - len(alt)) % 3 == 0:
         for r in rules['inframe-del'][gene]:
-            if r[0] == chr and r[1] <= pos and r[2] >= pos and len(ref)-len(alt) >= r[3]:
-                return 'somatic'
-    elif gene in rules['inframe-ins'] and len(ref) < len(alt) and (len(alt)-len(ref)) % 3 == 0:
-        for r in rules['inframe-ins'][gene]:
             if r[0] == chr and r[1] <= pos <= r[2] and len(ref) - len(alt) >= r[3]:
+                return 'somatic'
+    elif gene in rules['inframe-ins'] and len(ref) < len(alt) and (len(alt) - len(ref)) % 3 == 0:
+        for r in rules['inframe-ins'][gene]:
+            if r[0] == chr and r[1] <= pos <= r[2] and len(alt) - len(ref) >= r[3]:
                 return 'somatic'
     return False
 
 
 def parse_mut_tp53(mut_fpath):
-    mut_tp53 = []
+    mut_tp53 = set()
     with open(mut_fpath) as f:
         for l in f:
             l = l.strip()
@@ -366,7 +347,7 @@ def parse_mut_tp53(mut_fpath):
             if not line[19] or 'p.' not in line[19]:
                 continue
             prot = line[19].replace('p.', '')
-            mut_tp53.append(prot)
+            mut_tp53.add(prot)
 
     return mut_tp53
 
@@ -402,6 +383,36 @@ def is_hotspot_prot(gene, pchg, hotspot_proteins):
     pchg = pchg.replace('p.', '')
     key = '-'.join([gene, pchg])
     return key in hotspot_proteins
+
+
+def check_by_var_class(var_class, status, reasons, line, header):
+    if var_class == 'ClnSNP':
+        status, reasons = update_status(status, reasons, 'likely', 'clin_SNP')
+    elif var_class == 'dbSNP_del':
+        status, reasons = update_status(status, reasons, 'likely', 'dbSNP_del')
+    elif var_class == 'ClnSNP_known':
+        status, reasons = update_status(status, reasons, 'known', 'clin_SNP_known')
+    elif var_class == 'ClnSNP_unknown':
+        status, reasons = update_status(status, reasons, 'unknown', 'clin_SNP_unknown')
+    elif var_class == 'COSMIC':
+        if 'COSMIC_Cnt' in header:
+            if int(line[header.index('COSMIC_Cnt')]) >= 5:
+                status, reasons = update_status(status, reasons, 'likely', 'COSMIC_5+')
+        else:
+            status, reasons = update_status(status, reasons, 'likely', 'COSMIC')
+    return status, reasons
+
+
+def check_by_type(var_type, status, reasons, aa_chg):
+    if 'FRAME_SHIFT' in var_type or 'FRAMESHIFT' in var_type:
+        status, reasons = update_status(status, reasons, 'likely', 'frame_shift')
+    elif stop_gain_pattern.match(aa_chg):
+        status, reasons = update_status(status, reasons, 'likely', 'stop_gained')
+    elif not aa_chg and 'SPLICE' in var_type and 'REGION_VARIANT' not in var_type:
+        status, reasons = update_status(status, reasons, 'likely', 'splice_site')
+    elif 'SPLICE_DONOR' in var_type or 'SPLICE_ACCEPTOR' in var_type:
+        status, reasons = update_status(status, reasons, 'likely', 'splice_site')
+    return status, reasons
 
 
 def classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups):
