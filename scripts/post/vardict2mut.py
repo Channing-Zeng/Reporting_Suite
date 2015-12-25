@@ -12,9 +12,9 @@ long_options = "help depth= reads= min-freq= min-freq-hs= max-rate= output= " \
                "annotation-dir= suppressors= oncogenes= report_reason".split()
 short_options = "hD:V:f:F:R:o:n:"
 
-aa_chg_pattern = re.compile('^([A-Z]\d+)\D+$')
+aa_chg_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
 stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
-fs_pattern = re.compile('^[A-Z](\d+)fs')
+fs_pattern = re.compile('^[A-Z]+(\d+)fs')
 
 statuses = ['unknown', 'likely', 'known']
 
@@ -149,7 +149,7 @@ def main(args):
             line = l.split('\t')
             if len(line) > 11 and line[11]:
                snpeff_snp['-'.join([line[11], line[2]])] = 1
-            if line[5] != '-':
+            elif line[5] != '-':
                 snpeff_snp_ids[line[5]] = 1
 
     filter_artifacts = {}
@@ -255,10 +255,9 @@ def main(args):
                 continue
             if depth < config.min_depth or line[vd_col] < config.min_num_reads:
                 continue
-            snps = line[3].split(',')
-            for rs in snps:
-                if rs in snpeff_snp_ids:
-                    continue
+            snps = re.findall(r'rs\d+', line[3])
+            if any(snp in snpeff_snp_ids for snp in snps):
+                continue
 
             sample_pattern = re.compile('-\d\d[_-]([^_\d]+?)$')
             platform = re.findall(sample_pattern, sample)[0] if sample_pattern.match(sample) else ''
@@ -285,10 +284,8 @@ def main(args):
                 status, reasons = update_status(status, reasons, 'likely', 'stop_gained')
             if len(aa_chg) == 0 and 'SPLICE' in type and 'REGION_VARIANT' not in type:
                 status, reasons = update_status(status, reasons, 'likely', 'splice_site')
-                line[aa_chg_col] = 'splice'
             elif 'SPLICE_DONOR' in type or 'SPLICE_ACCEPTOR' in type:
                 status, reasons = update_status(status, reasons, 'likely', 'splice_site')
-                line[aa_chg_col] = 'splice'
             if var_class == 'COSMIC':
                 if 'COSMIC_Cnt' in header:
                     if int(line[header.index('COSMIC_Cnt')]) >= 5:
