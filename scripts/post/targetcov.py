@@ -21,7 +21,7 @@ from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.tools_from_cnf import get_system_path
 from source.utils import info
-from source.file_utils import adjust_path, safe_mkdir
+from source.file_utils import adjust_path, safe_mkdir, verify_file
 
 
 def main(args):
@@ -102,20 +102,21 @@ def main(args):
     exons_bed = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
     if exons_bed:
         info('Exons: ' + exons_bed)
+        exons_bed = verify_file(exons_bed)
     else:
         info('no exons found')
 
     if cnf.genes:
-        genes_fpath = adjust_path(cnf.genes)
+        genes_fpath = verify_file(cnf.genes)
         info('Custom genes list: ' + genes_fpath)
     else:
         genes_fpath = None
 
     info('Using alignment ' + cnf['bam'])
 
-    bed_fpath = cnf.bed
-    if bed_fpath:
-        info('Using amplicons/capture panel ' + bed_fpath)
+    if cnf.bed:
+        cnf.bed = verify_file(cnf.bed)
+        info('Using amplicons/capture panel ' + cnf.bed)
     elif exons_bed:
         info('WGS, taking CDS as target')
 

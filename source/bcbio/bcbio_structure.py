@@ -26,7 +26,7 @@ from source.file_utils import file_exists, safe_mkdir
 from source.utils import OrderedDefaultDict
 
 
-def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, extra_opts=None):
+def bcbio_summary_script_proc_params(proc_name, proc_dir_name=None, description=None, extra_opts=None):
     description = description or 'This script generates project-level summaries based on per-sample ' + proc_name + ' reports.'
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
@@ -78,6 +78,7 @@ def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, 
 
 def process_post_bcbio_args(parser):
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
 
     bcbio_dirpaths = []
     tags = []
@@ -111,16 +112,16 @@ def process_post_bcbio_args(parser):
         is_wgs = not opts.__dict__.get('bed') and not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
         _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs)
 
-        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf)
-
-        if not cnf.genome:
-            bcbio_yaml_genomes = set([d.get('genome_build') for d in bcbio_cnf['details']])
+        bcbio_yaml_genome = None
+        bcbio_yaml_genomes = set([d.get('genome_build') for d in bcbio_cnf['details']])
+        if len(bcbio_yaml_genomes) > 0:
             if len(bcbio_yaml_genomes) != 1:
                 critical('Got different genome_build values in bcbio YAML ' + bcbio_cnf_fpath)
             bcbio_yaml_genome = bcbio_yaml_genomes.pop()
             if bcbio_yaml_genome is None:
-                critical('genome_build is not present for any sample in bcbio YAML ' + bcbio_cnf_fpath)
-            cnf.genome = bcbio_yaml_genome
+                warn('genome_build is not present for any sample in bcbio YAML ' + bcbio_cnf_fpath)
+
+        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf, bcbio_yaml_genome)
 
         check_genome_resources(cnf)
 
@@ -189,7 +190,7 @@ def _detect_sys_config(config_dirpath, opts):
             # detect system and use default system config
             opts.sys_cnf = detect_sys_cnf_by_location()
 
-    info('Using ' + opts.sys_cnf)
+    info('Using system configuarion ' + opts.sys_cnf)
 
 
 def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
@@ -206,7 +207,7 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
         project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(provided_cnf_fpath)))
 
         if not isfile(project_run_cnf_fpath) or not os.path.samefile(provided_cnf_fpath, project_run_cnf_fpath):
-            info('Using ' + provided_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
+            info('Using run configuration ' + provided_cnf_fpath + ', copying to ' + project_run_cnf_fpath)
             if isfile(project_run_cnf_fpath):
                 try:
                     os.remove(project_run_cnf_fpath)
@@ -254,7 +255,7 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
                 opts.run_cnf = defaults['run_cnf_exome_seq']
 
             project_run_cnf_fpath = adjust_path(join(config_dirpath, basename(opts.run_cnf)))
-            info('Using ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
+            info('Using run configuration ' + opts.run_cnf + ', copying to ' + project_run_cnf_fpath)
             if isfile(project_run_cnf_fpath):
                 try:
                     os.remove(project_run_cnf_fpath)
@@ -263,7 +264,7 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
             if not isfile(project_run_cnf_fpath):
                 file_util.copy_file(opts.run_cnf, project_run_cnf_fpath, preserve_times=False)
 
-    info('Using ' + opts.run_cnf)
+    info('Using run configuarion ' + opts.run_cnf)
 
 
 class BCBioSample(BaseSample):

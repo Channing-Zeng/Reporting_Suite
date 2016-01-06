@@ -299,16 +299,16 @@ class BCBioRunner:
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
             paramln=abnormal_regions_cmdl
         )
-        if target_bed:
-            self.ngscat = Step(cnf, run_id,
-                name=BCBioStructure.ngscat_name, short_name='nc',
-                interpreter='python',
-                script=join('scripts', 'post', 'ngscat.py'),
-                dir_name=BCBioStructure.ngscat_dir,
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.ngscat_name + '.log'),
-                paramln=params_for_one_sample + ' --bam \'{bam}\' --bed ' + target_bed + ' -o \'{output_dir}\' -s \'{sample}\' '
-                        '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
-            )
+        self.ngscat = Step(cnf, run_id,
+            name=BCBioStructure.ngscat_name, short_name='nc',
+            interpreter='python',
+            script=join('scripts', 'post', 'ngscat.py'),
+            dir_name=BCBioStructure.ngscat_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.ngscat_name + '.log'),
+            paramln=params_for_one_sample + ' --bam \'{bam}\' --bed ' + str(target_bed) + ' -o \'{output_dir}\' -s \'{sample}\' '
+                    '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
+        )
+
         # self.qualimap = Step(cnf, run_id,
         #     name=BCBioStructure.qualimap_name, short_name='qm',
         #     interpreter='python',
@@ -429,32 +429,34 @@ class BCBioRunner:
 
     def prep_bed(self):
         target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(self.cnf, self.bcbio_structure.bed)
+        exons_no_genes_bed = None
 
         bed_md5_fpath = join(self.cnf.work_dir, 'bed_md5.txt')
 
-        new_md5 = md5(target_bed)
-        prev_md5 = None
-        if isfile(bed_md5_fpath):
-            with open(bed_md5_fpath) as f:
-                prev_md5 = f.read()
+        if target_bed or exons_bed:
+            new_md5 = md5(target_bed or exons_bed)
+            prev_md5 = None
+            if isfile(bed_md5_fpath):
+                with open(bed_md5_fpath) as f:
+                    prev_md5 = f.read()
 
-        reuse = False
-        if prev_md5 == new_md5:
-            info('Reusing previous BED files.')
-            reuse = True
-        else:
-            info('Annotating BED file')
-            if prev_md5:
-                info('Prev BED md5: ' + str(prev_md5))
-                info('New BED md5: ' + str(new_md5))
+            reuse = False
+            if prev_md5 == new_md5:
+                info('Reusing previous BED files.')
+                reuse = True
+            else:
+                info('Annotating BED file')
+                if prev_md5:
+                    info('Prev BED md5: ' + str(prev_md5))
+                    info('New BED md5: ' + str(new_md5))
 
-            with open(bed_md5_fpath, 'w') as f:
-                f.write(str(new_md5))
+                with open(bed_md5_fpath, 'w') as f:
+                    f.write(str(new_md5))
 
-        with with_cnf(self.cnf, reuse=reuse) as cnf:
-            exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
-            _, _, target_bed, exons_bed, exons_no_genes_bed = \
-                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+            with with_cnf(self.cnf, reuse=reuse) as cnf:
+                exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+                _, _, target_bed, exons_bed, exons_no_genes_bed = \
+                    extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
 
         return target_bed, exons_bed, exons_no_genes_bed, genes_fpath
 

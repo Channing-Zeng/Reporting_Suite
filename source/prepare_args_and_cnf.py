@@ -3,6 +3,7 @@ import getpass
 import hashlib
 import sys
 import os
+from optparse import SUPPRESS_HELP
 from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath, basename
 from os import getcwd
 import datetime
@@ -12,7 +13,7 @@ from source import logger
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, verify_obj_by_path, \
     remove_quotes, file_exists
 from source.config import defaults, Config
-from source.logger import info, critical, warn, err
+from source.logger import info, critical, warn, err, debug
 from source.file_utils import which, file_exists, safe_mkdir
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
 from source.utils import is_uk, is_us, is_cloud
@@ -21,56 +22,39 @@ from source.utils import is_local
 
 
 def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
-    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf', help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
-    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf', help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
+    parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf',
+                      help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
+    parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf',
+                      help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
     parser.add_option('-t', dest='threads', type='int', help='Max number of slots, default is %d' % defaults['threads'])
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
     parser.add_option('--project-name', '--project', dest='project_name', help='Project name. If not set, it gets parsed from JIRA or from the location path.')
-    parser.add_option('--done-marker', dest='done_marker')
-    parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help='Default is temporary directory')
     parser.add_option('--genome', dest='genome', help='Genome build')
-    parser.add_option('--debug', dest='debug', help='Debug mode; keep work directory.', action='store_true', default=False)
-    parser.add_option('--queue', dest='queue', help='Queue for qsub')
+    parser.add_option('--done-marker', dest='done_marker', help=SUPPRESS_HELP)
+    parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help=SUPPRESS_HELP)  # Default is temporary directory
+    parser.add_option('--debug', dest='debug', help=SUPPRESS_HELP, action='store_true', default=False)  # Debug mode; keep work directory.
+    parser.add_option('--queue', dest='queue', help=SUPPRESS_HELP)  # Queue name for qsub
 
 
 def check_genome_resources(cnf):
     if cnf.genome is None:
-        critical('Please, specify genome build using the --genome option.')
+        critical('Please, specify genome build (one of available in ' + cnf.sys_cnf +
+                 ') using the --genome option.')
 
     if not cnf.genomes:
-        critical('"genomes" section is not specgetified in system config ' + cnf.sys_cnf)
+        critical('"genomes" section is not specified in system config ' + cnf.sys_cnf)
 
-    info('Checking paths in the genomes sections in ' + cnf.sys_cnf)
-    info()
+    info('Genome: ' + str(cnf.genome.name))
 
-    info('Genome: ' + str(cnf.genome))
+    for key in cnf.genomes.keys():
+        if key != 'name' and isinstance(cnf.genome[key], basestring):
+            cnf.genome[key] = adjust_system_path(cnf.genome[key])
 
-    for build_name, genome_cnf in cnf.genomes.items():
-        for key in genome_cnf.keys():
-            if isinstance(genome_cnf[key], basestring):
-                genome_cnf[key] = adjust_system_path(genome_cnf[key])
-
-                if not verify_obj_by_path(genome_cnf[key], key, silent=True):
-                    if not genome_cnf[key].endswith('.gz') and verify_file(genome_cnf[key] + '.gz', silent=True):
-                        gz_fpath = genome_cnf[key] + '.gz'
-                        if verify_file(gz_fpath, silent=True):
-                            genome_cnf[key] = gz_fpath
-                            if build_name == cnf.genome:
-                                info(key + ': ' + gz_fpath)
-                    # else:
-                    #     if build_name == cnf.genome:
-                    #         err('   Err: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
-                        # else:
-                        #     warn('   Warn: no ' + genome_cnf[key] + (' and .gz' if not genome_cnf[key].endswith('gz') else ''))
-                # else:
-                #     info(key + ': ' + genome_cnf[key])
-        genome_cnf['name'] = build_name
-
-    cnf.genome = cnf.genomes[cnf.genome]
-
-    info('Checked genome resources.')
-    info('*' * 70)
-    info()
+            if not verify_obj_by_path(cnf.genome[key], key, silent=True):
+                if not cnf.genome[key].endswith('.gz') and verify_file(cnf.genome[key] + '.gz', silent=True):
+                    gz_fpath = cnf.genome[key] + '.gz'
+                    if verify_file(gz_fpath, silent=True):
+                        cnf.genome[key] = gz_fpath
 
 
 def check_keys_presence(cnf, required_keys):
@@ -241,7 +225,7 @@ def determine_sys_cnf(opts):
     else:
         opts.__dict__['sys_cnf'] = verify_file(detect_sys_cnf_by_location(), is_critical=True)
 
-    info('Using ' + opts.sys_cnf)
+    debug('Using system configuration ' + opts.sys_cnf)
     return opts.sys_cnf
 
 
@@ -256,7 +240,7 @@ def determine_run_cnf(opts, is_wgs=False, is_targeteq=False):
         opts.run_cnf = defaults['run_cnf_exome_seq']
 
     verify_file(opts.run_cnf, is_critical=True)
-    info('Using ' + opts.run_cnf)
+    debug('Using run configuration ' + opts.run_cnf)
     return opts.run_cnf
 
 

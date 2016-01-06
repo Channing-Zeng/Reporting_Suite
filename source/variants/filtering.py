@@ -143,25 +143,37 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, vardict2mut_res_fpat
         vardict2mut_executable = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
 
     c = cnf.variant_filtering
-    min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
+    min_freq = cnf.min_freq or c.min_freq
+    if min_freq == 'bcbio' or min_freq is None:
+        min_freq = sample_min_freq
+    if min_freq is None:
+        min_freq = defaults.default_min_freq
 
-    cmdline = '{vardict2mut_executable} -D {c.filt_depth} -V {c.min_vd} -f {min_freq} -R {c.max_ratio} --report_reason '
-    if cnf.min_hotspot_freq is not None and cnf.min_hotspot_freq != 'default':
-        cmdline += '-F ' + str(cnf.min_hotspot_freq)
-    cmdline += ' {vcf2txt_res_fpath} '
-    if cnf.genome.ruledir: cmdline += '--ruledir {cnf.genome.ruledir} '
-    if cnf.genome.filter_common_snp: cmdline += '--filter_common_snp {cnf.genome.filter_common_snp} '
-    if cnf.genome.snpeffect_export_polymorphic: cmdline += '--snpeffect_export_polymorphic {cnf.genome.snpeffect_export_polymorphic} '
-    if cnf.genome.filter_common_artifacts: cmdline += '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
-    if cnf.genome.actionable_hotspot: cmdline += '--actionable_hotspot {cnf.genome.actionable_hotspot} '
-    if cnf.genome.actionable: cmdline += '--actionable {cnf.genome.actionable} '
-    if cnf.genome.compendia_ms7_hotspot: cmdline += '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
+    cmdline = '{vardict2mut_executable} -f {min_freq} '
+    if vardict2mut_executable.endswith('.pl'):
+        cmdline += '--report_reason '
+        if c.min_hotspot_freq is not None and c.min_hotspot_freq != 'default':
+            cmdline += '-F ' + str(c.min_hotspot_freq)
+        if c.max_ratio_vardict2mut is not None:
+            cmdline += '-R ' + str(c.max_ratio_vardict2mut)
+        cmdline += ' {vcf2txt_res_fpath} '
+        if cnf.genome.ruledir: cmdline += '--ruledir {cnf.genome.ruledir} '
+        if cnf.genome.filter_common_snp: cmdline += '--filter_common_snp {cnf.genome.filter_common_snp} '
+        if cnf.genome.filter_common_artifacts: cmdline += '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
+        if cnf.genome.actionable: cmdline += '--actionable {cnf.genome.actionable} '
+        if cnf.genome.compendia_ms7_hotspot: cmdline += '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
+        if cnf.snpeffect_export_polymorphic: cmdline += '--snpeffect_export_polymorphic {cnf.snpeffect_export_polymorphic} '
+        if cnf.actionable_hotspot: cmdline += '--actionable_hotspot {cnf.actionable_hotspot} '
+        cmdline = cmdline.format(**locals())
+        res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
 
-    # if cnf.suppressors: cmdline += '--suppressors {cnf.suppressors} '
-    # if cnf.oncogenes: cmdline += '--oncogenes {cnf.oncogenes} '
+    else:
+        cmdline += '--genome ' + cnf.genome.name
+        cmdline += '--o ' + vardict2mut_res_fpath
+        cmdline = cmdline.format(**locals())
+        res = call(cnf, cmdline, output_fpath=vardict2mut_res_fpath,
+                   stdout_to_outputfile=False, exit_on_error=False)
 
-    cmdline = cmdline.format(**locals())
-    res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
     if not res:
         return None
     else:
@@ -430,7 +442,11 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
     vcf2txt = get_script_cmdline(cnf, 'perl', join('VarDict', 'vcf2txt.pl'), is_critical=True)
 
     c = cnf.variant_filtering
-    min_freq = cnf.min_freq or c.min_freq or sample_min_freq or defaults.default_min_freq
+    min_freq = cnf.min_freq or c.min_freq
+    if min_freq == 'bcbio' or min_freq is None:
+        min_freq = sample_min_freq
+    if min_freq is None:
+        min_freq = defaults.default_min_freq
 
     cmdline = '{vcf2txt} ' \
         '-f {min_freq} -n {c.sample_cnt} -F {c.ave_freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \

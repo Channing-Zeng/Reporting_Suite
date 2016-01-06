@@ -2,9 +2,10 @@
 
 import sys
 from os.path import join, basename, abspath, dirname, pardir
-from optparse import OptionParser
+from optparse import OptionParser, SUPPRESS_HELP
 from traceback import format_exc
 
+from source import logger
 from source.file_utils import remove_quotes
 from source.config import Config, defaults
 from source.logger import info, err, critical
@@ -16,55 +17,58 @@ code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
 
 
 def read_opts_and_cnfs(extra_opts,
-                       key_for_sample_name,
-                       required_keys,
+                       key_for_sample_name=None,
+                       required_keys=list(),
                        file_keys=list(),
                        dir_keys=list(),
                        description='',
                        extra_msg=None,
                        proc_name=None,
                        fpath_for_sample_name=None,
-                       output_fpath_not_dir=False):
+                       with_output_file=False,
+                       with_output_dir=True):
     options = extra_opts
-    if not output_fpath_not_dir:
-        options += [
-            (['-o', '--output-dir'], dict(
-                 dest='output_dir',
-                 metavar='DIR',
-                 help='output directory (or directory name in case of bcbio final dir)')
-             )]
-    else:
+    if with_output_file:
         options += [
             (['-o', '--output-file'], dict(
                  dest='output_file',
                  metavar='FILE',
-                 help='output file')
+                 help='Output file')
              )]
+    elif with_output_dir:
+        options += [
+            (['-o', '--output-dir'], dict(
+                 dest='output_dir',
+                 metavar='DIR',
+                 help='Output directory (or directory name in case of bcbio final dir)')
+             )]
+
     options += [
         (['-s', '--sample', '--name'], dict(
              dest='sample',
              metavar='NAME',
-             help='sample name (default is part of name of the first parameter prior to the first - or .')
+             help='Sample name (default is part of name of the first parameter prior to the first - or .')
          ),
         (['-c', '--caller'], dict(
              dest='caller',
-             metavar='CALLER',
-             help='variant caller name (default is part of name of the first parameter between the first - and following .')
+             metavar='CALLER_NAME',
+             help='Variant caller name (default is part of name of the first parameter between the first - and following .')
          ),
         (['-t', '--nt', '--threads'], dict(
              dest='threads',
              type='int',
-             help='number of threads')
+             help='Number of threads')
          ),
-        (['--clean'], dict(
+        (['--clean'], dict(  # do not keep work directory
              dest='keep_intermediate',
-             help='do not store work directory',
-             action='store_false')
+             action='store_false',
+             help=SUPPRESS_HELP)
          ),
         (['--debug'], dict(
              dest='debug',
              action='store_true',
-             default=False)
+             default=False,
+             help=SUPPRESS_HELP)
          ),
         (['--reuse'], dict(
              dest='reuse_intermediate',
@@ -84,13 +88,13 @@ def read_opts_and_cnfs(extra_opts,
              help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
                   'The default is %s' % defaults['run_cnf_exome_seq'])
          ),
-        (['--work-dir'], dict(dest='work_dir', metavar='DIR')),
-        (['--log-dir'], dict(dest='log_dir', metavar='DIR')),
-        (['--proc-name'], dict(dest='proc_name')),
+        (['--work-dir'], dict(dest='work_dir', metavar='DIR', help=SUPPRESS_HELP)),
+        (['--log-dir'], dict(dest='log_dir', metavar='DIR', help=SUPPRESS_HELP)),
+        (['--proc-name'], dict(dest='proc_name', help=SUPPRESS_HELP)),
         (['--project-name'], dict(dest='project_name')),
         (['--genome'], dict(dest='genome')),
-        (['--email'], dict(dest='email')),
-        (['--done-marker'], dict(dest='done_marker')),
+        (['--email'], dict(dest='email', help=SUPPRESS_HELP)),
+        (['--done-marker'], dict(dest='done_marker', help=SUPPRESS_HELP)),
     ]
 
     parser = OptionParser(description=description)
@@ -110,6 +114,7 @@ def read_opts_and_cnfs(extra_opts,
     parser.set_usage(parser.get_usage() + req_keys_usage)
 
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)

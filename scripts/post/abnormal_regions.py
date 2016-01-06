@@ -5,7 +5,7 @@ import bcbio_postproc
 import sys
 import shutil
 from source import BaseSample
-from source.bcbio.bcbio_structure import summary_script_proc_params, BCBioStructure
+from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.clinical_reporting.clinical_parser import parse_mutations, get_key_or_target_bed_genes
 from source.prepare_args_and_cnf import check_system_resources
 from source.targetcov.summarize_targetcov import _generate_summary_flagged_regions_report
@@ -13,7 +13,7 @@ from source.utils import info
 
 
 def main(args):
-    cnf, bcbio_structure = summary_script_proc_params(
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(
         BCBioStructure.targqc_name,
         BCBioStructure.targqc_summary_dir,
         extra_opts=[

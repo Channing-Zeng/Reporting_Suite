@@ -4,7 +4,7 @@ import bcbio_postproc
 
 
 import sys
-from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.logger import info
 from source.targetcov.summarize_targetcov import summarize_targqc, get_bed_targqc_inputs
 
@@ -13,7 +13,7 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(
         BCBioStructure.targqc_name,
         BCBioStructure.targqc_summary_dir,
         extra_opts=[

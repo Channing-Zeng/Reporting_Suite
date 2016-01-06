@@ -24,6 +24,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import index_bam, markdup_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
+from source import logger
 from source.logger import info, critical, err, is_local, warn, send_email
 from source.utils import is_az
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, determine_sys_cnf, determine_run_cnf, \
@@ -36,6 +37,7 @@ from source.webserver.exposing import sync_with_ngs_server
 def proc_opts():
     parser = OptionParser(description='')
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
     if len(args) < 1:
         critical('First argument should be a root datasets dir')
     # if len(args) < 2:

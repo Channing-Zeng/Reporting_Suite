@@ -16,6 +16,7 @@ project_fpath = None
 proc_name = None
 my_address = 'Vlad.Saveliev@astrazeneca.com'
 cnf_address = None
+is_debug = True
 
 smtp_host = None  # set up in source/config.py and system_info.yaml
 
@@ -43,6 +44,11 @@ def step_greetings(name):
 
 def info(msg='', ending='\n', print_date=True, severity='info'):
     _log(sys.stdout, msg, ending, print_date, severity=severity)
+
+
+def debug(msg='', ending='\n', print_date=True, severity='debug'):
+    if is_debug:
+        _log(sys.stdout, msg, ending, print_date, severity=severity)
 
 
 def warn(msg='', ending='\n', print_date=True, severity='warning'):

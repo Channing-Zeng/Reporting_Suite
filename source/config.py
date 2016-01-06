@@ -3,9 +3,11 @@ from contextlib import contextmanager
 from os import getcwd
 from os.path import abspath, expanduser, join, dirname, pardir
 from traceback import format_exc
+
+from source import logger
 from source.file_utils import verify_file, verify_module, adjust_path
 
-from source.logger import info, err, critical
+from source.logger import info, err, critical, debug
 
 if verify_module('yaml'):
     from yaml import load as load_yaml
@@ -50,7 +52,7 @@ for k, v in run_info_defaults.items():
 
 
 class Config(object):
-    def __init__(self, cmd_line_opts, sys_cnf=None, run_cnf=None, **kwargs):
+    def __init__(self, cmd_line_opts, sys_cnf=None, run_cnf=None, bcbio_genome_build=None, **kwargs):
         object.__setattr__(self, '__d', dict())
 
         self.level = 0
@@ -69,6 +71,14 @@ class Config(object):
             if run_cnf_fpath:
                 self.run_cnf = run_cnf_fpath
             self.tmp_base_dir = self.work_dir
+
+            if not self.genome:
+                self.genome = bcbio_genome_build
+            if self.genomes and self.genome:
+                build_name = self.genome
+                self.genome = Config(self.genomes[build_name])
+                self.genome.name = build_name
+
         else:
             for k, v in cmd_line_opts.items():
                 self[k] = v
@@ -136,6 +146,13 @@ class Config(object):
     def __len__(self):
         return self.__d.__len__()
 
+    # def __genome_resources(self):
+    #     cnf = self
+    #     if cnf.genomes and cnf.genome:
+    #         build_name = cnf.genome
+    #         cnf.genome = cnf.genomes[build_name]
+    #         cnf.genome.name = build_name
+
 
 class CallCnf:
     def __init__(self, dict_cnf):
@@ -185,10 +202,10 @@ def fill_dict_from_defaults(cur_cnf, defaults_dict):
 def _check_paths(sys_cnf=None, run_cnf=None):
     to_exit = False
 
-    info('System configuration file: ' + str(sys_cnf))
+    debug('System configuration file: ' + str(sys_cnf))
     if run_cnf:
-        info('Run configuration file: ' + str(run_cnf))
-    info()
+        debug('Run configuration file: ' + str(run_cnf))
+    debug()
 
     sys_cnf = verify_file(sys_cnf, 'System config', is_critical=True)
     if run_cnf:

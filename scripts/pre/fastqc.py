@@ -7,6 +7,7 @@ from os.path import join, basename, dirname, splitext, isfile
 from itertools import izip
 import os
 import sys
+from source import logger
 from source import info, verify_file
 from optparse import OptionParser
 from source.calling_process import call
@@ -43,6 +44,7 @@ def main():
              'Default is 1 million. Set to 0 to turn off downsampling.')
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), determine_run_cnf(opts))
     left_reads_fpath = verify_file(opts.left_reads_fpath, is_critical=True)

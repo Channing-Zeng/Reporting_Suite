@@ -79,6 +79,7 @@ def summary_script_proc_params(proc_name, proc_dir_name=None, description=None, 
 
 def process_post_bcbio_args(parser):
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
 
     bcbio_dirpaths = []
     tags = []

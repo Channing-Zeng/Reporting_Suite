@@ -35,6 +35,7 @@ def main():
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
 
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
 
     if len(args) == 0:
         critical('No BAMs provided to input.')

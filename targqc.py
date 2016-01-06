@@ -12,6 +12,7 @@ import source
 from source.config import Config, defaults
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_genome_resources, determine_run_cnf, \
     determine_sys_cnf
+from source import logger
 from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
     file_exists, isfile
@@ -42,6 +43,7 @@ def proc_args(argv):
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
 
     (opts, args) = parser.parse_args()
+    logger.is_debug = opts.debug
 
     if len(args) == 0:
         critical('No BAMs provided to input.')

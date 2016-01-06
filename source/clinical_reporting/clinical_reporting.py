@@ -226,13 +226,14 @@ class BaseClinicalReporting:
         if experiment.project_report_path:
             d['project_report_rel_path'] = relpath(experiment.project_report_path, dirname(experiment.sample.clinical_html))
         if experiment.target:
-            d['panel'] = experiment.target.type
-            d['bed_path'] = experiment.target.bed_fpath or ''
-            d['target_type'] = experiment.target.type
-            d['target_fraction'] = Metric.format_value(experiment.target.coverage_percent, is_html=True, unit='%')
+            d['target_section'] = dict()
+            d['target_section']['panel'] = experiment.target.type
+            d['target_section']['bed_path'] = experiment.target.bed_fpath or ''
+            d['target_section']['target_type'] = experiment.target.type
+            d['target_section']['target_fraction'] = Metric.format_value(experiment.target.coverage_percent, is_html=True, unit='%')
             if self.cnf.debug:
-                d['panel'] = experiment.target.type + ', AZ300 IDT panel'
-                d['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+                d['target_section']['panel'] = experiment.target.type + ', AZ300 IDT panel'
+                d['target_section']['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
         d['sample_type'] = experiment.sample.normal_match if experiment.sample.normal_match else 'unpaired'  # plasma, unpaired'
         d['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run

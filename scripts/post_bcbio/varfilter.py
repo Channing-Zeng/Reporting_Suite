@@ -14,7 +14,7 @@ from source.tools_from_cnf import get_java_tool_cmdline
 from source.variants.filtering import filter_for_variant_caller
 from source.config import defaults
 from source.logger import info, err, critical, warn
-from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.file_utils import safe_mkdir, symlink_plus, num_lines, verify_file
 from source.variants.vcf_processing import igvtools_index
 from source.variants.vcf_processing import bgzip_and_tabix
@@ -193,7 +193,7 @@ def main():
         )),
     ]
 
-    cnf, bcbio_structure = summary_script_proc_params(
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(
         BCBioStructure.varfilter_name,
         description=description,
         extra_opts=extra_opts)

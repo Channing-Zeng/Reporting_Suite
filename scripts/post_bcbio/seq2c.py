@@ -6,7 +6,7 @@ import bcbio_postproc
 import sys
 from os.path import join
 
-from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.calling_process import call
 from source.copy_number import cnv_reports
 from source.logger import info
@@ -17,7 +17,7 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(
         BCBioStructure.seq2c_name,
         BCBioStructure.cnv_summary_dir,
         extra_opts=[

@@ -8,7 +8,7 @@ from os.path import join
 
 import source
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
-from source.bcbio.bcbio_structure import BCBioStructure, summary_script_proc_params
+from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.logger import info, step_greetings
 
 
@@ -16,7 +16,7 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = summary_script_proc_params(BCBioStructure.fastqc_name, BCBioStructure.fastqc_dir)
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(BCBioStructure.fastqc_name, BCBioStructure.fastqc_dir)
 
     step_greetings('FastQC summary for all samples')
 
