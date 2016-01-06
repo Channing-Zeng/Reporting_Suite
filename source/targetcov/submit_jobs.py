@@ -65,7 +65,8 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpat
     wait_for_jobs(cnf, jobs_to_wait)
 
     info('Making targqc summary')
-    return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
+    return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples,
+                            bed_fpath=target_bed, exons_fpath=exons_bed)
 
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples,

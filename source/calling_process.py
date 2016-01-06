@@ -293,6 +293,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         res_ = None
         counter = 0
         max_number_of_tries = 200
+        slept = 0
+        timeout = 30
+        limit = 60 * 10
         while True:
             try:
                 res_ = do(cmdl, out_fpath, stderr_dump=stderr_dump)
@@ -306,10 +309,14 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if 'Cannot allocate memory' not in str(e):
                     break
                 else:
-                    err('Waiting...')
-                    time.sleep(30)
-                    err('Retrying...')
-                    err()
+                    if slept >= limit:
+                        return None
+                    else:
+                        err('Waiting ' + str(timeout) + ' seconds...')
+                        time.sleep(timeout)
+                        slept += timeout
+                        err('Retrying...')
+                        err()
         return res_
 
     res = None  # = proc or output_fpath

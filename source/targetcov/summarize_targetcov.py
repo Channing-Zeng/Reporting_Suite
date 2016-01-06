@@ -177,7 +177,8 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
 
     # _make_targetcov_symlinks(samples)
 
-    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath, tag_by_sample)
+    txt_fpath, tsv_fpath, html_fpath = _make_tarqc_html_report(
+            cnf, output_dir, samples, bed_fpath, tag_by_sample=tag_by_sample)
 
     best_for_regions_fpath = None
     if any(verify_file(s.targetcov_detailed_tsv, silent=True) for s in samples):
