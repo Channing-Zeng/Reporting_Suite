@@ -93,7 +93,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
         target_bed = verify_bed(target_bed, is_critical=True)
 
     if exons_bed:
-        target_bed = verify_bed(exons_bed, is_critical=True)
+        exons_bed = verify_bed(exons_bed, is_critical=True)
 
     if exons_bed and target_bed and abspath(exons_bed) == abspath(target_bed):
         warn('Same file used for exons and amplicons: ' + exons_bed)

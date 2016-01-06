@@ -364,7 +364,7 @@ class ClinicalReporting(BaseClinicalReporting):
         return mutations_dict
 
     def __coverage_section(self):
-        if self.experiment.depth_cutoff is not None:
+        if self.experiment.depth_cutoff is not None and self.key_genes_report is not None:
             coverage_dict = dict(depth_cutoff=self.experiment.depth_cutoff, columns=[])
             GENE_COL_NUM = 3
             genes_in_col = len(self.key_genes_report.rows) / GENE_COL_NUM
