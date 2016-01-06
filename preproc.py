@@ -82,7 +82,7 @@ def proc_opts():
     if opts.genome is None:
         opts.genome = 'hg19'
 
-    run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
+    run_cnf = determine_run_cnf(opts)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
     if cnf.work_dir:
@@ -135,22 +135,24 @@ def proc_opts():
 def read_hiseq4000_conf(conf_fpath):
     projectname_by_subproject = dict()
     jira_by_subproject = dict()
+    bed_by_subproject = dict()
     if verify_file(conf_fpath, is_critical=True, description='HiSeq4000 jira/subproject configuration file'):
         with open(conf_fpath) as f:
             for i, l in enumerate(f):
                 l = l.strip()
                 if not l.startswith('#'):
                     fs = l.split(',')
-                    if not len(fs) == 3:
-                        critical('A line in ' + conf_fpath + ' should contain 3 comma-separated values '
-                                 '(dirname, project name, jira url). Malformed line #' + str(i) + ': ' + l)
+                    if not len(fs) == 4:
+                        critical('A line in ' + conf_fpath + ' should contain 4 comma-separated values (empty allowed) '
+                                 '(dirname, project name, jira url, bed path). Malformed line #' + str(i) + ': ' + l)
                     projectname_by_subproject[fs[0]] = fs[1]
                     jira_by_subproject[fs[0]] = fs[2]
+                    bed_by_subproject[fs[0]] = fs[3]
     if len(projectname_by_subproject) == 0:
         critical('No records in ' + conf_fpath)
-    assert len(projectname_by_subproject) == len(jira_by_subproject), \
-        str(len(projectname_by_subproject)) + ', ' + str(len(jira_by_subproject))
-    return projectname_by_subproject, jira_by_subproject
+    assert len(projectname_by_subproject) == len(jira_by_subproject) == len(bed_by_subproject), \
+        str(len(projectname_by_subproject)) + ', ' + str(len(jira_by_subproject) + ', ' + str(len(bed_by_subproject)))
+    return projectname_by_subproject, jira_by_subproject, bed_by_subproject
 
 
 def parse_jira_case(jira_url):
@@ -163,9 +165,9 @@ def parse_jira_case(jira_url):
 
 def main():
     cnf, project_dirpath, jira_url = proc_opts()
-    prjname_by_subprj, jira_by_subprj = {'': cnf.project_name or ''}, {'': jira_url}
+    prjname_by_subprj, jira_by_subprj, bed_by_subprj = {'': cnf.project_name or ''}, {'': jira_url}, {'': cnf.bed}
     if cnf.hiseq4000_conf:
-        prjname_by_subprj, jira_by_subprj = read_hiseq4000_conf(cnf.hiseq4000_conf)
+        prjname_by_subprj, jira_by_subprj, bed_by_subprj = read_hiseq4000_conf(cnf.hiseq4000_conf)
 
     jira_case_by_subprj = dict()
     for subprj, jira_url in jira_by_subprj.items():
@@ -239,7 +241,7 @@ def main():
                         safe_mkdir(cnf.work_dir)
                         info('Making TargQC reports for BAMs from ' + str(downsample_to) + ' reads')
                         safe_mkdir(project.downsample_targqc_dirpath)
-                        project.downsample_targqc_report_fpath = run_targqc(cnf, project, bam_by_sample)
+                        project.downsample_targqc_report_fpath = run_targqc(cnf, bed_by_subprj[bed_by_subprj], project, bam_by_sample)
                         cnf.work_dir = dirname(cnf.work_dir)
             else:
                 err('For downsampled targqc and metamappint, bwa, sambamba, bammarkduplicates and seqtk are required.')
@@ -361,7 +363,7 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
     info('Running MetaMapping for downsampled BAMs')
 
 
-def run_targqc(cnf, project, bam_by_sample):
+def run_targqc(cnf, project, bed_fpath, bam_by_sample):
     info('Running TargQC for downsampled BAMs')
 
     targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
@@ -371,8 +373,8 @@ def run_targqc(cnf, project, bam_by_sample):
     safe_mkdir(targqc_work_dir)
     safe_mkdir(targqc_log_dir)
     bed_cmdl = ''
-    if cnf.bed:
-        bed_cmdl = '--bed ' + cnf.bed
+    if bed_fpath:
+        bed_cmdl = '--bed ' + bed_fpath
     cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} {bed_cmdl} ' \
            '--work-dir {targqc_work_dir} --log-dir {targqc_log_dir} --project-name {cnf.project_name} ' \
            '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
