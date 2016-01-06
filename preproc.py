@@ -37,16 +37,17 @@ if is_local():
     NGS_WEBSERVER_PREPROC_DIR = '/Users/vlad/Sites/reports'
 
 def proc_opts():
-    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL> [--bed BED] [--project-name STR] [--expose-only]\n' \
-                                   '\tNote that DATASET_DIR_LOCATION can be either the root of a Illumina run ' \
-                                   '(in witch case multiple projects may be detected and processed, or ' \
-                                   'a specific project in <root>/Unalign/<Project>'
+    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL(S)> [--bed BED] [--project-name STR] [--expose-only]\n' \
+            '\tNote that DATASET_DIR_LOCATION can be either the root of a Illumina run ' \
+            '(in witch case multiple projects may be detected and processed, or ' \
+            'a specific project in <root>/Unalign/<Project>'
 
     description = 'This script runs preprocessing. ' + usage
 
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     parser.add_option('-j', '--jira', dest='jira', help='JIRA case path (goes to the ngs-website)')
+    parser.add_option('--conf', dest='hiseq4000_conf', help='A csv-file in the form of "subproject_dir_name,sub_project_desired_name,jira_url"')
     parser.add_option('--bed', dest='bed', help='BED file (used for downsampled TargQC reports)')
     parser.add_option('--samplesheet', dest='samplesheet', help='Sample sheet (default is located under the dataset root as SampleSheet.csv')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
@@ -77,6 +78,9 @@ def proc_opts():
     jira_url = ''
     if len(args) > 1:
         jira_url = args[1]
+
+    if opts.genome is None:
+        opts.genome = 'hg19'
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
@@ -128,30 +132,64 @@ def proc_opts():
     return cnf, dataset_dirpath, jira_url
 
 
-def main():
-    cnf, project_dirpath, jira_url = proc_opts()
+def read_hiseq4000_conf(conf_fpath):
+    projectname_by_subproject = dict()
+    jira_by_subproject = dict()
+    if verify_file(conf_fpath, is_critical=True, description='HiSeq4000 jira/subproject configuration file'):
+        with open(conf_fpath) as f:
+            for i, l in enumerate(f):
+                l = l.strip()
+                if not l.startswith('#'):
+                    fs = l.split(',')
+                    if not len(fs) == 3:
+                        critical('A line in ' + conf_fpath + ' should contain 3 comma-separated values '
+                                 '(dirname, project name, jira url). Malformed line #' + str(i) + ': ' + l)
+                    projectname_by_subproject[fs[0]] = fs[1]
+                    jira_by_subproject[fs[0]] = fs[2]
+    if len(projectname_by_subproject) == 0:
+        critical('No records in ' + conf_fpath)
+    assert len(projectname_by_subproject) == len(jira_by_subproject), \
+        str(len(projectname_by_subproject)) + ', ' + str(len(jira_by_subproject))
+    return projectname_by_subproject, jira_by_subproject
 
+
+def parse_jira_case(jira_url):
     jira_case = None
     if is_az() and jira_url:
         info('Getting info from JIRA...')
         jira_case = retrieve_jira_info(jira_url)
-        if not cnf.project_name and jira_case:
-            cnf.project_name = jira_case.project_name
-            info('Setting project name from JIRA: ' + cnf.project_name)
-    if not cnf.project_name:
-        critical('Cannot parse JIRA url ' + str(jira_url) + ', and --project-name is not specified. Please, provide a project name.')
-    cnf.project_name = cnf.project_name.replace(' ', '_')
-    info('Fixed final project name: ' + cnf.project_name)
+    return jira_case
+
+
+def main():
+    cnf, project_dirpath, jira_url = proc_opts()
+    prjname_by_subprj, jira_by_subprj = {'': cnf.project_name or ''}, {'': jira_url}
+    if cnf.hiseq4000_conf:
+        prjname_by_subprj, jira_by_subprj = read_hiseq4000_conf(cnf.hiseq4000_conf)
+
+    jira_case_by_subprj = dict()
+    for subprj, jira_url in jira_by_subprj.items():
+        jira_case_by_subprj[subprj] = parse_jira_case(jira_url)
+        if not prjname_by_subprj[subprj] and jira_case_by_subprj[subprj]:
+            prjname_by_subprj[subprj] = jira_case_by_subprj[subprj].project_name
+            info('Setting project name from JIRA: ' + prjname_by_subprj[subprj])
+        if not prjname_by_subprj[subprj]:
+            critical('Cannot parse JIRA url ' + str(jira_url) +
+               ', and project name is not specified in the config or command line. Please, provide a project name.')
+        prjname_by_subprj[subprj] = prjname_by_subprj[subprj].replace(' ', '_')
+        info('Project name and JIRA URL for "' + subprj + '": ' + prjname_by_subprj[subprj] + ', ' + str(jira_url))
 
     info()
     info('*' * 60)
-    ds = DatasetStructure.create(project_dirpath, cnf.project_name, cnf.samplesheet)
+    ds = DatasetStructure.create(project_dirpath, prjname_by_subprj, cnf.samplesheet)
     if not ds.project_by_name:
-        critical('No projects found')
+        critical('Error: no projects found')
     info('Projects: ' + ', '.join([p.name + ' (' + ', '.join(p.sample_by_name) + ')' for p in ds.project_by_name.values()]))
     for project in ds.project_by_name.values():
         if not project.sample_by_name:
-            critical('No samples for project ' + project.name + ' found')
+            critical('Error: no samples for project ' + project.name + ' found')
+        if len(ds.project_by_name) > 1 and project.name not in jira_case_by_subprj:
+            critical('Error: ' + project.name + 'could not be found in config ' + str(cnf.hiseq4000_conf))
 
     for project in ds.project_by_name.values():
         samples = project.sample_by_name.values()
@@ -228,12 +266,13 @@ def main():
         info()
         info('Syncing with the NGS webserver')
         html_report_url = sync_with_ngs_server(cnf,
-            jira_url=cnf.jira,
+            jira_url=jira_by_subprj.get(project.name, jira_by_subprj.values()[0] if jira_by_subprj.values() else None),
             project_name=project.az_project_name,
             sample_names=[s.name for s in samples],
             dataset_dirpath=project_dirpath,
             summary_report_fpath=project.project_report_html_fpath,
-            jira_case=jira_case)
+            jira_case=jira_case_by_subprj.get(project.name, jira_case_by_subprj.values()[0] if jira_case_by_subprj.values() else None)
+        )
 
             # FastQC
             # symlink_to_ngs(project_dirpath, NGS_WEBSERVER_PREPROC_DIR)
