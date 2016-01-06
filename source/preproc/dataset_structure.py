@@ -11,15 +11,18 @@ from source.file_utils import verify_dir, verify_file, splitext_plus, safe_mkdir
 
 
 def get_hiseq4000_miseq_regexp(sample, suf):
-    return sample.name.replace('-', '.').replace('_', '.').replace(' ', '.') + \
+    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
+    return sn.replace('-', '.').replace('_', '.').replace(' ', '.') + \
         '_S\d+_L\d\d\d_' + suf + '.*\.fastq\.gz'
 
 def get_hiseq_regexp(sample, suf):
-    return sample.name.replace('-', '.').replace('_', '.').replace(' ', '.') + \
+    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
+    return sn.replace('-', '.').replace('_', '.').replace(' ', '.') + \
         '_' + sample.index + '_L\d\d\d_' + suf + '.*\.fastq\.gz'
 
 def get_nextseq500_regexp(sample, suf):
-    return sample.name.replace('-', '.').replace('_', '.').replace(' ', '.') + \
+    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
+    return sn.replace('-', '.').replace('_', '.').replace(' ', '.') + \
         '_S\d+_' + suf + '.*\.fastq\.gz'
 
 

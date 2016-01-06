@@ -99,7 +99,8 @@ def proc_opts():
             cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
             if exists(latest_fpath):
                 os.remove(latest_fpath)
-            os.symlink(cnf.work_dir, latest_fpath)
+            if not exists(latest_fpath):
+                os.symlink(basename(cnf.work_dir), latest_fpath)
 
     cnf.work_dir = adjust_path(cnf.work_dir)
     safe_mkdir(cnf.work_dir)
@@ -241,7 +242,8 @@ def main():
                         safe_mkdir(cnf.work_dir)
                         info('Making TargQC reports for BAMs from ' + str(downsample_to) + ' reads')
                         safe_mkdir(project.downsample_targqc_dirpath)
-                        project.downsample_targqc_report_fpath = run_targqc(cnf, bed_by_subprj[bed_by_subprj], project, bam_by_sample)
+                        project.downsample_targqc_report_fpath = run_targqc(cnf, project, bam_by_sample,
+                            bed_by_subprj.get(project.name, bed_by_subprj.values()[0] if bed_by_subprj.values() else None))
                         cnf.work_dir = dirname(cnf.work_dir)
             else:
                 err('For downsampled targqc and metamappint, bwa, sambamba, bammarkduplicates and seqtk are required.')
@@ -268,7 +270,7 @@ def main():
         info()
         info('Syncing with the NGS webserver')
         html_report_url = sync_with_ngs_server(cnf,
-            jira_url=jira_by_subprj.get(project.name, jira_by_subprj.values()[0] if jira_by_subprj.values() else None),
+            jira_url=jira_by_subprj.get(project.name, jira_by_subprj.values()[0] if jira_by_subprj.values() else 'unreached'),
             project_name=project.az_project_name,
             sample_names=[s.name for s in samples],
             dataset_dirpath=project_dirpath,
@@ -363,7 +365,7 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
     info('Running MetaMapping for downsampled BAMs')
 
 
-def run_targqc(cnf, project, bed_fpath, bam_by_sample):
+def run_targqc(cnf, project, bam_by_sample, bed_fpath):
     info('Running TargQC for downsampled BAMs')
 
     targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
