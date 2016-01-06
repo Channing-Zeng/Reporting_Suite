@@ -6,7 +6,7 @@ from collections import OrderedDict
 from os.path import join, basename
 
 from source.logger import info, critical, err
-from source.file_utils import file_exists, verify_file, file_transaction
+from source.file_utils import file_exists, verify_file, file_transaction, adjust_path
 from source.targetcov.Region import SortableByChrom
 
 
@@ -73,27 +73,29 @@ def get_chr_len_fpath(cnf):
                     chrom, length = line.split()[0], line.split()[1]
                     chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
     else:
-        genome_seq_fpath = cnf['genome'].get('seq')
-        if genome_seq_fpath:
-            if verify_file(genome_seq_fpath + '.fai'):
-                info('Reading genome index file (.fai) to get chromosome lengths')
-                with open(genome_seq_fpath + '.fai', 'r') as handle:
-                    for line in handle:
-                        line = line.strip()
-                        if line:
-                            chrom, length = line.split()[0], line.split()[1]
-                            chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
-            else:
-                info('Reading genome sequence (.fa) to get chromosome lengths')
-                with open(genome_seq_fpath, 'r') as handle:
-                    from Bio import SeqIO
-                    reference_records = SeqIO.parse(handle, 'fasta')
-                    for record in reference_records:
-                        chrom = record.id
-                        chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), len(record.seq)])
-        else:
-            err('There is no seq key in the system config for ' + cnf['genome']['name'])
+        genome_seq_fpath = adjust_path(cnf.genome.seq)
+        if not genome_seq_fpath:
+            critical('There is no "seq" key in ' + cnf.sys_cnf + ' for "' + cnf.genome.name + '" section')
             return None
+
+        if verify_file(genome_seq_fpath + '.fai'):
+            info('Reading genome index file (.fai) to get chromosome lengths')
+            with open(genome_seq_fpath + '.fai', 'r') as handle:
+                for line in handle:
+                    line = line.strip()
+                    if line:
+                        chrom, length = line.split()[0], line.split()[1]
+                        chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
+        elif verify_file(genome_seq_fpath):
+            info('Reading genome sequence (.fa) to get chromosome lengths')
+            with open(genome_seq_fpath, 'r') as handle:
+                from Bio import SeqIO
+                reference_records = SeqIO.parse(handle, 'fasta')
+                for record in reference_records:
+                    chrom = record.id
+                    chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), len(record.seq)])
+        else:
+            critical('Can\'t find ' + genome_seq_fpath + ' and ' + genome_seq_fpath + '.fai in ' + cnf.sys_cnf + ' for "' + cnf.genome.name + '" section')
 
     chr_lengths = sorted(chr_lengths, key=lambda (k, l): (k.get_key(), l))
 
