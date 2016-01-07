@@ -5,7 +5,7 @@ import sys
 import tempfile
 import shutil
 import os
-from os.path import abspath, dirname, realpath, join
+from os.path import abspath, dirname, realpath, join, splitext
 import subprocess
 import copy
 from source.file_utils import add_suffix, verify_file, which, adjust_path
@@ -264,7 +264,7 @@ def _annotate(bed_fpath, work_dirpath, cnf):
     for id, (db_name, db_bed_fpath) in enumerate(references):
         output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann_' + db_name.lower())
         log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
-        annotate_bed_py = sys.executable + ' ' + annotate_bed.__file__
+        annotate_bed_py = sys.executable + ' ' + splitext(annotate_bed.__file__)[0] + '.py'
 
         cmdline = '{annotate_bed_py} {input_fpath} --reference {db_bed_fpath} -o {output_fpath}'.format(**locals())
         __call(cnf, cmdline)
