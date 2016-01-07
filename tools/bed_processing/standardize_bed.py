@@ -266,7 +266,7 @@ def _annotate(bed_fpath, work_dirpath, cnf):
         log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
         annotate_bed_py = sys.executable + ' ' + splitext(annotate_bed.__file__)[0] + '.py'
 
-        cmdline = '{annotate_bed_py} {input_fpath} --reference {db_bed_fpath} -o {output_fpath}'.format(**locals())
+        cmdline = '{annotate_bed_py} {input_fpath} --reference {db_bed_fpath} -o {output_fpath} --genome {cnf.genome}'.format(**locals())
         __call(cnf, cmdline)
 
         if id < len(references) - 1:
