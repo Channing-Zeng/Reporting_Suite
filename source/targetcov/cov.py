@@ -505,16 +505,19 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                     continue
                 chrom, start, end, size, gene_name, strand, feature, biotype, min_depth, avg_depth, std_dev = line[:11]
                 region = Region(gene_name=gene_name, exon_num=None, strand=strand, biotype=biotype,
-                     feature=feature, extra_fields=list(),
-                     chrom=chrom, start=int(start) if start != '.' else None, end=int(end) if end != '.' else None,
-                     size=int(size), min_depth=float(min_depth) if min_depth else None,
-                     avg_depth=float(avg_depth), std_dev=float(std_dev))
+                     feature=feature, extra_fields=list(), chrom=chrom,
+                     start=int(start) if start != '.' else None,
+                     end=int(end) if end != '.' else None,
+                     size=int(size) if size != '.' else None,
+                     min_depth=float(min_depth) if min_depth != '.' else None,
+                     avg_depth=float(avg_depth) if avg_depth != '.' else None,
+                     std_dev=float(std_dev) if std_dev != '.' else None)
                 region.sample_name = gene_by_name[gene_name].sample_name
                 depth_thresholds = cnf.coverage_reports.depth_thresholds
                 rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
                 rates = line[-(len(depth_thresholds)):]
                 for i, t in enumerate(rates_within_threshs):
-                    rates_within_threshs[t] = float(rates[i])
+                    rates_within_threshs[t] = float(rates[i]) if rates[i] != '.' else None
                 region.rates_within_threshs = rates_within_threshs
                 if 'Capture' in feature:
                     gene_by_name[gene_name].add_amplicon(region)
