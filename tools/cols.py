@@ -13,23 +13,40 @@ def cols(in_f):
     max_lens = None
     delimiter = '\t'
     for i, l in enumerate(in_f):
+        l = l[:-1]  # removing the trailing '\n'
         if i == 0:
             if delimiter not in l and ',' in l:
                 delimiter = ','
             row = l.split(delimiter)
             max_lens = [0 for _ in row[:-1]]
-        row = l.split(delimiter)
-        rows.append(row)
+        else:
+            row = l.split(delimiter)
+            if len(row) > len(max_lens) + 1:
+                sys.stdout.flush()
+                sys.stderr.write('Error: line #' + str(i) + ' is longer than the first line ' +
+                                 '(has ' + str(len(row)) + ' columns instead of ' + str(len(max_lens) + 1) + '):\n' +
+                                 '  ' + l + '\n')
+                sys.stderr.flush()
+                continue
+            if len(row) < len(max_lens) + 1:  # adding empty columns to a shorter row to make it the same size as the rest
+                for _ in range(len(max_lens) + 1 - len(row)):
+                    row.append('')
         max_lens = map(max, zip(max_lens, map(len, row[:-1])))
+        rows.append(row)
     for row in rows:
         if row:
             for v, max_len in zip(row[:-1], max_lens):
-                sys.stdout.write(v + ' '*(max_len - len(v) + 2))
-            sys.stdout.write(row[-1])
+                if not sys.stdout.closed:
+                    sys.stdout.write(v + ' '*(max_len - len(v) + 2))
+            if not sys.stdout.closed:
+                sys.stdout.write(row[-1] + '\n')
     sys.stdout.close()
 
 def main():
-    cols(open(sys.argv[1]) if len(sys.argv) > 1 else sys.stdin)
+    try:
+        cols(open(sys.argv[1]) if len(sys.argv) > 1 else sys.stdin)
+    except IOError:
+        pass
 
 
 if __name__ == '__main__':
