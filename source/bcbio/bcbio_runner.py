@@ -165,7 +165,7 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
 
-        if Steps.contains(cnf.steps, 'ClinicalReport'):
+        if Steps.contains(cnf.steps, 'ClinicalReport') or Steps.contains(cnf.steps, 'ClinicalReports'):
             self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
@@ -360,6 +360,7 @@ class BCBioRunner:
            ' {varqc_cmdl}' +
            ' {match_cmdl}' +
            ' {seq2c_cmdl}' +
+           ' {sv_cmdl}' +
            ' --target-type ' + self.bcbio_structure.target_type +
           (' --bed ' + target_bed if target_bed else '') +
            ' -o {output_dir} ' +
@@ -707,11 +708,18 @@ class BCBioRunner:
                     if self.targetcov in self.steps or isdir(targqc_dirpath):
                         targqc_cmdl = ' --targqc-dir ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
 
+                    sv_cmdl = ''
+                    sv_fpath = sample.find_sv_fpath()
+                    if sv_fpath:
+                        sv_cmdl = ' --sv ' + sv_fpath
+
                     self._submit_job(
                         self.clin_report,
                         sample.name,
                         sample=sample.name, genome=sample.genome,
-                        match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl, varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl, seq2c_cmdl=seq2c_cmdl,
+                        match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
+                        varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
+                        seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
                         project_report_path=self.bcbio_structure.project_report_html_fpath,
                         wait_for_steps=wait_for_steps,
                         threads=self.threads_per_sample)
@@ -723,16 +731,17 @@ class BCBioRunner:
                 variant_caller = \
                     self.bcbio_structure.variant_callers.get('vardict') or \
                     self.bcbio_structure.variant_callers.get('vardict-java')
-                vardict_txt_fname = source.mut_fname_template.format(caller_name=variant_caller.name)
-                vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
-                mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+                if variant_caller:
+                    vardict_txt_fname = source.mut_fname_template.format(caller_name=variant_caller.name)
+                    vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
+                    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
 
-                wait_for_steps = []
-                wait_for_steps += [self.varqc.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varqc in self.steps else []
-                wait_for_steps += [self.varfilter.job_name(caller=variant_caller.name)] if self.varfilter in self.steps else []
-                wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
-
-                self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
+                    wait_for_steps = []
+                    wait_for_steps += [self.varqc.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varqc in self.steps else []
+                    wait_for_steps += [self.varfilter.job_name(caller=variant_caller.name)] if self.varfilter in self.steps else []
+                    wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
+    
+                    self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
 
             if self.varqc_after in self.steps:
                 info('VarQC_postVarFilter:')
