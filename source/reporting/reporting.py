@@ -242,7 +242,7 @@ class Metric:
                 return str(value)
 
         if isinstance(value, list):
-            return ','.join(Metric.format_value(v, unit, human_readable, is_html) for v in list)
+            return ', '.join(Metric.format_value(v, unit, human_readable, is_html) for v in value)
 
         return '.'
 
