@@ -34,7 +34,7 @@ class SortableByChrom:
             elif chr_remainder.startswith(c):
                 return i + 25
 
-        err('Warning: cannot parse chromosome ' + self.chrom + '\n')
+        err('Warning: cannot parse chromosome ' + self.chrom)
         return 99
 
     def get_key(self):
@@ -279,6 +279,11 @@ class GeneInfo(Region):
         # amplicon = copy.copy(amplicon)
         amplicon.gene_name = amplicon.gene_name or self.gene_name
         self.amplicons.append(amplicon)
+        if self.gene_name == '.':  # no exon
+            self.size += amplicon.get_size()
+            for depth, bases in amplicon.bases_by_depth.items():
+                self.bases_by_depth[depth] += bases
+            self.min_depth = min(self.min_depth, amplicon.min_depth) if self.min_depth else amplicon.min_depth
 
 
 def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):

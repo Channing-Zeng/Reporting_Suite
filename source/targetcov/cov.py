@@ -506,7 +506,8 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                 chrom, start, end, size, gene_name, strand, feature, biotype, min_depth, avg_depth, std_dev = line[:11]
                 region = Region(gene_name=gene_name, exon_num=None, strand=strand, biotype=biotype,
                      feature=feature, extra_fields=list(),
-                     chrom=chrom, start=int(start), end=int(end), size=int(size), min_depth=float(min_depth),
+                     chrom=chrom, start=int(start) if start != '.' else None, end=int(end) if end != '.' else None,
+                     size=int(size), min_depth=float(min_depth) if min_depth else None,
                      avg_depth=float(avg_depth), std_dev=float(std_dev))
                 region.sample_name = gene_by_name[gene_name].sample_name
                 depth_thresholds = cnf.coverage_reports.depth_thresholds
@@ -527,80 +528,81 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                     gene_by_name[gene_name].rates_within_threshs = region.rates_within_threshs
         return rep
 
-    targets_or_exons = []
+    else:
+        targets_or_exons = []
 
-    # Need to convert BAM to BED to make bedtools histogram
-    bam_bed_fpath = bam_to_bed(cnf, bam_fpath)
+        # Need to convert BAM to BED to make bedtools histogram
+        bam_bed_fpath = bam_to_bed(cnf, bam_fpath)
 
-    if exons_no_genes_bed or target_bed:
-        ready_target_bed = join(output_dir, 'target.bed')
-        try:
-            shutil.copy(target_bed or exons_bed, ready_target_bed)
-        except OSError:
-            err(traceback.format_exc())
+        if exons_no_genes_bed or target_bed:
+            ready_target_bed = join(output_dir, 'target.bed')
+            try:
+                shutil.copy(target_bed or exons_bed, ready_target_bed)
+            except OSError:
+                err(traceback.format_exc())
 
-        info()
-        info('Calculation of coverage statistics for the regions in the input BED file...')
-        targets_or_exons = bedcoverage_hist_stats(cnf, sample.name, target_bed or exons_no_genes_bed, bam_bed_fpath)
-        info()
-        # info('Merging capture BED file to get total target cov statistics...')
-        # total_merged_target_bed = total_merge_bed(cnf, target_bed or exons_no_genes_bed)
-        # info()
-        # info('Calculation of coverage statistics for total target...')
-        # _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, total_merged_target_bed)
-
-        # total_bed_size = get_total_bed_size(cnf, target_bed or exons_no_genes_bed)
-
-    un_annotated_amplicons = []
-
-    if exons_bed:
-        if not target_bed:
-            exons_with_optional_genes = targets_or_exons
-        else:
             info()
-            info('Calculating coverage statistics for exons...')
-            exons_with_optional_genes = bedcoverage_hist_stats(cnf, sample.name, exons_no_genes_bed, bam_bed_fpath)
+            info('Calculation of coverage statistics for the regions in the input BED file...')
+            targets_or_exons = bedcoverage_hist_stats(cnf, sample.name, target_bed or exons_no_genes_bed, bam_bed_fpath)
+            info()
+            # info('Merging capture BED file to get total target cov statistics...')
+            # total_merged_target_bed = total_merge_bed(cnf, target_bed or exons_no_genes_bed)
+            # info()
+            # info('Calculation of coverage statistics for total target...')
+            # _, combined_region, _ = bedcoverage_hist_stats(cnf, sample.name, bam_fpath, total_merged_target_bed)
 
-        for exon_or_gene in exons_with_optional_genes:
-            exon_or_gene.sample_name = sample.name
+            # total_bed_size = get_total_bed_size(cnf, target_bed or exons_no_genes_bed)
 
-            ef = exon_or_gene.extra_fields
-            if ef:
-                exon_or_gene.exon_num = ef[0]
-                if len(ef) >= 2:
-                    exon_or_gene.strand = ef[1]
-                if len(ef) >= 3:
-                    exon_or_gene.feature = ef[2]
-                else:
-                    exon_or_gene.feature = 'CDS'
-                if len(ef) >= 4:
-                    exon_or_gene.biotype = ef[3]
+        un_annotated_amplicons = []
 
-            if exon_or_gene.gene_name in gene_by_name:
-                gene_name = gene_by_name[exon_or_gene.gene_name]
-                gene_name.chrom = exon_or_gene.chrom
-                gene_name.strand = exon_or_gene.strand
-                gene_name.add_exon(exon_or_gene)
+        if exons_bed:
+            if not target_bed:
+                exons_with_optional_genes = targets_or_exons
+            else:
+                info()
+                info('Calculating coverage statistics for exons...')
+                exons_with_optional_genes = bedcoverage_hist_stats(cnf, sample.name, exons_no_genes_bed, bam_bed_fpath)
 
-        if target_bed:
-            for ampl in targets_or_exons:
-                ampl.feature = 'Capture'
-                ampl.sample_name = sample.name
+            for exon_or_gene in exons_with_optional_genes:
+                exon_or_gene.sample_name = sample.name
 
-                if ampl.gene_name != '.':
-                    gene_name = gene_by_name[ampl.gene_name]
-                    gene_name.add_amplicon(ampl)
-                else:
-                    un_annotated_amplicons.append(ampl)
+                ef = exon_or_gene.extra_fields
+                if ef:
+                    exon_or_gene.exon_num = ef[0]
+                    if len(ef) >= 2:
+                        exon_or_gene.strand = ef[1]
+                    if len(ef) >= 3:
+                        exon_or_gene.feature = ef[2]
+                    else:
+                        exon_or_gene.feature = 'CDS'
+                    if len(ef) >= 4:
+                        exon_or_gene.biotype = ef[3]
 
-            un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
+                if exon_or_gene.gene_name in gene_by_name:
+                    gene_name = gene_by_name[exon_or_gene.gene_name]
+                    gene_name.chrom = exon_or_gene.chrom
+                    gene_name.strand = exon_or_gene.strand
+                    gene_name.add_exon(exon_or_gene)
 
-    per_gene_report = None
-    if exons_bed or target_bed:
-        per_gene_report = _generate_report_from_regions(cnf, sample, output_dir,
-            gene_by_name.values(), un_annotated_amplicons)
+            if target_bed:
+                for ampl in targets_or_exons:
+                    ampl.feature = 'Capture'
+                    ampl.sample_name = sample.name
 
-    return per_gene_report
+                    if ampl.gene_name != '.':
+                        gene = gene_by_name[ampl.gene_name]
+                        gene.add_amplicon(ampl)
+                    else:
+                        un_annotated_amplicons.append(ampl)
+
+                un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
+
+        per_gene_report = None
+        if exons_bed or target_bed:
+            per_gene_report = _generate_report_from_regions(cnf, sample, output_dir,
+                gene_by_name.values(), un_annotated_amplicons)
+
+        return per_gene_report
 
 
 def _generate_report_from_regions(cnf, sample, output_dir, genes, un_annotated_amplicons):
@@ -609,16 +611,23 @@ def _generate_report_from_regions(cnf, sample, output_dir, genes, un_annotated_a
     info('Combining all regions for final report...')
     i = 0
     for gene in genes:
-        if i and i % 100000 == 0:
-            info('Processed {0:,} genes, current gene {1}'.format(i, gene.gene_name))
-        i += 1
+        if gene.gene_name != '.':
+            if i and i % 100000 == 0:
+                info('Processed {0:,} genes, current gene {1}'.format(i, gene.gene_name))
+            i += 1
 
-        final_regions.extend(gene.get_amplicons())
-        final_regions.extend(gene.get_exons())
-        final_regions.append(gene)
+            final_regions.extend(gene.get_amplicons())
+            final_regions.extend(gene.get_exons())
+            final_regions.append(gene)
 
-    for ampl in un_annotated_amplicons:
-        final_regions.append(ampl)
+    un_annotated_summary_region = next((g for g in genes if g.gene_name == '.'), None)
+    if un_annotated_summary_region and un_annotated_amplicons:
+        un_annotated_summary_region.feature = 'NotAnnotatedSummary'
+        for ampl in un_annotated_amplicons:
+            ampl.gene_name = un_annotated_summary_region.gene_name
+            un_annotated_summary_region.add_amplicon(ampl)
+            final_regions.append(ampl)
+        final_regions.append(un_annotated_summary_region)
     info('Processed {0:,} genes.'.format(i))
 
     info()

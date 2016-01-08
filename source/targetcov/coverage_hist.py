@@ -229,6 +229,8 @@ def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_n
                     sample_name=sample_name, chrom=chrom,
                     start=start, end=end, size=region_size,
                     gene_name=gene_name, extra_fields=extra_fields)
+                if region.gene_name == '.':
+                    pass
                 regions.append(region)
 
                 _total_regions_count += 1
@@ -236,10 +238,10 @@ def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_n
                 # if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
                 #     info('  Processed {0:,} regions'.format(_total_regions_count))
 
-            regions[-1].add_bases_for_depth(depth, bases)
+            region.add_bases_for_depth(depth, bases)
 
-            if regions[-1].min_depth is None:
-                regions[-1].min_depth = depth  # depth values go from lowest to highest, so if we are meeting the first record for this region, the depth would be the lowest
+            if region.min_depth is None:
+                region.min_depth = depth  # depth values go from lowest to highest, so if we are meeting the first record for this region, the depth would be the lowest
 
     # if _total_regions_count % 100000 != 0:
     #     info('  Processed {0:,} regions'.format(_total_regions_count))
