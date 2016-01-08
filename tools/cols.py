@@ -12,9 +12,14 @@ def cols(in_f):
     rows = []
     max_lens = None
     delimiter = '\t'
-    for i, l in enumerate(in_f):
+    line_num = 0
+    for l in in_f:
+        if not l.strip() or l.strip().startswith('##'):
+            sys.stdout.write(l)
+            continue
+        line_num += 1
         l = l[:-1]  # removing the trailing '\n'
-        if i == 0:
+        if line_num == 1:
             if delimiter not in l and ',' in l:
                 delimiter = ','
             row = l.split(delimiter)
@@ -23,7 +28,7 @@ def cols(in_f):
             row = l.split(delimiter)
             if len(row) > len(max_lens) + 1:
                 sys.stdout.flush()
-                sys.stderr.write('Error: line #' + str(i) + ' is longer than the first line ' +
+                sys.stderr.write('Error: line #' + str(line_num) + ' is longer than the first line ' +
                                  '(has ' + str(len(row)) + ' columns instead of ' + str(len(max_lens) + 1) + '):\n' +
                                  '  ' + l + '\n')
                 sys.stderr.flush()

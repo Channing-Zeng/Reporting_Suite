@@ -115,7 +115,7 @@ def main(args):
     info('Using alignment ' + cnf['bam'])
 
     if cnf.bed:
-        cnf.bed = verify_file(cnf.bed)
+        cnf.bed = verify_file(cnf.bed, is_critical=True)
         info('Using amplicons/capture panel ' + cnf.bed)
     elif exons_bed:
         info('WGS, taking CDS as target')
