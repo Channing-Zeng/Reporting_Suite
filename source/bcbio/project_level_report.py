@@ -197,7 +197,7 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                     OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
                     individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath),
                 _make_url_record(
-                    OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
+                    OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
                     individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath)
             ])
 
@@ -216,7 +216,7 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
         #     individual_reports_section.
 
         for s in bcbio_structure.samples:
-            targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('ngscat', s.ngscat_html_fpath), ('qualimap', s.qualimap_html_fpath)])
+            targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
             varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
             varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
 
