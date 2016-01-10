@@ -854,6 +854,12 @@ class BCBioRunner:
         except:
             raise
         finally:
+            if isdir(self.cnf.final_dir):
+                change_permissions(self.bcbio_structure.final_dirpath)
+            if isdir(self.cnf.work_dir):
+                change_permissions(self.bcbio_structure.work_dir)
+            if isdir(join(self.cnf.work_dir, '..', 'config')):
+                change_permissions(join(self.cnf.work_dir, '..', 'config'))
             del_jobs(self.cnf, self.jobs_running)
 
 
@@ -973,3 +979,9 @@ def _final_email_notification(html_report_url, jira_url, bs):
         txt += 'Jira: ' + jira_url
     send_email(txt, subj)
 
+
+def change_permissions(path):
+    try:
+        os.system('chmod -R g+w ' + path)
+    except:
+        pass
