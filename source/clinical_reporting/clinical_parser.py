@@ -262,9 +262,9 @@ class ClinicalExperimentInfo:
                     amp_del=amp_del or None)
                 seq2c_events_by_gene_name[gname] = event
 
-        info('Found ' + str(len(seq2c_events_by_gene_name.values()) + ' Seq2C events in key genes, ' +
-             str(len(e for e in seq2c_events_by_gene_name if e.is_amp())) + ' amplifications and ' +
-             str(len(e for e in seq2c_events_by_gene_name if e.is_del())) + ' deletions.'))
+        info('Found ' + str(len(seq2c_events_by_gene_name.values())) + ' Seq2C events in key genes, ' +
+             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_amp())) + ' amplifications and ' +
+             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_del())) + ' deletions.')
 
         for gn, event in seq2c_events_by_gene_name.items():
             self.key_gene_by_name[gn].seq2c_event = event
