@@ -332,15 +332,18 @@ class ClinicalReporting(BaseClinicalReporting):
     def write_report(self, output_fpath):
         info('')
 
-        write_static_html_report(self.cnf, {
+        data = {
             'key_or_target': self.experiment.key_or_target_genes,
             'genes_description': self.experiment.genes_description,
             'sample': self.sample_section(self.experiment),
             'variants': self.__mutations_section(),
-            'seq2c': {'plot_data': self.seq2c_plot_data},
             'coverage': self.__coverage_section(),
             'actionable_genes': self.__actionable_genes_section()
-        }, output_fpath,
+        }
+        if self.seq2c_plot_data:
+            data['seq2c'] = {'plot_data': self.seq2c_plot_data}
+
+        write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
