@@ -191,13 +191,18 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
 
     filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
     pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
+    filt_tsv_fpath = sample.get_filt_tsv_fpath_by_callername(caller_name)
     safe_mkdir(join(sample.dirpath, BCBioStructure.varfilter_dir))
 
     filter_values = set(variants.values())
 
     # Saving .anno.filt.vcf.gz and .anno.filt.pass.vcf
-    if cnf.reuse_intermediate and verify_file(filt_vcf_fpath + '.gz') and verify_file(pass_filt_vcf_fpath):
+    if cnf.reuse_intermediate \
+            and verify_file(filt_vcf_fpath + '.gz') \
+            and verify_file(pass_filt_vcf_fpath)\
+            and verify_file(filt_tsv_fpath):
         info(filt_vcf_fpath + '.gz' + ' and ' + pass_filt_vcf_fpath + ' exist; reusing.')
+
     else:
         with open_gzipsafe(anno_vcf_fpath) as vcf_f, \
              file_transaction(work_dir, filt_vcf_fpath) as filt_tx, \
@@ -237,20 +242,19 @@ def postprocess_vcf(work_dir, sample, caller_name, anno_vcf_fpath, variants, mut
 
         info(sample.name + ', ' + caller_name + ': saved filtered VCFs to ' + filt_vcf_fpath + ' and ' + pass_filt_vcf_fpath)
 
-    info()
-    info(sample.name + ', ' + caller_name + ': writing filtered TSVs')
-    filt_tsv_fpath = sample.get_filt_tsv_fpath_by_callername(caller_name)
-    # Converting to TSV - saving .anno.filt.tsv
-    if 'tsv_fields' in cnf.annotation:
-        tmp_tsv_fpath = make_tsv(cnf, filt_vcf_fpath, sample.name)
-        if not tmp_tsv_fpath:
-            err('TSV convertion didn\'t work')
-        else:
-            if isfile(filt_tsv_fpath):
-                os.remove(filt_tsv_fpath)
-            shutil.copy(tmp_tsv_fpath, filt_tsv_fpath)
+        info()
+        info(sample.name + ', ' + caller_name + ': writing filtered TSVs')
+        # Converting to TSV - saving .anno.filt.tsv
+        if 'tsv_fields' in cnf.annotation:
+            tmp_tsv_fpath = make_tsv(cnf, filt_vcf_fpath, sample.name)
+            if not tmp_tsv_fpath:
+                err('TSV convertion didn\'t work')
+            else:
+                if isfile(filt_tsv_fpath):
+                    os.remove(filt_tsv_fpath)
+                shutil.copy(tmp_tsv_fpath, filt_tsv_fpath)
 
-        info(sample.name + ', ' + caller_name + ': saved filtered TSV to ' + filt_tsv_fpath)
+            info(sample.name + ', ' + caller_name + ': saved filtered TSV to ' + filt_tsv_fpath)
 
     info('Done postprocessing filtered VCF.')
 
