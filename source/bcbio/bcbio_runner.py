@@ -697,6 +697,7 @@ class BCBioRunner:
                     wait_for_steps = []
                     wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
 
+                    match_cmdl = ''
                     if sample.phenotype and sample.phenotype != 'normal':
                         if clinical_report_caller:
                             varqc_cmdl = ' --varqc ' + sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json')
