@@ -121,7 +121,9 @@ class DatasetStructure:
         for i, info_d in enumerate(sample_infos):
             proj_name = info_d.get('Sample_Project', info_d.get('SampleProject'))
             if not proj_name:
-                critical('  no SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
+                warn('  no SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
+                     # ', using ' + self.az_prjname_by_subprj[''])
+                # proj_name = self.az_prjname_by_subprj['']
             if proj_name is not None and proj_name not in project_by_name:
                 project_by_name[proj_name] = DatasetProject(proj_name)
             project = project_by_name[proj_name]
@@ -348,7 +350,7 @@ class DatasetProject:
         self.project_report_html_fpath = join(self.dirpath, az_project_name + '.html')
 
     def concat_fastqs(self, get_fastq_regexp, cnf):
-        info('Concatenating fastq files for ' + self.name)
+        info('Concatenating fastq files for ' + self.name or self.az_project_name)
         if self.mergred_dir_found:
             info('  found already merged fastq dir, skipping.')
             return
