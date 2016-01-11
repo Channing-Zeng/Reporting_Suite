@@ -854,12 +854,12 @@ class BCBioRunner:
         except:
             raise
         finally:
-            if isdir(self.cnf.final_dir):
+            if isdir(self.bcbio_structure.final_dirpath):
                 change_permissions(self.bcbio_structure.final_dirpath)
-            if isdir(self.cnf.work_dir):
+            if isdir(self.bcbio_structure.work_dir):
                 change_permissions(self.bcbio_structure.work_dir)
-            if isdir(join(self.cnf.work_dir, '..', 'config')):
-                change_permissions(join(self.cnf.work_dir, '..', 'config'))
+            if isdir(join(self.bcbio_structure.work_dir, '..', 'config')):
+                change_permissions(join(self.bcbio_structure.work_dir, '..', 'config'))
             del_jobs(self.cnf, self.jobs_running)
 
 

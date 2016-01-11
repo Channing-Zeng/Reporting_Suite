@@ -26,9 +26,14 @@ variant_filtering:
 #                              #   as not a mutation, even if it's in COSMIC or apparent deleterious, but unless it is actionable.
 #                              #   Use with caution. Don't use it for homogeneous samples.
 
-  min_freq:           0.005   # -f
+  min_freq:             0.005 # -f
                               # When individual allele frequency (AF) is less than [min_freq], the variant is considered
                               # likely false poitive.
+                              # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
+
+  min_freq_vardict2mut: 0.005 # -f in vardict2mut
+                              # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                              # likely false poitive, unless it is actionable.
                               # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
 
 #  min_hotspot_freq:   default # -F in vardict2mut
@@ -39,18 +44,18 @@ variant_filtering:
 #  sample_cnt:         10      #         -n
 #  ave_freq:           0.15    #         -F
 #  count_undetermined: True    #         !-u   Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
-#
+
 #  min_p_mean:         5       # PMEAN.  -p   The minimum mean position in reads for variants.
 #  min_q_mean:         25      # QUAL.   -q   The minimum mean base quality phred score for variant.
-#
+
   filt_depth:         5       # DP.     -D   The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
 #  filt_q_mean:        0       # QUAL.   -Q   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
 #  filt_p_mean:        0       # PMEAN.  -P   The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
-#
+
 #  min_mq:             10      # MQ.     -M   The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
   min_vd:             3       # VD.     -V   The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
-#
+
 #  maf:                0.0025  # GMAF.   -G   If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
 #  signal_noise:       1.5     # SN.     -o   Signal/noise value.
-#
+
 #  bias:               False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.

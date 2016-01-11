@@ -68,10 +68,10 @@ def get_args():
     if not cnf.output_file:
         critical('Please, specify the output fpath with -o')
 
-    cnf.variant_filtering.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq
+    cnf.variant_filtering.min_freq_vardict2mut = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut or cnf.variant_filtering.min_freq
     cnf.variant_filtering.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
     if cnf.variant_filtering.min_hotspot_freq is None or cnf.variant_filtering.min_hotspot_freq == 'default':
-        cnf.variant_filtering.min_hotspot_freq = min(0.01, cnf.variant_filtering.min_freq / 2)
+        cnf.variant_filtering.min_hotspot_freq = min(0.01, cnf.variant_filtering.min_freq_vardict2mut / 2)
 
     info()
 
@@ -295,7 +295,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 if allele_freq < cnf.variant_filtering.min_hotspot_freq or (allele_freq < 0.2 and key in act_germline):
                     continue
             else:
-                if allele_freq < cnf.variant_filtering.min_freq or var_type.startswith('INTRON') or var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
+                if allele_freq < cnf.variant_filtering.min_freq_vardict2mut or var_type.startswith('INTRON') or var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
                         or (var_type == 'SPLICE_REGION_VARIANT' and not aa_chg):
                         continue
             if status != 'known' and (var_type.startswith('UPSTREAM') or var_type.startswith('DOWNSTREAM') or var_type.startswith('INTERGENIC') or

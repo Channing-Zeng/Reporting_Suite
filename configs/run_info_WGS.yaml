@@ -25,9 +25,14 @@ variant_filtering:
 #                              #   as not a mutation, even if it's in COSMIC or apparent deleterious, but unless it is actionable.
 #                              #   Use with caution. Don't use it for homogeneous samples.
 
-  min_freq:           0.075   # -f
+  min_freq:             0.075 # -f
                               # When individual allele frequency (AF) is less than [min_freq], the variant is considered
                               # likely false poitive.
+                              # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
+
+  min_freq_vardict2mut: 0.075 # -f in vardict2mut
+                              # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                              # likely false poitive, unless it is actionable.
                               # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
 
 #  min_hotspot_freq:   default # -F in vardict2mut
