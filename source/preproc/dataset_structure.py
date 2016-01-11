@@ -121,9 +121,7 @@ class DatasetStructure:
         for i, info_d in enumerate(sample_infos):
             proj_name = info_d.get('Sample_Project', info_d.get('SampleProject'))
             if not proj_name:
-                warn('  no SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath +
-                     ', using ' + self.az_project_name)
-                proj_name = self.az_project_name
+                critical('  no SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
             if proj_name is not None and proj_name not in project_by_name:
                 project_by_name[proj_name] = DatasetProject(proj_name)
             project = project_by_name[proj_name]
