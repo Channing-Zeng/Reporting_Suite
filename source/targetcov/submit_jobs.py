@@ -96,8 +96,8 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
        (' --exons-no-genes ' + exons_no_genes_bed if exons_no_genes_bed else '') + \
        (' --genes ' + genes_fpath if genes_fpath else '') + \
        (' --reannotate ' if cnf.reannotate else '') + \
-       (' --dedup ' if cnf.dedup else '') + \
         ' --no-prep-bed'
+       # (' --dedup ' if cnf.dedup else '') + \
 
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',

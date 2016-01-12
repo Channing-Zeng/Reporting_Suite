@@ -71,6 +71,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     extra_qsub_opts = ''
     if run_on_chara and is_us():
         extra_qsub_opts += '-l h="chara|rask"'
+    cmdline = cmdline.replace('"', '\\"').replace('\\\\"', '\\"')
     qsub_cmdline = (
         '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} '
         '-j n -o {log_fpath} -e {err_fpath} {hold_jid_line} '
@@ -118,6 +119,12 @@ def wait_for_jobs(cnf, jobs):
                         info('Done ' + j.repr + ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
 
                     waiting = False
+                if not j.is_done and isfile(j.error_marker):
+                    j.is_done = True
+                    err('Job ' + j.repr + ' returned non-0. ' +
+                       ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                    if waiting:
+                        info('', print_date=False)
 
             # check flags and wait if not all are done
             if not all(j.is_done for j in jobs):

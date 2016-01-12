@@ -39,7 +39,7 @@ def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
 def check_genome_resources(cnf):
     if cnf.genome is None:
         critical('Please, specify genome build (one of available in ' + cnf.sys_cnf +
-                 ') using the --genome option.')
+                 ') using the --genome option (e.g., --genome hg38).')
 
     if not cnf.genomes:
         critical('"genomes" section is not specified in system config ' + cnf.sys_cnf)
