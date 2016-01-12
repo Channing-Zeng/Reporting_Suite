@@ -123,8 +123,6 @@ def read_opts_and_cnfs(extra_opts,
     if errors:
         parser.print_help()
         critical(errors)
-    file_keys = [k for k in file_keys if k in required_keys]
-    dir_keys = [k for k in dir_keys if k in required_keys]
     errors = check_dirs_and_files(cnf, file_keys, dir_keys)
     if errors:
         critical(errors)

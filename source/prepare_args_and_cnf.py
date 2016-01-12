@@ -229,12 +229,12 @@ def determine_sys_cnf(opts):
     return opts.sys_cnf
 
 
-def determine_run_cnf(opts, is_wgs=False, is_targeteq=False):
+def determine_run_cnf(opts, is_wgs=False, is_deep_seq=False):
     if opts.run_cnf:
         opts.run_cnf = adjust_path(opts.run_cnf)
     elif is_wgs:
         opts.run_cnf = defaults['run_cnf_wgs']
-    elif is_targeteq:
+    elif is_deep_seq:
         opts.run_cnf = defaults['run_cnf_deep_seq']
     else:
         opts.run_cnf = defaults['run_cnf_exome_seq']
