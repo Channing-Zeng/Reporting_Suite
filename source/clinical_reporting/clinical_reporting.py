@@ -401,10 +401,14 @@ class ClinicalReporting(BaseClinicalReporting):
             'genes_description': self.experiment.genes_description,
             'sample': self.sample_section(self.experiment),
             'variants': self.__mutations_section(),
-            'sv': self.__sv_section(),
             'coverage': self.__coverage_section(),
             'actionable_genes': self.__actionable_genes_section()
         }
+        if self.sv_report:
+            data['sv'] = {}
+            section = self.__sv_section()
+            if section:
+                data['sv'] = {'report': section}
         if self.seq2c_plot_data:
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
 
