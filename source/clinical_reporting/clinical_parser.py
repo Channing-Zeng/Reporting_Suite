@@ -3,9 +3,12 @@ from itertools import izip
 from json import load
 from os.path import join
 
+import re
+
 import source
 from source import verify_file, info
-from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
+from source.clinical_reporting.known_sv import fusions as known_fusions
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path
 from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
@@ -28,10 +31,14 @@ class KeyGene:
         self.ave_depth = ave_depth
         self.cov_by_threshs = dict()
         self.mutations = []
-        self.seq2c_event = None
+        self.seq2c_events = []
+        self.sv_events = []
 
     def __str__(self):
         return self.name
+
+    def __repr__(self):
+        return self.__str__()
 
     def __hash__(self):
         return hash(self.name)
@@ -63,6 +70,9 @@ class Mutation(SortableByChrom):
         return str(self.gene) + ' ' + str(self.chrom) + ':' + \
                str(self.pos) + ' ' + str(self.ref) + '>' + str(self.alt)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __hash__(self):
         return hash((self.chrom, self.pos, self.ref, self.alt))
 
@@ -91,8 +101,140 @@ class Seq2CEvent:
         return str(self.gene) + ' ' + str(self.log2r if self.log2r is not None else self.ab_log2r)\
                + ' ' + str(self.amp_del) + ' ' + str(self.fragment)
 
+    def __repr__(self):
+        return self.__str__()
+
     def __hash__(self):
         return hash((self.gene, self.fragment, self.amp_del))
+
+
+class SVEvent:
+    class Annotation:
+        def __init__(self):
+            self.type = None
+            self.effect = None
+            self.genes = []
+            self.transcript = None
+
+            self.known = False
+
+        @staticmethod
+        def parse_annotation(string):
+            fs = string.split('|')
+            a = SVEvent.Annotation()
+            a.type = fs[0]
+            a.effect = fs[1]
+            genes_val = fs[2]
+            if a.type == 'BND':
+                if '/' in genes_val:
+                    a.genes = genes_val.split('/')
+                elif genes_val.count('-') == 1:
+                    a.genes = genes_val.split('-')
+                else:
+                    return None
+            else:
+                a.genes = [genes_val]
+            a.transcript = fs[3]
+            return a
+
+    @staticmethod
+    def parse_sv_event(**kwargs):  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
+        e = SVEvent()
+        e.caller = kwargs.get('caller')
+        e.chrom = kwargs.get('chrom')
+        e.start = int(kwargs.get('start'))
+        e.sample = kwargs.get('sample')
+        e.end = int(kwargs.get('end')) if kwargs.get('end') else None
+
+        e.type = None
+        e.id = None
+        e.mate_id = None
+        svt = kwargs.get('svtype')
+        if svt:  # BND:MantaBND:12:0:1:0:0:0:1:MantaBND:12:0:1:0:0:0:0 or BND:71_2:71_1 or
+            e.type = svt.split(':', 1)[0]
+            if e.type == 'BND' and ':' in svt:
+                if 'MantaBND' in svt:
+                    m = re.match(r'(?P<id1>MantaBND[:0-9]+):(?P<id2>MantaBND[:0-9]+)', svt.split(':', 1)[1])
+                else:
+                    m = re.match(r'(?P<id1>.+):(?P<id2>.+)', svt.split(':', 1)[1])
+                e.id = m.group('id1')
+                e.mate_id = m.group('id2')
+
+        e.known_gene_val = kwargs.get('known')
+        e.known_gene = e.known_gene_val.split('-with-')[1] if '-with-' in e.known_gene_val else e.known_gene_val
+        e.end_gene = kwargs.get('end_gene')
+        e.lof = kwargs.get('lof')
+        e.annotations = []
+        if kwargs.get('annotation'):
+            for s in kwargs.get('annotation').split(','):
+                a = SVEvent.Annotation.parse_annotation(s)
+                if a:
+                    assert a.type == e.type, 'Annotation type and event type does not match: ' + str(e.type) + ', ' + str(a.type)
+                    e.annotations.append(a)
+
+        e.split_read_support = kwargs.get('split_read_support').split(',') if kwargs.get('split_read_support') else []
+        e.paired_end_support = kwargs.get('paired_end_support').split(',') if kwargs.get('paired_end_support') else []
+
+        return e
+
+        # lof_genes = []
+        # if kwargs.get('end_gene'):
+        #     for a in kwargs.get('end_gene').split(','):
+        #         lof_genes.append(a[1:-1].split('|')[0])
+        # with open(adjust_path('~/t.tsv'), 'a') as f:
+        #     f.write(str(self.type) + '\t' + kwargs.get('known') + '\t' + kwargs.get('end_gene') + '\t' + ', '.join(lof_genes) + '\n')
+
+    def __init__(self):
+        self.caller = None
+        self.chrom = None
+        self.start = None
+        self.sample = None
+        self.end = None
+        self.type = None
+        self.id = None
+        self.mate_id = None
+        self.known_gene_val = None
+        self.known_gene = None
+        self.end_gene = None
+        self.lof = None
+        self.annotations = []
+        self.split_read_support = None
+        self.paired_end_support = None
+
+    def is_fusion(self):
+        return self.type == 'BND'
+
+    def get_possible_fusion_pairs(self):
+        if self.type == 'BND':
+            return [a.genes for a in self.annotations]
+
+    def is_deletion(self):
+        return self.type == 'DEL'
+
+    def is_insertion(self):
+        return self.type == 'INS'
+
+    def is_duplication(self):
+        return self.type == 'DUP'
+
+    def __str__(self):
+        return str(self.chrom) + ':' + str(self.start) + ' ' + str(self.annotations)
+
+    def __repr__(self):
+        return self.__str__()
+
+    def __hash__(self):
+        return hash((self.caller, self.chrom, self.start, self.type, self.id, self.mate_id))
+
+    def get_key(self):
+        return self.chrom, self.type, tuple(tuple(sorted(a.genes)) for a in self.annotations)
+
+
+# class FusionEvent(SVEvent):
+#     def __init__(self, **kwargs):
+#         SVEvent.__init__(self, **kwargs)
+#         self.is_know_sv = False
+#         self.fusion_pair = False
 
 
 class CDS:
@@ -131,7 +273,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_com
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, sv_fpath=sample.find_sv_fpath(),
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
-        project_report_path=bs.project_report_html_fpath, is_target2wqs_comparison=is_target2wqs_comparison)
+        project_report_path=bs.project_report_html_fpath, is_target2wgs_comparison=is_target2wqs_comparison)
 
 
 def clinical_sample_info_from_cnf(cnf):
@@ -150,13 +292,13 @@ class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
                  bed_fpath, mutations_fpath, sv_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None,
-                 is_target2wqs_comparison=False):
+                 is_target2wgs_comparison=False):
         self.cnf = cnf
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
         self.key_gene_by_name = dict()
-        self.key_or_target_genes = ''
+        self.genes_collection_type = ''
         self.genes_description = ''
         self.key = ''
         self.patient = Patient()
@@ -166,25 +308,25 @@ class ClinicalExperimentInfo:
         self.actionable_genes_dict = None
         self.total_variants = None
         self.mutations = None
-        self.sv_events_by_gene_name = None
+        self.sv_events = None
         self.seq2c_events_by_gene_name = None
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
         info()
 
-        if not is_target2wqs_comparison:  # use all genes from bed instead of key genes if bed exists and number of genes < 2000
+        if not is_target2wgs_comparison:  # use all genes from bed instead of key genes if bed exists and number of genes < 2000
             key_gene_names, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes)
         else:
             use_custom_panel = False
             key_gene_names = get_key_genes(key_genes)
 
         if use_custom_panel:
-            self.key_or_target_genes = 'target'
+            self.genes_collection_type = 'target'
             self.genes_description = 'target genes'
             info('Preparing data for a clinical report for ' + str(len(key_gene_names)) + ' target genes from ' + str(bed_fpath) + ', sample ' + self.sample.name)
         else:
-            self.key_or_target_genes = 'key'
+            self.genes_collection_type = 'key'
             self.genes_description = 'genes that have been previously implicated in various cancers'
             info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
 
@@ -195,7 +337,7 @@ class ClinicalExperimentInfo:
             info('Parsing target and patient info...')
             self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
             self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
-            info('Parsing TargetCov ' + self.key_or_target_genes + ' genes stats...')
+            info('Parsing TargetCov ' + self.genes_collection_type + ' genes stats...')
             self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
             self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
             self.parse_targetseq_detailed_report()
@@ -208,7 +350,7 @@ class ClinicalExperimentInfo:
         if varqc_json_fpath and mutations_fpath:
             info('Parsing mutations...')
             self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
-            self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.key_or_target_genes)
+            self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
                 self.key_gene_by_name[mut.gene.name].mutations.append(mut)
             info('Retrieving SolveBio...')
@@ -218,7 +360,7 @@ class ClinicalExperimentInfo:
 
         if sv_fpath:
             info('Parsing prioritized SV...')
-            self.sv_events_by_gene_name = self.parse_sv(sv_fpath)
+            self.sv_events = self.parse_sv(sv_fpath, self.key_gene_by_name)
 
         info('Parsing Seq2C...')
         if seq2c_tsv_fpath:
@@ -235,8 +377,35 @@ class ClinicalExperimentInfo:
     def get_mut_info_from_solvebio(self):
         query_mutations(self.cnf, self.mutations)
 
-    def parse_sv(self, sv_fpath):
-        return None
+    def parse_sv(self, sv_fpath, key_gene_by_name):
+        info('Parsing prioritized SV events from ' + sv_fpath)
+        sv_events = []
+        sv_events_by_gene_name = OrderedDict()
+
+        sorted_known_fusions = [sorted(p) for p in known_fusions['homo_sapiens']]
+
+        with open(sv_fpath) as f:
+            header_rows = []
+            for i, l in enumerate(f):
+                fs = l.strip().split('\t')
+                if i == 0:
+                    header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
+                else:
+                    event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
+                    if event and event.sample == self.sample.name:
+                        sv_events.append(event)
+
+                        for annotation in event.annotations:
+                            if event.is_fusion() and sorted(annotation.genes) in sorted_known_fusions:
+                                info('Found ' + '/'.join(annotation.genes) + ' in known')
+                                annotation.known = True
+
+                            for g in annotation.genes:
+                                if g in key_gene_by_name:
+                                    sv_events_by_gene_name[g] = event
+                                    sv_events.append(event)
+                                    key_gene_by_name[g].sv_events.append(event)
+        return sv_events
 
     def parse_seq2c_report(self, seq2c_tsv_fpath):
         seq2c_events_by_gene_name = dict()
@@ -267,12 +436,12 @@ class ClinicalExperimentInfo:
              str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_del())) + ' deletions.')
 
         for gn, event in seq2c_events_by_gene_name.items():
-            self.key_gene_by_name[gn].seq2c_event = event
+            self.key_gene_by_name[gn].seq2c_events.append(event)
 
         return seq2c_events_by_gene_name
 
     def parse_targetseq_detailed_report(self):
-        info('Preparing coverage stats ' + self.key_or_target_genes + ' gene tables')
+        info('Preparing coverage stats ' + self.genes_collection_type + ' gene tables')
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):
@@ -318,12 +487,12 @@ class ClinicalExperimentInfo:
                 del self.key_gene_by_name[gene.name]
 
 
-def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_or_target_genes, for_flagged_report=False):
+def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collection_type, for_flagged_report=False):
     mutations = []
     if for_flagged_report:
         info('Preparing mutations stats for flagged regions report')
     else:
-        info('Preparing mutations stats for ' + key_or_target_genes + ' gene tables')
+        info('Preparing mutations stats for ' + key_collection_type + ' gene tables')
     info('Checking ' + mutations_fpath)
     if not verify_file(mutations_fpath):
         mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
@@ -397,7 +566,7 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_or_targe
                 mut.reason = reason
 
                 mutations.append(mut)
-    info('Found ' + str(len(mutations)) + ' mutations in ' + key_or_target_genes + ' genes')
+    info('Found ' + str(len(mutations)) + ' mutations in ' + key_collection_type + ' genes')
     return mutations
 
 

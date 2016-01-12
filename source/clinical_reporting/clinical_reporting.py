@@ -113,8 +113,70 @@ class BaseClinicalReporting:
 
         return report
 
-    def make_sv_report(self, svs_by_experiment):
-        return None
+    @staticmethod
+    def make_sv_report(svs_by_experiment):
+        ms = [
+            Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
+            Metric('Type'),
+            Metric('Location', with_heatmap=False, align='left', sort_direction='ascending'),
+            Metric('Genes', max_width=200, class_='long_line'),
+            Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
+        ]
+
+        if len(svs_by_experiment) == 1:
+            ms.extend([
+                Metric('Split read support', short_name='Split /', with_heatmap=False),
+                Metric('Paired read support', short_name='paired read support', with_heatmap=False),
+            ])
+        else:
+            for e in svs_by_experiment.keys():
+                ms.extend([
+                    Metric(e.key + ' Split read support', short_name='Split /', with_heatmap=False),
+                    Metric(e.key + ' Paired read support', short_name='paired read support', with_heatmap=False),
+                ])
+
+        metric_storage = MetricStorage(sections=[ReportSection(name='main_sv_section', metrics=ms)])
+        report = PerRegionSampleReport(sample=svs_by_experiment.keys()[0].sample,
+                                       metric_storage=metric_storage)
+
+        # Writing records
+        svs_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
+        for e, svs in svs_by_experiment.items():
+            for sv in svs:
+                svs_by_key_by_experiment[sv.get_key()][e] = sv
+
+        for sv_key, sv_by_experiment in svs_by_key_by_experiment.items():
+            sv = next((s for s in sv_by_experiment.values() if s is not None), None)
+
+            row = report.add_row()
+
+            type_dict = {
+                'BND': 'Fusion',
+                'INS': 'Insertion',
+                'DEL': 'Deletion',
+                'DUP': 'Duplication',
+            }
+            row.add_record('Chr', sv.chrom)
+            row.add_record('Type', type_dict.get(sv.type, sv.type) if sv else None)
+            row.add_record('Location', Metric.format_value(sv.start) + (('..' + Metric.format_value(sv.end)) if sv.end else '') if sv else None, num=sv.start if sv else None)
+            row.add_record('Genes', ', '.join('/'.join(a.genes) for a in sv.annotations))
+            row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
+
+            if len(sv_by_experiment.values()) == 1:
+                row.add_record('Split read support', sv.split_read_support if sv else None)
+                row.add_record('Paired read support', sv.paired_end_support if sv else None)
+            else:
+                for e, m in sv_by_experiment.items():
+                    row.add_record(e.key + ' Split read support', sv.split_read_support if sv else None)
+                    row.add_record(e.key + ' Paired read support', sv.paired_end_support if sv else None)
+
+            if any(a.known for a in sv.annotations):
+                row.highlighted = True
+
+            if len(sv_by_experiment.keys()) == len(svs_by_experiment.keys()):
+                row.highlighted_green = True
+
+        return report
 
     def make_seq2c_plot_json(self, experiment_by_key):
         data = dict()
@@ -131,13 +193,13 @@ class BaseClinicalReporting:
             )
 
             for gene in e.key_gene_by_name.values():
-                if gene.seq2c_event:
+                for se in gene.seq2c_events:
                     d['events'].append(dict(
                         x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
                         geneName=gene.name,
-                        logRatio=gene.seq2c_event.ab_log2r if gene.seq2c_event.ab_log2r is not None else gene.seq2c_event.log2r,
-                        ampDel=gene.seq2c_event.amp_del,
-                        fragment=gene.seq2c_event.fragment))
+                        logRatio=se.ab_log2r if se.ab_log2r is not None else se.log2r,
+                        ampDel=se.amp_del,
+                        fragment=se.fragment))
 
                     # if not gene.seq2c_event.ab_log2r or gene.seq2c_event.fragment == 'BP':  # breakpoint, meaning part of exon is not amplified
 
@@ -170,8 +232,9 @@ class BaseClinicalReporting:
 
             for gene in e.key_gene_by_name.values():
                 mut_info_by_gene[gene.name] = [('p.' + m.aa_change if m.aa_change else '.') for m in gene.mutations]
-                if gene.seq2c_event and (gene.seq2c_event.is_amp() or gene.seq2c_event.is_del()):
-                    mut_info_by_gene[gene.name].append(gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
+                for se in gene.seq2c_events:
+                    if se and (se.is_amp() or se.is_del()):
+                        mut_info_by_gene[gene.name].append(se.amp_del + ', ' + se.fragment)
 
             for gene in e.key_gene_by_name.values():
                 gene_names.append(gene.name)
@@ -319,11 +382,12 @@ class ClinicalReporting(BaseClinicalReporting):
         info('Preparing data...')
         if self.experiment.mutations:
             self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
-        if self.experiment.sv_events_by_gene_name:
-            self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events_by_gene_name})
+        if self.experiment.sv_events:
+            self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
         if self.experiment.seq2c_events_by_gene_name:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
-        if self.experiment.actionable_genes_dict and (self.experiment.mutations or self.experiment.seq2c_events_by_gene_name):
+        if self.experiment.actionable_genes_dict and \
+                (self.experiment.mutations or self.experiment.seq2c_events_by_gene_name or self.experiment.sv_events):
             self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
         if self.experiment.ave_depth:
             self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name, self.experiment.ave_depth)
@@ -333,10 +397,11 @@ class ClinicalReporting(BaseClinicalReporting):
         info('')
 
         data = {
-            'key_or_target': self.experiment.key_or_target_genes,
+            'key_or_target': self.experiment.genes_collection_type,
             'genes_description': self.experiment.genes_description,
             'sample': self.sample_section(self.experiment),
             'variants': self.__mutations_section(),
+            'sv': self.__sv_section(),
             'coverage': self.__coverage_section(),
             'actionable_genes': self.__actionable_genes_section()
         }
@@ -365,6 +430,13 @@ class ClinicalReporting(BaseClinicalReporting):
             mutations_dict['total_variants'] = Metric.format_value(self.experiment.total_variants, is_html=True)
             mutations_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
         return mutations_dict
+
+    def __sv_section(self):
+        sv_dict = dict()
+        if self.sv_report and self.sv_report.rows:
+            sv_dict['table'] = build_report_html(self.sv_report, sortable=True)
+            sv_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
+        return sv_dict
 
     def __coverage_section(self):
         if self.experiment.depth_cutoff is not None and self.key_genes_report is not None:
@@ -395,7 +467,7 @@ class ClinicalReporting(BaseClinicalReporting):
         if self.experiment.depth_cutoff is None:
             return None
 
-        info('Making ' + self.experiment.key_or_target_genes + ' genes coverage report...')
+        info('Making ' + self.experiment.genes_collection_type + ' genes coverage report...')
         clinical_cov_metrics = [
             Metric('Gene'),
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
@@ -414,13 +486,13 @@ class ClinicalReporting(BaseClinicalReporting):
             reg.add_record('Ave depth', gene.ave_depth)
             m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(self.experiment.depth_cutoff))
             reg.add_record(m.name, next((cov for cutoff, cov in gene.cov_by_threshs.items() if cutoff == self.experiment.depth_cutoff), None))
-            if gene.seq2c_event and (gene.seq2c_event.is_amp() or gene.seq2c_event.is_del()):
-                reg.add_record('CNV', gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
+            if any(se.is_amp() or se.is_del() for se in gene.seq2c_events):
+                reg.add_record('CNV', '; '.join([se.amp_del + ', ' + se.fragment for se in gene.seq2c_events if se.is_amp() or se.is_del()]))
 
         return key_genes_report
 
     def make_actionable_genes_report(self, actionable_genes_dict):
-        info('Preparing mutations stats for ' + self.experiment.key_or_target_genes + ' gene tables')
+        info('Preparing mutations stats for ' + self.experiment.genes_collection_type + ' gene tables')
 
         clinical_action_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[
@@ -436,7 +508,7 @@ class ClinicalReporting(BaseClinicalReporting):
         report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_action_metric_storage)
         actionable_gene_names = actionable_genes_dict.keys()
 
-        sv_mutation_types = {'Rearrangement', 'Fusion'}
+        sv_mutation_types = {'Rearrangement', 'Fusion', 'Amplification', 'Deletion'}
         cnv_mutation_types = {'Amplification', 'Deletion'}
 
         for gene in self.experiment.key_gene_by_name.values():
@@ -457,11 +529,20 @@ class ClinicalReporting(BaseClinicalReporting):
                             variants.append(mut.aa_change if mut.aa_change else '.')
                             types.append(mut.var_type)
 
-            if cnv_mutation_types and gene.seq2c_event:
-                if 'Amplification' in possible_mutation_types and gene.seq2c_event.amp_del == 'Amp' or \
-                        'Deletion' in possible_mutation_types and gene.seq2c_event.amp_del == 'Del':
-                    variants.append(gene.seq2c_event.amp_del + ', ' + gene.seq2c_event.fragment)
-                    types.append(gene.seq2c_event.amp_del)
+            if cnv_mutation_types:
+                for se in gene.seq2c_events:
+                    if 'Amplification' in possible_mutation_types and se.amp_del == 'Amp' or \
+                            'Deletion' in possible_mutation_types and se.amp_del == 'Del':
+                        variants.append(se.amp_del + ', ' + se.fragment)
+                        types.append(se.amp_del)
+
+            if sv_mutation_types:
+                for se in gene.sv_events:
+                    if ('Fusion' in possible_mutation_types or 'Rearrangement' in possible_mutation_types) and se.type == 'BND' or \
+                       'Deletion' in possible_mutation_types and se.type == 'DEL' or \
+                       'Amplification' in possible_mutation_types and se.type == 'DUP':
+                        variants.append(se.type)
+                        types.append(se.type)
 
             if not variants:
                 continue

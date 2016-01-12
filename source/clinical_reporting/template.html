@@ -112,6 +112,7 @@
         <div class="space_8px"></div>
         <div>
             <a class="dotted-link" href="#variants">Mutations in {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#sv">Structural variants in {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#actionable">Actionable {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#coverage">Coverage analysis for the {key_or_target} genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
@@ -138,6 +139,18 @@
             </div>
         {.or}
             <p>No variants detected in {key_or_target} regions.</p>
+        {.end}
+
+        <a name="sv"></a>
+        <h1>Structural variants in {key_or_target} genes</h1>
+        {.section sv}
+            <div id="sv_div">
+                <div id="sv_table_div">
+                    {table}
+                </div>
+            </div>
+        {.or}
+            <p>No structural variants detected in {key_or_target} regions.</p>
         {.end}
 
         <a name="actionable"></a>

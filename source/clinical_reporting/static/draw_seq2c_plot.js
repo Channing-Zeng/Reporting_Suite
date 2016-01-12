@@ -2,6 +2,9 @@ $(function() {
     var fullData = readJsonFromElement($('#seq2c_plot_data_json'));
     var colors = distinctColors();
 
+    if (fullData == null) {
+
+    }
     if (fullData.hasOwnProperty('ticksX')) {
         drawSeq2cPlot('seq2c', fullData, $('#seq2c_plot_placeholder'));
     } else {
