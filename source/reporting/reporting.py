@@ -998,7 +998,15 @@ def build_report_html(report, sortable=True):
     report_html = ''
     report_html += _build_common_records(report.get_common_records())
 
+    report_html += '<div class="space_8px"></div>'
+    report_html += '<div>'
     for section in report.metric_storage.sections:
+        report_html += '<a class="dotted-link" href="#' + section.name + '">' + section.title + '</a><span>&nbsp;&nbsp;&nbsp;</span>'
+    report_html += '</div>'
+    report_html += '<div class="space_4px"></div>'
+
+    for section in report.metric_storage.sections:
+        report_html += '<a name="' + section.name + '"></a>'
         report_html += build_section_html(report, section, sortable=sortable)
 
     return report_html
