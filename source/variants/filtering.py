@@ -151,25 +151,25 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, vardict2mut_res_fpat
 
     cmdline = '{vardict2mut_executable} -f {min_freq} '
     if vardict2mut_executable.endswith('.pl'):
-        cmdline += '--report_reason '
+        cmdline += ' --report_reason '
         if c.min_hotspot_freq is not None and c.min_hotspot_freq != 'default':
-            cmdline += '-F ' + str(c.min_hotspot_freq)
+            cmdline += ' -F ' + str(c.min_hotspot_freq)
         if c.max_ratio_vardict2mut is not None:
-            cmdline += '-R ' + str(c.max_ratio_vardict2mut)
+            cmdline += ' -R ' + str(c.max_ratio_vardict2mut)
         cmdline += ' {vcf2txt_res_fpath} '
-        if cnf.genome.ruledir: cmdline += '--ruledir {cnf.genome.ruledir} '
-        if cnf.genome.filter_common_snp: cmdline += '--filter_common_snp {cnf.genome.filter_common_snp} '
-        if cnf.genome.filter_common_artifacts: cmdline += '--filter_common_artifacts {cnf.genome.filter_common_artifacts} '
-        if cnf.genome.actionable: cmdline += '--actionable {cnf.genome.actionable} '
-        if cnf.genome.compendia_ms7_hotspot: cmdline += '--compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
-        if cnf.snpeffect_export_polymorphic: cmdline += '--snpeffect_export_polymorphic {cnf.snpeffect_export_polymorphic} '
-        if cnf.actionable_hotspot: cmdline += '--actionable_hotspot {cnf.actionable_hotspot} '
+        if cnf.genome.ruledir: cmdline += ' --ruledir {cnf.genome.ruledir} '
+        if cnf.genome.filter_common_snp: cmdline += ' --filter_common_snp {cnf.genome.filter_common_snp} '
+        if cnf.genome.filter_common_artifacts: cmdline += ' --filter_common_artifacts {cnf.genome.filter_common_artifacts} '
+        if cnf.genome.actionable: cmdline += ' --actionable {cnf.genome.actionable} '
+        if cnf.genome.compendia_ms7_hotspot: cmdline += ' --compendia_ms7_hotspot {cnf.genome.compendia_ms7_hotspot} '
+        if cnf.snpeffect_export_polymorphic: cmdline += ' --snpeffect_export_polymorphic {cnf.snpeffect_export_polymorphic} '
+        if cnf.actionable_hotspot: cmdline += ' --actionable_hotspot {cnf.actionable_hotspot} '
         cmdline = cmdline.format(**locals())
         res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
 
     else:
-        cmdline += '--genome ' + cnf.genome.name
-        cmdline += '--o ' + vardict2mut_res_fpath
+        cmdline += ' --genome ' + cnf.genome.name
+        cmdline += ' --o ' + vardict2mut_res_fpath
         cmdline = cmdline.format(**locals())
         res = call(cnf, cmdline, output_fpath=vardict2mut_res_fpath,
                    stdout_to_outputfile=False, exit_on_error=False)

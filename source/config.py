@@ -63,9 +63,10 @@ class Config(object):
             for k, v in loaded_dict.items():
                 self[k] = v
 
-            for k, v in cmd_line_opts.items():
-                if v is not None:
-                    self[k] = v
+            if cmd_line_opts:
+                for k, v in cmd_line_opts.items():
+                    if v is not None:
+                        self[k] = v
 
             self.sys_cnf = sys_cnf_fpath
             if run_cnf_fpath:
@@ -76,6 +77,8 @@ class Config(object):
                 self.genome = bcbio_genome_build
             if self.genomes and self.genome:
                 build_name = self.genome
+                if build_name not in self.genomes:
+                    critical('Genome ' + str(build_name) + ' not in ' + sys_cnf_fpath)
                 self.genome = Config(self.genomes[build_name])
                 self.genome.name = build_name
 
