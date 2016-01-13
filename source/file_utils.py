@@ -245,7 +245,7 @@ def symlink_plus(orig, new):
                 os.symlink(os.path.relpath(orig_noext + sub_ext), os.path.basename(new_noext + sub_ext))
 
 def open_gzipsafe(f, mode='rb'):
-    if f.endswith('.gz') or f.endswith('.gzip'):
+    if f.endswith('.gz') or f.endswith('.gzip') or f.endswith('.gz.tx') or f.endswith('.gzip.tx'):
         if 'b' not in mode:
             mode += 'b'
         try:
@@ -254,16 +254,19 @@ def open_gzipsafe(f, mode='rb'):
             err('Error opening gzip ' + f + ': ' + str(e) + ', opening as plain text')
             return open(f, mode=mode)
         else:
-            try:
-                h.read(1)
-            except IOError, e:
-                err('Error opening gzip ' + f + ': ' + str(e) + ', opening as plain text')
-                h.close()
-                return open(f, mode=mode)
-            else:
-                h.close()
-                h = gzip.open(f, mode=mode)
+            if 'w' in mode:
                 return h
+            else:
+                try:
+                    h.read(1)
+                except IOError, e:
+                    err('Error opening gzip ' + f + ': ' + str(e) + ', opening as plain text')
+                    h.close()
+                    return open(f, mode=mode)
+                else:
+                    h.close()
+                    h = gzip.open(f, mode=mode)
+                    return h
     else:
         return open(f, mode=mode)
 
@@ -775,8 +778,8 @@ def remove_quotes(s):
 def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=True,
                  overwrite=False, reuse_intermediate=True, ctx=None):
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
-    if output_fpath.endswith('.gz'):
-        output_fpath = output_fpath[:-3]
+    # if output_fpath.endswith('.gz'):
+    #     output_fpath = output_fpath[:-3]
 
     if islink(output_fpath):
         os.unlink(output_fpath)
@@ -789,7 +792,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
     info('inside convert_file 2: overwrite=' + str(overwrite))
 
     with file_transaction(cnf.work_dir, output_fpath) as tx_fpath:
-        with open_gzipsafe(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:
+        with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
             if ctx:
                 convert_file_fn(inp_f, out_f, ctx)
             else:
