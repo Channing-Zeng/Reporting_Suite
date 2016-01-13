@@ -82,6 +82,7 @@ coverage_reports:
 
 annotation:
   dbnsfp:
+    skip-annotation: False
     annotations:
     - SIFT_score
     - Polyphen2_HVAR_score
@@ -103,6 +104,7 @@ annotation:
 
   dbsnp:
     all-annotations: False
+    skip-annotation: False
     annotations:
     - SAO
     - VC
@@ -119,6 +121,7 @@ annotation:
 
   cosmic:
     all-annotations: False
+    skip-annotation: False
     annotations:
     - CNT
     - AA
@@ -126,6 +129,7 @@ annotation:
 
   oncomine:
     all-annotations: False
+    skip-annotation: False
     annotations:
 #    - om
     - om_Cancer
@@ -134,6 +138,7 @@ annotation:
     - om_MutClassPC
 
   clinvar:
+    skip-annotation: False
     annotations:
     - CLNSIG  # Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other
 
@@ -141,6 +146,7 @@ annotation:
 #    clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
     cancer: False
     extra_options: ''
+    skip-annotation: False
 
 #  mongo:
 #    all-annotations: True

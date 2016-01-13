@@ -146,32 +146,33 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     original_vcf = cnf.vcf
 
     db_section_by_name = OrderedDict((dbname, cnf.annotation[dbname])
-           for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
-           if dbname in cnf.annotation)
+        for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
+        if dbname in cnf.annotation and not cnf.annotation[dbname].get('skip-annotation'))
 
-    to_delete_id_ref = []
-    if 'dbsnp' in db_section_by_name.keys():
-        info('Removing IDs from dbsnp as rs*')
-        to_delete_id_ref.append('rs')
-    if 'cosmic' in db_section_by_name.keys():
-        info('Removing IDs from dbsnp as COS*')
-        to_delete_id_ref.append('COS')
+    if not cnf.no_check:
+        to_delete_id_ref = []
+        if 'dbsnp' in db_section_by_name.keys():
+            info('Removing IDs from dbsnp as rs*')
+            to_delete_id_ref.append('rs')
+        if 'cosmic' in db_section_by_name.keys():
+            info('Removing IDs from dbsnp as COS*')
+            to_delete_id_ref.append('COS')
 
-    def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
-        if rec.ID:
-            if isinstance(rec.ID, basestring):
-                if any(rec.ID.startswith(pref) for pref in to_delete_id_ref):
-                    rec.ID = None
-            else:
-                rec.ID = [id_ for id_ in rec.ID if not any(id_.startswith(pref) for pref in to_delete_id_ref)]
+        def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
+            if rec.ID:
+                if isinstance(rec.ID, basestring):
+                    if any(rec.ID.startswith(pref) for pref in to_delete_id_ref):
+                        rec.ID = None
+                else:
+                    rec.ID = [id_ for id_ in rec.ID if not any(id_.startswith(pref) for pref in to_delete_id_ref)]
 
-        if not rec.FILTER:
-            rec.FILTER = 'PASS'
+            if not rec.FILTER:
+                rec.FILTER = 'PASS'
 
-        return rec
+            return rec
 
-    info('Removing previous rs* and COS* IDs')
-    vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
+        info('Removing previous rs* and COS* IDs')
+        vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
     for dbname, dbconf in db_section_by_name.items():
         res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
@@ -205,7 +206,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             if file_exists(summary_fpath): shutil.move(summary_fpath, final_summary_fpath)
             if file_exists(genes_fpath): shutil.move(genes_fpath, final_genes_fpath)
 
-    if 'tracks' in cnf.annotation and cnf.annotation['tracks']:
+    if 'tracks' in cnf.annotation and cnf.annotation['tracks'] and cnf.annotation['tracks']:
         track_fapths = []
         for track_name in cnf.annotation['tracks']:
             if isfile(track_name) and verify_file(track_name):
@@ -244,12 +245,13 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
 def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
-    if not cnf.get('no_correct_vcf'):
+    if not cnf.no_check:
         vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
-    info()
-    info('Adding SAMPLE=' + samplename + ' annotation...')
-    vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename, number='1', type_='String', description='Sample name')
+    if not cnf.no_check:
+        info()
+        info('Adding SAMPLE=' + samplename + ' annotation...')
+        vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename, number='1', type_='String', description='Sample name')
 
     final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
     final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
@@ -313,13 +315,14 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     info('Removing previous annotations...')
     annotations = vcf_conf.get('annotations')
 
-    def delete_annos(rec):
-        for anno in annotations:
-            if anno in rec.INFO:
-                del rec.INFO[anno]
-        return rec
-    if annotations:
-        input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='d')
+    if not cnf.no_check:
+        def delete_annos(rec):
+            for anno in annotations:
+                if anno in rec.INFO:
+                    del rec.INFO[anno]
+            return rec
+        if annotations:
+            input_fpath = iterate_vcf(cnf, input_fpath, delete_annos, suffix='d')
 
     anno_line = ''
     if annotations:
@@ -333,36 +336,36 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         err('Error: snpsift resulted ' + str(output_fpath) + ' for ' + dbname)
         return output_fpath
 
-    # all_fields.extend(annotations)
-    info_pattern = re.compile(r'''\#\#INFO=<
-        ID=(?P<id>[^,]+),\s*
-        Number=(?P<number>-?\d+|\.|[AG]),\s*
-        Type=(?P<type>Integer|Float|Flag|Character|String),\s*
-        Description="(?P<desc>[^"]*)"
-        >''', re.VERBOSE)
+    if not cnf.no_check:
+        info_pattern = re.compile(r'''\#\#INFO=<
+            ID=(?P<id>[^,]+),\s*
+            Number=(?P<number>-?\d+|\.|[AG]),\s*
+            Type=(?P<type>Integer|Float|Flag|Character|String),\s*
+            Description="(?P<desc>[^"]*)"
+            >''', re.VERBOSE)
 
-    def _fix_after_snpsift(line, i, ctx):
-        if not line.startswith('#'):
-            if not ctx['met_CHROM']:
-                return None
-            line = line.replace(' ', '_')
-            assert ' ' not in line
+        def _fix_after_snpsift(line, i, ctx):
+            if not line.startswith('#'):
+                if not ctx['met_CHROM']:
+                    return None
+                line = line.replace(' ', '_')
+                assert ' ' not in line
 
-        # elif line.startswith('##INFO=<ID=om'):
-        #     line = line.replace(' ', '')
+            # elif line.startswith('##INFO=<ID=om'):
+            #     line = line.replace(' ', '')
 
-        elif not ctx['met_CHROM'] and line.startswith('#CHROM'):
-            ctx['met_CHROM'] = True
+            elif not ctx['met_CHROM'] and line.startswith('#CHROM'):
+                ctx['met_CHROM'] = True
 
-        elif line.startswith('##INFO'):
-            m = info_pattern.match(line)
-            if m:
-                line = '##INFO=<ID={0},Number={1},Type={2},Description="{3}">'.format(
-                    m.group('id'), m.group('number'), m.group('type'), m.group('desc'))
+            elif line.startswith('##INFO'):
+                m = info_pattern.match(line)
+                if m:
+                    line = '##INFO=<ID={0},Number={1},Type={2},Description="{3}">'.format(
+                        m.group('id'), m.group('number'), m.group('type'), m.group('desc'))
+            return line
 
-        return line
+        output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='fx', ctx=dict(met_CHROM=False))
 
-    output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='fx', ctx=dict(met_CHROM=False))
     return output_fpath
 
 
@@ -404,7 +407,7 @@ def _snpeff(cnf, input_fpath):
 
     stats_fpath = join(cnf.work_dir, cnf.sample + '-' + cnf.caller + '.snpEff_summary.csv')
 
-    ref_name = cnf.annotation.snpeff.reference or cnf.genome.name
+    ref_name = cnf.genome.snpeff.reference or cnf.genome.name
     # if ref_name == 'GRCh37': ref_name += '.75'
     # if ref_name.startswith('hg38'): ref_name = 'GRCh38.78'
 
@@ -433,12 +436,13 @@ def _snpeff(cnf, input_fpath):
     if cnf.annotation.snpeff.extra_options:
         opts += ''
 
-    info('Removing previous snpEff annotations...')
-    res = remove_prev_eff_annotation(cnf, input_fpath)
-    if not res:
-        err('Could not remove preivous snpEff annotations')
-        return None, None, None
-    input_fpath = res
+    if not cnf.no_check:
+        info('Removing previous snpEff annotations...')
+        res = remove_prev_eff_annotation(cnf, input_fpath)
+        if not res:
+            err('Could not remove preivous snpEff annotations')
+            return None, None, None
+        input_fpath = res
 
     snpeff_type = get_snpeff_type(snpeff)
     if snpeff_type == "old":

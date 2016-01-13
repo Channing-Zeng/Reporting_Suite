@@ -44,7 +44,7 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpat
             info('Processing ' + basename(sample.bam))
 
             info('TargetSeq for "' + basename(sample.bam) + '"')
-            j = _submit_job(cnf, targetcov_step, sample, threads=threads_per_sample, bam=sample.bam)
+            j = _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam)
             jobs_to_wait.append(j)
             summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 
@@ -145,20 +145,20 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
     return targetcov_step, ngscat_step, qualimap_step
 
 
-def _submit_job(cnf, step, sample='', wait_for_steps=None, threads=1, is_critical=True, **kwargs):
+def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_critical=True, **kwargs):
     tool_cmdline = get_system_path(cnf, step.interpreter, step.script, is_critical=is_critical)
     if not tool_cmdline:
         return False
 
-    kwargs['sample'] = sample
+    kwargs['sample'] = sample_name
     cmdline = tool_cmdline + ' ' + step.param_line.format(**kwargs)
 
     info(step.name)
 
     job = submit_job(cnf, cmdline,
-        job_name=step.job_name(sample.name),
-        wait_for_steps=wait_for_steps,
-        threads=threads)
+         job_name=step.job_name(sample_name),
+         wait_for_steps=wait_for_steps,
+         threads=threads)
 
     info()
     return job

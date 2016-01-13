@@ -28,6 +28,7 @@ def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
                       help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
     parser.add_option('-t', dest='threads', type='int', help='Max number of slots, default is %d' % defaults['threads'])
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
+    parser.add_option('--no-check', dest='no_check', action='store_true', help=SUPPRESS_HELP)
     parser.add_option('--project-name', '--project', dest='project_name', help='Project name. If not set, it gets parsed from JIRA or from the location path.')
     parser.add_option('--genome', dest='genome', help='Genome build')
     parser.add_option('--done-marker', dest='done_marker', help=SUPPRESS_HELP)
@@ -229,12 +230,12 @@ def determine_sys_cnf(opts):
     return opts.sys_cnf
 
 
-def determine_run_cnf(opts, is_wgs=False, is_deep_seq=False):
+def determine_run_cnf(opts, is_wgs=False, is_targeteq=False):
     if opts.run_cnf:
         opts.run_cnf = adjust_path(opts.run_cnf)
     elif is_wgs:
         opts.run_cnf = defaults['run_cnf_wgs']
-    elif is_deep_seq:
+    elif is_targeteq:
         opts.run_cnf = defaults['run_cnf_deep_seq']
     else:
         opts.run_cnf = defaults['run_cnf_exome_seq']

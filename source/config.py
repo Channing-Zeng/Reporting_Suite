@@ -52,7 +52,7 @@ for k, v in run_info_defaults.items():
 
 
 class Config(object):
-    def __init__(self, cmd_line_opts, sys_cnf=None, run_cnf=None, bcbio_genome_build=None, **kwargs):
+    def __init__(self, d, sys_cnf=None, run_cnf=None, bcbio_genome_build=None, **kwargs):
         object.__setattr__(self, '__d', dict())
 
         self.level = 0
@@ -61,10 +61,12 @@ class Config(object):
             sys_cnf_fpath, run_cnf_fpath = _check_paths(sys_cnf, run_cnf)
             loaded_dict = _load(sys_cnf_fpath, run_cnf_fpath)
             for k, v in loaded_dict.items():
+                # if k == 'annotation':
+                #     pass
                 self[k] = v
 
-            if cmd_line_opts:
-                for k, v in cmd_line_opts.items():
+            if d:
+                for k, v in d.items():
                     if v is not None:
                         self[k] = v
 
@@ -83,7 +85,7 @@ class Config(object):
                 self.genome.name = build_name
 
         else:
-            for k, v in cmd_line_opts.items():
+            for k, v in d.items():
                 self[k] = v
 
     def get(self, key, d=None):

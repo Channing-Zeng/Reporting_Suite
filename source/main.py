@@ -92,6 +92,7 @@ def read_opts_and_cnfs(extra_opts,
         (['--log-dir'], dict(dest='log_dir', metavar='DIR', help=SUPPRESS_HELP)),
         (['--proc-name'], dict(dest='proc_name', help=SUPPRESS_HELP)),
         (['--project-name'], dict(dest='project_name')),
+        (['--no-check'], dict(dest='no_check', action='store_true', help=SUPPRESS_HELP)),
         (['--genome'], dict(dest='genome')),
         (['--email'], dict(dest='email', help=SUPPRESS_HELP)),
         (['--done-marker'], dict(dest='done_marker', help=SUPPRESS_HELP)),
@@ -123,6 +124,8 @@ def read_opts_and_cnfs(extra_opts,
     if errors:
         parser.print_help()
         critical(errors)
+    file_keys = [k for k in file_keys if k in required_keys]
+    dir_keys = [k for k in dir_keys if k in required_keys]
     errors = check_dirs_and_files(cnf, file_keys, dir_keys)
     if errors:
         critical(errors)
