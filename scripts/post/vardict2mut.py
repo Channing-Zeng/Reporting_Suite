@@ -91,22 +91,29 @@ def main():
 
 
 def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
-    suppressors = parse_genes_list(cnf.suppressor or [])
-    oncogenes = parse_genes_list(cnf.oncogenes or [])
+    suppressors = parse_genes_list(cnf.suppressor)
+    oncogenes = parse_genes_list(cnf.oncogenes)
 
-    tp53_hg19_positions = []
+    tp53_positions = []
     tp53_groups = dict()
     if cnf.genome.ruledir:
-        tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.genome.ruledir, 'Rules', 'DNE.txt')),
-                       'Group 2': parse_mut_tp53(join(cnf.genome.ruledir, 'Rules', 'TA0-25.txt')),
-                       'Group 3': parse_mut_tp53(join(cnf.genome.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
-
-        tp53_hg19_positions = (
-            '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
-            '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
-            '7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 '
-            '7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 '
-            '7578371 7579312 7579700 7579839').split()
+        tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.genome.ruledir, 'DNE.txt')),
+                       'Group 2': parse_mut_tp53(join(cnf.genome.ruledir, 'TA0-25.txt')),
+                       'Group 3': parse_mut_tp53(join(cnf.genome.ruledir, 'TA25-50_SOM_10x.txt'))}
+        if cnf.genome.name == 'hg38':
+            tp53_positions = (
+                '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
+                '7674180 7674291 7674292 7674857 7674858 7674972 7674973 7675051 7675052 7675237 7675238 '
+                '7675992 7675993 7676273 7676274 7676380 7676381 7676404 7676405 7676519 7676520 7670715 '
+                '7673608 7673837 7674290 7674971 7675236 7676272 7676403 7673535 7673701 7674181 7674859 '
+                '7675053 7675994 7676382 7676521').split()
+        else:
+            tp53_positions = (
+                '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
+                '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
+                '7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 '
+                '7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 '
+                '7578371 7579312 7579700 7579839').split()
 
     # Set up common SNP filter
     filter_snp = set()
@@ -254,9 +261,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             key = '-'.join([chr, pos, ref, alt])
             allele_freq = float(line[allele_freq_col])
             is_act = False
-            if all([rules, act_somatic, act_germline, actionable_hotspots, tp53_hg19_positions, tp53_groups]):
+            if all([rules, act_somatic, act_germline, actionable_hotspots, tp53_positions, tp53_groups]):
                 is_act = is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_somatic,
-                                       act_germline, actionable_hotspots, tp53_hg19_positions, tp53_groups)
+                                       act_germline, actionable_hotspots, tp53_positions, tp53_groups)
             if not is_act and (key in filter_snp or ('-'.join([gene, aa_chg]) in snpeff_snp) or
                                    (key in filter_artifacts and allele_freq < 0.5)):
                 continue
@@ -313,7 +320,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 out_f.write('\t'.join(line + [status]) + ('\t' + ','.join(reasons)))
 
 
-def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, act_hotspots, tp53_hg19_pos, tp53_groups):
+def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, act_hotspots, tp53_pos, tp53_groups):
     key = '-'.join([chr, pos, ref, alt])
     if key in act_som:
         return act_som[key]
@@ -331,7 +338,7 @@ def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, ac
         if aa_chg_trim in act_hotspots:
             return True
     if gene == 'TP53':
-        tp53_group = classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups)
+        tp53_group = classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups)
         if tp53_group != 'NA':
             return 'somatic'
     if gene in rules['inframe-del'] and len(ref) > len(alt) and (len(ref) - len(alt)) % 3 == 0:
@@ -424,12 +431,12 @@ def check_by_type(var_type, status, reasons, aa_chg):
     return status, reasons
 
 
-def classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups):
+def classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups):
     ref = ref.replace(' ', '')
     alt = alt.replace(' ', '')
     pos = pos.replace(' ', '')
     aa_chg = aa_chg.replace(' ', '')
-    if pos in tp53_hg19_pos and len(ref) == 1 and len(alt) == 1:
+    if pos in tp53_pos and len(ref) == 1 and len(alt) == 1:
         return 'Group 6'
     aa_chg = aa_chg.replace('p.', '')
     aa_num = 0
@@ -452,7 +459,9 @@ def classify_tp53(aa_chg, pos, ref, alt, tp53_hg19_pos, tp53_groups):
 
 
 def parse_genes_list(fpath):
-    genes = [line.strip() for line in open(fpath)]
+    genes = []
+    if fpath and verify_file(fpath):
+        genes = [line.strip() for line in open(fpath)]
     return genes
 
 

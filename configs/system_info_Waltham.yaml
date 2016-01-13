@@ -74,6 +74,16 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
     refseq: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq.no_genes.cut4.merge.bed
 
+    polymorphic_variants:         /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
+    ruledir:                      /ngs/reference_data/genomes/Hsapiens/hg38/variation/rules
+    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
+    snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
+    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
+    actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable_hotspot.txt
+    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
+    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bwa/hg38-noalt.fa
@@ -88,6 +98,16 @@ genomes:
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
     refseq: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq.no_genes.cut4.merge.bed
+
+    polymorphic_variants:         /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
+    ruledir:                      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/rules
+    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
+    snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
+    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
+    actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable_hotspot.txt
+    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
+    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
   mm10:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
