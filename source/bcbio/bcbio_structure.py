@@ -651,8 +651,10 @@ class BCBioStructure(BaseProjectStructure):
         else:
             bed_files_used = [s.bed for s in self.samples]
             if len(set(bed_files_used)) > 2:
-                critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
-            self.bed = bed_files_used[0] if bed_files_used else None
+                err('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
+                self.bed = None
+            else:
+                self.bed = bed_files_used[0] if bed_files_used else None
 
         self.target_type = 'genome'
         if self.bed:
