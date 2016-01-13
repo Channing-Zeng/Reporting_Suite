@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+from optparse import SUPPRESS_HELP
+
 import bcbio_postproc
 
 
@@ -79,11 +81,11 @@ def main(args):
                      'Default is ' + str(defaults['coverage_reports']['padding']),
                 type='int')
              ),
-            # (['--pcr'], dict(
-            #     dest='pcr',
-            #     action='store_true',
-            #     help='deduplication was not perfome, thud do not try to dedup')
-            #  ),
+            (['--no-dedup'], dict(
+                dest='no_dedup',
+                action='store_true',
+                help=SUPPRESS_HELP)
+             ),
         ],
         required_keys=['bam'],
         file_keys=['bam', 'bed'],

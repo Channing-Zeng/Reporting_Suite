@@ -294,10 +294,11 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if target_bed:
         target_info.regions_num = calc_region_number(target_bed)
 
-    sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
-    remove_dups(cnf, bam_fpath, sample.dedup_bam)
-    
-    _run_qualimap(cnf, sample, bam_fpath, target_bed, pcr=(getsize(bam_fpath) == getsize(sample.dedup_bam)))
+    if not cnf.no_dedup:
+        sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
+        remove_dups(cnf, bam_fpath, sample.dedup_bam)
+
+    _run_qualimap(cnf, sample, bam_fpath, target_bed, pcr=cnf.no_dedup or (getsize(bam_fpath) == getsize(sample.dedup_bam)))
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
@@ -320,7 +321,8 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     else:
         target_info.bases_num = target_stats['reference_size']
 
-    bam_fpath = sample.dedup_bam
+    if sample.dedup_bam:
+        bam_fpath = sample.dedup_bam
     reads_stats['mapped_dedup'] = number_of_mapped_reads(cnf, bam_fpath)
 
     if target_info.bed:

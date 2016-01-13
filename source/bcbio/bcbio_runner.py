@@ -276,6 +276,8 @@ class BCBioRunner:
             targetcov_params += '--bed ' + target_bed + ' '
         if genes_fpath:
             targetcov_params += '--genes ' + genes_fpath + ' '
+        if cnf.no_dedup:
+            targetcov_params += '--no-dedup '
 
         targetcov_params += '--no-prep-bed '
         if cnf.steps and 'AbnormalCovReport' in cnf.steps:

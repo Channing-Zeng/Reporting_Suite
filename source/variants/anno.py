@@ -312,10 +312,10 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             return
         verify_file(db_path, is_critical=True)
 
-    info('Removing previous annotations...')
     annotations = vcf_conf.get('annotations')
 
     if not cnf.no_check:
+        info('Removing previous annotations...')
         def delete_annos(rec):
             for anno in annotations:
                 if anno in rec.INFO:
