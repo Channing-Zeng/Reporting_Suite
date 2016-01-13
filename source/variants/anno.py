@@ -330,6 +330,8 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, dbname)
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
         stdout_to_outputfile=True, exit_on_error=False)
     if not output_fpath:
@@ -391,6 +393,8 @@ def _snpsift_db_nsfp(cnf, input_fpath):
     cmdline = '{executable} dbnsfp {ann_line} -v -db {db_path} ' \
               '{input_fpath}'.format(**locals())
     output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath, stdout_to_outputfile=True, exit_on_error=False):
         return output_fpath
     else:
@@ -454,6 +458,8 @@ def _snpeff(cnf, input_fpath):
                '{input_fpath}').format(**locals())
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True)
     if res:
@@ -483,6 +489,8 @@ def _tracks(cnf, track_fpath, input_fpath):
 
     assert input_fpath
     output_fpath = intermediate_fname(cnf, input_fpath, field_name)
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                                    stdout_to_outputfile=True)
     if not output_fpath:
