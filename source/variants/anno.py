@@ -1,18 +1,19 @@
 from collections import OrderedDict
 import shutil
 import os
-from os.path import splitext, basename, join, isfile
+from os.path import splitext, basename, join, isfile, relpath
 import socket
 import sys
 import re
-from ext_modules import vcf_parser
-from ext_modules.vcf_parser.parser import _Info
 
+import source
 from source.calling_process import call_subprocess, call
-from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction
+from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction, \
+    safe_mkdir
 from source.logger import step_greetings, critical, info, err, warn
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
+from source.variants import qc
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index
 
 
@@ -242,7 +243,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     return annotated, vcf_fpath
 
 
-def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
+def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
     # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
     if not cnf.no_check:
@@ -250,10 +251,10 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
 
     if not cnf.no_check:
         info()
-        info('Adding SAMPLE=' + samplename + ' annotation...')
-        vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', samplename, number='1', type_='String', description='Sample name')
+        info('Adding SAMPLE=' + sample.name + ' annotation...')
+        vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')
 
-    final_vcf_fname = samplename + '-' + callername + '.anno.vcf'
+    final_vcf_fname = sample.name + (('-' + callername) if callername else '') + '.anno.vcf'
     final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
 
     info('Moving final VCF ' + vcf_fpath + ' to ' + final_vcf_fpath)
@@ -262,6 +263,12 @@ def finialize_annotate_file(cnf, vcf_fpath, samplename, callername):
     if isfile(final_vcf_fpath + '.gz'):
         os.remove(final_vcf_fpath + '.gz')
     shutil.copy(vcf_fpath, final_vcf_fpath)
+
+    if cnf.qc:
+        report = qc.make_report(cnf, vcf_fpath, sample)
+        qc_dirpath = join(cnf.output_dir, 'qc')
+        safe_mkdir(qc_dirpath)
+        qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
 
     # Indexing
     info()

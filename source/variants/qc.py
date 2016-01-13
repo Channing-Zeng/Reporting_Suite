@@ -2,6 +2,7 @@ from os.path import join
 
 from ext_modules import vcf_parser
 
+import source
 from source.logger import step_greetings, warn
 from source.file_utils import open_gzipsafe
 from source.reporting.reporting import Metric, MetricStorage, ReportSection, SampleReport
@@ -109,14 +110,14 @@ def make_report(cnf, vcf_fpath, sample):
     report.add_record('Ti/tv',               float(transitions) / transversions if transversions != 0 else None)
     report.add_record('Total with rejected', total_with_rejected)
 
-    save_report(cnf, report)
     return report
 
 
-def save_report(cnf, report):
-    f_basepath = join(cnf.output_dir, cnf.sample + ('-' + cnf.caller if cnf.caller else '') + '.' + cnf.proc_name)
-
-    report.save_txt(join(cnf.output_dir, f_basepath + '.txt'))
-    report.save_json(join(cnf.output_dir, f_basepath + '.json'))
-
-
+def save_report(cnf, report, sample, callername, output_dir, proc_name=source.varqc_name):
+    f_basepath = join(output_dir, sample.name + ('-' + callername if callername else '') + '.' + proc_name)
+    report.save_txt(join(output_dir, f_basepath + '.txt'))
+    report.save_json(join(output_dir, f_basepath + '.json'))
+    report.save_html(cnf,
+        join(output_dir, sample.name + '-' + callername + '.' + proc_name + '.html'),
+        caption='Variant QC for ' + sample.name + ' (caller: ' + callername + ')')
+    return report
