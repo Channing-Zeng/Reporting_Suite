@@ -47,7 +47,7 @@ def check_genome_resources(cnf):
 
     info('Genome: ' + str(cnf.genome.name))
 
-    for key in cnf.genomes.keys():
+    for key in cnf.genome.keys():
         if key != 'name' and isinstance(cnf.genome[key], basestring):
             cnf.genome[key] = adjust_system_path(cnf.genome[key])
 
