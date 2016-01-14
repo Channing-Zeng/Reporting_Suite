@@ -49,16 +49,8 @@ def main():
     if not qualimap:
         critical('Cannot find qualimap')
 
-    sd_opt = ''
-    if not cnf.pcr:
-        sd_opt = '--skip-duplicated'
-    dup_num = number_of_dup_reads(cnf, cnf.bam)
-    info('Number of dup reads is ' + str(dup_num))
-    if dup_num and dup_num == 0:
-        sd_opt = ''
-
     info()
-    cmdline = ('{qualimap} bamqc {sd_opt} -nt ' + str(cnf.threads) + ' --java-mem-size=24G -nr 5000 '
+    cmdline = ('{qualimap} bamqc --skip-duplicates --skip-dup-mode 1 -nt ' + str(cnf.threads) + ' --java-mem-size=24G -nr 5000 '
         '-bam {cnf.bam} -outdir {cnf.output_dir} {bed} -c -gd HUMAN').format(**locals())
     report_fpath = join(cnf.output_dir, 'qualimapReport.html')
 
