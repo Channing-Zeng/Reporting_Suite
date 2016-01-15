@@ -12,7 +12,7 @@ import re
 from source import info, verify_file
 from source.config import Config
 from source import logger
-from source.file_utils import adjust_path
+from source.file_utils import adjust_path, verify_dir
 from source.logger import critical
 from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resources, \
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
@@ -53,7 +53,7 @@ def get_args():
 
     (opts, args) = parser.parse_args()
     if len(args) < 1:
-        critical()
+        critical('Provide the first argument - output from vcf2txt.pl')
     logger.is_debug = opts.debug
 
     vcf2txt_res_fpath = verify_file(args[0])
@@ -86,28 +86,28 @@ def main():
 
     do_filtering(cnf, vcf2txt_res_fpath, cnf.out_fpath)
 
-    info()
-    info('Done, saved to ' + cnf.out_fpath)
+    info('Saved to ' + cnf.out_fpath)
 
 
 def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
-    suppressors = parse_genes_list(cnf.suppressor)
-    oncogenes = parse_genes_list(cnf.oncogenes)
+    suppressors = parse_genes_list(adjust_path(cnf.suppressor))
+    oncogenes = parse_genes_list(adjust_path(cnf.oncogenes))
 
     tp53_positions = []
     tp53_groups = dict()
     if cnf.genome.ruledir:
+        cnf.genome.ruledir = verify_dir(cnf.genome.ruledir, is_critical=True)
         tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.genome.ruledir, 'DNE.txt')),
                        'Group 2': parse_mut_tp53(join(cnf.genome.ruledir, 'TA0-25.txt')),
                        'Group 3': parse_mut_tp53(join(cnf.genome.ruledir, 'TA25-50_SOM_10x.txt'))}
-        if cnf.genome.name == 'hg38':
+        if cnf.genome.name.startswith('hg38'):
             tp53_positions = (
                 '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
                 '7674180 7674291 7674292 7674857 7674858 7674972 7674973 7675051 7675052 7675237 7675238 '
                 '7675992 7675993 7676273 7676274 7676380 7676381 7676404 7676405 7676519 7676520 7670715 '
                 '7673608 7673837 7674290 7674971 7675236 7676272 7676403 7673535 7673701 7674181 7674859 '
                 '7675053 7675994 7676382 7676521').split()
-        else:
+        elif cnf.genome.name.startswith('hg19') or cnf.genome.name.startswith('GRCh37'):
             tp53_positions = (
                 '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
                 '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
@@ -118,7 +118,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     # Set up common SNP filter
     filter_snp = set()
     if cnf.genome.filter_common_snp:
-        with open(cnf.genome.filter_common_snp) as f:
+        with open(adjust_path(cnf.genome.filter_common_snp)) as f:
             for l in f:
                 l = l.strip()
                 if not l:
@@ -129,7 +129,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     snpeff_snp = set()
     snpeff_snp_ids = set()
     if cnf.snpeffect_export_polymorphic:
-        with open(cnf.snpeffect_export_polymorphic) as f:
+        with open(adjust_path(cnf.snpeffect_export_polymorphic)) as f:
             for l in f:
                 l = l.strip()
                 if not l:
@@ -142,7 +142,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
     filter_artifacts = set()
     if cnf.genome.filter_common_artifacts:
-        with open(cnf.genome.filter_common_artifacts) as f:
+        with open(adjust_path(cnf.genome.filter_common_artifacts)) as f:
             for l in f:
                 l = l.strip()
                 if not l:
@@ -152,7 +152,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
     actionable_hotspots = defaultdict(set)
     if cnf.actionable_hotspot:
-        with open(cnf.actionable_hotspot) as f:
+        with open(adjust_path(cnf.actionable_hotspot)) as f:
             for l in f:
                 l = l.strip()
                 if not l:
@@ -169,7 +169,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     rules[inframe_del] = {}
     rules[inframe_ins] = {}
     if cnf.genome.actionable:
-        with open(cnf.genome.actionable) as f:
+        with open(adjust_path(cnf.genome.actionable)) as f:
             for l in f:
                 l = l.strip()
                 if not l:
@@ -193,7 +193,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     hotspot_nucleotides = set()
     hotspot_proteins = set()
     if cnf.genome.compendia_ms7_hotspot:
-        with open(cnf.genome.compendia_ms7_hotspot) as f:
+        with open(adjust_path(cnf.genome.compendia_ms7_hotspot)) as f:
             for l in f:
                 l = l.strip()
                 if not l:
@@ -219,8 +219,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     aa_chg_col = None
     pcnt_sample_col = None
 
+    lines_written = 0
     header = ''
-    with open(vcf2txt_res_fpath) as f, open(out_fpath, 'w') as out_f:
+    with open(adjust_path(vcf2txt_res_fpath)) as f, open(adjust_path(out_fpath), 'w') as out_f:
         if cnf.is_output_fm:
             out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
         for i, l in enumerate(f):
@@ -315,9 +316,14 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 continue
             if cnf.is_output_fm:
                 out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, line[aa_chg_col], line[header.index('cDNA_Change')], 'chr:' + line[chr_col],
-                                 str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']))
+                                 str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']) + '\n')
+                lines_written += 1
             else:
-                out_f.write('\t'.join(line + [status]) + ('\t' + ','.join(reasons)))
+                out_f.write('\t'.join(line + [status]) + ('\t' + ','.join(reasons)) + '\n')
+                lines_written += 1
+
+    info()
+    info('Written ' + str(lines_written) + ' lines')
 
 
 def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, act_hotspots, tp53_pos, tp53_groups):

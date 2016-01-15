@@ -149,14 +149,13 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, vardict2mut_res_fpat
     if min_freq is None:
         min_freq = defaults.default_min_freq
 
-    cmdline = '{vardict2mut_executable} -f {min_freq} '
+    cmdline = '{vardict2mut_executable} {vcf2txt_res_fpath} -f {min_freq} '
     if vardict2mut_executable.endswith('.pl'):
         cmdline += ' --report_reason '
         if c.min_hotspot_freq is not None and c.min_hotspot_freq != 'default':
             cmdline += ' -F ' + str(c.min_hotspot_freq)
         if c.max_ratio_vardict2mut is not None:
             cmdline += ' -R ' + str(c.max_ratio_vardict2mut)
-        cmdline += ' {vcf2txt_res_fpath} '
         if cnf.genome.ruledir: cmdline += ' --ruledir {cnf.genome.ruledir} '
         if cnf.genome.filter_common_snp: cmdline += ' --filter_common_snp {cnf.genome.filter_common_snp} '
         if cnf.genome.filter_common_artifacts: cmdline += ' --filter_common_artifacts {cnf.genome.filter_common_artifacts} '
@@ -169,7 +168,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, sample_by_name, vardict2mut_res_fpat
 
     else:
         cmdline += ' --genome ' + cnf.genome.name
-        cmdline += ' --o ' + vardict2mut_res_fpath
+        cmdline += ' -o ' + vardict2mut_res_fpath
         cmdline = cmdline.format(**locals())
         res = call(cnf, cmdline, output_fpath=vardict2mut_res_fpath,
                    stdout_to_outputfile=False, exit_on_error=False)
@@ -466,13 +465,15 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
     dbsnp_multi_mafs = cnf.genomes[sample_by_name.values()[0].genome].dbsnp_multi_mafs
     if dbsnp_multi_mafs and verify_file(dbsnp_multi_mafs):
         cmdline += ' -A ' + dbsnp_multi_mafs
+    else:
+        cmdline += ' -A ""'
 
     if cnf.is_wgs:
         info('WGS; running vcftxt separately for each sample to save memory.')
         vcf2txt_outputs_by_vcf_fpath = OrderedDict()
         for vcf_fpath in vcf_fpaths:
             sample_output_fpath = add_suffix(vcf2txt_out_fpath, splitext(basename(vcf_fpath))[0])
-            res = __run_vcf2txt(cnf, cmdline + ' ' + vcf_fpath, sample_output_fpath)
+            res = __run_vcf2txt(cnf, cmdline + ' ' + '<(gunzip -c ' + vcf_fpath + ')', sample_output_fpath)
             if res:
                 vcf2txt_outputs_by_vcf_fpath[vcf_fpath] = sample_output_fpath
             info()
@@ -496,7 +497,8 @@ def run_vcf2txt(cnf, vcf_fpaths, sample_by_name, vcf2txt_out_fpath, sample_min_f
             return None
 
     else:
-        res = __run_vcf2txt(cnf, cmdline + ' ' + ' '.join(vcf_fpaths), vcf2txt_out_fpath)
+        cmdline += ' ' + ' '.join('<(gunzip -c ' + vcf_fpath + ')' for vcf_fpath in vcf_fpaths)
+        res = __run_vcf2txt(cnf, cmdline, vcf2txt_out_fpath)
         return res
 
 
