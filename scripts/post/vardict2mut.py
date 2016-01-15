@@ -247,7 +247,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 aa_chg_col = header.index('Amino_Acid_Change')
                 pcnt_sample_col = header.index('Pcnt_sample')
                 if not cnf.is_output_fm:
-                    out_f.write(l + '\tStatus\tReason')
+                    out_f.write(l + '\tStatus\tReason\n')
                 continue
             line = l.split('\t')
             if line[pass_col] != 'TRUE':
