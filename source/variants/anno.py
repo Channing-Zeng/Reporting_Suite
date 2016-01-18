@@ -10,7 +10,7 @@ import source
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction, \
     safe_mkdir
-from source.logger import step_greetings, critical, info, err, warn
+from source.logger import step_greetings, critical, info, err, warn, debug
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
 from source.variants import qc
@@ -142,7 +142,7 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
 
 
 def run_annotators(cnf, vcf_fpath, bam_fpath):
-    info('run_annotators')
+    debug('run_annotators')
     annotated = False
     original_vcf = cnf.vcf
 

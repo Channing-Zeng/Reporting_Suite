@@ -19,7 +19,7 @@ def run_variants(cnf, samples, main_script_name):
 
     jobs_to_wait = []
     if not cnf.only_summary:
-        varannotate_cmdl = (get_script_cmdline(cnf, 'python', '/gpfs/group/ngs/src/az.reporting/scripts/post/varannotate.py') +
+        varannotate_cmdl = (get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varannotate.py')) +
             ' --sys-cnf ' + cnf.sys_cnf +
             ' --run-cnf ' + cnf.run_cnf +
             ' --project-name ' + cnf.project_name +
@@ -31,12 +31,11 @@ def run_variants(cnf, samples, main_script_name):
         )
 
         for sample in samples:
-            info('Processing ' + basename(sample.bam))
-
-            info('TargetSeq for "' + basename(sample.bam) + '"')
-            j = submit_job(cnf, varannotate_cmdl + ' --vcf ' + sample.vcf,
+            info('Annotating "' + basename(sample.vcf) + '"')
+            j = submit_job(cnf, varannotate_cmdl + ' --vcf ' + sample.vcf +
+                           ' -o ' + sample.dirpath,
                            job_name='VA_' + cnf.project_name + '_' + sample.name,
-                           threads=threads_per_sample, bam=sample.bam)
+                           threads=threads_per_sample)
             jobs_to_wait.append(j)
 
             info('Done submitting ' + basename(sample.vcf))
@@ -47,22 +46,25 @@ def run_variants(cnf, samples, main_script_name):
     summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name)
 
 
+
+
 def summarize_varqc(cnf, output_dir, samples, caption):
     info('VarQC summary...')
 
     jsons_by_sample = dict()
     for s in samples:
-        fpath = join(s.dirpath, 'varAnnotate', 'qc', s.name + '.varQC.json')
+        fpath = join(s.dirpath, 'qc', s.name + '.varQC.json')
         if verify_file(fpath):
             jsons_by_sample[s.name] = fpath
 
     htmls_by_sample = dict()
     for s in samples:
-        fpath = join(s.dirpath, 'varAnnotate', 'qc', s.name + '.varQC.html')
+        fpath = join(s.dirpath, 'qc', s.name + '.varQC.html')
         if verify_file(fpath):
-            jsons_by_sample[s.name] = fpath
+            htmls_by_sample[s.name] = fpath
 
-    report = FullReport.construct_from_sample_report_jsons(samples, output_dir, jsons_by_sample, htmls_by_sample)
+    report = FullReport.construct_from_sample_report_jsons(
+            samples, output_dir, jsons_by_sample=jsons_by_sample, htmls_by_sample=htmls_by_sample)
     full_summary_fpaths = report.save_into_files(cnf, join(output_dir, 'varQC'), caption='Variant QC, ' + caption)
 
     info()

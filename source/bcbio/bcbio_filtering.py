@@ -1,0 +1,304 @@
+from collections import OrderedDict, defaultdict
+import os
+from os.path import basename, join, isfile, islink, splitext, isdir
+from random import random
+from time import sleep
+import traceback
+import shutil
+
+from joblib import Parallel, delayed
+import source
+from source.bcbio.bcbio_structure import BCBioStructure
+from source.calling_process import call, call_check_output
+from source.config import defaults
+from source.profiling import fn_timer
+from source.tools_from_cnf import get_script_cmdline, get_system_path, get_java_tool_cmdline
+from source.logger import err, warn, send_email, critical
+from source.utils import is_us
+from source.variants.filtering import filter_with_vcf2txt, combine_vcfs, index_vcf
+from source.variants.tsv import make_tsv
+from source.variants.vcf_processing import iterate_vcf, get_sample_column_index, bgzip_and_tabix, igvtools_index
+from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, \
+    symlink_plus, file_transaction, num_lines
+from source.logger import info
+from source.webserver.exposing import convert_path_to_url
+
+
+def filter_bcbio_structure(cnf, bcbio_structure):
+    info('Starting variant filtering.')
+    info('-' * 70)
+
+    callers = bcbio_structure.variant_callers.values()
+    if cnf.caller:
+        try:
+            callers = [next(c for c in callers if c.name == cnf.caller)]
+        except StopIteration:
+            critical('No variant caller ' + str(cnf.caller) + ' found')
+        info('Running only for ' + callers[0].name)
+
+    for caller in callers:
+        filter_for_variant_caller(caller, cnf, bcbio_structure)
+    info('Done filtering for all variant callers.')
+
+    global glob_cnf
+    glob_cnf = cnf
+
+    threads_num = min(len(bcbio_structure.samples) * len(callers), cnf.threads)
+    # write_vcfs(cnf, bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
+
+    info('Indexing final VCFs')
+    Parallel(n_jobs=threads_num) \
+        (delayed(index_vcf)(
+                sample.name,
+                sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False),
+                sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False),
+                caller.name)
+            for caller in callers for sample in caller.samples)
+
+    email_msg = ['Variant filtering finished.']
+
+    errory = _symlink_vcfs(callers, bcbio_structure.var_dirpath)
+
+    _combine_vcfs(cnf, callers, bcbio_structure.var_dirpath)
+
+    if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in callers):
+        info()
+        info('Final variants:')
+        email_msg.append('')
+        email_msg.append('Combined variants for each variant caller:')
+        for caller in callers:
+            info('  ' + caller.name)
+            email_msg.append('  ' + caller.name)
+
+            if caller.single_vcf2txt_res_fpath:
+                msg = '     Single: ' + caller.single_vcf2txt_res_fpath + ', ' + str(num_lines(caller.single_vcf2txt_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
+            if caller.paired_vcf2txt_res_fpath:
+                msg = '     Paired: ' + caller.paired_vcf2txt_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
+
+            if caller.single_mut_res_fpath:
+                msg = '     Single PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
+            if caller.paired_mut_res_fpath:
+                msg = '     Paired PASSed: ' + caller.paired_mut_res_fpath + ', ' + str(num_lines(caller.paired_mut_res_fpath) - 1) + ' variants'
+                info(msg)
+                email_msg.append(msg)
+
+                if cnf.datahub_path:
+                    _copy_to_datahub(cnf, caller, cnf.datahub_path)
+
+    if errory:
+        err()
+        err('For some samples and callers annotated VCFs could not be read:')
+        for sample_name, fpath in errory:
+            if not fpath:
+                err('  For ' + str(sample_name) + ' VCF cannot be found')
+            else:
+                err('  For ' + str(sample_name) + ' VCF ' + str(fpath) + ' cannot be read')
+
+
+def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
+    info()
+    info('Combining final VCFs:')
+    for caller in callers:
+        combined_vcf_fpath = join(datestamp_var_dirpath, caller.name + '.vcf')
+        vcf_fpath_by_sname = {s.name: s.find_filt_vcf_by_callername(caller.name) for s in caller.samples}
+        vcf_fpath_by_sname = {s_name: vcf_fpath for s_name, vcf_fpath in vcf_fpath_by_sname.items() if vcf_fpath}
+        info(caller.name + ': writing to ' + combined_vcf_fpath)
+        combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath)
+
+
+def filter_for_variant_caller(caller, cnf, bcbio_structure):
+    info('Running for ' + caller.name)
+
+    all_vcf_by_sample = caller.find_anno_vcf_by_sample()
+    if len(all_vcf_by_sample) == 0:
+        err('No vcfs for ' + caller.name + '. Skipping.')
+        return caller
+
+    def fill_in(batches):
+        vcf_by_sample = OrderedDict()
+        for b in batches:
+            info('Batch ' + b.name)
+            if b.normal:
+                info('  normal sample: ' + b.normal.name)
+                vcf_fpath = all_vcf_by_sample.get(b.normal.name)
+                if vcf_fpath:
+                    vcf_by_sample[b.normal.name] = vcf_fpath
+                    info('  normal VCF: ' + vcf_fpath)
+            if len(b.tumor) > 1:
+                err('  ERROR: ' + caller.name + ': ' + str(len(b.tumor)) + ' tumor samples (' + ', '.join(t.name for t in b.tumor) + ') for batch ' + b.name)
+            if len(b.tumor) > 0:
+                info('  tumor sample: ' + b.tumor[0].name)
+                vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
+                if vcf_fpath:
+                    vcf_by_sample[b.tumor[0].name] = vcf_fpath
+                    info('  tumor VCF: ' + vcf_fpath)
+        return vcf_by_sample
+
+    paired_batches = [b for b in bcbio_structure.batches.values() if b.paired]
+    info('Paired batches: ' + ', '.join(b.name for b in paired_batches))
+    paired_vcf_by_sample = fill_in(paired_batches)
+
+    single_batches = [b for b in bcbio_structure.batches.values() if not b.paired]
+    info('Single batches: ' + ', '.join(b.name for b in single_batches))
+    single_vcf_by_sample = fill_in(single_batches)
+
+    # single_samples = [s for s in bcbio_structure.samples if s.name not in paired_vcf_by_sample and s.name not in single_vcf_by_sample]
+    # for s in single_samples:
+    #     vcf_fpath = all_vcf_by_sample.get(s.name)
+    #     if vcf_fpath:
+    #         single_vcf_by_sample[s.name] = vcf_fpath
+    #         info('  ' + s.name + ' VCF: ' + vcf_fpath)
+
+    def proc_vcf_by_sample(vcf_by_sample, samples, caller_name):
+        var_samples = []
+        for s_name, vcf_fpath in vcf_by_sample.items():
+            sample = next(s for s in samples if s.name == s_name)
+            var_s = source.VarSample(s_name, sample.dirpath)
+            var_s.anno_vcf_fpath = vcf_fpath
+            var_s.filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
+            var_s.pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
+            var_s.filt_tsv_fpath = sample.get_filt_tsv_fpath_by_callername(caller_name)
+            var_s.varfilter_dirpath = join(sample.dirpath, BCBioStructure.varfilter_dir)
+            var_samples.append(var_s)
+        return var_samples
+
+    if single_vcf_by_sample:
+        info('*' * 70)
+        info('Single samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+
+        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
+        if paired_vcf_by_sample:
+            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
+        vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
+
+        var_samples = proc_vcf_by_sample(single_vcf_by_sample, caller.samples, caller.name)
+        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, var_samples, caller.name, vcf2txt_fpath,
+                                                     bcbio_structure.var_dirpath, bcbio_structure.samples[0].min_af)
+        __symlink_mut_pass(bcbio_structure, mut_fpath)
+
+        caller.single_vcf2txt_res_fpath = vcf2txt_fpath
+        caller.single_mut_res_fpath = mut_fpath
+        if mut_fpath:
+            info('Done filtering with vcf2txt/vardict2mut for single samples, result is ' + str(mut_fpath))
+
+    if paired_vcf_by_sample:
+        info('*' * 70)
+        info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+
+        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
+        if single_vcf_by_sample:
+            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
+        vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
+
+        var_samples = proc_vcf_by_sample(paired_vcf_by_sample, caller.samples, caller.name)
+        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, var_samples, caller.name, vcf2txt_fpath,
+                                                     bcbio_structure.var_dirpath, bcbio_structure.samples[0].min_af)
+        __symlink_mut_pass(bcbio_structure, mut_fpath)
+
+        caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
+        caller.paired_mut_res_fpath = mut_fpath
+        if mut_fpath:
+            info('Done filtering with vcf2txt/vardict2mut for paired samples, result is ' + str(mut_fpath))
+
+    info('-' * 70)
+    info()
+
+    return caller
+
+
+def __filter_for_vcfs(cnf, var_samples, caller_name, vcf2txt_res_fpath, var_dirpath, min_af):
+    threads_num = min(len(var_samples), cnf.threads)
+    info('Number of threads for filtering: ' + str(threads_num))
+
+    info()
+    info('-' * 70)
+    info('Filtering using vcf2txt...')
+
+    mut_fpath = filter_with_vcf2txt(cnf, var_samples, var_dirpath, vcf2txt_res_fpath,
+        caller_name, min_af, threads_num)
+
+    info('Done filtering with vcf2txt/vardict2mut, result is ' + str(mut_fpath))
+    if not mut_fpath:
+        return None, None
+
+    return vcf2txt_res_fpath, mut_fpath
+
+
+def __symlink_mut_pass(bcbio_structure, mut_fpath):
+    # symlinking
+    pass_txt_basefname = basename(mut_fpath)
+    pass_txt_fpath_symlink = join(bcbio_structure.date_dirpath, pass_txt_basefname)
+
+    if islink(pass_txt_fpath_symlink):
+        try:
+            os.unlink(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    if isfile(pass_txt_fpath_symlink):
+        try:
+            os.remove(pass_txt_fpath_symlink)
+        except OSError:
+            pass
+    try:
+        symlink_plus(mut_fpath, pass_txt_fpath_symlink)
+    except OSError:
+        err('Cannot symlink ' + mut_fpath + ' -> ' + pass_txt_fpath_symlink)
+
+
+def _copy_to_datahub(cnf, caller, datahub_dirpath):
+    info('Copying to DataHub...')
+    cmdl1 = 'ssh klpf990@ukapdlnx115.ukapd.astrazeneca.net \'bash -c ""\' '
+    cmdl2 = 'scp {fpath} klpf990@ukapdlnx115.ukapd.astrazeneca.net:' + datahub_dirpath
+    # caller.combined_filt_maf_fpath
+
+
+def _symlink_vcfs(callers, datestamp_var_dirpath):
+    info()
+    info('Symlinking final VCFs:')
+    errory = []
+    for caller in callers:
+        info(caller.name)
+        for sample in caller.samples:
+            info(sample.name)
+
+            filt_vcf_fpath = sample.find_filt_vcf_by_callername(caller.name)
+            if not verify_file(filt_vcf_fpath):
+                errory.append([caller.name, filt_vcf_fpath])
+            else:
+                base_filt_fpath = filt_vcf_fpath[:-3] if filt_vcf_fpath.endswith('.gz') else filt_vcf_fpath
+                for fpath in [base_filt_fpath + '.gz',
+                              base_filt_fpath + '.idx',
+                              base_filt_fpath + '.gz.tbi']:
+                    if verify_file(fpath):
+                        _symlink_to_dir(fpath, sample.dirpath)
+                        # _symlink_to_dir(fpath, datestamp_var_dirpath)
+
+            BCBioStructure.move_vcfs_to_var(sample)
+
+    return errory
+
+
+def _symlink_to_dir(fpath, dirpath):
+    if not isdir(dirpath):
+        safe_mkdir(dirpath)
+
+    dst_path = join(dirpath, basename(fpath))
+
+    if islink(dst_path) or isfile(dst_path):
+        try:
+            os.remove(dst_path)
+        except OSError:
+            err('Cannot symlink ' + fpath + ' -> ' + dst_path + ': cannot remove ' + dst_path)
+            return
+
+    try:
+        symlink_plus(fpath, dst_path)
+    except OSError:
+        err('Cannot symlink ' + fpath + ' -> ' + dst_path)
+

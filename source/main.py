@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+import os
 import sys
 from os.path import join, basename, abspath, dirname, pardir
 from optparse import OptionParser, SUPPRESS_HELP
@@ -40,7 +40,8 @@ def read_opts_and_cnfs(extra_opts,
             (['-o', '--output-dir'], dict(
                  dest='output_dir',
                  metavar='DIR',
-                 help='Output directory (or directory name in case of bcbio final dir)')
+                 help='Output directory (or directory name in case of bcbio final dir)',
+                 default=os.getcwd())
              )]
 
     options += [
@@ -146,14 +147,14 @@ def read_opts_and_cnfs(extra_opts,
 
     if cnf.caller:
         cnf.caller = remove_quotes(cnf.caller)
-    elif key_for_sample_name and cnf[key_for_sample_name]:
-        key_fname = basename(cnf[key_for_sample_name])
-        try:
-            cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
-        except:
-            cnf.caller = ''
+    # elif key_for_sample_name and cnf[key_for_sample_name]:
+    #     key_fname = basename(cnf[key_for_sample_name])
+    #     try:
+    #         cnf.caller = cnf.caller or key_fname.split('.')[0].split('-')[1]
+    #     except:
+    #         cnf.caller = ''
     else:
-        cnf.caller = ''
+        cnf.caller = None
 
     cnf.proc_name = cnf.proc_name or proc_name
     set_up_dirs(cnf)

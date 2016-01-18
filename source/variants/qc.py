@@ -118,6 +118,6 @@ def save_report(cnf, report, sample, callername, output_dir, proc_name=source.va
     report.save_txt(join(output_dir, f_basepath + '.txt'))
     report.save_json(join(output_dir, f_basepath + '.json'))
     report.save_html(cnf,
-        join(output_dir, sample.name + '-' + callername + '.' + proc_name + '.html'),
-        caption='Variant QC for ' + sample.name + ' (caller: ' + callername + ')')
+        join(output_dir, sample.name + (('-' + callername) if callername else '') + '.' + proc_name + '.html'),
+        caption='Variant QC for ' + sample.name + ((' (caller: ' + callername + ')') if callername else ''))
     return report

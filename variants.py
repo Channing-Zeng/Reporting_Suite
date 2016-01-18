@@ -29,7 +29,6 @@ def proc_args(argv):
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--is-wgs', dest='is_wgs', action='store_true', default=False, help='whole genome sequencing')
-    parser.add_option('--no-check', dest='no_check', action='store_true', default=False, help=SUPPRESS_HELP)
     parser.add_option('--is-deep-seq', dest='is_deep_seq', action='store_true', default=False, help='deep targeted sequencing')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
