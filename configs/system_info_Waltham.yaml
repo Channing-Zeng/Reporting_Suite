@@ -105,7 +105,9 @@ genomes:
 
   mm10:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
-    seq: /ngs/reference_data/genomes/Mmusculus/mm10/bwa/mm10.fa
+    bwa: /ngs/reference_data/genomes/Mmusculus/mm10/bwa/mm10.fa
+
+    exons:    /ngs/reference_data/genomes/Mmusculus/mm10/bed/Exons.with_genes.bed
 
     dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf
     snpeff:
