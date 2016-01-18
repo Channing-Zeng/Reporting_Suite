@@ -589,18 +589,18 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
                     gene_name.strand = exon_or_gene.strand
                     gene_name.add_exon(exon_or_gene)
 
-            if target_bed:
-                for ampl in targets_or_exons:
-                    ampl.feature = 'Capture'
-                    ampl.sample_name = sample.name
+        if target_bed:
+            for ampl in targets_or_exons:
+                ampl.feature = 'Capture'
+                ampl.sample_name = sample.name
 
-                    if ampl.gene_name != '.':
-                        gene = gene_by_name[ampl.gene_name]
-                        gene.add_amplicon(ampl)
-                    else:
-                        un_annotated_amplicons.append(ampl)
+                if ampl.gene_name != '.':
+                    gene = gene_by_name[ampl.gene_name]
+                    gene.add_amplicon(ampl)
+                else:
+                    un_annotated_amplicons.append(ampl)
 
-                un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
+            un_annotated_amplicons = sorted(un_annotated_amplicons, key=lambda r: (r.start, r.end))
 
         per_gene_report = None
         if exons_bed or target_bed:
