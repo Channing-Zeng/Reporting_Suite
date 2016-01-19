@@ -1,27 +1,15 @@
 from collections import OrderedDict, defaultdict
 import os
 from os.path import basename, join, isfile, islink, splitext, isdir
-from random import random
-from time import sleep
-import traceback
-import shutil
 
 from joblib import Parallel, delayed
 import source
 from source.bcbio.bcbio_structure import BCBioStructure
-from source.calling_process import call, call_check_output
-from source.config import defaults
-from source.profiling import fn_timer
-from source.tools_from_cnf import get_script_cmdline, get_system_path, get_java_tool_cmdline
 from source.logger import err, warn, send_email, critical
-from source.utils import is_us
 from source.variants.filtering import filter_with_vcf2txt, combine_vcfs, index_vcf
-from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import iterate_vcf, get_sample_column_index, bgzip_and_tabix, igvtools_index
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, \
     symlink_plus, file_transaction, num_lines
 from source.logger import info
-from source.webserver.exposing import convert_path_to_url
 
 
 def filter_bcbio_structure(cnf, bcbio_structure):
@@ -155,32 +143,15 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     #         single_vcf_by_sample[s.name] = vcf_fpath
     #         info('  ' + s.name + ' VCF: ' + vcf_fpath)
 
-    def proc_vcf_by_sample(vcf_by_sample, samples, caller_name):
-        var_samples = []
-        for s_name, vcf_fpath in vcf_by_sample.items():
-            sample = next(s for s in samples if s.name == s_name)
-            var_s = source.VarSample(s_name, sample.dirpath)
-            var_s.anno_vcf_fpath = vcf_fpath
-            var_s.filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller_name, gz=False)
-            var_s.pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller_name, gz=False)
-            var_s.filt_tsv_fpath = sample.get_filt_tsv_fpath_by_callername(caller_name)
-            var_s.varfilter_dirpath = join(sample.dirpath, BCBioStructure.varfilter_dir)
-            var_samples.append(var_s)
-        return var_samples
-
     if single_vcf_by_sample:
         info('*' * 70)
-        info('Single samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+        info('Single samples (total ' + str(len(single_vcf_by_sample)) + '):')
 
         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
         if paired_vcf_by_sample:
             vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
-        vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
 
-        var_samples = proc_vcf_by_sample(single_vcf_by_sample, caller.samples, caller.name)
-        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, var_samples, caller.name, vcf2txt_fpath,
-                                                     bcbio_structure.var_dirpath, bcbio_structure.samples[0].min_af)
-        __symlink_mut_pass(bcbio_structure, mut_fpath)
+        vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, single_vcf_by_sample, vcf2txt_fname)
 
         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
         caller.single_mut_res_fpath = mut_fpath
@@ -194,12 +165,8 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
         if single_vcf_by_sample:
             vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
-        vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
 
-        var_samples = proc_vcf_by_sample(paired_vcf_by_sample, caller.samples, caller.name)
-        vcf2txt_fpath, mut_fpath = __filter_for_vcfs(cnf, var_samples, caller.name, vcf2txt_fpath,
-                                                     bcbio_structure.var_dirpath, bcbio_structure.samples[0].min_af)
-        __symlink_mut_pass(bcbio_structure, mut_fpath)
+        vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, paired_vcf_by_sample, vcf2txt_fname)
 
         caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
         caller.paired_mut_res_fpath = mut_fpath
@@ -212,22 +179,28 @@ def filter_for_variant_caller(caller, cnf, bcbio_structure):
     return caller
 
 
-def __filter_for_vcfs(cnf, var_samples, caller_name, vcf2txt_res_fpath, var_dirpath, min_af):
-    threads_num = min(len(var_samples), cnf.threads)
-    info('Number of threads for filtering: ' + str(threads_num))
+def __proc_caller_samples(cnf, bcbio_structure, caller, vcf_by_sample, vcf2txt_fname):
+    vcf2txt_fpath = join(bcbio_structure.var_dirpath, vcf2txt_fname)
+    var_samples = []
+    for s_name, vcf_fpath in vcf_by_sample.items():
+        sample = next(s for s in caller.samples if s.name == s_name)
+        var_s = source.VarSample(s_name, sample.dirpath)
+        var_s.anno_vcf_fpath = vcf_fpath
+        var_s.filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False)
+        var_s.pass_filt_vcf_fpath = sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False)
+        var_s.filt_tsv_fpath = sample.get_filt_tsv_fpath_by_callername(caller.name)
+        var_s.varfilter_dirpath = join(sample.dirpath, BCBioStructure.varfilter_dir)
+        var_samples.append(var_s)
 
     info()
     info('-' * 70)
     info('Filtering using vcf2txt...')
 
-    mut_fpath = filter_with_vcf2txt(cnf, var_samples, var_dirpath, vcf2txt_res_fpath,
-        caller_name, min_af, threads_num)
+    mut_fpath = filter_with_vcf2txt(cnf, var_samples, bcbio_structure.var_dirpath, vcf2txt_fpath,
+        caller_name=caller.name, sample_min_freq=bcbio_structure.samples[0].min_af)
 
-    info('Done filtering with vcf2txt/vardict2mut, result is ' + str(mut_fpath))
-    if not mut_fpath:
-        return None, None
-
-    return vcf2txt_res_fpath, mut_fpath
+    __symlink_mut_pass(bcbio_structure, mut_fpath)
+    return var_samples
 
 
 def __symlink_mut_pass(bcbio_structure, mut_fpath):

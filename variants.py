@@ -32,6 +32,7 @@ def proc_args(argv):
     parser.add_option('--is-deep-seq', dest='is_deep_seq', action='store_true', default=False, help='deep targeted sequencing')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
+    parser.add_option('-c', '--caller', dest='caller_name')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
@@ -71,10 +72,7 @@ def proc_args(argv):
 def main():
     cnf, samples = proc_args(sys.argv)
 
-    html_fpath = run_variants(cnf, samples, basename(__file__))
-
-    # if targqc_html_fpath:
-    #     send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
+    run_variants(cnf, samples, basename(__file__))
 
 
 def read_samples(args):

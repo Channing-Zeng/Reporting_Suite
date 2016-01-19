@@ -88,6 +88,9 @@ def prep_vcf(vcf_fpath, sample_name, caller_name):
 def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
         caller_name=None, sample_min_freq=None, threads_num=1):
 
+    threads_num = min(len(var_samples), cnf.threads)
+    info('Number of threads for filtering: ' + str(threads_num))
+
     safe_mkdir(output_dirpath)
 
     # vcf_fpaths = [s.vcf for s in samples if verify_file(s.vcf, 'VCF fpath')]
@@ -168,7 +171,7 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
     write_vcfs(cnf, var_samples,
                join(output_dirpath, source.varfilter_name),
                caller_name, vcf2txt_out_fpath, mut_fpath, threads_num)
-    info('Done filtering with vcf2txt/vardict2mut.')
+    info('Done filtering with vcf2txt/vardict2mut, saved to ' + str(mut_fpath))
     return mut_fpath
 
 

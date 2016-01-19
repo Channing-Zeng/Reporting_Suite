@@ -9,6 +9,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.file_utils import verify_file
+from source.variants.filtering import filter_with_vcf2txt
 
 
 def run_variants(cnf, samples, main_script_name):
@@ -27,7 +28,8 @@ def run_variants(cnf, samples, main_script_name):
             ' --log-dir -' +
             ' --genome ' + cnf.genome.name +
            (' --no-check ' if cnf.no_check else '') +
-            ' --qc '
+            ' --qc ' +
+            ' --caller ' + cnf.caller_name
         )
 
         for sample in samples:
@@ -43,12 +45,19 @@ def run_variants(cnf, samples, main_script_name):
 
     wait_for_jobs(cnf, jobs_to_wait)
 
-    summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name)
+    __summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name)
+
+    for var_s in samples:
+        var_s.anno_vcf_fpath = join(var_s.dirpath, var_s.name + '.anno.vcf.gz')
+        var_s.filt_vcf_fpath = join(var_s.dirpath, var_s.name + '.anno.filt.vcf')
+        var_s.pass_filt_vcf_fpath = join(var_s.dirpath, var_s.name + '.anno.filt.pass.vcf')
+        var_s.varfilter_dirpath = join(var_s.dirpath)
+
+    vcftxt_res_fpath = join(cnf.output_dir, (cnf.caller_name or 'variants') + '.txt')
+    mut_fpath = filter_with_vcf2txt(cnf, samples, cnf.output_dir, vcftxt_res_fpath, cnf.caller_name)
 
 
-
-
-def summarize_varqc(cnf, output_dir, samples, caption):
+def __summarize_varqc(cnf, output_dir, samples, caption):
     info('VarQC summary...')
 
     jsons_by_sample = dict()
