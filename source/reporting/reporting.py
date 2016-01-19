@@ -233,11 +233,11 @@ class Metric:
             if human_readable:
                 if unit == '%':
                     value *= 100
-                presision = 2
+                precision = 2
                 for i in range(10, 2, -1):
-                    if value < 1./(10**i):
-                        presision = i + 1
-                return '{value:.{presision}f}{unit_str}'.format(**locals())
+                    if abs(value) < 1./(10**i):
+                        precision = i + 1
+                return '{value:.{precision}f}{unit_str}'.format(**locals())
             else:
                 return str(value)
 
