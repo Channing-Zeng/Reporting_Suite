@@ -69,6 +69,7 @@ actionable_hotspot:           ~/Dropbox/az/reference_data/filtering/actionable_h
 key_genes: ~/Dropbox/az/reference_data/az_key_genes.txt
 suppressors: ~/Dropbox/az/reference_data/suppressors.txt
 oncogenes: ~/Dropbox/az/reference_data/oncogenes.txt
+specific_mutations: ~/Dropbox/az/reference_data/filtering/specific_mutations.csv
 
 tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 

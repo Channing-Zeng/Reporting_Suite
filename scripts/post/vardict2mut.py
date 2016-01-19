@@ -22,7 +22,7 @@ aa_chg_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
 stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
 fs_pattern = re.compile('^[A-Z]+(\d+)fs')
 
-statuses = ['unknown', 'likely', 'known']
+statuses = ['', 'known', 'likely', 'unknown']  # Tier 1,2,3
 
 
 def get_args():
@@ -202,6 +202,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 hotspot_nucleotides.add('-'.join(line[1:5]))
                 hotspot_proteins.add('-'.join([line[0], line[6]]))
 
+    specific_mutations, genes_with_generic_rules, sensitive_mutations, resistance_mutations, \
+        genes_with_sens_or_res_mutations = parse_specific_mutations(adjust_path(cnf.specific_mutations))
+
     pass_col = None
     sample_col = None
     chr_col = None
@@ -217,10 +220,18 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     depth_col = None
     vd_col = None
     aa_chg_col = None
+    effect_col = None
+    exon_col = None
     pcnt_sample_col = None
 
     lines_written = 0
     header = ''
+
+    sensitizations = []
+    sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
+    cur_gene_mutations = []
+    prev_gene = ''
+
     with open(adjust_path(vcf2txt_res_fpath)) as f, open(adjust_path(out_fpath), 'w') as out_f:
         if cnf.is_output_fm:
             out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
@@ -238,6 +249,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 alt_col = header.index('Alt')
                 class_col = header.index('Var_Class')
                 type_col = header.index('Type')
+                effect_col = header.index('Effect')
                 func_col = header.index('Functional_Class')
                 gene_code_col = header.index('Gene_Coding')
                 allele_freq_col = header.index('AlleleFreq')
@@ -245,6 +257,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 depth_col = header.index('Depth')
                 vd_col = header.index('VD')
                 aa_chg_col = header.index('Amino_Acid_Change')
+                exon_col = header.index('Exon')
                 pcnt_sample_col = header.index('Pcnt_sample')
                 if not cnf.is_output_fm:
                     out_f.write(l + '\tStatus\tReason\n')
@@ -255,8 +268,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 line[sample_col], line[chr_col], line[pos_col], line[ref_col], \
                 line[alt_col], line[aa_chg_col], line[gene_col], float(line[depth_col])
-            aa_chg = line[aa_chg_col]
-            gene = line[gene_col]
+            gene_aachg = '-'.join([gene, aa_chg[1:]])
             if 'chr' not in chr:
                 chr = 'chr' + chr
             key = '-'.join([chr, pos, ref, alt])
@@ -283,11 +295,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                     continue
             status = 'unknown'
             reasons = []
-            var_class, var_type, fclass, gene_coding = \
-                line[class_col], line[type_col], line[func_col], line[gene_code_col]
+            var_class, var_type, fclass, gene_coding, effect = \
+                line[class_col], line[type_col], line[func_col], line[gene_code_col], line[effect_col]
             var_type = var_type.upper()
             status, reasons = check_by_var_class(var_class, status, reasons, line, header)
-            status, reasons = check_by_type(var_type, status, reasons, aa_chg)
+            status, reasons = check_by_type(var_type, status, reasons, aa_chg, effect)
 
             if is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
                 status, reasons = update_status(status, reasons, 'likely', 'hotspot_nucl_change')
@@ -299,28 +311,66 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 status, reasons = update_status(status, reasons, 'known', 'actionable_germline')
             elif is_act:
                 status, reasons = update_status(status, reasons, 'known', 'actionable')
-            if is_act:
-                if allele_freq < cnf.variant_filtering.min_hotspot_freq or (allele_freq < 0.2 and key in act_germline):
-                    continue
-            else:
-                if allele_freq < cnf.variant_filtering.min_freq_vardict2mut or var_type.startswith('INTRON') or var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
-                        or (var_type == 'SPLICE_REGION_VARIANT' and not aa_chg):
+
+            region = ''
+            if line[exon_col]:
+                region = line[exon_col].split('/')[0]
+                if 'intron' in var_type:
+                    region = 'intron' + region
+
+            status, reasons, is_specific_mutation = check_for_specific_mutation(specific_mutations, gene, aa_chg,
+                                                                                effect, region, status, reasons)
+
+            if not is_specific_mutation:
+                if status != 'known' and gene in genes_with_generic_rules:
+                    status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg)
+
+                if is_loss_of_function(reasons):
+                    if gene in oncogenes:
+                        status, reasons = update_status(status, reasons, 'unknown', ','.join(reasons), force=True)
+                    elif gene in suppressors:
+                        is_act = True
+                        status, reasons = update_status(status, reasons, 'known', 'actionable')
+
+                if is_act:
+                    if allele_freq < cnf.variant_filtering.min_hotspot_freq or (allele_freq < 0.2 and key in act_germline):
                         continue
-            if status != 'known' and (var_type.startswith('UPSTREAM') or var_type.startswith('DOWNSTREAM') or var_type.startswith('INTERGENIC') or
-                                          var_type.startswith('INTRAGENIC') or ('UTR_' in var_type and 'CODON' not in var_type) or
-                                              'NON_CODING' in gene_coding.upper() or fclass.upper().startswith('NON_CODING')):
-                continue
-            if status != 'known' and var_class == 'dbSNP':
-                continue
-            if status != 'known' and float(line[pcnt_sample_col]) > cnf.variant_filtering.max_ratio:
-                continue
-            if cnf.is_output_fm:
-                out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, line[aa_chg_col], line[header.index('cDNA_Change')], 'chr:' + line[chr_col],
-                                 str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-']) + '\n')
-                lines_written += 1
+                else:
+                    if allele_freq < cnf.variant_filtering.min_freq_vardict2mut or var_type.startswith('INTRON') or var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
+                            or (var_type == 'SPLICE_REGION_VARIANT' and not aa_chg):
+                        continue
+
+                if status != 'known':
+                    if var_type.startswith('UPSTREAM') or var_type.startswith('DOWNSTREAM') or var_type.startswith(
+                            'INTERGENIC') or var_type.startswith('INTRAGENIC') or ('UTR_' in var_type and 'CODON' not in var_type) \
+                            or 'NON_CODING' in gene_coding.upper() or fclass.upper().startswith('NON_CODING'):
+                        continue
+                    if var_class == 'dbSNP':
+                        continue
+                    if float(line[pcnt_sample_col]) > cnf.variant_filtering.max_ratio:
+                        continue
+
+            if gene in genes_with_sens_or_res_mutations and (prev_gene == gene or not cur_gene_mutations):
+                if gene_aachg in sensitization_aa_changes:
+                    sens_mut = sensitization_aa_changes[gene_aachg]
+                    sensitizations.append(sens_mut)
+                cur_gene_mutations.append([line, status, reasons, gene_aachg])
             else:
-                out_f.write('\t'.join(line + [status]) + ('\t' + ','.join(reasons)) + '\n')
-                lines_written += 1
+                if cur_gene_mutations:
+                    print_mutations_for_one_gene(cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations,
+                                 sensitive_mutations, resistance_mutations, sensitizations)
+                    cur_gene_mutations = []
+                    sensitizations = []
+            prev_gene = gene
+
+            if gene not in genes_with_sens_or_res_mutations:
+                if cnf.is_output_fm:
+                    out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, line[aa_chg_col], line[header.index('cDNA_Change')], 'chr:' + line[chr_col],
+                                     str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
+                    lines_written += 1
+                else:
+                    out_f.write('\t'.join(line + [status]) + ('\t' + ','.join(reasons) + '\n'))
+                    lines_written += 1
 
     info()
     info('Written ' + str(lines_written) + ' lines')
@@ -374,8 +424,8 @@ def parse_mut_tp53(mut_fpath):
     return mut_tp53
 
 
-def update_status(cur_status, reasons, new_status, new_reason):
-    if statuses.index(new_status) < statuses.index(cur_status):
+def update_status(cur_status, reasons, new_status, new_reason, force=False):
+    if not force and statuses.index(new_status) > statuses.index(cur_status):
         return cur_status, reasons
     if cur_status != new_status:
         reasons = [new_reason]
@@ -425,11 +475,13 @@ def check_by_var_class(var_class, status, reasons, line, header):
     return status, reasons
 
 
-def check_by_type(var_type, status, reasons, aa_chg):
+def check_by_type(var_type, status, reasons, aa_chg, effect):
     if 'FRAME_SHIFT' in var_type or 'FRAMESHIFT' in var_type:
         status, reasons = update_status(status, reasons, 'likely', 'frame_shift')
-    elif stop_gain_pattern.match(aa_chg):
+    elif stop_gain_pattern.match(aa_chg) or 'STOP_GAIN' in var_type:
         status, reasons = update_status(status, reasons, 'likely', 'stop_gained')
+    elif 'START_LOST' in var_type and effect == 'HIGH':
+        status, reasons = update_status(status, reasons, 'likely', 'start_lost')
     elif not aa_chg and 'SPLICE' in var_type and 'REGION_VARIANT' not in var_type:
         status, reasons = update_status(status, reasons, 'likely', 'splice_site')
     elif 'SPLICE_DONOR' in var_type or 'SPLICE_ACCEPTOR' in var_type:
@@ -464,11 +516,110 @@ def classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups):
     return 'NA'
 
 
+def parse_specific_mutations(specific_mut_fpath):
+    specific_mutations = {}
+    genes_with_generic_rules = set()
+
+    sensitive_mutations = defaultdict(dict)  # other mutation is required
+    resistance_mutations = defaultdict(dict)  # absence of other mutation is required
+
+    genes_with_sens_or_res_mutations = defaultdict(set)
+    with open(specific_mut_fpath) as f:
+        for l in f:
+            l = l.strip()
+            if not l:
+                continue
+            line = l.split('\t')
+            gene = line[0].upper()
+            regions = re.findall(r'\d+', line[1])
+            if '-' in line[1]:
+                for region_num in range(int(regions[0]) + 1, int(regions[1])):
+                    regions.append(str(region_num))
+            if 'intron' in line[1]:
+                regions = ['intron' + region for region in regions]
+            for index in range(2, len(line)):
+                if line[index]:
+                    mut = line[index]
+                    if mut == 'generic':
+                        genes_with_generic_rules.add(gene)
+                    else:
+                        if 'codon' in mut:
+                            codons = re.findall(r'\d+', mut)
+                            if '-' in mut and len(codons) == 2:
+                                codons = range(int(codons[0]), int(codons[1]) + 1)
+                            for region in regions:
+                                for codon in codons:
+                                    specific_mutations['-'.join([gene, region, str(codon)])] = index - 1
+                        elif 'sens' in mut or 'res' in mut:
+                            sens_pattern = re.compile('\((\D+)\s+\D+\)')
+                            sens_mutation = re.findall(sens_pattern, mut)[0]
+                            prot_chg = mut.split()[0].replace('p.', '')
+                            mutation = '-'.join([gene, prot_chg[1:]])
+                            genes_with_sens_or_res_mutations[gene].add(sens_mutation)
+                            if 'sens' in mut:
+                                sensitive_mutations[sens_mutation][mutation] = index - 1
+                            else:
+                                resistance_mutations[sens_mutation][mutation] = index - 1
+                        else:
+                            mut = line[index].replace('p.', '')
+                            specific_mutations['-'.join([gene, mut[1:]])] = index - 1
+
+    return specific_mutations, genes_with_generic_rules, sensitive_mutations, resistance_mutations, genes_with_sens_or_res_mutations
+
+
+def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region, status, reasons):
+    if aa_chg:
+        gene_aachg = '-'.join([gene, aa_chg[1:]])
+        if gene_aachg in specific_mutations:
+            tier = specific_mutations[gene_aachg]
+            status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
+            return status, reasons, True
+    if region and effect in ['HIGH', 'MODERATE']:
+        codon = re.sub('[^0-9]', '', aa_chg)
+        gene_codon_chg = '-'.join([gene, region, codon])
+        if gene_codon_chg in specific_mutations:
+            tier = specific_mutations[gene_codon_chg]
+            status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
+            return status, reasons, True
+
+    return status, reasons, False
+
+
+def check_by_general_rules(var_type, status, reasons, aa_chg):
+    if aa_chg_pattern.match(aa_chg) or var_type.startswith('INFRAME'):
+        if status != 'unknown':
+            status, reasons = update_status(status, reasons, 'unknown', ','.join(reasons), force=True)
+    if 'splice_site' in reasons:
+        status, reasons = update_status(status, reasons, 'known', 'actionable')
+    if is_loss_of_function(reasons):
+        status, reasons = update_status(status, reasons, 'known', 'actionable')
+    return status, reasons
+
+
+def is_loss_of_function(reasons):
+    lof_reasons = ['frame_shift', 'stop_gained', 'start_lost', 'splice_site']
+    return any(reason in lof_reasons for reason in reasons)
+
+
 def parse_genes_list(fpath):
     genes = []
     if fpath and verify_file(fpath):
         genes = [line.strip() for line in open(fpath)]
     return genes
+
+
+def print_mutations_for_one_gene(cur_gene_mutations, gene, genes_with_sens_or_res_mutations,
+                                 sensitive_mutations, resistance_mutations, sensitizations):
+    for line in cur_gene_mutations:
+        text, status, reasons, gene_aachg = line
+        for sens_mut in genes_with_sens_or_res_mutations[gene]:
+            if sens_mut in sensitizations:
+                tier = sensitive_mutations[sens_mut][gene_aachg] if gene_aachg in sensitive_mutations else 0
+            else:
+                tier = resistance_mutations[sens_mut][gene_aachg] if gene_aachg in resistance_mutations else 0
+            if tier != 0:
+                status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
+        print '\t'.join(text + [status]) + ('\t' + ','.join(reasons))
 
 
 if __name__ == '__main__':
