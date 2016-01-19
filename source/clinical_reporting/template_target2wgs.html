@@ -159,6 +159,39 @@
                     </tr>
                 </table>
             </div>
+                {.section amp_del}
+                    <table width="100%">
+                        <tr style="vertical-align: top;">
+                        <!--<div class="multi-col-layout">-->
+                        {.repeated section columns}
+                            <td style="">
+                                <table class="report_table static_report"
+                                       style="margin-right: 40px;">
+                                    <thead>
+                                        <tr class="top_row_tr">
+                                            {.repeated section metric_names}
+                                                {@}
+                                            {.end}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {.repeated section rows}
+                                            <tr>
+                                                {.repeated section records}
+                                                    {@}
+                                                {.end}
+                                            </tr>
+                                        {.end}
+                                    </tbody>
+                                </table>
+                            </td>
+                        {.end}
+                        <!--</div>-->
+                        </tr>
+                    </table>
+                {.or}
+                    <p>No CNVs found in {key_or_target} genes.</p>
+                {.end}
             {.end}
             <div class="json_code">
                 <div id="seq2c_plot_data_json">
@@ -173,7 +206,7 @@
         <h1>Coverage analysis for the key genes</h1>
         <div class="coverage_plot">
             <p style="margin-top: -5px;">
-                Height inidicates gene average coverage,
+                Height indicates gene average coverage,
                 <span style="color: green;">green</span> means that > 90% gene is covered at half of global average coverage.
             </p>
             <div class="js_plot" id="gene_plot">
@@ -198,7 +231,7 @@
         </div>
 
         <table width="100%">
-            <tr>
+            <tr style="vertical-align: top;">
             <!--<div class="multi-col-layout">-->
             {.repeated section columns}
                 <td style="">

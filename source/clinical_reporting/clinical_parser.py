@@ -107,6 +107,8 @@ class Seq2CEvent:
     def __hash__(self):
         return hash((self.gene, self.fragment, self.amp_del))
 
+    def get_key(self):
+        return self.gene, self.amp_del, self.log2r
 
 class SVEvent:
     class Annotation:

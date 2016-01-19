@@ -65,6 +65,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         self.mutations_report = self.make_mutations_report({e: e.mutations for e in experiment_by_key.values()})
         # self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
         self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
+        self.seq2c_reports = self.make_seq2c_report({e: e.seq2c_events_by_gene_name for e in experiment_by_key.values()})
         self.key_genes_report = self.make_key_genes_cov_report(self.experiment_by_key)
         self.cov_plot_data = self.make_key_genes_cov_json(self.experiment_by_key)
 
@@ -108,7 +109,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             'coverage': self.__coverage_section(self.key_genes_report, self.cov_plot_data),
             # 'actionable_genes': self.__actionable_genes_section()
         }
-
+        for i in enumerate(self.experiment_by_key.keys()):
+            data['seq2c']['experiments'][i]['amp_del'] = self.__seq2c_section(self.seq2c_reports[i])
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template_target2wgs.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
@@ -148,16 +150,20 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
     def __coverage_section(key_genes_report, cov_plot_data):
         coverage_dict = dict(columns=[])
         GENE_COL_NUM = 2
-        genes_in_col = len(key_genes_report.rows) / GENE_COL_NUM
+        genes_in_col = [len(key_genes_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
+        for i in range(len(key_genes_report.rows) % GENE_COL_NUM):
+            genes_in_col[i] += 1
         calc_cell_contents(key_genes_report, key_genes_report.get_rows_of_records())
+        printed_genes = 0
         for i in range(GENE_COL_NUM):
             column_dict = dict()
             # column_dict['table'] = build_report_html(coverage_report)
             column_dict['metric_names'] = [make_cell_th(m) for m in key_genes_report.metric_storage.get_metrics()]
             column_dict['rows'] = [
                 dict(records=[make_cell_td(r) for r in region.records])
-                    for region in key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
+                    for region in key_genes_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
             coverage_dict['columns'].append(column_dict)
+            printed_genes += genes_in_col[i]
         coverage_dict['plot_data'] = cov_plot_data
         return coverage_dict
 
@@ -199,6 +205,26 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                     row.add_record(e.key + ' CNV', hit.seq2c_event.amp_del + ', ' + hit.seq2c_event.fragment)
 
         return key_genes_report
+
+    def __seq2c_section(self, seq2c_report):
+        seq2c_dict = dict()
+        if seq2c_report and seq2c_report.rows:
+            seq2c_dict = dict(columns=[])
+            GENE_COL_NUM = min(2, len(seq2c_report.rows))
+            genes_in_col = [len(seq2c_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
+            for i in range(len(seq2c_report.rows) % GENE_COL_NUM):
+                genes_in_col[i] += 1
+            calc_cell_contents(seq2c_report, seq2c_report.get_rows_of_records())
+            printed_genes = 0
+            for i in range(GENE_COL_NUM):
+                column_dict = dict()
+                column_dict['metric_names'] = [make_cell_th(m) for m in seq2c_report.metric_storage.get_metrics()]
+                column_dict['rows'] = [
+                    dict(records=[make_cell_td(r) for r in region.records])
+                        for region in seq2c_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
+                seq2c_dict['columns'].append(column_dict)
+                printed_genes += genes_in_col[i]
+        return seq2c_dict
 
     @staticmethod
     def make_db_html(mut):

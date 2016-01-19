@@ -213,6 +213,39 @@ class BaseClinicalReporting:
         else:
             return json.dumps(data)
 
+    def make_seq2c_report(self, seq2c_by_experiment):
+        ms = [
+            Metric('Gene', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),  # Gene
+            Metric('Chr', with_heatmap=False, max_width=20, align='right'),
+            Metric('Log ratio', max_width=80),
+            Metric('Amp/Del', max_width=70),
+            Metric('BP/Whole', max_width=50),
+        ]
+
+        reports = []
+
+        # Writing records
+        for e, seq2c in seq2c_by_experiment.items():
+            metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
+            report = PerRegionSampleReport(sample=seq2c_by_experiment.keys()[0].sample,
+                                           metric_storage=metric_storage)
+            seq2c_events = seq2c.values()
+            for event in sorted(seq2c_events, key=lambda e: e.gene.name):
+                if event.is_amp() or event.is_del():
+                    row = report.add_row()
+                    row.add_record('Gene', event.gene.name)
+                    row.add_record('Chr', event.gene.chrom.replace('chr', ''))
+                    row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
+                    row.add_record('Amp/Del', event.amp_del)
+                    row.add_record('BP/Whole', event.fragment)
+            reports.append(report)
+
+        if len(seq2c_by_experiment.keys()) == 1:
+            return reports[0]
+        else:
+            return reports
+
+
     def make_key_genes_cov_json(self, experiment_by_key):
         chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
         chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
@@ -376,6 +409,7 @@ class ClinicalReporting(BaseClinicalReporting):
         self.sv_report = None
         self.actionable_genes_report = None
         self.seq2c_plot_data = None
+        self.seq2c_report = None
         self.key_genes_report = None
         self.cov_plot_data = None
 
@@ -386,6 +420,7 @@ class ClinicalReporting(BaseClinicalReporting):
             self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
         if self.experiment.seq2c_events_by_gene_name:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
+            self.seq2c_report = self.make_seq2c_report({self.experiment: self.experiment.seq2c_events_by_gene_name})
         if self.experiment.actionable_genes_dict and \
                 (self.experiment.mutations or self.experiment.seq2c_events_by_gene_name or self.experiment.sv_events):
             self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
@@ -411,7 +446,8 @@ class ClinicalReporting(BaseClinicalReporting):
                 data['sv'] = {'report': section}
         if self.seq2c_plot_data:
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
-
+            if self.seq2c_report:
+                data['seq2c']['amp_del'] = self.__seq2c_section()
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
@@ -446,20 +482,44 @@ class ClinicalReporting(BaseClinicalReporting):
         if self.experiment.depth_cutoff is not None and self.key_genes_report is not None:
             coverage_dict = dict(depth_cutoff=self.experiment.depth_cutoff, columns=[])
             GENE_COL_NUM = 3
-            genes_in_col = len(self.key_genes_report.rows) / GENE_COL_NUM
+            genes_in_col = [len(self.key_genes_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
+            for i in range(len(self.key_genes_report.rows) % GENE_COL_NUM):
+                genes_in_col[i] += 1
             calc_cell_contents(self.key_genes_report, self.key_genes_report.get_rows_of_records())
+            printed_genes = 0
             for i in range(GENE_COL_NUM):
                 column_dict = dict()
                 # column_dict['table'] = build_report_html(coverage_report)
                 column_dict['metric_names'] = [make_cell_th(m) for m in self.key_genes_report.metric_storage.get_metrics()]
                 column_dict['rows'] = [
                     dict(records=[make_cell_td(r) for r in region.records])
-                        for region in self.key_genes_report.rows[i * genes_in_col:(i+1) * genes_in_col]]
+                        for region in self.key_genes_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
                 coverage_dict['columns'].append(column_dict)
+                printed_genes += genes_in_col[i]
             coverage_dict['plot_data'] = self.cov_plot_data
             return coverage_dict
         else:
             return dict()
+
+    def __seq2c_section(self):
+        seq2c_dict = dict()
+        if self.seq2c_report and self.seq2c_report.rows:
+            seq2c_dict = dict(columns=[])
+            GENE_COL_NUM = min(3, len(self.seq2c_report.rows))
+            genes_in_col = [len(self.seq2c_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
+            for i in range(len(self.seq2c_report.rows) % GENE_COL_NUM):
+                genes_in_col[i] += 1
+            calc_cell_contents(self.seq2c_report, self.seq2c_report.get_rows_of_records())
+            printed_genes = 0
+            for i in range(GENE_COL_NUM):
+                column_dict = dict()
+                column_dict['metric_names'] = [make_cell_th(m) for m in self.seq2c_report.metric_storage.get_metrics()]
+                column_dict['rows'] = [
+                    dict(records=[make_cell_td(r) for r in region.records])
+                        for region in self.seq2c_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
+                seq2c_dict['columns'].append(column_dict)
+                printed_genes += genes_in_col[i]
+        return seq2c_dict
 
     def __actionable_genes_section(self):
         actionable_genes_dict = dict()

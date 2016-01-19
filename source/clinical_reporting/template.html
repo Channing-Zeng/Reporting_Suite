@@ -195,8 +195,41 @@
                     </div>
                 </div>
             </div>
+            {.section amp_del}
+                <table width="100%">
+                    <tr style="vertical-align: top;">
+                    <!--<div class="multi-col-layout">-->
+                    {.repeated section columns}
+                        <td style="">
+                            <table class="report_table static_report"
+                                   style="margin-right: 40px;">
+                                <thead>
+                                    <tr class="top_row_tr">
+                                        {.repeated section metric_names}
+                                            {@}
+                                        {.end}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {.repeated section rows}
+                                        <tr>
+                                            {.repeated section records}
+                                                {@}
+                                            {.end}
+                                        </tr>
+                                    {.end}
+                                </tbody>
+                            </table>
+                        </td>
+                    {.end}
+                    <!--</div>-->
+                    </tr>
+                </table>
+            {.or}
+                <p>No CNVs found in {key_or_target} genes.</p>
+            {.end}
         {.or}
-            <p>No Seq2C events found in key genes.</p>
+            <p>No Seq2C events found in {key_or_target} genes.</p>
         {.end}
 
         <a name="coverage"></a>
@@ -229,7 +262,7 @@
         </div>
 
         <table width="100%">
-            <tr>
+            <tr style="vertical-align: top;">
             <!--<div class="multi-col-layout">-->
             {.repeated section columns}
                 <td style="">
