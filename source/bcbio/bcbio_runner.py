@@ -710,6 +710,7 @@ class BCBioRunner:
                         match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
 
                     targqc_cmdl = ''
+                    targqc_summary_cmdl = ''
                     targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
                     if self.targetcov in self.steps or verify_dir(targqc_dirpath):
                         targqc_cmdl = ' --targqc-dir ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
@@ -730,6 +731,7 @@ class BCBioRunner:
                         match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
                         varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
                         seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
+                        targqc_summary_cmdl=targqc_summary_cmdl,
                         project_report_path=self.bcbio_structure.project_report_html_fpath,
                         wait_for_steps=wait_for_steps,
                         threads=self.threads_per_sample)
