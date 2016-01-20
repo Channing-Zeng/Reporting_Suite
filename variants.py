@@ -42,7 +42,7 @@ def proc_args(argv):
 
     sample_names, vcf_fpaths = read_samples(args)
 
-    run_cnf = determine_run_cnf(opts, is_targeteq=opts.is_deep_seq, is_wgs=opts.is_wgs)
+    run_cnf = determine_run_cnf(opts, is_targetseq=opts.is_deep_seq, is_wgs=opts.is_wgs)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
     if not cnf.project_name:

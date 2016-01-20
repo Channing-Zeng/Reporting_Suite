@@ -50,7 +50,7 @@ def proc_args(argv):
 
     sample_names, bam_fpaths = read_samples(args)
 
-    run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'), is_deep_seq=opts.deep_seq)
+    run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'), is_targetseq=opts.deep_seq)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
     if not cnf.project_name:
