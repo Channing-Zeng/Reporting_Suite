@@ -44,7 +44,8 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpat
             info('Processing ' + basename(sample.bam))
 
             info('TargetSeq for "' + basename(sample.bam) + '"')
-            j = _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam)
+            j = _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam,
+                            targqc_dirpath=sample.targqc_dirpath)
             jobs_to_wait.append(j)
             summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
 
@@ -87,9 +88,9 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
         ' --log-dir -'
 
     targetcov_params = params_for_one_sample + \
-        ' -s {sample.name}' + \
-        ' -o ' + join('{sample.targqc_dirpath}') + \
-        ' --work-dir ' + join(cnf.work_dir, '{sample.name}') + \
+        ' -s {sample_name}' + \
+        ' -o ' + join('{targqc_dirpath}') + \
+        ' --work-dir ' + join(cnf.work_dir, '{sample_name}') + \
         ' --bam {bam}' + \
        (' --bed ' + bed_fpath if bed_fpath else '') + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
@@ -106,43 +107,43 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
         paramln=targetcov_params
     )
 
-    ngscat_step = None
-    if bed_fpath or exons_no_genes_bed:
-        ngscat_params = params_for_one_sample + \
-            ' -s {sample.name} ' + \
-            ' -o {sample.ngscat_dirpath}' + \
-            ' --work-dir ' + join(cnf.work_dir, source.ngscat_name + '_{sample.name}') + \
-            ' --bam {bam}' + \
-            ' --bed ' + (bed_fpath or exons_no_genes_bed) + \
-            ' --saturation y '
+    # ngscat_step = None
+    # if bed_fpath or exons_no_genes_bed:
+    #     ngscat_params = params_for_one_sample + \
+    #         ' -s {sample_name} ' + \
+    #         ' -o {ngscat_dirpath}' + \
+    #         ' --work-dir ' + join(cnf.work_dir, source.ngscat_name + '_{sample_name}') + \
+    #         ' --bam {bam}' + \
+    #         ' --bed ' + (bed_fpath or exons_no_genes_bed) + \
+    #         ' --saturation y '
+    #
+    #     ngscat_step = Step(cnf, run_id,
+    #         name=source.ngscat_name, short_name='nc',
+    #         interpreter='python',
+    #         script=join('scripts', 'post', 'ngscat.py'),
+    #         paramln=ngscat_params
+    #     )
 
-        ngscat_step = Step(cnf, run_id,
-            name=source.ngscat_name, short_name='nc',
-            interpreter='python',
-            script=join('scripts', 'post', 'ngscat.py'),
-            paramln=ngscat_params
-        )
+    # qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')
+    # if bed_fpath:
+    #     fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
+    #
+    # qualimap_params = \
+    #     params_for_one_sample + \
+    #     ' --bam {bam}' + \
+    #    (' --bed ' + qualimap_bed_fpath if bed_fpath else '') + \
+    #     ' -o ' + join(cnf.output_dir, '{sample.qualimap_dirpath}')
+    #
+    # qualimap_step = None
+    # if cnf.qualimap:
+    #     qualimap_step = Step(cnf, run_id,
+    #         name=source.qualimap_name, short_name='qm',
+    #         interpreter='python',
+    #         script=join('scripts', 'post', 'qualimap.py'),
+    #         paramln=qualimap_params,
+    #     )
 
-    qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')
-    if bed_fpath:
-        fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
-
-    qualimap_params = \
-        params_for_one_sample + \
-        ' --bam {bam}' + \
-       (' --bed ' + qualimap_bed_fpath if bed_fpath else '') + \
-        ' -o ' + join(cnf.output_dir, '{sample.qualimap_dirpath}')
-
-    qualimap_step = None
-    if cnf.qualimap:
-        qualimap_step = Step(cnf, run_id,
-            name=source.qualimap_name, short_name='qm',
-            interpreter='python',
-            script=join('scripts', 'post', 'qualimap.py'),
-            paramln=qualimap_params,
-        )
-
-    return targetcov_step, ngscat_step, qualimap_step
+    return targetcov_step, None, None
 
 
 def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_critical=True, **kwargs):
@@ -150,7 +151,7 @@ def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_cr
     if not tool_cmdline:
         return False
 
-    kwargs['sample'] = sample_name
+    kwargs['sample_name'] = sample_name
     cmdline = tool_cmdline + ' ' + step.param_line.format(**kwargs)
 
     info(step.name)
