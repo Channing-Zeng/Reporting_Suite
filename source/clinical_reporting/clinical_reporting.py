@@ -90,7 +90,7 @@ class BaseClinicalReporting:
             row.add_record('Transcript', mut.transcript)
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', **self._pos_recargs(mut))
-            row.add_record('Change', mut.cdna_change)  #**self._chg_recargs(mut))
+            row.add_record('Change', **self._chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict status', **self._status_field(mut))
