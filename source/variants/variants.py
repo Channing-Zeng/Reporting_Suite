@@ -45,7 +45,7 @@ def run_variants(cnf, samples, main_script_name):
 
     wait_for_jobs(cnf, jobs_to_wait)
 
-    __summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name)
+    summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name)
 
     for var_s in samples:
         var_s.anno_vcf_fpath = join(var_s.dirpath, var_s.name + '.anno.vcf.gz')
@@ -57,7 +57,7 @@ def run_variants(cnf, samples, main_script_name):
     mut_fpath = filter_with_vcf2txt(cnf, samples, cnf.output_dir, vcftxt_res_fpath, cnf.caller_name)
 
 
-def __summarize_varqc(cnf, output_dir, samples, caption):
+def summarize_varqc(cnf, output_dir, samples, caption):
     info('VarQC summary...')
 
     jsons_by_sample = dict()
