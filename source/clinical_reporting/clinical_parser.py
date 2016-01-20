@@ -32,7 +32,7 @@ class KeyGene:
         self.cov_by_threshs = dict()
         self.mutations = []
         self.seq2c_events = []
-        self.sv_events = []
+        self.sv_events = set()
 
     def __str__(self):
         return self.name
@@ -385,7 +385,7 @@ class ClinicalExperimentInfo:
 
     def parse_sv(self, sv_fpath, key_gene_by_name):
         info('Parsing prioritized SV events from ' + sv_fpath)
-        sv_events = []
+        sv_events = set()
         sv_events_by_gene_name = OrderedDict()
 
         sorted_known_fusions = [sorted(p) for p in known_fusions['homo_sapiens']]
@@ -399,8 +399,6 @@ class ClinicalExperimentInfo:
                 else:
                     event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
                     if event and event.sample == self.sample.name:
-                        sv_events.append(event)
-
                         for annotation in event.annotations:
                             if event.is_fusion() and sorted(annotation.genes) in sorted_known_fusions:
                                 info('Found ' + '/'.join(annotation.genes) + ' in known')
@@ -409,8 +407,8 @@ class ClinicalExperimentInfo:
                             for g in annotation.genes:
                                 if g in key_gene_by_name:
                                     sv_events_by_gene_name[g] = event
-                                    sv_events.append(event)
-                                    key_gene_by_name[g].sv_events.append(event)
+                                    sv_events.add(event)
+                                    key_gene_by_name[g].sv_events.add(event)
         return sv_events
 
     def parse_seq2c_report(self, seq2c_tsv_fpath):
