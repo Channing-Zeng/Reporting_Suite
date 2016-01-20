@@ -116,6 +116,9 @@ table.draggable {
   margin-left: -125px;
   z-index: 2; }
 
+.mut_plot_placeholder {
+  min-height: 400px; }
+
 .gene_plot_placeholder {
   min-height: 400px; }
 

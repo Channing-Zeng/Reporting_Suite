@@ -113,6 +113,30 @@ class BaseClinicalReporting:
 
         return report
 
+    def make_mutations_json(self, mutations_by_experiment):
+        data = dict()
+
+        for e, muts in mutations_by_experiment.items():
+            d = dict(
+                mutations=[]
+            )
+
+            for i, mut in enumerate(sorted(muts, key=lambda m: m.freq, reverse=True)):
+                d['mutations'].append(dict(
+                    x=i+1,
+                    geneName=mut.gene.name,
+                    chrom=mut.chrom, position=mut.pos, freq=mut.freq * 100,
+                    mutType=mut.eff_type, aaChg=mut.aa_change, cdnaChange=mut.codon_change))
+            d['maxY'] = max([mut.freq for mut in muts]) * 105
+            d['minY'] = 0
+
+            data[e.key.lower()] = d
+
+        if len(mutations_by_experiment.keys()) == 1:
+            return json.dumps(data.values()[0])
+        else:
+            return json.dumps(data)
+
     @staticmethod
     def make_sv_report(svs_by_experiment):
         ms = [
@@ -417,6 +441,7 @@ class ClinicalReporting(BaseClinicalReporting):
         info('Preparing data...')
         if self.experiment.mutations:
             self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
+            self.mutations_plot_data = self.make_mutations_json({self.experiment: self.experiment.mutations})
         if self.experiment.sv_events:
             self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
         if self.experiment.seq2c_events_by_gene_name:
@@ -452,6 +477,7 @@ class ClinicalReporting(BaseClinicalReporting):
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
+                            join(dirname(abspath(__file__)), 'static', 'draw_mutations_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_seq2c_plot.js')],
            extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
@@ -470,6 +496,7 @@ class ClinicalReporting(BaseClinicalReporting):
             mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
             mutations_dict['total_variants'] = Metric.format_value(self.experiment.total_variants, is_html=True)
             mutations_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
+            mutations_dict['plot_data'] = self.mutations_plot_data
         return mutations_dict
 
     def __sv_section(self):

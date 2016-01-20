@@ -63,6 +63,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info('Preparing data...')
         # self.mut_by_key_by_exper = self.arrange_mutations({k: i.mutations for k, i in experiment_by_key.items()})
         self.mutations_report = self.make_mutations_report({e: e.mutations for e in experiment_by_key.values()})
+        self.mutations_plot_data = self.make_mutations_json({e: e.mutations for e in experiment_by_key.values()})
         # self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
         self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
         self.seq2c_reports = self.make_seq2c_report({e: e.seq2c_events_by_gene_name for e in experiment_by_key.values()})
@@ -143,6 +144,10 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             mutations_dict['total_key_genes'] = '/'.join(
                 set(Metric.format_value(len(e.key_gene_by_name), is_html=True) + ' ' + k
                     for k, e in experiment_by_key.items()))
+
+            mutations_dict['experiments'] = [dict(header=k, key=k.lower()) for k in self.experiment_by_key.keys()]
+
+            mutations_dict['plot_data'] = self.mutations_plot_data
 
         return mutations_dict
 
