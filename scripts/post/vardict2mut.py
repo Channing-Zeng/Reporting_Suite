@@ -123,8 +123,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 l = l.strip()
                 if not l:
                     continue
-                line = l.split('\t')
-                filter_snp.add('-'.join(line[1:5]))
+                fields = l.split('\t')
+                filter_snp.add('-'.join(fields[1:5]))
 
     snpeff_snp = set()
     snpeff_snp_ids = set()
@@ -134,11 +134,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 l = l.strip()
                 if not l:
                     continue
-                line = l.split('\t')
-                if len(line) > 11 and line[11]:
-                    snpeff_snp.add('-'.join([line[11], line[2]]))
-                elif line[5] != '-':
-                    snpeff_snp_ids.add(line[5])
+                fields = l.split('\t')
+                if len(fields) > 11 and fields[11]:
+                    snpeff_snp.add('-'.join([fields[11], fields[2]]))
+                elif fields[5] != '-':
+                    snpeff_snp_ids.add(fields[5])
 
     filter_artifacts = set()
     if cnf.genome.filter_common_artifacts:
@@ -147,8 +147,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 l = l.strip()
                 if not l:
                     continue
-                line = l.split('\t')
-                filter_artifacts.add('-'.join(line[1:5]))
+                fields = l.split('\t')
+                filter_artifacts.add('-'.join(fields[1:5]))
 
     actionable_hotspots = defaultdict(set)
     if cnf.actionable_hotspot:
@@ -157,8 +157,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 l = l.strip()
                 if not l:
                     continue
-                line = l.split('\t')
-                actionable_hotspots[line[0]].add(line[1])
+                fields = l.split('\t')
+                actionable_hotspots[fields[0]].add(fields[1])
 
     act_somatic = set()
     act_germline = set()
@@ -174,21 +174,21 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 l = l.strip()
                 if not l:
                     continue
-                line = l.split('\t')
-                if line[7] == 'germline':
-                    key = '-'.join(line[1:5])
+                fields = l.split('\t')
+                if fields[7] == 'germline':
+                    key = '-'.join(fields[1:5])
                     act_germline.add(key)
-                elif line[7] == 'somatic':
-                    if line[6] == 'rule':
-                        if line[4] == '*' and len(line[3]) == 1:
-                            key = '-'.join(line[1:4])
+                elif fields[7] == 'somatic':
+                    if fields[6] == 'rule':
+                        if fields[4] == '*' and len(fields[3]) == 1:
+                            key = '-'.join(fields[1:4])
                             act_somatic.add(key)
-                        elif line[5] == inframe_del:
-                            rules[inframe_del].setdefault(line[0], []).append(line[1:5])
-                        elif line[5] == inframe_ins:
-                            rules[inframe_ins].setdefault(line[0], []).append(line[1:5])
+                        elif fields[5] == inframe_del:
+                            rules[inframe_del].setdefault(fields[0], []).append(fields[1:5])
+                        elif fields[5] == inframe_ins:
+                            rules[inframe_ins].setdefault(fields[0], []).append(fields[1:5])
                     else:
-                        key = '-'.join(line[1:5])
+                        key = '-'.join(fields[1:5])
                         act_somatic.add(key)
     hotspot_nucleotides = set()
     hotspot_proteins = set()
@@ -198,9 +198,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 l = l.strip()
                 if not l:
                     continue
-                line = l.split('\t')
-                hotspot_nucleotides.add('-'.join(line[1:5]))
-                hotspot_proteins.add('-'.join([line[0], line[6]]))
+                fields = l.split('\t')
+                hotspot_nucleotides.add('-'.join(fields[1:5]))
+                hotspot_proteins.add('-'.join([fields[0], fields[6]]))
 
     specific_mutations, genes_with_generic_rules, sensitive_mutations, resistance_mutations, \
         genes_with_sens_or_res_mutations = parse_specific_mutations(adjust_path(cnf.specific_mutations))
@@ -236,7 +236,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
         if cnf.is_output_fm:
             out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
         for i, l in enumerate(f):
-            l = l.strip()
+            l = l.replace('\n', '')
             if not l:
                 continue
             if i == 0:
@@ -262,17 +262,19 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 if not cnf.is_output_fm:
                     out_f.write(l + '\tStatus\tReason\n')
                 continue
-            line = l.split('\t')
-            if line[pass_col] != 'TRUE':
+            fields = l.split('\t')
+            if len(fields) < len(header):
+                critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(header)) + ')')
+            if fields[pass_col] != 'TRUE':
                 continue
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
-                line[sample_col], line[chr_col], line[pos_col], line[ref_col], \
-                line[alt_col], line[aa_chg_col], line[gene_col], float(line[depth_col])
+                fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
+                fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
             gene_aachg = '-'.join([gene, aa_chg[1:]])
             if 'chr' not in chr:
                 chr = 'chr' + chr
             key = '-'.join([chr, pos, ref, alt])
-            allele_freq = float(line[allele_freq_col])
+            allele_freq = float(fields[allele_freq_col])
             is_act = False
             if all([rules, act_somatic, act_germline, actionable_hotspots, tp53_positions, tp53_groups]):
                 is_act = is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_somatic,
@@ -280,9 +282,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             if not is_act and (key in filter_snp or ('-'.join([gene, aa_chg]) in snpeff_snp) or
                                    (key in filter_artifacts and allele_freq < 0.5)):
                 continue
-            if depth < cnf.variant_filtering.filt_depth or line[vd_col] < cnf.variant_filtering.min_vd:
+            if depth < cnf.variant_filtering.filt_depth or fields[vd_col] < cnf.variant_filtering.min_vd:
                 continue
-            snps = re.findall(r'rs\d+', line[3])
+            snps = re.findall(r'rs\d+', fields[3])
             if any(snp in snpeff_snp_ids for snp in snps):
                 continue
 
@@ -296,9 +298,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             status = 'unknown'
             reasons = []
             var_class, var_type, fclass, gene_coding, effect = \
-                line[class_col], line[type_col], line[func_col], line[gene_code_col], line[effect_col]
+                fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], fields[effect_col]
             var_type = var_type.upper()
-            status, reasons = check_by_var_class(var_class, status, reasons, line, header)
+            status, reasons = check_by_var_class(var_class, status, reasons, fields, header)
             status, reasons = check_by_type(var_type, status, reasons, aa_chg, effect)
 
             if is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
@@ -313,8 +315,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 status, reasons = update_status(status, reasons, 'known', 'actionable')
 
             region = ''
-            if line[exon_col]:
-                region = line[exon_col].split('/')[0]
+            if fields[exon_col]:
+                region = fields[exon_col].split('/')[0]
                 if 'intron' in var_type:
                     region = 'intron' + region
 
@@ -347,14 +349,14 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                         continue
                     if var_class == 'dbSNP':
                         continue
-                    if float(line[pcnt_sample_col]) > cnf.variant_filtering.max_ratio:
+                    if float(fields[pcnt_sample_col]) > cnf.variant_filtering.max_ratio:
                         continue
 
             if gene in genes_with_sens_or_res_mutations and (prev_gene == gene or not cur_gene_mutations):
                 if gene_aachg in sensitization_aa_changes:
                     sens_mut = sensitization_aa_changes[gene_aachg]
                     sensitizations.append(sens_mut)
-                cur_gene_mutations.append([line, status, reasons, gene_aachg])
+                cur_gene_mutations.append([fields, status, reasons, gene_aachg])
             else:
                 if cur_gene_mutations:
                     print_mutations_for_one_gene(cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations,
@@ -365,11 +367,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
             if gene not in genes_with_sens_or_res_mutations:
                 if cnf.is_output_fm:
-                    out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, line[aa_chg_col], line[header.index('cDNA_Change')], 'chr:' + line[chr_col],
+                    out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[header.index('cDNA_Change')], 'chr:' + fields[chr_col],
                                      str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
                     lines_written += 1
                 else:
-                    out_f.write('\t'.join(line + [status]) + ('\t' + ','.join(reasons) + '\n'))
+                    out_f.write('\t'.join(fields + [status]) + ('\t' + ','.join(reasons) + '\n'))
                     lines_written += 1
 
     info()
