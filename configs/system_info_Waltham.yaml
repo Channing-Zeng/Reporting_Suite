@@ -11,7 +11,7 @@ resources:
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/bin/vcfannotate
   qualimap:
-    path: /group/ngs/src/qualimap/qualimap
+    path: ext_tools/qualimap/qualimap
   samtools:
     path: /group/ngs/src/samtools/samtools
     # path: /group/cancer_informatics/tools_resources/NGS/bin/samtools
@@ -147,6 +147,8 @@ genomes:
       rptmk: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
       RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
 
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+
   hg19-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/seq/hg19-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bwa/hg19-noalt.fa
@@ -203,15 +205,14 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
 
-snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
-actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable_hotspot.txt
-ruledir:                      /ngs/reference_data/genomes/Hsapiens/hg19/variation/rules
-specific_mutations:           /ngs/reference_data/genomes/Hsapiens/hg19/variation/specific_mutations.csv
-
-key_genes: /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
-suppressors: /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
-oncogenes: /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
-snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
+snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/cancer_informatics/snpeffect_export_Polymorphic.txt
+actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/cancer_informatics/actionable_hotspot.txt
+ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules
+specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
+key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
+suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
+oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
+snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
 queue: batch.q
 

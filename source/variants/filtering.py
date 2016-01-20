@@ -210,6 +210,10 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
         res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
 
     else:
+        cmdline += ' --sys-cnf ' + cnf.sys_cnf
+        cmdline += ' --run-cnf ' + cnf.run_cnf
+        cmdline += ' --project-name ' + cnf.project_name
+        cmdline += (' --reuse ' if cnf.reuse_intermediate else '')
         cmdline += ' --genome ' + cnf.genome.name
         cmdline += ' -o ' + vardict2mut_res_fpath
         cmdline = cmdline.format(**locals())

@@ -24,8 +24,8 @@ def filter_bcbio_structure(cnf, bcbio_structure):
             critical('No variant caller ' + str(cnf.caller) + ' found')
         info('Running only for ' + callers[0].name)
 
-    for caller in callers:
-        filter_for_variant_caller(caller, cnf, bcbio_structure)
+    for c in callers:
+        filter_for_variant_caller(c, cnf, bcbio_structure)
     info('Done filtering for all variant callers.')
 
     global glob_cnf
@@ -54,30 +54,30 @@ def filter_bcbio_structure(cnf, bcbio_structure):
         info('Final variants:')
         email_msg.append('')
         email_msg.append('Combined variants for each variant caller:')
-        for caller in callers:
-            info('  ' + caller.name)
-            email_msg.append('  ' + caller.name)
+        for c in callers:
+            info('  ' + c.name)
+            email_msg.append('  ' + c.name)
 
-            if caller.single_vcf2txt_res_fpath:
-                msg = '     Single: ' + caller.single_vcf2txt_res_fpath + ', ' + str(num_lines(caller.single_vcf2txt_res_fpath) - 1) + ' variants'
+            if c.single_vcf2txt_res_fpath:
+                msg = '     Single: ' + c.single_vcf2txt_res_fpath + ', ' + str(num_lines(c.single_vcf2txt_res_fpath) - 1) + ' variants'
                 info(msg)
                 email_msg.append(msg)
-            if caller.paired_vcf2txt_res_fpath:
-                msg = '     Paired: ' + caller.paired_vcf2txt_res_fpath + ', ' + str(num_lines(caller.paired_vcf2txt_res_fpath) - 1) + ' variants'
+            if c.paired_vcf2txt_res_fpath:
+                msg = '     Paired: ' + c.paired_vcf2txt_res_fpath + ', ' + str(num_lines(c.paired_vcf2txt_res_fpath) - 1) + ' variants'
                 info(msg)
                 email_msg.append(msg)
 
-            if caller.single_mut_res_fpath:
-                msg = '     Single PASSed: ' + caller.single_mut_res_fpath + ', ' + str(num_lines(caller.single_mut_res_fpath) - 1) + ' variants'
+            if c.single_mut_res_fpath:
+                msg = '     Single PASSed: ' + c.single_mut_res_fpath + ', ' + str(num_lines(c.single_mut_res_fpath) - 1) + ' variants'
                 info(msg)
                 email_msg.append(msg)
-            if caller.paired_mut_res_fpath:
-                msg = '     Paired PASSed: ' + caller.paired_mut_res_fpath + ', ' + str(num_lines(caller.paired_mut_res_fpath) - 1) + ' variants'
+            if c.paired_mut_res_fpath:
+                msg = '     Paired PASSed: ' + c.paired_mut_res_fpath + ', ' + str(num_lines(c.paired_mut_res_fpath) - 1) + ' variants'
                 info(msg)
                 email_msg.append(msg)
 
                 if cnf.datahub_path:
-                    _copy_to_datahub(cnf, caller, cnf.datahub_path)
+                    _copy_to_datahub(cnf, c, cnf.datahub_path)
 
     if errory:
         err()
@@ -200,7 +200,7 @@ def __proc_caller_samples(cnf, bcbio_structure, caller, vcf_by_sample, vcf2txt_f
         caller_name=caller.name, sample_min_freq=bcbio_structure.samples[0].min_af)
 
     __symlink_mut_pass(bcbio_structure, mut_fpath)
-    return var_samples
+    return vcf2txt_fpath, mut_fpath
 
 
 def __symlink_mut_pass(bcbio_structure, mut_fpath):

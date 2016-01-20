@@ -7,7 +7,7 @@ resources:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /ngs/RDI/PROGRAMS/snpEff/SnpSift.jar
   qualimap:
-    path: /ngs/RDI/SCRIPTS/qualimap/qualimap
+    path: ext_tools/qualimap/qualimap
   samtools:
     path: /apps/samtools/0.1.19/rhel6-x64/samtools
   bedtools:
@@ -102,6 +102,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
@@ -129,13 +131,11 @@ genomes:
 snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
 actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable_hotspot.txt
 ruledir:                      /ngs/reference_data/genomes/Hsapiens/hg19/variation/rules
-
-key_genes: /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
-suppressors: /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
-oncogenes: /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
-snpeff_transcripts: /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
-
-tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
+key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
+suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
+oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
+specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
+snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
 queue: ngs.q
 

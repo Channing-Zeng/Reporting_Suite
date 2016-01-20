@@ -9,7 +9,7 @@ resources:
   vcfannotate:
     path: /usr/local/share/bcbio/bin/vcfannotate
   qualimap:
-    path: /usr/local/share/bcbio/bin/qualimap
+    path: ext_tools/qualimap/qualimap
   samtools:
     path: /usr/local/share/bcbio/bin/samtools
   bedtools:

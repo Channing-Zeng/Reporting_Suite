@@ -373,7 +373,7 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
                       'bad_promoter.bed': 'Bad promoter'}
     bed_filenames = tricky_regions.keys()
 
-    bed_fpaths = [join(cnf.tricky_regions, bed_filename) for bed_filename in bed_filenames]
+    bed_fpaths = [join(cnf.genome.tricky_regions, bed_filename) for bed_filename in bed_filenames]
 
     info('Intersecting BED ' + selected_bed_fpath + ' using BED files with tricky regions')
 
