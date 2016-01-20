@@ -39,4 +39,10 @@ td.long_line:hover {
 .actionable_table td, .actionable_table td * {
   vertical-align: top; }
 
+p {
+  max-width: 600px; }
+
+ol {
+  max-width: 600px; }
+
 /*# sourceMappingURL=clinical_report.css.map */

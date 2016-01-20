@@ -50,6 +50,7 @@ class Mutation(SortableByChrom):
         self.gene = None
         self.transcript = None
         self.codon_change = None
+        self.cdna_change = None
         self.chrom = chrom
         self.pos = None
         self.ref = None
@@ -254,10 +255,11 @@ class Patient:
 
 
 class Target:
-    def __init__(self, coverage_percent=None, type_=None, bed_fpath=None):
+    def __init__(self, coverage_percent=None, type_=None, bed_fpath=None, targqc_link=None):
         self.coverage_percent = coverage_percent
         self.type = type_
         self.bed_fpath = bed_fpath
+        self.targqc_link = targqc_link
 
 
 def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_comparison=False):
@@ -275,7 +277,8 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_com
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, sv_fpath=sample.find_sv_fpath(),
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
-        project_report_path=bs.project_report_html_fpath, is_target2wgs_comparison=is_target2wqs_comparison)
+        project_report_path=bs.project_report_html_fpath, targqc_report_path=bs.targqc_summary_fpath,
+        is_target2wgs_comparison=is_target2wqs_comparison)
 
 
 def clinical_sample_info_from_cnf(cnf):
@@ -283,17 +286,18 @@ def clinical_sample_info_from_cnf(cnf):
         targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
         normal_match=cnf.match_sample_name)
 
-    return ClinicalExperimentInfo(cnf, sample=sample,
-        key_genes=cnf.key_genes, target_type=cnf.target_type,
-        bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath, sv_fpath=cnf.sv_fpath,
-        varqc_json_fpath=cnf.varqc_json_fpath, seq2c_tsv_fpath=cnf.seq2c_tsv_fpath,
-        project_name=cnf.project_name, project_report_path=cnf.project_report_path)
+    return ClinicalExperimentInfo(
+        cnf, sample=sample, key_genes=cnf.key_genes,
+        target_type=cnf.target_type, bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath, sv_fpath=cnf.sv_fpath,
+        varqc_json_fpath=cnf.varqc_json_fpath,
+        seq2c_tsv_fpath=cnf.seq2c_tsv_fpath, project_name=cnf.project_name,
+        project_report_path=cnf.project_report_path, targqc_report_path=cnf.targqc_report_path)
 
 
 class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
                  bed_fpath, mutations_fpath, sv_fpath, varqc_json_fpath,
-                 project_report_path, project_name, seq2c_tsv_fpath=None,
+                 project_report_path, project_name, seq2c_tsv_fpath=None, targqc_report_path=None,
                  is_target2wgs_comparison=False):
         self.cnf = cnf
         self.sample = sample
@@ -304,7 +308,7 @@ class ClinicalExperimentInfo:
         self.genes_description = ''
         self.key = ''
         self.patient = Patient()
-        self.target = Target(type_=target_type, bed_fpath=bed_fpath)
+        self.target = Target(type_=target_type, bed_fpath=bed_fpath, targqc_link=targqc_report_path)
         self.ave_depth = None
         self.depth_cutoff = None
         self.actionable_genes_dict = None
@@ -545,6 +549,7 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                 mut.gene = KeyGene(gname)
                 mut.transcript = transcript
                 mut.codon_change = codon_change
+                mut.cdna_change = cdna_change
                 mut.aa_change = aa_change
                 mut.aa_len = aa_len
                 mut.pos = int(start)

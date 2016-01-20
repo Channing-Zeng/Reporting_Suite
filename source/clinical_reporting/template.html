@@ -44,24 +44,23 @@
 
 <div class="content">
     <div style="margin-top: -150px; margin-bottom: 45px; color: white;">
-        <h1 style="">Clinical report</h1>
-        <span style="color: #CCC;">For research use only</span>
+        <h1 style="">Oncology NGS Report</h1>
+        <span style="color: red;">For research use only</span>
     </div>
 
     <div id='report' class="clinical_report">
         <div style="width: 1127px">
             <div style="">
             {.section sample}
-                <h1 class="report-header">{sample}</h1>
+                <h1 class="report-header">Sample: {sample}</h1>
                 <p style="line-height: 1.5em;">
                 <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
-                {.section patient}
-                    <b>Patient: </b>{sex}<br>
-                {.end}
+                {.section patient}<b>Patient: </b>{sex}<br>{.end}
                 <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
-                <b>Sample type: </b>{sample_type}<br>
+                {.section sample_type}<b>Sample type: </b>{sample_type}<br>{.or}{.end}
                 {.section target_section}
-                    <b>Target: </b><a href="{bed_path}">{panel}</a>
+                    {.section targqc_link}<b>QC metrics: </b><a href="{targqc_link}">TargQC report</a><br>{.or}{.end}
+                    <b>Target: </b>{.section bed_path}<a href="{bed_path}">{panel}</a>{.or}{panel}{.end}
                     covered {target_fraction} of all positions
                     at {ave_depth} average coverage
                     <br>
@@ -127,6 +126,15 @@
                     These data were analyzed to identify previously reported and novel variants
                     in {total_key_genes} {genes_description} (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
+                <p>
+                    Warning! There are many caveats to interpreting NGS results, and many sources of false positive and false negative results. Some factors and issues to be aware of
+                    <ol>
+                    <li><b>Germline variants</b> – germline SNPs occur at approximately 100%, 50%, or 0% frequency and every effort is made to filter out germline variants (some exceptions like BRCA1/2).
+                    <li><b>Somatic variants</b> – somatic variants occur at nearly any allele frequency but as allele frequencies approach 20% and lower, data become noisier and false positive variants increase.
+                    <li><b>Sample types</b> - In general, focus on somatic variants above ~30% allele frequency for cell line and explant models, above ~5% and above for tumors, and above ~0.7% for ctDNA. Formalin treated tumors have the added complication of C>T and G>A de-amination artefacts.
+                    <li><b>False positive mutations</b> – advance algorithms were employed to generate the highest quality variant calls, but false positive will still occur and are likely present in the candidate mutation output below. False positive variants are more found in homopolymer tracts, in genes with repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes residing in repetitive or unstable regions of the genome.
+                    </ol>
+                </p>
                 <p id="variants_switch">
                     <span>Likely pathogenic</span>
                     /
@@ -157,7 +165,7 @@
         {.end}
 
         <a name="actionable"></a>
-        <h1>Actionable {key_or_target} genes</h1>
+        <h1>Actionable {key_or_target} genes - variants and larger alterations of interest</h1>
         {.section actionable_genes}
             <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
             <div class="actionable_table">

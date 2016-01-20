@@ -10,7 +10,7 @@ from traceback import format_exc
 import source
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
 from source.bcbio.project_level_report import make_project_level_report
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -363,6 +363,7 @@ class BCBioRunner:
            ' {match_cmdl}' +
            ' {seq2c_cmdl}' +
            ' {sv_cmdl}' +
+           ' {targqc_summary_cmdl}' +
            ' --target-type ' + self.bcbio_structure.target_type +
           (' --bed ' + target_bed if target_bed else '') +
            ' -o {output_dir} ' +
@@ -692,7 +693,7 @@ class BCBioRunner:
                     mutation_cmdl = ' --mutations ' + mutations_fpath
 
                 seq2c_cmdl = ''
-                if (self.bcbio_structure.seq2c_fpath and isfile(self.bcbio_structure.seq2c_fpath)) or self.seq2c in self.steps:
+                if self.seq2c in self.steps or verify_file(self.bcbio_structure.seq2c_fpath, silent=True):
                     seq2c_cmdl = ' --seq2c ' + self.bcbio_structure.seq2c_fpath
 
                 for sample in self.bcbio_structure.samples:
@@ -710,8 +711,12 @@ class BCBioRunner:
 
                     targqc_cmdl = ''
                     targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
-                    if self.targetcov in self.steps or isdir(targqc_dirpath):
+                    if self.targetcov in self.steps or verify_dir(targqc_dirpath):
                         targqc_cmdl = ' --targqc-dir ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
+
+                        targqc_summary_cmdl = ''
+                        if self.targqc_summary in self.steps or verify_file(self.bcbio_structure.targqc_summary_fpath, silent=True):
+                            targqc_summary_cmdl += ' --targqc-html ' + self.bcbio_structure.targqc_summary_fpath
 
                     sv_cmdl = ''
                     sv_fpath = sample.find_sv_fpath()

@@ -46,7 +46,7 @@ class BaseClinicalReporting:
             # Metric('Allele'),             # Het.
             # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-            Metric('Change', max_width=95, class_='long_line'),       # G>A
+            Metric('Change', max_width=95, class_='long_line', description='cDNA change'),       # G>A
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Pathogenicity,\nReported by VarDict', class_='long_line'),     # Likely
@@ -90,7 +90,7 @@ class BaseClinicalReporting:
             row.add_record('Transcript', mut.transcript)
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', **self._pos_recargs(mut))
-            row.add_record('Change', **self._chg_recargs(mut))
+            row.add_record('Change', mut.cdna_change)  #**self._chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict status', **self._status_field(mut))
@@ -308,11 +308,11 @@ class BaseClinicalReporting:
         d = dict()
         d['patient'] = {'sex': 'unknown'}
         d['project_report_rel_path'] = 'not generagted'
-        d['panel'] = 'unknown'
-        d['bed_path'] = 'unknown'
-        d['target_type'] = 'unknown'
-        d['target_fraction'] = 'unknown'
-        d['ave_depth'] = 'unknown'
+        # d['panel'] = 'unknown'
+        # d['bed_path'] = 'unknown'
+        # d['target_type'] = 'unknown'
+        # d['target_fraction'] = 'unknown'
+        # d['ave_depth'] = 'unknown'
 
         d['key'] = experiment.key
         d['sample'] = experiment.sample.name.replace('_', ' ')
@@ -324,14 +324,15 @@ class BaseClinicalReporting:
         if experiment.target:
             d['target_section'] = dict()
             d['target_section']['panel'] = experiment.target.type
-            d['target_section']['bed_path'] = experiment.target.bed_fpath or ''
+            d['target_section']['bed_path'] = experiment.target.bed_fpath
+            d['target_section']['targqc_link'] = experiment.target.targqc_link
             d['target_section']['target_type'] = experiment.target.type
             d['target_section']['target_fraction'] = Metric.format_value(experiment.target.coverage_percent, is_html=True, unit='%')
-            if self.cnf.debug:
-                d['target_section']['panel'] = experiment.target.type + ', AZ300 IDT panel'
-                d['target_section']['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
+            # if self.cnf.debug:
+            #     d['target_section']['panel'] = experiment.target.type + ', AZ300 IDT panel'
+            #     d['target_section']['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
-        d['sample_type'] = experiment.sample.normal_match if experiment.sample.normal_match else 'unpaired'  # plasma, unpaired'
+        d['sample_type'] = experiment.sample.normal_match
         d['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
         # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
         if experiment.ave_depth is not None:

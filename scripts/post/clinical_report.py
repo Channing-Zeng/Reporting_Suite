@@ -41,6 +41,9 @@ def main():
             (['--project-level-report'], dict(
                 dest='project_report_path',
             )),
+            (['--targqc-html'], dict(
+                dest='targqc_report_path',
+            )),
             (['--match'], dict(
                 dest='match_sample_name',
             )),
