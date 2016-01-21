@@ -32,6 +32,7 @@ def main(args):
             continue
         if l.strip().startswith('#'):
             sys.stdout.write(l)
+            continue
 
         fs = l.strip().split('\t')
         chrom = fs[0]
@@ -40,12 +41,12 @@ def main(args):
         other_fields = fs[3:]
         regions.append(Region(chrom, start, end, other_fields, genome))
 
-    sys.stderr.write('Found ' + str(len(regions)) + ' regions.\n')
-
     for region in sorted(regions, key=lambda r: r.get_key()):
         fs = [region.chrom, str(region.start), str(region.end)]
         fs.extend(region.other_fields)
         sys.stdout.write('\t'.join(fs) + '\n')
+
+    sys.stderr.write('Sorted ' + str(len(regions)) + ' regions.\n')
 
 
 if __name__ == '__main__':
