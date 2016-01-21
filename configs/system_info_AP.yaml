@@ -128,14 +128,14 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
 
-snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
-actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable_hotspot.txt
-ruledir:                      /ngs/reference_data/genomes/Hsapiens/hg19/variation/rules
+snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/snpeffect_export_Polymorphic.txt
+actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/actionable_hotspot.txt
+ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules
 key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
-snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
+#snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
 queue: ngs.q
 

@@ -205,8 +205,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
 
-snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/cancer_informatics/snpeffect_export_Polymorphic.txt
-actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/cancer_informatics/actionable_hotspot.txt
+snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/snpeffect_export_Polymorphic.txt
+actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/actionable_hotspot.txt
 ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
 key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
