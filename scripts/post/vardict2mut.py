@@ -665,13 +665,17 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
 
 
 def check_by_general_rules(var_type, status, reasons, aa_chg):
-    if aa_chg_pattern.match(aa_chg) or var_type.startswith('INFRAME'):
-        if status != 'unlikely':  # update even if likely
-            status, reasons = update_status(status, reasons, 'unlikely', ', '.join(reasons), force=True)
     if 'splice_site' in reasons:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
+        return status, reasons
     if is_loss_of_function(reasons):
         status, reasons = update_status(status, reasons, 'known', 'actionable')
+        return status, reasons
+    if 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
+        status, reasons = update_status(status, reasons, 'known', 'actionable')
+        return status, reasons
+    if status != 'unlikely':
+        status, reasons = update_status(status, reasons, 'unlikely', '', force=True)
     return status, reasons
 
 
