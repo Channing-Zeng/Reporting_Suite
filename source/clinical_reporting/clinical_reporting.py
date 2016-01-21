@@ -48,8 +48,8 @@ class BaseClinicalReporting:
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
             Metric('Change', max_width=95, class_='long_line', description='cDNA change'),       # G>A
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
-            Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-            Metric('VarDict status', short_name='Pathogenicity,\nReported by VarDict', class_='long_line'),     # Likely
+            Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
+            Metric('VarDict status', short_name='Pathogenicity', class_='long_line'),     # Likely
             # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
             Metric('Databases'),                 # rs352343, COSM2123
         ]

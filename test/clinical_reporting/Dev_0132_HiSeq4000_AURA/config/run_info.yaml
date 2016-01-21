@@ -11,27 +11,52 @@ reuse_intermediate: False
 
 
 variant_filtering:
-# fraction:           0.4
-  max_ratio:          0.75    # When a variant is present in more than [max_ratio] of samples, and AF < 0.3, it's considered as likely false positive, even if it's in COSMIC.
+  fraction:              0.4  # -r
+                              # When a variant is present in more than [max_ratio] of samples,
+                              #  and mean allele frequency is less than -f (mean_freq),
+                              #  it's considered as likely false positive, even if it's in COSMIC.
 
-# # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal _sample_cnt_ samples, is present in more than _fraction_ of samples; and the avarage allele frequency is less than _freq_, it's considered as likely false positive.
-# sample_cnt:         10
-# ave_freq:           0.15
-# count_undetermined: True    # Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
+  max_ratio:             1.0  # -R
+                              # When a passing variant is present in more than [max_ratio] of samples and at least -n samples,
+                              #   it's considered as dbSNP, even if it's in COSMIC or apparent deleterious.
+                              #   Use with caution. Don't use it for homogeneous samples.
 
-# min_p_mean:         5       # PMEAN.  The minimum mean position in reads for variants.
-# min_q_mean:         25      # QUAL.   The minimum mean base quality phred score for variant.
+  max_ratio_vardict2mut: 1.0  # -R in vardict2mut
+                              # When a variant is present in more than [max_ratio_vardict2mut] of samples, it's considered
+                              #   as not a mutation, even if it's in COSMIC or apparent deleterious, but unless it is actionable.
+                              #   Use with caution. Don't use it for homogeneous samples.
 
-  filt_depth:         5       # DP.     The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
-# filt_p_mean:        0       # QUAL.   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
-# filt_q_mean:        0       # PMEAN.  The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
-
-  min_freq:           0.01    # AF.     When individual allele frequency < freq for variants, it was considered likely false poitives.
+  min_freq:             0.075 # -f
+                              # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                              # likely false poitive.
                               # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
-# min_mq:             10      # MQ.     The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
-  min_vd:             3       # VD.     The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
 
-# maf:                0.0025  # GMAF.   If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
-# signal_noise:       1.5     # SN.     Signal/noise value.
+  min_freq_vardict2mut: 0.075 # -f in vardict2mut
+                              # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                              # likely false poitive, unless it is actionable.
+                              # By default, min_allele_fraction in the bcbio-nextgen YAML is taken instead.
 
-# bias:               False   # Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
+  min_hotspot_freq:   default # -F in vardict2mut
+                              # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
+                              # Default: 0.01 or half [min_freq], whichever is less.
+
+  # When a novel variant (non-dbSNP, non-COSMIC) is detected in greater or equal _sample_cnt_ samples, is present in more than _fraction_ of samples; and the avarage allele frequency is less than _freq_, it's considered as likely false positive.
+  sample_cnt:         10      #         -n
+  ave_freq:           0.15    #         -F
+  count_undetermined: True    #         !-u   Undeteremined won't be counted for the sample count. Not used 'cause we don't actually have any undetermined samples.
+
+  min_p_mean:         5       # PMEAN.  -p   The minimum mean position in reads for variants.
+  min_q_mean:         25      # QUAL.   -q   The minimum mean base quality phred score for variant.
+
+  filt_depth:         0       # DP.     -D   The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
+  filt_q_mean:        0       # QUAL.   -Q   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
+  filt_p_mean:        0       # PMEAN.  -P   The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
+
+  min_mq:             10      # MQ.     -M   The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
+  min_vd:             3       # VD.     -V   The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
+
+  maf:                0.0025  # GMAF.   -G   If there's MAF with frequency, it'll be considered dbSNP regardless of COSMIC.
+  signal_noise:       1.5     # SN.     -o   Signal/noise value.
+
+  bias:               False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
+

@@ -1,0 +1,572 @@
+Sample	Chr	Start	ID	Ref	Alt	Type	Effect	Functional_Class	Codon_Change	Amino_Acid_Change	cDNA_Change	Amino_Acid_Length	Gene	Transcript_bioType	Gene_Coding	Transcript	Exon	COSMIC_CDS_Change	COSMIC_AA_Change	COSMIC_Cnt	End	Depth	AlleleFreq	Bias	Pmean	Pstd	Qual	Qstd	SBF	GMAF	VD	CLNSIG	ODDRATIO	HIAF	MQ	SN	AdjAF	NM	Shift3	MSI	dbSNPBuildID	N_samples	N_Var	Pcnt_sample	Ave_AF	PASS	Var_Type	Var_Class	Status	Reason
+chr1	120612002	rs372504208;COSM132830	CGG	C	frameshift_variant	HIGH	frameshift_variant	c.17_18delCC	P6fs	c.17_18delCC	2471	NOTCH2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr4	1388375	rs533172496;COSM1427135	T	TCA	frameshift_variant	HIGH	frameshift_variant	c.77_78dupCA	C27fs	c.77_78dupCA	446	CRIPAK	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388497	rs763834024	TCACA	T	frameshift_variant	HIGH	frameshift_variant	c.202_205delACAC	T68fs	c.202_205delACAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1389023	rs757316983	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.728_729delAC	H243fs	c.728_729delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr5	79970914	rs752887309;COSM1438888	CA	C	frameshift_variant	HIGH	frameshift_variant	c.1148delA	K383fs	c.1148delA	1137	MSH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr6	170871138	.	C	A	stop_gained	HIGH	stop_gained	c.314C>A	S105*	c.314C>A	339	TBP	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	6026409	.	C	A	stop_gained	HIGH	stop_gained	c.1987G>T	E663*	c.1987G>T	862	PMS2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr7	55249071	rs121434569;COSM6240	C	T	missense_variant	MODERATE	missense_variant	c.2369C>T	T790M	c.2369C>T	1210	EGFR	Coding	COSMIC	known	actionable	known	actionable,manually_curated
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-61_-8+69del		c.-61_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151962134	rs146238849;COSM230133	G	T	stop_gained	HIGH	stop_gained	c.1173C>A	C391*	c.1173C>A	4911	KMT2C	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chr7	151970859	rs149992209;COSM1179669	C	T	missense_variant	MODERATE	missense_variant	c.943G>A	G315S	c.943G>A	4911	KMT2C	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	12775861	rs3833707;COSM243414	T	TGGCGGCGGC	inframe_insertion	MODERATE	inframe_insertion	c.157_165dupGGCGGCGGC	G53_G55dup	c.157_165dupGGCGGCGGC	228	LURAP1L	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	80537095	rs200106152;COSM3218458	G	T	stop_gained	HIGH	stop_gained	c.303C>A	Y101*	c.303C>A	359	GNAQ	Coding	COSMIC	likely	AA_change	unlikely	stop_gained
+chr9	98270592	.	TGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTTGCCGCCGCC	T	start_lost	HIGH	start_lost	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	M1_G17del	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr11	69633615	.	CGCATCGCGCCGCAACCGCGCCCCAGGGCCCGCTGCGGGCCAGCCGGGCTCCAGCAGGCTGAGCAGTAGCAGCCAGATTAGGCCCATCGTG	C	start_lost	HIGH	start_lost	c.-4_86delCACGATGGGCCTAATCTGGCTGCTACTGCTCAGCCTGCTGGAGCCCGGCTGGCCCGCAGCGGGCCCTGGGGCGCGGTTGCGGCGCGATGC	M1_A29del	c.-4_86delCACGATGGGCCTAATCTGGCTGCTACTGCTCAGCCTGCTGGAGCCCGGCTGGCCCGCAGCGGGCCCTGGGGCGCGGTTGCGGCGCGATGC	239	FGF3	Coding	Novel	unknown		likely	start_lost
+chr11	95825217	.	GC	ACTGT	stop_gained	HIGH	stop_gained	c.1977_1978delGCinsACAGT	Q660dup	c.1977_1978delGCinsACAGT	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr15	99467231	.	C	A	stop_gained	HIGH	stop_gained	c.2612C>A	S871*	c.2612C>A	1367	IGF1R	Coding	Novel	likely	AA_change	likely	stop_gained
+chr17	41245586	rs80357522;COSM1383519	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1961delA	K654fs	c.1961delA	1863	BRCA1	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr19	17958754	.	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.-14+1G>T		c.-14+1G>T		JAK3	Coding	Novel	likely	splice_site	unlikely	splice_site
+chrX	70602999	rs769562614	C	CA	frameshift_variant	HIGH	frameshift_variant	c.2000dupA	A668fs	c.2000dupA	1895	TAF1	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chrX	106846442	.	C	T	stop_gained	HIGH	stop_gained	c.5272C>T	Q1758*	c.5272C>T	1810	FRMPD3	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	106846462	.	G	GCAACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAA	stop_gained	HIGH	stop_gained	c.5294_5295insACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAACA	L1736_Q1765dup	c.5294_5295insACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAACA	1810	FRMPD3	Coding	Novel	unknown		likely	stop_gained
+chr1	6257784	rs759765382;COSM179404	CT	C	frameshift_variant	HIGH	frameshift_variant	c.44delA	K15fs	c.44delA	128	RPL22	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	147091500	rs782367190;COSM1333664	A	AC	frameshift_variant	HIGH	frameshift_variant	c.1547dupC	P517fs	c.1547dupC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	150551442	.	G	A	stop_gained	HIGH	stop_gained	c.565C>T	Q189*	c.565C>T	350	MCL1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	190719307	.	C	T	stop_gained	HIGH	stop_gained	c.1309C>T	Q437*	c.1309C>T	932	PMS1	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	37048527	.	T	A	stop_gained	HIGH	stop_gained	c.426T>A	C142*	c.426T>A	756	MLH1	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr3	52440911	.	TC	T	frameshift_variant	HIGH	frameshift_variant	c.592delG	E198fs	c.592delG	729	BAP1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr3	121168274	rs767715243	C	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.7153-1G>A		c.7153-1G>A		POLQ	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	178938934	COSM446019	G	A	missense_variant	MODERATE	missense_variant	c.2176G>A	E726K	c.2176G>A	1068	PIK3CA	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change,manually_curated
+chr4	1388497	rs55954740	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.204_205delAC	T68fs	c.204_205delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388589	rs764309047	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.296_297delAC	H99fs	c.296_297delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389187	rs767148612	TGTGGAGTGCCCGCCTGCTCACACGTGCCGAC	T	frameshift_variant	HIGH	frameshift_variant	c.910_940delACGTGCCGACGTGGAGTGCCCGCCTGCTCAC	T304fs	c.910_940delACGTGCCGACGTGGAGTGCCCGCCTGCTCAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	55573440	.	G	T	stop_gained	HIGH	stop_gained	c.1102G>T	E368*	c.1102G>T	976	KIT	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr4	106194062	.	TA	T	frameshift_variant	HIGH	frameshift_variant	c.4527delA	K1509fs	c.4527delA	2002	TET2	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr4	140811194	.	C	A	stop_gained	HIGH	stop_gained	c.1396G>T	E466*	c.1396G>T	1134	MAML3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr6	1611818	.	GGCGCGGGGGCCGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGA	G	frameshift_variant	HIGH	frameshift_variant	c.1150_1231delGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGAGCGCGGGGGCC	A384fs	c.1150_1231delGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGAGCGCGGGGGCC	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	1612019	.	GGCGGCGGCGGCGGCGGCGGCGGGGGAGGCCAGGAGGCCGGCCACCACCCTGCGGCCCACCAAGGCCGCCTCACCTCGTGGTACCTGAACCAGGCGGGCGGAGACCTGGGCCACTTGGCGAGC	G	frameshift_variant	HIGH	frameshift_variant	c.1360_1481del	G454fs	c.1360_1481del	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	170871168	.	C	A	stop_gained	HIGH	stop_gained	c.344C>A	S115*	c.344C>A	339	TBP	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	55249071	rs121434569;COSM6240	C	T	missense_variant	MODERATE	missense_variant	c.2369C>T	T790M	c.2369C>T	1210	EGFR	Coding	COSMIC	known	actionable	known	actionable,manually_curated
+chr7	103131248	.	G	A	stop_gained	HIGH	stop_gained	c.9472C>T	Q3158*	c.9472C>T	3460	RELN	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	114269955	.	G	ACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAATAGCAGCAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAA	stop_gained	HIGH	stop_gained	c.567delGinsACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAATAGCAGCAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAA	Q161_Q189dup	c.567delGinsACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAATAGCAGCAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAA	740	FOXP2	Coding	Novel	unknown		likely	stop_gained
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-61_-8+69del		c.-61_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151962134	rs146238849;COSM230133	G	T	stop_gained	HIGH	stop_gained	c.1173C>A	C391*	c.1173C>A	4911	KMT2C	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chr7	151962296	rs751158858	T	C	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.1013-2A>G		c.1013-2A>G		KMT2C	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr7	151970859	rs149992209;COSM1179669	C	T	missense_variant	MODERATE	missense_variant	c.943G>A	G315S	c.943G>A	4911	KMT2C	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	12775861	rs3833707;COSM243414	T	TGGCGGCGGC	inframe_insertion	MODERATE	inframe_insertion	c.157_165dupGGCGGCGGC	G53_G55dup	c.157_165dupGGCGGCGGC	228	LURAP1L	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	19378706	rs34590252	CT	C	frameshift_variant	HIGH	frameshift_variant	c.348delA	K116fs	c.348delA	249	RPS6	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr9	32633583	COSM20437	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1994delA	K665fs	c.1994delA	1826	TAF1L	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr9	80537095	rs200106152;COSM3218458	G	T	stop_gained	HIGH	stop_gained	c.303C>A	Y101*	c.303C>A	359	GNAQ	Coding	COSMIC	likely	AA_change	unlikely	stop_gained
+chr9	98268850	.	C	T	stop_gained	HIGH	stop_gained	c.233G>A	W78*	c.233G>A	1447	PTCH1	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr11	108123543	.	G	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.1803-1G>T		c.1803-1G>T		ATM	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr13	48919239	.	TA	T	frameshift_variant	HIGH	frameshift_variant	c.408delA	K136fs	c.408delA	928	RB1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr13	102379140	.	G	T	stop_gained	HIGH	stop_gained	c.444C>A	C148*	c.444C>A	252	FGF14	Coding	Novel	likely	AA_change	likely	stop_gained
+chr14	75513462	.	G	T	stop_gained	HIGH	stop_gained	c.2897C>A	S966*	c.2897C>A	1453	MLH3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr14	75514337	COSM1371137	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2021delA	N674fs	c.2021delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr14	75514603	rs766244000;COSM1371146	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1755delA	K585fs	c.1755delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr15	90631917	rs780120934;COSM4612047	T	TC	frameshift_variant	HIGH	frameshift_variant	c.435dupG	T146fs	c.435dupG	452	IDH2	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr16	2129032	.	G	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.2967-1G>T		c.2967-1G>T		TSC2	Coding	Novel	likely	splice_site	known	actionable
+chr16	23646610	.	G	T	stop_gained	HIGH	stop_gained	c.1257C>A	C419*	c.1257C>A	1186	PALB2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr17	27401213	.	G	T	stop_gained	HIGH	stop_gained	c.5C>A	S2*	c.5C>A	115	TIAF1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr20	31022441	rs756958159;COSM4170082	A	AG	frameshift_variant	HIGH	frameshift_variant	c.1934dupG	G646fs	c.1934dupG	1541	ASXL1	Coding	COSMIC	likely	COSMIC_5+	known	lof_in_suppressor
+chr22	30070932	.	T	C	splice_donor_variant	HIGH	splice_donor_variant	c.1446+2T>C		c.1446+2T>C		NF2	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chrX	70360666	.	C	T	stop_gained	HIGH	stop_gained	c.6226C>T	Q2076*	c.6226C>T	2177	MED12	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chrX	70361110	.	C	CAATAAG	stop_gained	HIGH	stop_gained	c.6299_6300insATAAGA	Q2099_Q2100dup	c.6299_6300insATAAGA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chr1	6257784	rs759765382;COSM179404	CT	C	frameshift_variant	HIGH	frameshift_variant	c.44delA	K15fs	c.44delA	128	RPL22	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	65339110	COSM1639943	CT	C	frameshift_variant	HIGH	frameshift_variant	c.425delA	K142fs	c.425delA	1154	JAK1	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	214454670	.	C	T	stop_gained	HIGH	stop_gained	c.73C>T	Q25*	c.73C>T	433	SMYD2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	47635584	.	G	T	stop_gained	HIGH	stop_gained	c.256G>T	E86*	c.256G>T	934	MSH2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr3	40503520	rs57354599;COSM1044560	A	ACTGCTG	inframe_insertion	MODERATE	inframe_insertion	c.472_477dupGCTGCT	A158_A159dup	c.472_477dupGCTGCT	215	RPL14	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr3	70014010	.	C	T	stop_gained	HIGH	stop_gained	c.1174C>T	Q392*	c.1174C>T	520	MITF	Coding	Novel	likely	AA_change	likely	stop_gained
+chr3	142188183	.	G	T	stop_gained	HIGH	stop_gained	c.6548C>A	S2183*	c.6548C>A	2644	ATR	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	168833256	rs773080349;COSM207998	CT	C	frameshift_variant	HIGH	frameshift_variant	c.2403delA	K801fs	c.2403delA	1239	MECOM	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr3	178947904	.	G	T	stop_gained	HIGH	stop_gained	c.2779G>T	G927*	c.2779G>T	1068	PIK3CA	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr4	1388497	rs763834024	TCACA	T	frameshift_variant	HIGH	frameshift_variant	c.202_205delACAC	T68fs	c.202_205delACAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389022	.	C	A	stop_gained	HIGH	stop_gained	c.723C>A	C241*	c.723C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389082	.	C	A	stop_gained	HIGH	stop_gained	c.783C>A	C261*	c.783C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389397	rs774281558	ACG	A	frameshift_variant	HIGH	frameshift_variant	c.1099_1100delCG	R367fs	c.1099_1100delCG	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr5	39002716	.	G	A	stop_gained	HIGH	stop_gained	c.313C>T	R105*	c.313C>T	1732	RICTOR	Coding	Novel	likely	AA_change	likely	stop_gained
+chr6	1612019	.	GGCGGCGGCGGCGGCGGCGGCGGGGGAGGCCAGGAGGCCGGCCACCACCCTGCGGCCCACCAAGGCCGCCTCACCTCGTGGTACCTGAACCAGGCGGGCGGAGACCTGGGCCACTTGGCGAGC	G	frameshift_variant	HIGH	frameshift_variant	c.1360_1481del	G454fs	c.1360_1481del	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	157527337	.	A	T	stop_gained	HIGH	stop_gained	c.5062A>T	R1688*	c.5062A>T	2249	ARID1B	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	6027156	.	C	CT	frameshift_variant	HIGH	frameshift_variant	c.1239dupA	D414fs	c.1239dupA	862	PMS2	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr7	103216127	.	C	A	stop_gained	HIGH	stop_gained	c.4171G>T	E1391*	c.4171G>T	3460	RELN	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	116403229	.	C	A	stop_gained	HIGH	stop_gained	c.2490C>A	Y830*	c.2490C>A	1390	MET	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-58_-8+69del		c.-58_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	5064978	.	TA	T	frameshift_variant	HIGH	frameshift_variant	c.1155delA	K385fs	c.1155delA	1132	JAK2	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr10	30728091	.	C	A	stop_gained	HIGH	stop_gained	c.224C>A	S75*	c.224C>A	467	MAP3K8	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	46298715	.	A	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.5364-2A>T		c.5364-2A>T		ARID2	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr12	120114362	.	G	T	stop_gained	HIGH	stop_gained	c.553G>T	G185*	c.553G>T	270	PRKAB1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr14	75514337	COSM1371137	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2021delA	N674fs	c.2021delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr15	38643291	.	T	A	stop_gained	HIGH	stop_gained	c.761T>A	L254*	c.761T>A	444	SPRED1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr15	99467239	.	G	T	stop_gained	HIGH	stop_gained	c.2620G>T	E874*	c.2620G>T	1367	IGF1R	Coding	Novel	likely	AA_change	likely	stop_gained
+chr16	2127694	COSM4059159	G	A	missense_variant	MODERATE	missense_variant	c.2933G>A	R978H	c.2933G>A	1807	TSC2	Coding	COSMIC	unknown		unlikely	
+chr17	27401054	rs781476992	CCA	C	frameshift_variant	HIGH	frameshift_variant	c.162_163delTG	C54fs	c.162_163delTG	115	TIAF1	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr17	29559777	.	C	A	missense_variant	MODERATE	missense_variant	c.3374C>A	A1125E	c.3374C>A	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29664476	.	C	T	missense_variant	MODERATE	missense_variant	c.6518C>T	A2173V	c.6518C>T	2839	NF1	Coding	Novel	unknown		unlikely	
+chr18	39584352	.	G	A	stop_gained	HIGH	stop_gained	c.1017G>A	W339*	c.1017G>A	887	PIK3C3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr19	11118575	rs759896283	TAGG	T	frameshift_variant	HIGH	frameshift_variant	c.2002-2_2002delAGG	E668fs	c.2002-2_2002delAGG	1679	SMARCA4	Coding	dbSNP_del	likely	dbSNP_del	known	lof_in_suppressor
+chr19	15376406	.	G	T	stop_gained	HIGH	stop_gained	c.608C>A	S203*	c.608C>A	1362	BRD4	Coding	Novel	likely	AA_change	likely	stop_gained
+chr19	17955111	rs755706305;COSM1391582	T	TG	frameshift_variant	HIGH	frameshift_variant	c.115dupC	Q39fs	c.115dupC	1124	JAK3	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr20	32664864	rs10649600;COSM1326800	C	CCAG	inframe_insertion	MODERATE	inframe_insertion	c.690_691insAGC	A230_G231insS	c.690_691insAGC	306	RALY	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr22	36718563	.	C	A	stop_gained	HIGH	stop_gained	c.616G>T	E206*	c.616G>T	1960	MYH9	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	47424647	.	C	A	stop_gained	HIGH	stop_gained	c.464C>A	S155*	c.464C>A	609	ARAF	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	70360671	.	CCACATCCG	ACA	stop_gained	HIGH	stop_gained	c.6231_6239delCCACATCCGinsACA	Y2077_R2080delins*Q	c.6231_6239delCCACATCCGinsACA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chr1	147091500	rs782367190;COSM1333664	A	AC	frameshift_variant	HIGH	frameshift_variant	c.1547dupC	P517fs	c.1547dupC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	204400858	.	C	A	stop_gained	HIGH	stop_gained	c.4219G>T	E1407*	c.4219G>T	1634	PIK3C2B	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	25470620	.	T	C	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.856-2A>G		c.856-2A>G		DNMT3A	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr2	148683685	rs764719749;COSM252949	TA	T	frameshift_variant	HIGH	frameshift_variant	c.1310delA	K437fs	c.1310delA	513	ACVR2A	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr2	198281593	.	C	A	stop_gained	HIGH	stop_gained	c.538G>T	E180*	c.538G>T	1304	SF3B1	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	121248607	.	A	T	stop_gained	HIGH	stop_gained	c.993T>A	Y331*	c.993T>A	2590	POLQ	Coding	Novel	likely	AA_change	likely	stop_gained
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	168833256	rs773080349;COSM207998	CT	C	frameshift_variant	HIGH	frameshift_variant	c.2403delA	K801fs	c.2403delA	1239	MECOM	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388375	rs533172496;COSM1427135	T	TCA	frameshift_variant	HIGH	frameshift_variant	c.77_78dupCA	C27fs	c.77_78dupCA	446	CRIPAK	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388487	rs767746917	GC	G	frameshift_variant	HIGH	frameshift_variant	c.191delC	P64fs	c.191delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389082	.	C	A	stop_gained	HIGH	stop_gained	c.783C>A	C261*	c.783C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389582	.	T	A	stop_gained	HIGH	stop_gained	c.1283T>A	L428*	c.1283T>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	106164835	.	G	T	stop_gained	HIGH	stop_gained	c.3703G>T	G1235*	c.3703G>T	2002	TET2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr5	38510696	.	G	T	stop_gained	HIGH	stop_gained	c.861C>A	C287*	c.861C>A	1097	LIFR	Coding	Novel	likely	AA_change	likely	stop_gained
+chr5	112177892	.	G	T	stop_gained	HIGH	stop_gained	c.6601G>T	G2201*	c.6601G>T	2843	APC	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr7	106509191	.	C	A	stop_gained	HIGH	stop_gained	c.1185C>A	C395*	c.1185C>A	1102	PIK3CG	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	128852110	.	G	T	stop_gained	HIGH	stop_gained	c.2182G>T	G728*	c.2182G>T	787	SMO	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr7	142560988	.	G	T	start_lost	HIGH	start_lost	c.3G>T	M1?	c.3G>T	1021	EPHB6	Coding	Novel	unknown		likely	start_lost
+chr7	142564304	.	C	T	stop_gained	HIGH	stop_gained	c.1528C>T	Q510*	c.1528C>T	1021	EPHB6	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	148508778	.	C	T	stop_gained	HIGH	stop_gained	c.1886G>A	W629*	c.1886G>A	751	EZH2	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr7	148512599	.	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1544delA	K515fs	c.1544delA	751	EZH2	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	135781485	.	C	A	missense_variant	MODERATE	missense_variant	c.1480G>T	A494S	c.1480G>T	1164	TSC1	Coding	Novel	unknown		unlikely	
+chr9	139390945	COSM4775108	G	A	stop_gained	HIGH	stop_gained	c.7246C>T	Q2416*	c.7246C>T	2555	NOTCH1	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr10	89711909	.	A	T	missense_variant	MODERATE	missense_variant	c.527A>T	Y176F	c.527A>T	403	PTEN	Coding	Novel	unknown		unlikely	
+chr10	123279555	.	G	T	missense_variant	MODERATE	missense_variant	c.877C>A	H293N	c.877C>A	822	FGFR2	Coding	Novel	unknown		likely	manually_curated
+chr12	49426193	.	C	A	stop_gained	HIGH	stop_gained	c.12295G>T	G4099*	c.12295G>T	5537	KMT2D	Coding	Novel	likely	AA_change	likely	stop_gained
+chr13	32954272	rs397508041;COSM4666065	GA	G	frameshift_variant	HIGH	frameshift_variant	c.9253delA	T3085fs	c.9253delA	3418	BRCA2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr16	67645852	.	A	G	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.782-2A>G		c.782-2A>G		CTCF	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr16	67646012	COSM972482	AAC	A	frameshift_variant	HIGH	frameshift_variant	c.950_951delCA	T317fs	c.950_951delCA	727	CTCF	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr17	16089949	.	G	T	stop_gained	HIGH	stop_gained	c.161C>A	S54*	c.161C>A	2440	NCOR1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr17	29556281	.	C	A	stop_gained	HIGH	stop_gained	c.2648C>A	S883*	c.2648C>A	2839	NF1	Coding	Novel	likely	AA_change	known	actionable
+chr17	29560122	.	T	C	missense_variant	MODERATE	missense_variant	c.3599T>C	V1200A	c.3599T>C	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29654636	.	G	T	missense_variant	MODERATE	missense_variant	c.5388G>T	E1796D	c.5388G>T	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29663716	.	C	A	missense_variant	MODERATE	missense_variant	c.6211C>A	Q2071K	c.6211C>A	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29664488	.	C	A	missense_variant	MODERATE	missense_variant	c.6530C>A	A2177D	c.6530C>A	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29676167	.	G	A	missense_variant	MODERATE	missense_variant	c.7219G>A	A2407T	c.7219G>A	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	78931475	.	C	A	stop_gained	HIGH	stop_gained	c.3422C>A	S1141*	c.3422C>A	1335	RPTOR	Coding	Novel	likely	AA_change	likely	stop_gained
+chr19	1219360	.	G	A	missense_variant	MODERATE	missense_variant	c.412G>A	E138K	c.412G>A	433	STK11	Coding	Novel	unknown		unlikely	
+chr19	31767765	.	A	T	stop_gained	HIGH	stop_gained	c.2934T>A	C978*	c.2934T>A	1081	TSHZ3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr19	40902611	.	T	A	stop_gained	HIGH	stop_gained	c.1648A>T	K550*	c.1648A>T	1461	PRX	Coding	Novel	likely	AA_change	likely	stop_gained
+chr20	51870042	.	C	A	stop_gained	HIGH	stop_gained	c.45C>A	Y15*	c.45C>A	1034	TSHZ2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr22	36681309	.	G	A	stop_gained	HIGH	stop_gained	c.5341C>T	Q1781*	c.5341C>T	1960	MYH9	Coding	Novel	likely	AA_change	likely	stop_gained
+chr22	41531892	.	C	A	stop_gained	HIGH	stop_gained	c.1604C>A	S535*	c.1604C>A	2414	EP300	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	106846480	.	G	GCAACAATAACAAAAGCAACGATAGCAACAGTAT	stop_gained	HIGH	stop_gained	c.5312_5313insACAATAACAAAAGCAACGATAGCAACAGTATCA	Q1761_Q1771dup	c.5312_5313insACAATAACAAAAGCAACGATAGCAACAGTATCA	1810	FRMPD3	Coding	Novel	unknown		likely	stop_gained
+chr1	65306996	COSM4693741	G	GT	frameshift_variant	HIGH	frameshift_variant	c.2580dupA	P861fs	c.2580dupA	1154	JAK1	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr2	39281762	.	G	T	stop_gained	HIGH	stop_gained	c.713C>A	S238*	c.713C>A	1333	SOS1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	37061800	.	G	A	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.885-1G>A		c.885-1G>A		MLH1	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr4	1388375	rs533172496;COSM1427135	T	TCA	frameshift_variant	HIGH	frameshift_variant	c.77_78dupCA	C27fs	c.77_78dupCA	446	CRIPAK	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388589	rs764309047	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.296_297delAC	H99fs	c.296_297delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388837	rs766702536	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.542_543delAC	H181fs	c.542_543delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389022	.	C	A	stop_gained	HIGH	stop_gained	c.723C>A	C241*	c.723C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389296	rs773905100	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1004_1005delCA	T335fs	c.1004_1005delCA	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr5	79970914	rs752887309;COSM1438888	CA	C	frameshift_variant	HIGH	frameshift_variant	c.1148delA	K383fs	c.1148delA	1137	MSH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr7	55242469	rs121913438;COSM12370	TTAAGAGAAGCAACATCTC	T	disruptive_inframe_deletion	MODERATE	disruptive_inframe_deletion	c.2240_2257delTAAGAGAAGCAACATCTC	L747_P753delinsS	c.2240_2257delTAAGAGAAGCAACATCTC	1210	EGFR	Coding	COSMIC	known	actionable	likely	COSMIC_5+
+chr7	128829060	.	TG	T	frameshift_variant	HIGH	frameshift_variant	c.73delG	D25fs	c.73delG	787	SMO	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-61_-8+69del		c.-61_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr8	26196492	.	C	T	stop_gained	HIGH	stop_gained	c.199C>T	Q67*	c.199C>T	457	PPP2R2A	Coding	Novel	likely	AA_change	likely	stop_gained
+chr9	98270591	.	CTGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGT	C	start_lost	HIGH	start_lost	c.-2_52delACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCA	M1_S18del	c.-2_52delACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCA	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr14	75514337	COSM1371137	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2021delA	N674fs	c.2021delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr17	7578406	rs28934578;COSM3355994	C	T	missense_variant	MODERATE	missense_variant	c.524G>A	R175H	c.524G>A	393	TP53	Coding	COSMIC	likely	hotspot_nucl_change	known	actionable
+chr17	63052467	rs771380711	TCG	T	frameshift_variant	HIGH	frameshift_variant	c.243_244delCG	R81fs	c.243_244delCG	377	GNA13	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr20	57429596	.	G	GCAGCCGATCCCGACTCCGGGGCAGCCCCTGCCGCCCCAGCCGATCCCCGACTCCGGGGCGGCCCCTGACGCCC	frameshift_variant	HIGH	frameshift_variant	c.1323_1324insCGACTCCGGGGCGGCCCCTGACGCCCCAGCCGATCCCGACTCCGGGGCAGCCCCTGCCGCCCCAGCCGATCCC	D442fs	c.1323_1324insCGACTCCGGGGCGGCCCCTGACGCCCCAGCCGATCCCGACTCCGGGGCAGCCCCTGCCGCCCCAGCCGATCCC	1037	GNAS	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chrX	70361110	.	C	CAATAAG	stop_gained	HIGH	stop_gained	c.6299_6300insATAAGA	Q2099_Q2100dup	c.6299_6300insATAAGA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	106846460	.	C	CAGT	stop_gained	HIGH	stop_gained	c.5292_5293insTAG	Q1764_Q1765ins*	c.5292_5293insTAG	1810	FRMPD3	Coding	Novel	unknown		likely	stop_gained
+chr1	6257784	rs759765382;COSM179404	CT	C	frameshift_variant	HIGH	frameshift_variant	c.44delA	K15fs	c.44delA	128	RPL22	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	65306996	COSM4693741	G	GT	frameshift_variant	HIGH	frameshift_variant	c.2580dupA	P861fs	c.2580dupA	1154	JAK1	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr1	147091500	rs782367190;COSM1333664	A	AC	frameshift_variant	HIGH	frameshift_variant	c.1547dupC	P517fs	c.1547dupC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr2	25469621	.	G	GC	frameshift_variant	HIGH	frameshift_variant	c.1146dupG	L383fs	c.1146dupG	912	DNMT3A	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr2	178129277	.	CCGGCGGCGGCAGCTCCAAGTCCATCATGATGAGCTGTGGACCGTGTGTTGGGGCTCCCCGACGGCGGCCCTGTTCCGGCTGCCGAGGCGCGGCGCGGACAGGGCGGCTCTGGTGG	C	frameshift_variant	HIGH	frameshift_variant	c.-88_27del	M1fs	c.-88_27del	605	NFE2L2	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr4	1388375	rs533172496;COSM1427135	T	TCA	frameshift_variant	HIGH	frameshift_variant	c.77_78dupCA	C27fs	c.77_78dupCA	446	CRIPAK	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388953	rs779340869	TCGCCTGCTCACACGTGCCGATGCGGAGTGCC	T	frameshift_variant	HIGH	frameshift_variant	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	R235fs	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389022	.	C	A	stop_gained	HIGH	stop_gained	c.723C>A	C241*	c.723C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389023	rs757316983	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.728_729delAC	H243fs	c.728_729delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389296	rs773905100	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1004_1005delCA	T335fs	c.1004_1005delCA	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr7	96635398	.	C	T	stop_gained	HIGH	stop_gained	c.109C>T	Q37*	c.109C>T	293	DLX6	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	116398601	.	C	T	stop_gained	HIGH	stop_gained	c.2191C>T	R731*	c.2191C>T	1390	MET	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-61_-8+69del		c.-61_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	154760629	.	G	A	stop_gained	HIGH	stop_gained	c.1282C>T	Q428*	c.1282C>T	1069	PAXIP1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr9	98270529	rs778175153;COSM4611880	G	GC	frameshift_variant	HIGH	frameshift_variant	c.114dupG	L39fs	c.114dupG	1447	PTCH1	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr11	95825217	.	GC	ACTGT	stop_gained	HIGH	stop_gained	c.1977_1978delGCinsACAGT	Q660dup	c.1977_1978delGCinsACAGT	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr11	95825233	.	TTG	CTCTTA	stop_gained	HIGH	stop_gained	c.1960_1962delCAAinsTAAGAG	Q654delins*E	c.1960_1962delCAAinsTAAGAG	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr12	18747458	.	G	T	stop_gained	HIGH	stop_gained	c.4042G>T	E1348*	c.4042G>T	1486	PIK3C2G	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	124887058	rs35831183;COSM1476308	G	GGCT	inframe_insertion	MODERATE	inframe_insertion	c.1529_1531dupAGC	Q510dup	c.1529_1531dupAGC	2514	NCOR2	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr14	75514337	rs767782578	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2021dupA	N674fs	c.2021dupA	1453	MLH3	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr16	2121459	.	TCCTGGGCCTGCACGAGCTTGGCTCTGGCTTTCACCATCCTCTTCCTGACAGGCCTTTGACTTCCTGTTGCTGCTGCGGGCCGACTCACTGCACCG	T	frameshift_variant	HIGH	frameshift_variant	c.1840-51_1883delCCTGGGCCTGCACGAGCTTGGCTCTGGCTTTCACCATCCTCTTCCTGACAGGCCTTTGACTTCCTGTTGCTGCTGCGGGCCGACTCACTGCACCG	A614fs	c.1840-51_1883delCCTGGGCCTGCACGAGCTTGGCTCTGGCTTTCACCATCCTCTTCCTGACAGGCCTTTGACTTCCTGTTGCTGCTGCGGGCCGACTCACTGCACCG	1807	TSC2	Coding	Novel	likely	frame_shift	known	actionable
+chr18	45457146	.	GGCCGCCGCGGCGCCACGCACCCACCTCCCGGCGGCTGGCGGGCTGCTGGCTGGCGAGCTGCTTCTCC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-96_-54+24delGGAGAAGCAGCTCGCCAGCCAGCAGCCCGCCAGCCGCCGGGAGGTGGGTGCGTGGCGCCGCGGCGGC		c.-96_-54+24delGGAGAAGCAGCTCGCCAGCCAGCAGCCCGCCAGCCGCCGGGAGGTGGGTGCGTGGCGCCGCGGCGGC		SMAD2	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chrX	70360666	.	C	T	stop_gained	HIGH	stop_gained	c.6226C>T	Q2076*	c.6226C>T	2177	MED12	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chrX	70361077	.	T	TAGCAGCAGCAGCAACAGCAACAGCAGCAGCAGCAGCAGCAGCAACAGCAACAGCAGCAGCAGCAACAGCAACAACAGCAACACATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCAATAGCAACAAAAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAAC	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.6268-3_6268-2insAGCAGCAGCAGCAACAGCAACAGCAGCAGCAGCAGCAGCAGCAACAGCAACAGCAGCAGCAGCAACAGCAACAACAGCAACACATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCAATAGCAACAAAAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAAC		c.6268-3_6268-2insAGCAGCAGCAGCAACAGCAACAGCAGCAGCAGCAGCAGCAGCAACAGCAACAGCAGCAGCAGCAACAGCAACAACAGCAACACATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCAATAGCAACAAAAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAAC		MED12	Coding	Novel	likely	splice_site	unlikely	splice_site
+chrX	70361110	.	C	CAATAAG	stop_gained	HIGH	stop_gained	c.6299_6300insATAAGA	Q2099_Q2100dup	c.6299_6300insATAAGA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	106846442	.	C	T	stop_gained	HIGH	stop_gained	c.5272C>T	Q1758*	c.5272C>T	1810	FRMPD3	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	115303927	rs387906503;COSM1465082	AT	A	frameshift_variant	HIGH	frameshift_variant	c.402delT	F134fs	c.402delT	363	AGTR2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	6257784	rs759765382;COSM179404	CT	C	frameshift_variant	HIGH	frameshift_variant	c.44delA	K15fs	c.44delA	128	RPL22	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	65306996	COSM4693741	G	GT	frameshift_variant	HIGH	frameshift_variant	c.2580dupA	P861fs	c.2580dupA	1154	JAK1	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr1	120612002	rs372504208;COSM132830	CGG	C	frameshift_variant	HIGH	frameshift_variant	c.17_18delCC	P6fs	c.17_18delCC	2471	NOTCH2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	153233488	rs150026164;COSM1334271	C	CGGCGGT	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.75_80dupTGGCGG	G26_G27dup	c.75_80dupTGGCGG	312	LOR	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	37090062	.	G	T	stop_gained	HIGH	stop_gained	c.1951G>T	E651*	c.1951G>T	756	MLH1	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr3	142274739	rs757500301;COSM214499	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2320delA	I774fs	c.2320delA	2644	ATR	Coding	COSMIC	likely	COSMIC_5+	known	lof_in_suppressor
+chr3	195792409	.	G	T	stop_gained	HIGH	stop_gained	c.1103C>A	S368*	c.1103C>A	760	TFRC	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1389022	.	C	A	stop_gained	HIGH	stop_gained	c.723C>A	C241*	c.723C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr6	16327801	.	G	T	stop_gained	HIGH	stop_gained	c.741C>A	Y247*	c.741C>A	815	ATXN1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	140453179	.	C	A	stop_gained	HIGH	stop_gained	c.1756G>T	E586*	c.1756G>T	766	BRAF	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-58_-8+69del		c.-58_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151962134	rs146238849;COSM230133	G	T	stop_gained	HIGH	stop_gained	c.1173C>A	C391*	c.1173C>A	4911	KMT2C	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chr7	151970859	rs149992209;COSM1179669	C	T	missense_variant	MODERATE	missense_variant	c.943G>A	G315S	c.943G>A	4911	KMT2C	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	12775861	rs3833707;COSM243414	T	TGGCGGCGGC	inframe_insertion	MODERATE	inframe_insertion	c.157_165dupGGCGGCGGC	G53_G55dup	c.157_165dupGGCGGCGGC	228	LURAP1L	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	80537095	rs200106152;COSM3218458	G	T	stop_gained	HIGH	stop_gained	c.303C>A	Y101*	c.303C>A	359	GNAQ	Coding	COSMIC	likely	AA_change	unlikely	stop_gained
+chr9	98270586	.	AGCCGCTGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTT	A	start_lost	HIGH	start_lost	c.-3_57delAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCAGCGGC	M1_G19del	c.-3_57delAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCAGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr9	98270591	.	CTGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGT	C	start_lost	HIGH	start_lost	c.-2_52delACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCA	M1_S18del	c.-2_52delACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCA	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr9	139390945	COSM4775108	G	A	stop_gained	HIGH	stop_gained	c.7246C>T	Q2416*	c.7246C>T	2555	NOTCH1	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr10	112361593	.	C	A	stop_gained	HIGH	stop_gained	c.2843C>A	S948*	c.2843C>A	1217	SMC3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr11	108164088	.	A	ATTTTTATT	frameshift_variant	HIGH	frameshift_variant	c.4660_4661insTTTTTATT	N1554fs	c.4660_4661insTTTTTATT	3056	ATM	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr12	40699743	.	G	T	stop_gained	HIGH	stop_gained	c.3934G>T	G1312*	c.3934G>T	2527	LRRK2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	124887058	rs35831183;COSM1476308	G	GGCT	inframe_insertion	MODERATE	inframe_insertion	c.1529_1531dupAGC	Q510dup	c.1529_1531dupAGC	2514	NCOR2	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr13	48878080	.	CCACCGCCGCCGCTGCCGCCGCGGAACCCCCGG	C	frameshift_variant	HIGH	frameshift_variant	c.45_76delTGCCGCCGCGGAACCCCCGGCACCGCCGCCGC	A15fs	c.45_76delTGCCGCCGCGGAACCCCCGGCACCGCCGCCGC	928	RB1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr16	71689191	.	G	T	stop_gained	HIGH	stop_gained	c.2537C>A	S846*	c.2537C>A	1323	PHLPP2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr16	71706226	.	C	A	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.1472-1G>T		c.1472-1G>T		PHLPP2	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr17	7578203	rs730882025;COSM120097	C	T	missense_variant	MODERATE	missense_variant	c.646G>A	V216M	c.646G>A	393	TP53	Coding	COSMIC	likely	hotspot_nucl_change	known	actionable
+chr17	29585468	.	T	C	missense_variant	MODERATE	missense_variant	c.4280T>C	L1427S	c.4280T>C	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	56056604	COSM1479777	T	TTGC	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.1044_1046dupGCA	Q349dup	c.1044_1046dupGCA	521	VEZF1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr17	63052467	rs771380711	TCG	T	frameshift_variant	HIGH	frameshift_variant	c.243_244delCG	R81fs	c.243_244delCG	377	GNA13	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chrX	47004846	.	A	G	start_lost	HIGH	start_lost	c.1A>G	M1?	c.1A>G	995	RBM10	Coding	Novel	unknown		likely	start_lost
+chrX	66765154	.	C	CTGCTGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCGAGACCAGTCCTCGGCAGCAGCAGCAGAGGCAGCAGAAGCAGG	frameshift_variant	HIGH	frameshift_variant	c.205_206insGAGACCAGTCCTCGGCAGCAGCAGCAGAGGCAGCAGAAGCAGGTGCTGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGC	Q69fs	c.205_206insGAGACCAGTCCTCGGCAGCAGCAGCAGAGGCAGCAGAAGCAGGTGCTGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGCAGC	920	AR	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr1	6257784	rs759765382;COSM179404	CT	C	frameshift_variant	HIGH	frameshift_variant	c.44delA	K15fs	c.44delA	128	RPL22	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	55505552	rs35574083;COSM4603230	A	ACTG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.63_65dupGCT	L22dup	c.63_65dupGCT	692	PCSK9	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr1	120612002	rs372504208;COSM132830	CGG	C	frameshift_variant	HIGH	frameshift_variant	c.17_18delCC	P6fs	c.17_18delCC	2471	NOTCH2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	153233488	rs150026164;COSM1334271	C	CGGCGGT	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.75_80dupTGGCGG	G26_G27dup	c.75_80dupTGGCGG	312	LOR	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr4	1388497	rs763834024	TCACA	T	frameshift_variant	HIGH	frameshift_variant	c.202_205delACAC	T68fs	c.202_205delACAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388922	rs759934399	CTGCCTGCTCACACGTGCCCATGTGGAGTGTT	C	frameshift_variant	HIGH	frameshift_variant	c.624_654delTGCCTGCTCACACGTGCCCATGTGGAGTGTT	P208fs	c.624_654delTGCCTGCTCACACGTGCCCATGTGGAGTGTT	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1389381	rs779800691	GC	G	frameshift_variant	HIGH	frameshift_variant	c.1085delC	P362fs	c.1085delC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	106193720	.	G	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.4183-1G>T		c.4183-1G>T		TET2	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr5	79970914	rs752887309;COSM1438888	CA	C	frameshift_variant	HIGH	frameshift_variant	c.1148delA	K383fs	c.1148delA	1137	MSH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151962134	rs146238849;COSM230133	G	T	stop_gained	HIGH	stop_gained	c.1173C>A	C391*	c.1173C>A	4911	KMT2C	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chr7	151970859	rs149992209;COSM1179669	C	T	missense_variant	MODERATE	missense_variant	c.943G>A	G315S	c.943G>A	4911	KMT2C	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	12775861	rs3833707;COSM243414	T	TGGCGGCGGC	inframe_insertion	MODERATE	inframe_insertion	c.157_165dupGGCGGCGGC	G53_G55dup	c.157_165dupGGCGGCGGC	228	LURAP1L	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	80537095	rs200106152;COSM3218458	G	T	stop_gained	HIGH	stop_gained	c.303C>A	Y101*	c.303C>A	359	GNAQ	Coding	COSMIC	likely	AA_change	unlikely	stop_gained
+chr9	98270591	.	CTGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGT	C	start_lost	HIGH	start_lost	c.-2_52delACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCA	M1_S18del	c.-2_52delACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCA	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr9	139390945	COSM4775108	G	A	stop_gained	HIGH	stop_gained	c.7246C>T	Q2416*	c.7246C>T	2555	NOTCH1	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr11	95825265	.	GCTGCTGCTGCTGTTGGGCTGAAATTGAGCTCTGCTGCTGTTGCTGTTGTTGAGCTGAAATTGAACTCTGCTGTTGCTGT	TTTGTTATTGTTGCTGCTGCTACCTGTTGCTGACATTGCTGTTGCTGCTGCTGTTGTTGCTGCTACTGCTATGTTGCTGTTTCTATTATTATTGCTGTTGTTGACTACGA	stop_gained	HIGH	stop_gained	c.1851_1930delACAGCAACAGCAGAGTTCAATTTCAGCTCAACAACAGCAACAGCAGCAGAGCTCAATTTCAGCCCAACAGCAGCAGCAGCinsTCGTAGTCAACAACAGCAATAATAATAGAAACAGCAACATAGCAGTAGCAGCAACAACAGCAGCAGCAACAGCAATGTCAGCAACAGGTAGCAGCAGCAACAATAACAAA	Q617_Q644delinsHRSQQQQ***KQQHSSSSNNSSSNSNVSNR*QQQQ*QK	c.1851_1930delACAGCAACAGCAGAGTTCAATTTCAGCTCAACAACAGCAACAGCAGCAGAGCTCAATTTCAGCCCAACAGCAGCAGCAGCinsTCGTAGTCAACAACAGCAATAATAATAGAAACAGCAACATAGCAGTAGCAGCAACAACAGCAGCAGCAACAGCAATGTCAGCAACAGGTAGCAGCAGCAACAATAACAAA	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr17	7578203	rs730882025;COSM120097	C	T	missense_variant	MODERATE	missense_variant	c.646G>A	V216M	c.646G>A	393	TP53	Coding	COSMIC	likely	hotspot_nucl_change	known	actionable
+chr20	32664864	rs10649600;COSM1326800	C	CCAG	inframe_insertion	MODERATE	inframe_insertion	c.690_691insAGC	A230_G231insS	c.690_691insAGC	306	RALY	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr1	120612002	rs372504208;COSM132830	CGG	C	frameshift_variant	HIGH	frameshift_variant	c.17_18delCC	P6fs	c.17_18delCC	2471	NOTCH2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	147091500	rs782367190;COSM1333664	A	AC	frameshift_variant	HIGH	frameshift_variant	c.1547dupC	P517fs	c.1547dupC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	150551562	.	C	A	stop_gained	HIGH	stop_gained	c.445G>T	E149*	c.445G>T	350	MCL1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr1	155880570	.	C	A	stop_gained	HIGH	stop_gained	c.34G>T	E12*	c.34G>T	236	RIT1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	39224441	.	G	A	stop_gained	HIGH	stop_gained	c.2917C>T	Q973*	c.2917C>T	1333	SOS1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	39278299	.	C	A	stop_gained	HIGH	stop_gained	c.850G>T	E284*	c.850G>T	1333	SOS1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	48025963	.	G	T	stop_gained	HIGH	stop_gained	c.841G>T	G281*	c.841G>T	1360	MSH6	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	99160383	.	G	T	stop_gained	HIGH	stop_gained	c.862G>T	E288*	c.862G>T	977	INPP4A	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	212589804	COSM3709394	G	T	stop_gained	HIGH	stop_gained	c.738C>A	C246*	c.738C>A	1308	ERBB4	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	178938945	.	GGT	G	splice_donor_variant	HIGH	splice_donor_variant	c.2187+1_2187+2delGT		c.2187+1_2187+2delGT		PIK3CA	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr3	185195130	.	C	A	stop_gained	HIGH	stop_gained	c.2447C>A	S816*	c.2447C>A	966	MAP3K13	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1388589	rs764309047	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.296_297delAC	H99fs	c.296_297delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1388953	rs779340869	TCGCCTGCTCACACGTGCCGATGCGGAGTGCC	T	frameshift_variant	HIGH	frameshift_variant	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	R235fs	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	143130083	.	G	T	stop_gained	HIGH	stop_gained	c.933C>A	Y311*	c.933C>A	924	INPP4B	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr5	112111429	.	G	T	stop_gained	HIGH	stop_gained	c.526G>T	E176*	c.526G>T	2843	APC	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr6	1612099	.	GT	G	frameshift_variant	HIGH	frameshift_variant	c.1420delT	Y474fs	c.1420delT	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	32634593	.	C	A	stop_gained	HIGH	stop_gained	c.985G>T	E329*	c.985G>T	1826	TAF1L	Coding	Novel	likely	AA_change	likely	stop_gained
+chr9	98240336	.	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.1347+1G>T		c.1347+1G>T		PTCH1	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr9	98270529	.	GC	G	frameshift_variant	HIGH	frameshift_variant	c.114delG	G38fs	c.114delG	1447	PTCH1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr9	98270586	.	AGCCGCTGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTTGCC	A	start_lost	HIGH	start_lost	c.-6_57delGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCAGCGGC	M1_G19del	c.-6_57delGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCAGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr9	135772891	.	T	A	missense_variant	MODERATE	missense_variant	c.2732A>T	E911V	c.2732A>T	1164	TSC1	Coding	Novel	unknown		unlikely	
+chr11	69589592	.	G	T	stop_gained	HIGH	stop_gained	c.261C>A	Y87*	c.261C>A	206	FGF4	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	69222655	.	G	T	stop_gained	HIGH	stop_gained	c.628G>T	E210*	c.628G>T	497	MDM2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	78582389	.	G	T	stop_gained	HIGH	stop_gained	c.5887G>T	E1963*	c.5887G>T	2385	NAV3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	133226059	.	G	A	stop_gained	HIGH	stop_gained	c.3838C>T	Q1280*	c.3838C>T	2286	POLE	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	133245239	.	G	A	stop_gained	HIGH	stop_gained	c.2008C>T	Q670*	c.2008C>T	2286	POLE	Coding	Novel	likely	AA_change	likely	stop_gained
+chr16	2098698	.	C	A	missense_variant	MODERATE	missense_variant	c.82C>A	P28T	c.82C>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2106701	.	C	A	missense_variant	MODERATE	missense_variant	c.705C>A	S235R	c.705C>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2107108	.	G	T	splice_region_variant	LOW	splice_region_variant	c.777G>T	L259L	c.777G>T	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2134969	.	T	C	missense_variant	MODERATE	missense_variant	c.4511T>C	L1504P	c.4511T>C	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	23641430	.	G	T	stop_gained	HIGH	stop_gained	c.2045C>A	S682*	c.2045C>A	1186	PALB2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr17	7572990	.	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1118delA	K373fs	c.1118delA	393	TP53	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr17	29483003	.	T	C	splice_region_variant	LOW	splice_region_variant	c.63T>C	L21L	c.63T>C	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	33446606	rs200487648	G	T	stop_gained	HIGH	stop_gained	c.27C>A	C9*	c.27C>A	348	RAD51D	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr17	40497611	.	G	T	stop_gained	HIGH	stop_gained	c.338C>A	S113*	c.338C>A	770	STAT3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr17	56056604	COSM1479777	T	TTGC	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.1044_1046dupGCA	Q349dup	c.1044_1046dupGCA	521	VEZF1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr17	63533938	rs771001164;COSM292718	CCT	C	frameshift_variant	HIGH	frameshift_variant	c.1214_1215delAG	E405fs	c.1214_1215delAG	843	AXIN2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr19	17953420	.	C	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.567-1G>A		c.567-1G>A		JAK3	Coding	Novel	likely	splice_site	unlikely	splice_site
+chrX	76829806	COSM85818	G	A	stop_gained	HIGH	stop_gained	c.6235C>T	R2079*	c.6235C>T	2492	ATRX	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chrX	106846460	.	C	CAGT	stop_gained	HIGH	stop_gained	c.5292_5293insTAG	Q1764_Q1765ins*	c.5292_5293insTAG	1810	FRMPD3	Coding	Novel	unknown		likely	stop_gained
+chrX	115303927	rs387906503;COSM1465082	AT	A	frameshift_variant	HIGH	frameshift_variant	c.402delT	F134fs	c.402delT	363	AGTR2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	55505552	rs35574083;COSM4603230	A	ACTG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.63_65dupGCT	L22dup	c.63_65dupGCT	692	PCSK9	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr1	65306996	COSM4693741	G	GT	frameshift_variant	HIGH	frameshift_variant	c.2580dupA	P861fs	c.2580dupA	1154	JAK1	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr1	153233488	rs150026164;COSM1334271	C	CGGCGGT	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.75_80dupTGGCGG	G26_G27dup	c.75_80dupTGGCGG	312	LOR	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr2	16082313	COSM1400341	AC	A	frameshift_variant	HIGH	frameshift_variant	c.134delC	P45fs	c.134delC	464	MYCN	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr4	1388593	rs558358960;COSM1427137	ACACGTGCCCATGTGGAGTGCCCGCCTGCT	A	frameshift_variant	HIGH	frameshift_variant	c.327_355delGTGCCCATGTGGAGTGCCCGCCTGCTCAC	T109fs	c.327_355delGTGCCCATGTGGAGTGCCCGCCTGCTCAC	446	CRIPAK	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1389022	.	C	A	stop_gained	HIGH	stop_gained	c.723C>A	C241*	c.723C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	84393388	.	G	T	stop_gained	HIGH	stop_gained	c.269C>A	S90*	c.269C>A	409	FAM175A	Coding	Novel	likely	AA_change	likely	stop_gained
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-61_-8+69del		c.-61_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	32633583	COSM20437	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1994delA	K665fs	c.1994delA	1826	TAF1L	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr9	98270592	.	TGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTTGCCGCCGCC	T	start_lost	HIGH	start_lost	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	M1_G17del	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr12	124887058	rs35831183;COSM1476308	G	GGCT	inframe_insertion	MODERATE	inframe_insertion	c.1529_1531dupAGC	Q510dup	c.1529_1531dupAGC	2514	NCOR2	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr14	75514337	COSM1371137	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2021delA	N674fs	c.2021delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr18	60382827	.	GCGCCGCCGCCGTCTCCCACCTCCGCCTCATCGCCTCCCTCTCCGCCCGCTGCCTCCGGAGCTGGGGGGGAAACGCGAAGCCCCACTGCAATGGAGCC	G	frameshift_variant	HIGH	frameshift_variant	c.-80_17delCGTCTCCCACCTCCGCCTCATCGCCTCCCTCTCCGCCCGCTGCCTCCGGAGCTGGGGGGGAAACGCGAAGCCCCACTGCAATGGAGCCCGCCGCCGC	M1fs	c.-80_17delCGTCTCCCACCTCCGCCTCATCGCCTCCCTCTCCGCCCGCTGCCTCCGGAGCTGGGGGGGAAACGCGAAGCCCCACTGCAATGGAGCCCGCCGCCGC	1717	PHLPP1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr20	32664864	rs10649600;COSM1326800	C	CCAG	inframe_insertion	MODERATE	inframe_insertion	c.690_691insAGC	A230_G231insS	c.690_691insAGC	306	RALY	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chrX	106846442	.	C	T	stop_gained	HIGH	stop_gained	c.5272C>T	Q1758*	c.5272C>T	1810	FRMPD3	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	115303927	rs387906503;COSM1465082	AT	A	frameshift_variant	HIGH	frameshift_variant	c.402delT	F134fs	c.402delT	363	AGTR2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	153233488	rs150026164;COSM1334271	C	CGGCGGT	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.75_80dupTGGCGG	G26_G27dup	c.75_80dupTGGCGG	312	LOR	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr4	1388953	rs779340869	TCGCCTGCTCACACGTGCCGATGCGGAGTGCC	T	frameshift_variant	HIGH	frameshift_variant	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	R235fs	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389397	rs774281558	ACG	A	frameshift_variant	HIGH	frameshift_variant	c.1099_1100delCG	R367fs	c.1099_1100delCG	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr6	1611818	.	GGCGCGGGGGCCGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGA	G	frameshift_variant	HIGH	frameshift_variant	c.1150_1231delGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGAGCGCGGGGGCC	A384fs	c.1150_1231delGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGAGCGCGGGGGCC	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	32633583	COSM20437	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1994delA	K665fs	c.1994delA	1826	TAF1L	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr9	98270592	.	TGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTTGCCGCCGCC	T	start_lost	HIGH	start_lost	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	M1_G17del	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr12	124887058	rs35831183;COSM1476308	G	GGCT	inframe_insertion	MODERATE	inframe_insertion	c.1529_1531dupAGC	Q510dup	c.1529_1531dupAGC	2514	NCOR2	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr13	36050228	.	G	T	stop_gained	HIGH	stop_gained	c.48C>A	Y16*	c.48C>A	359	MAB21L1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr14	75514337	COSM1371137	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2021delA	N674fs	c.2021delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr18	60383176	.	CG	C	frameshift_variant	HIGH	frameshift_variant	c.266delG	G89fs	c.266delG	1717	PHLPP1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chrX	106846442	.	C	T	stop_gained	HIGH	stop_gained	c.5272C>T	Q1758*	c.5272C>T	1810	FRMPD3	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	106846462	.	G	GCAACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAA	stop_gained	HIGH	stop_gained	c.5294_5295insACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAACA	L1736_Q1765dup	c.5294_5295insACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAAAACAGCAACA	1810	FRMPD3	Coding	Novel	unknown		likely	stop_gained
+chr1	9778843	.	G	A	stop_gained	HIGH	stop_gained	c.1112G>A	W371*	c.1112G>A	1044	PIK3CD	Coding	Novel	likely	AA_change	likely	stop_gained
+chr1	11272950	.	G	A	stop_gained	HIGH	stop_gained	c.3301C>T	Q1101*	c.3301C>T	2549	MTOR	Coding	Novel	likely	AA_change	likely	stop_gained
+chr1	27023326	.	GC	G	frameshift_variant	HIGH	frameshift_variant	c.437delC	P146fs	c.437delC	2285	ARID1A	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr1	27058002	.	CT	A	frameshift_variant	HIGH	frameshift_variant	c.1710_1711delCTinsA	S571fs	c.1710_1711delCTinsA	2285	ARID1A	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr1	147095660	.	C	T	stop_gained	HIGH	stop_gained	c.3181C>T	Q1061*	c.3181C>T	1426	BCL9	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	16082313	COSM1400341	AC	A	frameshift_variant	HIGH	frameshift_variant	c.134delC	P45fs	c.134delC	464	MYCN	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr2	178097312	.	C	A	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.403-1G>T		c.403-1G>T		NFE2L2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr3	142274739	rs778867790;COSM1617015	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2320dupA	I774fs	c.2320dupA	2644	ATR	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	178927382	.	G	A	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.1146-1G>A		c.1146-1G>A		PIK3CA	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr3	195794402	.	C	A	stop_gained	HIGH	stop_gained	c.1027G>T	E343*	c.1027G>T	760	TFRC	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1388497	rs55954740	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.204_205delAC	T68fs	c.204_205delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388650	.	C	A	stop_gained	HIGH	stop_gained	c.351C>A	C117*	c.351C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1388743	.	C	A	stop_gained	HIGH	stop_gained	c.444C>A	C148*	c.444C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1388953	rs779340869	TCGCCTGCTCACACGTGCCGATGCGGAGTGCC	T	frameshift_variant	HIGH	frameshift_variant	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	R235fs	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	55589749	rs55737343	G	A	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.1232-1G>A		c.1232-1G>A		KIT	Coding	dbSNP_del	likely	splice_site	unlikely	dbSNP_del,splice_site
+chr6	1610662	.	GCGGCGGCGAGCGGGGGCCATGCAGGCGCGCTACTCCGTGTCCAGCCCCAACTCCCTGGGAGTGGTGCCCTACCT	G	frameshift_variant	HIGH	frameshift_variant	c.-1_56delCGGCGGCGAGCGGGGGCCATGCAGGCGCGCTACTCCGTGTCCAGCCCCAACTCCCTGGGAGTGGTGCCCTACCT	M1fs	c.-1_56delCGGCGGCGAGCGGGGGCCATGCAGGCGCGCTACTCCGTGTCCAGCCCCAACTCCCTGGGAGTGGTGCCCTACCT	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	16327912	rs368218879;COSM450875	C	A	missense_variant	MODERATE	missense_variant	c.630G>T	Q210H	c.630G>T	815	ATXN1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr7	6027156	.	C	CT	frameshift_variant	HIGH	frameshift_variant	c.1239dupA	D414fs	c.1239dupA	862	PMS2	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr7	142562397	rs748119509	G	GC	frameshift_variant	HIGH	frameshift_variant	c.846dupC	R283fs	c.846dupC	1021	EPHB6	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr7	151874713	COSM87960	G	A	stop_gained	HIGH	stop_gained	c.7825C>T	R2609*	c.7825C>T	4911	KMT2C	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chr8	26221270	.	C	A	stop_gained	HIGH	stop_gained	c.866C>A	S289*	c.866C>A	457	PPP2R2A	Coding	Novel	likely	AA_change	likely	stop_gained
+chr9	80537095	rs200106152;COSM3218458	G	T	stop_gained	HIGH	stop_gained	c.303C>A	Y101*	c.303C>A	359	GNAQ	Coding	COSMIC	likely	AA_change	unlikely	stop_gained
+chr9	133760263	.	AG	A	frameshift_variant	HIGH	frameshift_variant	c.2648delG	G883fs	c.2648delG	1149	ABL1	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr9	135771644	.	T	C	missense_variant	MODERATE	missense_variant	c.3473A>G	E1158G	c.3473A>G	1164	TSC1	Coding	Novel	unknown		unlikely	
+chr9	135781401	COSM4736807	C	T	missense_variant	MODERATE	missense_variant	c.1564G>A	A522T	c.1564G>A	1164	TSC1	Coding	COSMIC	unknown		unlikely	
+chr9	135786956	rs757758630	C	A	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.914-1G>T		c.914-1G>T		TSC1	Coding	dbSNP_del	likely	splice_site	known	actionable
+chr9	136906925	rs757177744	G	T	stop_gained	HIGH	stop_gained	c.1364C>A	S455*	c.1364C>A	726	BRD3	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr11	108186841	rs778031266	G	A	splice_donor_variant	HIGH	splice_donor_variant	c.6198+1G>A		c.6198+1G>A		ATM	Coding	dbSNP_del	likely	splice_site	known	lof_in_suppressor
+chr12	49438022	.	G	A	stop_gained	HIGH	stop_gained	c.5149C>T	Q1717*	c.5149C>T	5537	KMT2D	Coding	Novel	likely	AA_change	likely	stop_gained
+chr13	32907420	rs80359309;COSM4666031	GA	G	frameshift_variant	HIGH	frameshift_variant	c.1813delA	I605fs	c.1813delA	3418	BRCA2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr15	90628583	.	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1003delG	V335fs	c.1003delG	452	IDH2	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr16	2107178	.	A	G	missense_variant	MODERATE	missense_variant	c.847A>G	R283G	c.847A>G	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2125862	.	G	A	missense_variant	MODERATE	missense_variant	c.2608G>A	A870T	c.2608G>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2136353	.	T	C	missense_variant	MODERATE	missense_variant	c.4822T>C	Y1608H	c.4822T>C	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2137911	.	G	T	missense_variant	MODERATE	missense_variant	c.5037G>T	E1679D	c.5037G>T	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2138114	.	G	A	missense_variant	MODERATE	missense_variant	c.5134G>A	A1712T	c.5134G>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr17	12013691	.	G	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.667-1G>T		c.667-1G>T		MAP2K4	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr17	29588782	.	C	T	missense_variant	MODERATE	missense_variant	c.4631C>T	A1544V	c.4631C>T	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	38545804	.	G	T	stop_gained	HIGH	stop_gained	c.4563C>A	Y1521*	c.4563C>A	1531	TOP2A	Coding	Novel	likely	AA_change	likely	stop_gained
+chr17	41245586	rs80357853;COSM1383518	C	CT	frameshift_variant	HIGH	frameshift_variant	c.1961dupA	Y655fs	c.1961dupA	1863	BRCA1	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr17	56056604	COSM1479777	T	TTGC	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.1044_1046dupGCA	Q349dup	c.1044_1046dupGCA	521	VEZF1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr17	63533093	.	CG	C	frameshift_variant	HIGH	frameshift_variant	c.1800delC	P600fs	c.1800delC	843	AXIN2	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr20	31021276	.	C	CA	frameshift_variant	HIGH	frameshift_variant	c.1281dupA	Q428fs	c.1281dupA	1541	ASXL1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr20	52198313	.	G	T	stop_gained	HIGH	stop_gained	c.1053C>A	C351*	c.1053C>A	1048	ZNF217	Coding	Novel	likely	AA_change	likely	stop_gained
+chr22	24133995	COSM3673234	C	A	stop_gained	HIGH	stop_gained	c.146C>A	S49*	c.146C>A	385	SMARCB1	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chrX	66942754	.	C	A	stop_gained	HIGH	stop_gained	c.2535C>A	C845*	c.2535C>A	920	AR	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr1	65310572	.	C	A	stop_gained	HIGH	stop_gained	c.2116G>T	E706*	c.2116G>T	1154	JAK1	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr2	25467117	.	G	T	stop_gained	HIGH	stop_gained	c.1758C>A	C586*	c.1758C>A	912	DNMT3A	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr2	39285861	.	T	A	stop_gained	HIGH	stop_gained	c.298A>T	R100*	c.298A>T	1333	SOS1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	178129277	.	CCGGCGGCGGCAGCTCCAAGTCCATCATGATGAGCTGTGGACCGTGTGTTGGGGCTCCCCGACGGCGGCCCTGTTCCGGCTGCCGAGGCGCGGCGCGGACAGGGCGGCTCTGGTGGCGG	C	frameshift_variant	HIGH	frameshift_variant	c.-91_27del	M1fs	c.-91_27del	605	NFE2L2	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr2	198281635	.	G	A	stop_gained	HIGH	stop_gained	c.496C>T	R166*	c.496C>T	1304	SF3B1	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	142274739	rs757500301;COSM214499	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2320delA	I774fs	c.2320delA	2644	ATR	Coding	COSMIC	likely	COSMIC_5+	known	lof_in_suppressor
+chr3	142281939	.	C	T	stop_gained	HIGH	stop_gained	c.305G>A	W102*	c.305G>A	2644	ATR	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr4	1388497	rs55954740	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.204_205delAC	T68fs	c.204_205delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388503	rs757124288	ACGTGTCCATGTGGAGTGCCCACCTGCTCATG	A	frameshift_variant	HIGH	frameshift_variant	c.205_235delCGTGTCCATGTGGAGTGCCCACCTGCTCATG	R69fs	c.205_235delCGTGTCCATGTGGAGTGCCCACCTGCTCATG	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388589	rs764309047	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.296_297delAC	H99fs	c.296_297delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388743	.	C	A	stop_gained	HIGH	stop_gained	c.444C>A	C148*	c.444C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1388922	rs759934399	CTGCCTGCTCACACGTGCCCATGTGGAGTGTT	C	frameshift_variant	HIGH	frameshift_variant	c.624_654delTGCCTGCTCACACGTGCCCATGTGGAGTGTT	P208fs	c.624_654delTGCCTGCTCACACGTGCCCATGTGGAGTGTT	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1388953	rs779340869	TCGCCTGCTCACACGTGCCGATGCGGAGTGCC	T	frameshift_variant	HIGH	frameshift_variant	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	R235fs	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389022	.	C	A	stop_gained	HIGH	stop_gained	c.723C>A	C241*	c.723C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	55151543	.	GAAGTCAAAAACCTCCTTTCAGATGAT	G	frameshift_variant	HIGH	frameshift_variant	c.2332_2357delGTCAAAAACCTCCTTTCAGATGATAA	V778fs	c.2332_2357delGTCAAAAACCTCCTTTCAGATGATAA	1089	PDGFRA	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr4	55561718	.	ACCAT	A	frameshift_variant	HIGH	frameshift_variant	c.120_123delTCCA	H40fs	c.120_123delTCCA	976	KIT	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr5	878533	.	G	T	stop_gained	HIGH	stop_gained	c.1208C>A	S403*	c.1208C>A	597	BRD9	Coding	Novel	likely	AA_change	likely	stop_gained
+chr5	38484894	.	G	T	stop_gained	HIGH	stop_gained	c.2574C>A	C858*	c.2574C>A	1097	LIFR	Coding	Novel	likely	AA_change	likely	stop_gained
+chr5	141993624	.	G	T	stop_gained	HIGH	stop_gained	c.69C>A	Y23*	c.69C>A	155	FGF1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr6	1611821	.	GCGGGGGCCGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGA	G	frameshift_variant	HIGH	frameshift_variant	c.1142_1220delCGGGGGCCGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGA	A381fs	c.1142_1220delCGGGGGCCGCGGGGGGCGCGGGCGGCGCCGGGACCTACCACTGCAACCTGCAAGCCATGAGCCTGTACGCGGCCGGCGA	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	16327912	rs368218879;COSM450875	C	A	missense_variant	MODERATE	missense_variant	c.630G>T	Q210H	c.630G>T	815	ATXN1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr7	6027156	.	C	CT	frameshift_variant	HIGH	frameshift_variant	c.1239dupA	D414fs	c.1239dupA	862	PMS2	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr7	103185617	.	A	T	stop_gained	HIGH	stop_gained	c.6477T>A	C2159*	c.6477T>A	3460	RELN	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151856008	rs749788827	CT	C	frameshift_variant	HIGH	frameshift_variant	c.11609delA	K3870fs	c.11609delA	4911	KMT2C	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr8	38315054	rs765497063	T	C	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.12-2A>G		c.12-2A>G		FGFR1	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr9	133748275	.	T	A	stop_gained	HIGH	stop_gained	c.993T>A	Y331*	c.993T>A	1149	ABL1	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr9	135797259	COSM1106333	G	A	missense_variant	MODERATE	missense_variant	c.610C>T	R204C	c.610C>T	1164	TSC1	Coding	COSMIC	unknown		unlikely	
+chr10	43623578	.	G	A	stop_gained	HIGH	stop_gained	c.3206G>A	W1069*	c.3206G>A	1114	RET	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr11	69633615	.	CGCATCGCGCCGCAACCGCGCCCCAGGGCCCGCTGCGGGCCAGCCGGGCTCCAGCAGGCTGAGCAGTAGCAGCCAGATTAGGCCCATCGTG	C	start_lost	HIGH	start_lost	c.-4_86delCACGATGGGCCTAATCTGGCTGCTACTGCTCAGCCTGCTGGAGCCCGGCTGGCCCGCAGCGGGCCCTGGGGCGCGGTTGCGGCGCGATGC	M1_A29del	c.-4_86delCACGATGGGCCTAATCTGGCTGCTACTGCTCAGCCTGCTGGAGCCCGGCTGGCCCGCAGCGGGCCCTGGGGCGCGGTTGCGGCGCGATGC	239	FGF3	Coding	Novel	unknown		likely	start_lost
+chr11	95825217	.	GC	ACTGT	stop_gained	HIGH	stop_gained	c.1977_1978delGCinsACAGT	Q660dup	c.1977_1978delGCinsACAGT	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr11	95825233	.	TTG	CTCTTA	stop_gained	HIGH	stop_gained	c.1960_1962delCAAinsTAAGAG	Q654delins*E	c.1960_1962delCAAinsTAAGAG	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr11	95825280	.	GGGCTGAAATTGAGCTCTGCTGCTGTTGCTGTTGTTGAGCTGAAATTGAACTC	TTTACTGCTGCTATTGTTGCTGTTGTTGCTGATGCTGTTGCTGTTGCTGTTGCTGTTGCTGTTGCTGTTGCTGTTGCTGT	stop_gained	HIGH	stop_gained	c.1863_1915delGAGTTCAATTTCAGCTCAACAACAGCAACAGCAGCAGAGCTCAATTTCAGCCCinsACAGCAACAGCAACAGCAACAGCAACAGCAACAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAA	S622_Q639delinsQQQQQQQQQQQQQQQHQQQQQQ*QQ*K	c.1863_1915delGAGTTCAATTTCAGCTCAACAACAGCAACAGCAGCAGAGCTCAATTTCAGCCCinsACAGCAACAGCAACAGCAACAGCAACAGCAACAGCAACAGCAACAGCATCAGCAACAACAGCAACAATAGCAGCAGTAAA	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr12	56489579	.	G	T	stop_gained	HIGH	stop_gained	c.2044G>T	E682*	c.2044G>T	1342	ERBB3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr13	26975684	.	G	T	stop_gained	HIGH	stop_gained	c.1192G>T	G398*	c.1192G>T	464	CDK8	Coding	Novel	likely	AA_change	likely	stop_gained
+chr14	75514337	rs767782578	A	AT	frameshift_variant	HIGH	frameshift_variant	c.2021dupA	N674fs	c.2021dupA	1453	MLH3	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr15	42054420	.	C	A	stop_gained	HIGH	stop_gained	c.7604C>A	S2535*	c.7604C>A	3065	MGA	Coding	Novel	likely	AA_change	likely	stop_gained
+chr15	90631917	rs780120934;COSM4612047	T	TC	frameshift_variant	HIGH	frameshift_variant	c.435dupG	T146fs	c.435dupG	452	IDH2	Coding	COSMIC	likely	frame_shift	unlikely	frame_shift
+chr16	2115557	.	A	G	missense_variant	MODERATE	missense_variant	c.1637A>G	E546G	c.1637A>G	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2125851	.	C	A	missense_variant	MODERATE	missense_variant	c.2597C>A	A866D	c.2597C>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2136337	.	G	T	missense_variant	MODERATE	missense_variant	c.4806G>T	E1602D	c.4806G>T	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr17	29533268	.	A	G	missense_variant	MODERATE	missense_variant	c.1271A>G	D424G	c.1271A>G	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	38556581	.	G	T	stop_gained	HIGH	stop_gained	c.2880C>A	Y960*	c.2880C>A	1531	TOP2A	Coding	Novel	likely	AA_change	likely	stop_gained
+chr17	41245586	rs80357853;COSM1383518	C	CT	frameshift_variant	HIGH	frameshift_variant	c.1961dupA	Y655fs	c.1961dupA	1863	BRCA1	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr17	63052467	rs771380711	TCG	T	frameshift_variant	HIGH	frameshift_variant	c.243_244delCG	R81fs	c.243_244delCG	377	GNA13	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr18	45457146	.	GGCCGCCGCGGCGCCACGCACCCACCTCCCGGCGGCTGGCGGGCTGCTGGCTGGCGAGCTGCTTCTCC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-96_-54+24delGGAGAAGCAGCTCGCCAGCCAGCAGCCCGCCAGCCGCCGGGAGGTGGGTGCGTGGCGCCGCGGCGGC		c.-96_-54+24delGGAGAAGCAGCTCGCCAGCCAGCAGCCCGCCAGCCGCCGGGAGGTGGGTGCGTGGCGCCGCGGCGGC		SMAD2	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr19	1223009	.	G	A	missense_variant	MODERATE	missense_variant	c.946G>A	A316T	c.946G>A	433	STK11	Coding	Novel	unknown		unlikely	
+chr19	1227522	.	CCCAGGGGCCCGCGGGAGGCGGAGAACCGGTGCCCAGGCTGACCTCTTCCGTCTTCCTTCCACCCTGCAGCCCGTGTCCAGGAGCCCCG	C	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.*17-69_*35delCCAGGGGCCCGCGGGAGGCGGAGAACCGGTGCCCAGGCTGACCTCTTCCGTCTTCCTTCCACCCTGCAGCCCGTGTCCAGGAGCCCCG		c.*17-69_*35delCCAGGGGCCCGCGGGAGGCGGAGAACCGGTGCCCAGGCTGACCTCTTCCGTCTTCCTTCCACCCTGCAGCCCGTGTCCAGGAGCCCCG		STK11	Coding	Novel	likely	splice_site	known	actionable
+chr19	11130347	.	C	A	stop_gained	HIGH	stop_gained	c.2586C>A	Y862*	c.2586C>A	1679	SMARCA4	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chrX	70361110	.	C	CAATAAG	stop_gained	HIGH	stop_gained	c.6299_6300insATAAGA	Q2099_Q2100dup	c.6299_6300insATAAGA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	70361151	.	A	ATAACAAAAGCAACAATAGCAACAGTATCAGCAACAGCAACAGCAATAGAAACAAAAGCAT	stop_gained	HIGH	stop_gained	c.6339_6340insTAACAAAAGCAACAATAGCAACAGTATCAGCAACAGCAACAGCAATAGAAACAAAAGCAT	Q2113_Q2114ins*QKQQ*QQYQQQQQQ*KQKH	c.6339_6340insTAACAAAAGCAACAATAGCAACAGTATCAGCAACAGCAACAGCAATAGAAACAAAAGCAT	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	115303927	rs387906503;COSM1465082	AT	A	frameshift_variant	HIGH	frameshift_variant	c.402delT	F134fs	c.402delT	363	AGTR2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	27105761	.	C	A	stop_gained	HIGH	stop_gained	c.5372C>A	S1791*	c.5372C>A	2285	ARID1A	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr1	45797984	.	T	C	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.789-2A>G		c.789-2A>G		MUTYH	Coding	Novel	likely	splice_site	known	lof_in_suppressor
+chr1	147091500	rs781994033;COSM391451	AC	A	frameshift_variant	HIGH	frameshift_variant	c.1547delC	P516fs	c.1547delC	1426	BCL9	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	204495536	.	C	T	stop_gained	HIGH	stop_gained	c.127C>T	Q43*	c.127C>T	490	MDM4	Coding	Novel	likely	AA_change	likely	stop_gained
+chr2	190719518	COSM1404084	C	A	stop_gained	HIGH	stop_gained	c.1520C>A	S507*	c.1520C>A	932	PMS1	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr3	30691871	rs756007977;COSM300123	G	GA	frameshift_variant	HIGH	frameshift_variant	c.458dupA	P154fs	c.458dupA	592	TGFBR2	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr3	40503520	rs57354599;COSM1044560	A	ACTGCTG	inframe_insertion	MODERATE	inframe_insertion	c.472_477dupGCTGCT	A158_A159dup	c.472_477dupGCTGCT	215	RPL14	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr3	49397756	.	G	T	stop_gained	HIGH	stop_gained	c.468C>A	Y156*	c.468C>A	193	RHOA	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr3	142274739	rs757500301;COSM214499	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2320delA	I774fs	c.2320delA	2644	ATR	Coding	COSMIC	likely	COSMIC_5+	known	lof_in_suppressor
+chr4	1388589	rs764309047	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.296_297delAC	H99fs	c.296_297delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389082	.	C	A	stop_gained	HIGH	stop_gained	c.783C>A	C261*	c.783C>A	446	CRIPAK	Coding	Novel	likely	AA_change	likely	stop_gained
+chr4	1389360	rs571164794	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.1065_1066delAC	T355fs	c.1065_1066delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1801472	.	A	G	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.380-2A>G		c.380-2A>G		FGFR3	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr4	1803429	.	A	G	missense_variant	MODERATE	missense_variant	c.698A>G	K233R	c.698A>G	806	FGFR3	Coding	Novel	unknown		likely	manually_curated
+chr4	106162498	.	C	T	stop_gained	HIGH	stop_gained	c.3412C>T	Q1138*	c.3412C>T	2002	TET2	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr5	112175687	COSM23595	G	T	stop_gained	HIGH	stop_gained	c.4396G>T	G1466*	c.4396G>T	2843	APC	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr7	6441550	.	G	T	stop_gained	HIGH	stop_gained	c.397G>T	G133*	c.397G>T	211	RAC1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	114269952	.	GCAGCAA	ATAGCAGCAGTAAAAACAG	stop_gained	HIGH	stop_gained	c.564_570delGCAGCAAinsATAGCAGCAGTAAAAACAG	Q189delins*QQ*K	c.564_570delGCAGCAAinsATAGCAGCAGTAAAAACAG	740	FOXP2	Coding	Novel	unknown		likely	stop_gained
+chr7	148581186	.	GCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGCGCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-58_-8+69del		c.-58_-8+69del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151945256	rs201234598;COSM3733335	G	A	stop_gained	HIGH	stop_gained	c.2263C>T	Q755*	c.2263C>T	4911	KMT2C	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,stop_gained
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	135781139	.	T	C	missense_variant	MODERATE	missense_variant	c.1826A>G	E609G	c.1826A>G	1164	TSC1	Coding	Novel	unknown		unlikely	
+chr9	135786020	.	A	G	missense_variant	MODERATE	missense_variant	c.1201T>C	C401R	c.1201T>C	1164	TSC1	Coding	Novel	unknown		unlikely	
+chr9	139401081	.	G	T	stop_gained	HIGH	stop_gained	c.3912C>A	C1304*	c.3912C>A	2555	NOTCH1	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr10	89725194	.	G	T	missense_variant	MODERATE	missense_variant	c.1177G>T	D393Y	c.1177G>T	403	PTEN	Coding	Novel	unknown		unlikely	
+chr10	112724738	.	G	T	stop_gained	HIGH	stop_gained	c.622G>T	E208*	c.622G>T	582	SHOC2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr10	123263317	.	A	G	missense_variant	MODERATE	missense_variant	c.1429T>C	F477L	c.1429T>C	822	FGFR2	Coding	Novel	unknown		likely	manually_curated
+chr10	123263329	.	G	T	missense_variant	MODERATE	missense_variant	c.1417C>A	P473T	c.1417C>A	822	FGFR2	Coding	Novel	unknown		likely	manually_curated
+chr10	123263446	.	C	A	stop_gained	HIGH	stop_gained	c.1300G>T	E434*	c.1300G>T	822	FGFR2	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr11	95825247	.	GC	AT	stop_gained	HIGH	stop_gained	c.1947_1948delGCinsAT	Q650*	c.1947_1948delGCinsAT	1156	MAML2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr11	119145540	.	A	T	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.748-2A>T		c.748-2A>T		CBL	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr12	7067178	.	C	T	stop_gained	HIGH	stop_gained	c.1303C>T	Q435*	c.1303C>T	624	PTPN6	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr12	40761496	.	C	T	stop_gained	HIGH	stop_gained	c.7513C>T	Q2505*	c.7513C>T	2527	LRRK2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr14	23450599	.	G	A	stop_gained	HIGH	stop_gained	c.877C>T	R293*	c.877C>T	538	AJUBA	Coding	Novel	likely	AA_change	likely	stop_gained
+chr16	2106701	.	C	A	missense_variant	MODERATE	missense_variant	c.705C>A	S235R	c.705C>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2124247	.	C	T	missense_variant	MODERATE	missense_variant	c.2402C>T	A801V	c.2402C>T	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr16	2134287	.	G	A	missense_variant	MODERATE	missense_variant	c.4064G>A	R1355K	c.4064G>A	1807	TSC2	Coding	Novel	unknown		unlikely	
+chr17	29508497	.	G	T	missense_variant	MODERATE	missense_variant	c.644G>T	S215I	c.644G>T	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29653242	.	C	A	missense_variant	MODERATE	missense_variant	c.5240C>A	A1747D	c.5240C>A	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	29657420	.	C	A	missense_variant	MODERATE	missense_variant	c.5716C>A	L1906I	c.5716C>A	2839	NF1	Coding	Novel	unknown		unlikely	
+chr17	41246703	.	G	T	stop_gained	HIGH	stop_gained	c.845C>A	S282*	c.845C>A	1863	BRCA1	Coding	Novel	likely	AA_change	known	lof_in_suppressor
+chr19	1219388	.	GT	G	frameshift_variant	HIGH	frameshift_variant	c.443delT	F148fs	c.443delT	433	STK11	Coding	Novel	likely	frame_shift	known	actionable
+chr19	1223009	.	G	A	missense_variant	MODERATE	missense_variant	c.946G>A	A316T	c.946G>A	433	STK11	Coding	Novel	unknown		unlikely	
+chr19	17946024	.	C	A	stop_gained	HIGH	stop_gained	c.1915G>T	E639*	c.1915G>T	1124	JAK3	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr19	31769909	.	C	A	stop_gained	HIGH	stop_gained	c.790G>T	E264*	c.790G>T	1081	TSHZ3	Coding	Novel	likely	AA_change	likely	stop_gained
+chr19	52719321	.	C	A	stop_gained	HIGH	stop_gained	c.987C>A	C329*	c.987C>A	589	PPP2R1A	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1270+1G>T		c.*1270+1G>T		BAGE4	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1175+1G>T		c.*1175+1G>T		BAGE3	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1175+1G>T		c.*1175+1G>T		BAGE2	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1270+1G>T		c.*1270+1G>T		BAGE5	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chrX	63413163	.	C	A	stop_gained	HIGH	stop_gained	c.4G>T	E2*	c.4G>T	1135	AMER1	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	66931282	.	G	T	stop_gained	HIGH	stop_gained	c.1924G>T	E642*	c.1924G>T	920	AR	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chrX	70360666	.	C	T	stop_gained	HIGH	stop_gained	c.6226C>T	Q2076*	c.6226C>T	2177	MED12	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chrX	70361088	.	G	GCAGCATCAGCAGCAACAACAGCAACAATAGCAGCAGTAACAACAGCAACAACAGCAGCATTAA	stop_gained	HIGH	stop_gained	c.6278_6279insGCATCAGCAGCAACAACAGCAACAATAGCAGCAGTAACAACAGCAACAACAGCAGCATTAACA	Q2073_Q2093dup	c.6278_6279insGCATCAGCAGCAACAACAGCAACAATAGCAGCAGTAACAACAGCAACAACAGCAGCATTAACA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	70361110	.	C	CAATAAG	stop_gained	HIGH	stop_gained	c.6299_6300insATAAGA	Q2099_Q2100dup	c.6299_6300insATAAGA	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	70361128	.	C	CAGT	stop_gained	HIGH	stop_gained	c.6318_6319insTAG	Q2106_Q2107ins*	c.6318_6319insTAG	2177	MED12	Coding	Novel	unknown		unlikely	stop_gained
+chrX	70597629	.	C	A	stop_gained	HIGH	stop_gained	c.951C>A	Y317*	c.951C>A	1895	TAF1	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	70679516	.	G	T	stop_gained	HIGH	stop_gained	c.5245G>T	E1749*	c.5245G>T	1895	TAF1	Coding	Novel	likely	AA_change	likely	stop_gained
+chrX	106846462	.	G	GCAACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCAGCAGCAT	stop_gained	HIGH	stop_gained	c.5294_5295insACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCAGCAGCATCA	N1747_Q1765dup	c.5294_5295insACAATAACAAAAGCAACGATAGCAACAGTATCAGCAACAGCAACAGCAGCAGCATCA	1810	FRMPD3	Coding	Novel	unknown		likely	stop_gained
+chr1	6257784	rs759765382;COSM179404	CT	C	frameshift_variant	HIGH	frameshift_variant	c.44delA	K15fs	c.44delA	128	RPL22	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr1	65339110	.	C	CT	frameshift_variant	HIGH	frameshift_variant	c.425dupA	I143fs	c.425dupA	1154	JAK1	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chr2	16082313	COSM1400341	AC	A	frameshift_variant	HIGH	frameshift_variant	c.134delC	P45fs	c.134delC	464	MYCN	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr3	40503520	rs57354599;COSM1044560	A	ACTGCTG	inframe_insertion	MODERATE	inframe_insertion	c.472_477dupGCTGCT	A158_A159dup	c.472_477dupGCTGCT	215	RPL14	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr3	142274739	rs757500301;COSM214499	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2320delA	I774fs	c.2320delA	2644	ATR	Coding	COSMIC	likely	COSMIC_5+	known	lof_in_suppressor
+chr4	1388375	rs533172496;COSM1427135	T	TCA	frameshift_variant	HIGH	frameshift_variant	c.77_78dupCA	C27fs	c.77_78dupCA	446	CRIPAK	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr4	1388929	rs750838245	C	A	stop_gained	HIGH	stop_gained	c.630C>A	C210*	c.630C>A	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,stop_gained
+chr4	1388953	rs779340869	TCGCCTGCTCACACGTGCCGATGCGGAGTGCC	T	frameshift_variant	HIGH	frameshift_variant	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	R235fs	c.704_734delGATGCGGAGTGCCCGCCTGCTCACACGTGCC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr4	1389023	rs757316983	TCA	T	frameshift_variant	HIGH	frameshift_variant	c.728_729delAC	H243fs	c.728_729delAC	446	CRIPAK	Coding	dbSNP_del	likely	dbSNP_del	likely	dbSNP_del,frame_shift
+chr6	1611928	.	CG	C	frameshift_variant	HIGH	frameshift_variant	c.1253delG	G418fs	c.1253delG	553	FOXC1	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr6	134494692	.	G	A	stop_gained	HIGH	stop_gained	c.526C>T	Q176*	c.526C>T	526	SGK1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr6	170871013	rs113202486;COSM247745	A	ACAG	disruptive_inframe_insertion	MODERATE	disruptive_inframe_insertion	c.213_215dupGCA	Q72dup	c.213_215dupGCA	339	TBP	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr7	6027156	.	C	CT	frameshift_variant	HIGH	frameshift_variant	c.1239dupA	D414fs	c.1239dupA	862	PMS2	Coding	Novel	likely	frame_shift	known	lof_in_suppressor
+chr7	6441994	.	A	T	stop_gained	HIGH	stop_gained	c.553A>T	K185*	c.553A>T	211	RAC1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr7	148581185	.	GGCGCCGCCGCCGCCGCCCGGTTCGCACTCCCGGAGCCCCGCCGGCCGGGCCGCCCGCAGCGGCGCGTTACCTTCGTCCCGCGCGCCGACTCGCGTTGTTCCCGCGCGTCGCCCCCGC	G	splice_donor_variant	HIGH	splice_donor_variant	c.-54_-8+70del		c.-54_-8+70del		EZH2	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr7	151945256	rs201234598;COSM3733335	G	A	stop_gained	HIGH	stop_gained	c.2263C>T	Q755*	c.2263C>T	4911	KMT2C	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,stop_gained
+chr8	144940290	COSM1319745	C	G	missense_variant	MODERATE	missense_variant	c.7132G>C	D2378H	c.7132G>C	2420	EPPK1	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	12775861	rs3833707;COSM243414	T	TGGCGGCGGC	inframe_insertion	MODERATE	inframe_insertion	c.157_165dupGGCGGCGGC	G53_G55dup	c.157_165dupGGCGGCGGC	228	LURAP1L	Coding	COSMIC	likely	hotspot_nucl_change	likely	COSMIC_5+,hotspot_nucl_change
+chr9	32633583	COSM20437	CT	C	frameshift_variant	HIGH	frameshift_variant	c.1994delA	K665fs	c.1994delA	1826	TAF1L	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr9	98270586	.	AGCCGCTGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTTGCCGCC	A	start_lost	HIGH	start_lost	c.-9_57delGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCAGCGGC	M1_G19del	c.-9_57delGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGCAGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr9	98270592	.	TGCCGCCGCCGCCGCGGTCCTGGGGCTCGGCGGCGTTACCAGCCGAGGCCATGTTGCCGCCGCC	T	start_lost	HIGH	start_lost	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	M1_G17del	c.-12_51delGGCGGCGGCAACATGGCCTCGGCTGGTAACGCCGCCGAGCCCCAGGACCGCGGCGGCGGCGGC	1447	PTCH1	Coding	Novel	unknown		known	lof_in_suppressor
+chr9	133747601	.	G	A	splice_donor_variant	HIGH	splice_donor_variant	c.964+1G>A		c.964+1G>A		ABL1	Coding	Novel	likely	splice_site	unlikely	splice_site
+chr11	95825274	.	GCTGTTGGGCTGAAATTGAGCTCTGCTGCTGTTGCTGTTGTTGAGCTGAAATTGAACTCTGCTGTTGCTGT	CTTATTGTTGCTGCTGCTACCTGTTGCTGACATTGCTGTTGCTGCTGCTGTTGTTGCTGCTACTGCTATGTTGCTGTTTCTATTATTATTGCTGTTGTTGACTACGA	stop_gained	HIGH	stop_gained	c.1851_1921delACAGCAACAGCAGAGTTCAATTTCAGCTCAACAACAGCAACAGCAGCAGAGCTCAATTTCAGCCCAACAGCinsTCGTAGTCAACAACAGCAATAATAATAGAAACAGCAACATAGCAGTAGCAGCAACAACAGCAGCAGCAACAGCAATGTCAGCAACAGGTAGCAGCAGCAACAATAAG	Q617_Q641delinsHRSQQQQ***KQQHSSSSNNSSSNSNVSNR*QQQQ*E	c.1851_1921delACAGCAACAGCAGAGTTCAATTTCAGCTCAACAACAGCAACAGCAGCAGAGCTCAATTTCAGCCCAACAGCinsTCGTAGTCAACAACAGCAATAATAATAGAAACAGCAACATAGCAGTAGCAGCAACAACAGCAGCAGCAACAGCAATGTCAGCAACAGGTAGCAGCAGCAACAATAAG	1156	MAML2	Coding	Novel	unknown		likely	stop_gained
+chr12	46254719	COSM166441	C	T	stop_gained	HIGH	stop_gained	c.4909C>T	Q1637*	c.4909C>T	1835	ARID2	Coding	COSMIC	likely	AA_change	known	lof_in_suppressor
+chr12	49427678	COSM1739891	G	A	stop_gained	HIGH	stop_gained	c.10810C>T	Q3604*	c.10810C>T	5537	KMT2D	Coding	COSMIC	likely	AA_change	likely	stop_gained
+chr12	69203056	.	C	A	stop_gained	HIGH	stop_gained	c.83C>A	S28*	c.83C>A	497	MDM2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	124809971	.	C	A	stop_gained	HIGH	stop_gained	c.7522G>T	E2508*	c.7522G>T	2514	NCOR2	Coding	Novel	likely	AA_change	likely	stop_gained
+chr12	124848227	COSM1163695	TG	T	frameshift_variant	HIGH	frameshift_variant	c.2925delC	P975fs	c.2925delC	2514	NCOR2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr14	75514337	COSM1371137	AT	A	frameshift_variant	HIGH	frameshift_variant	c.2021delA	N674fs	c.2021delA	1453	MLH3	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift
+chr16	2138226	.	A	G	splice_acceptor_variant	HIGH	splice_acceptor_variant	c.5161-2A>G		c.5161-2A>G		TSC2	Coding	Novel	likely	splice_site	known	actionable
+chr17	59871028	.	C	T	stop_gained	HIGH	stop_gained	c.1403G>A	W468*	c.1403G>A	1249	BRIP1	Coding	Novel	likely	AA_change	likely	stop_gained
+chr18	60639886	COSM1389438	C	CA	frameshift_variant	HIGH	frameshift_variant	c.3706dupA	T1236fs	c.3706dupA	1717	PHLPP1	Coding	COSMIC	likely	frame_shift	known	lof_in_suppressor
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1270+1G>T		c.*1270+1G>T		BAGE4	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1175+1G>T		c.*1175+1G>T		BAGE3	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1175+1G>T		c.*1175+1G>T		BAGE2	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chr21	11026722	rs200592940	C	A	splice_donor_variant	HIGH	splice_donor_variant	c.*1270+1G>T		c.*1270+1G>T		BAGE5	Coding	dbSNP_del	likely	splice_site	likely	dbSNP_del,splice_site
+chrX	70349023	.	CT	C	frameshift_variant	HIGH	frameshift_variant	c.3539delT	F1180fs	c.3539delT	2177	MED12	Coding	Novel	likely	frame_shift	unlikely	frame_shift
+chrX	70360666	.	C	T	stop_gained	HIGH	stop_gained	c.6226C>T	Q2076*	c.6226C>T	2177	MED12	Coding	Novel	likely	AA_change	unlikely	stop_gained
+chrX	115303927	rs387906503;COSM1465082	AT	A	frameshift_variant	HIGH	frameshift_variant	c.402delT	F134fs	c.402delT	363	AGTR2	Coding	COSMIC	likely	COSMIC_5+	likely	COSMIC_5+,frame_shift

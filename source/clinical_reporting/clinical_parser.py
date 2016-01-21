@@ -8,7 +8,7 @@ import re
 import source
 from source import verify_file, info
 from source.clinical_reporting.known_sv import fusions as known_fusions
-from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path, verify_dir
 from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
@@ -283,15 +283,21 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_com
 
 def clinical_sample_info_from_cnf(cnf):
     sample = source.BaseSample(cnf.sample, cnf.output_dir,
-        targqc_dirpath=cnf.targqc_dirpath, clinical_report_dirpath=cnf.output_dir,
+        targqc_dirpath=verify_dir(cnf.targqc_dirpath, silent=True),
+        clinical_report_dirpath=cnf.output_dir,
         normal_match=cnf.match_sample_name)
 
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes=cnf.key_genes,
-        target_type=cnf.target_type, bed_fpath=cnf.bed_fpath, mutations_fpath=cnf.mutations_fpath, sv_fpath=cnf.sv_fpath,
-        varqc_json_fpath=cnf.varqc_json_fpath,
-        seq2c_tsv_fpath=cnf.seq2c_tsv_fpath, project_name=cnf.project_name,
-        project_report_path=cnf.project_report_path, targqc_report_path=cnf.targqc_report_path)
+        target_type=cnf.target_type,
+        bed_fpath=verify_file(cnf.bed_fpath, silent=True),
+        mutations_fpath=verify_file(cnf.mutations_fpath, silent=True),
+        sv_fpath=verify_file(cnf.sv_fpath, silent=True),
+        varqc_json_fpath=verify_file(cnf.varqc_json_fpath, silent=True),
+        seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, silent=True),
+        project_name=cnf.project_name,
+        project_report_path=verify_file(cnf.project_report_path, silent=True),
+        targqc_report_path=verify_file(cnf.targqc_report_path, silent=True))
 
 
 class ClinicalExperimentInfo:
@@ -340,7 +346,7 @@ class ClinicalExperimentInfo:
             self.key_gene_by_name[gene_name] = KeyGene(gene_name)
 
         if self.sample.targqc_dirpath and self.sample.targetcov_json_fpath:
-            info('Parsing target and patient info...')
+            info('Parsing target and patient info from ' + str(self.sample.targetcov_json_fpath))
             self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
             self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
             info('Parsing TargetCov ' + self.genes_collection_type + ' genes stats...')
@@ -354,7 +360,7 @@ class ClinicalExperimentInfo:
         self.actionable_genes_dict = parse_broad_actionable()
 
         if varqc_json_fpath and mutations_fpath:
-            info('Parsing mutations...')
+            info('Parsing mutations from ' + str(mutations_fpath))
             self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
             self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
@@ -365,11 +371,11 @@ class ClinicalExperimentInfo:
             warn('No varqc_json_fpath or mutations_fpath provided, skipping mutation stats.')
 
         if sv_fpath:
-            info('Parsing prioritized SV...')
+            info('Parsing prioritized SV from ' + str(sv_fpath))
             self.sv_events = self.parse_sv(sv_fpath, self.key_gene_by_name)
 
-        info('Parsing Seq2C...')
         if seq2c_tsv_fpath:
+            info('Parsing Seq2C from ' + str(seq2c_tsv_fpath))
             self.seq2c_events_by_gene_name = self.parse_seq2c_report(seq2c_tsv_fpath)
         else:
             warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
