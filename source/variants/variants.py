@@ -29,7 +29,7 @@ def run_variants(cnf, samples, main_script_name):
             ' --genome ' + cnf.genome.name +
            (' --no-check ' if cnf.no_check else '') +
             ' --qc ' +
-            ' --caller ' + cnf.caller_name
+          ((' --caller ' + cnf.caller_name) if cnf.caller_name else '')
         )
 
         for sample in samples:
