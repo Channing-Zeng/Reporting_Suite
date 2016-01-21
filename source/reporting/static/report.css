@@ -119,6 +119,9 @@ table.draggable {
 .mut_plot_placeholder {
   min-height: 400px; }
 
+.substitutions_plot_placeholder {
+  min-height: 200px; }
+
 .gene_plot_placeholder {
   min-height: 400px; }
 

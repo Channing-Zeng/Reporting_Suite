@@ -23,10 +23,10 @@ $(function() {
 
 function drawMutPlot(key, data, placeholder_el) {
     var minY = data.minY;
-    var maxY = data.maxY;
+    var maxY = 100;
     var maxX = 100;
-    var barMaxWidth = maxX / data.mutations.length;
-    var ticksX = barMaxWidth * 1.15;
+    var ticksX = maxX / data.mutations.length;
+    var barMaxWidth = ticksX / 1.15;
 
     var info = {
         isInitialized: false,
@@ -85,12 +85,11 @@ function drawMutPlot(key, data, placeholder_el) {
                 grid: {
                     borderWidth: 1,
                     hoverable: true,
-                    autoHighlight: false,
-                    mouseActiveRadius: 1000
+                    autoHighlight: false
                 },
                 yaxis: {
                     min: minY,
-                    max: maxY * 1.05,
+                    max: maxY,
                     labelWidth: 120,
                     reserveSpace: true,
                     lineWidth: 0.5,

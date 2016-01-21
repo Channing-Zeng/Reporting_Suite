@@ -32,6 +32,7 @@
     <script type="text/javascript" src="table_sorter/tsort.js"></script>
     <script type="text/javascript" src="clinical_report.js"></script>
     <script type="text/javascript" src="draw_mutations_plot.js"></script>
+    <script type="text/javascript" src="draw_substitutions_plot.js"></script>
     <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
     <script type="text/javascript" src="draw_seq2c_plot.js"></script>
 </head>
@@ -162,6 +163,29 @@
                     <div class="json_code">
                         <div id="mut_plot_data_json">
                             {plot_data}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <br>
+            <h2>Substitutions</h2>
+            <div class="js_plot" id="substitutions_plot">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <div class='plot_placeholder substitutions_plot_placeholder' id="substitutions_plot_placeholder">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class='legend_placeholder' id="substitutions_plot_legend_placeholder"></div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="json_code">
+                        <div id="substitutions_plot_data_json">
+                            {substitutions_plot_data}
                         </div>
                     </div>
                 </div>

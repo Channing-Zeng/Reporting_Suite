@@ -314,6 +314,7 @@ function bindTip(placeholder, key, showTipFn, plot, direction, generalData) {
                 showTipFn(key, item, plot, direction, generalData);
             }
         } else {
+            var prevPoint = null;
             var hideDuration = 200;
             $('#' + key + '_plot_tip').hide(hideDuration);
             $('#' + key + '_plot_tip_vertical_rule').hide(hideDuration);

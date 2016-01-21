@@ -127,7 +127,35 @@ class BaseClinicalReporting:
                     geneName=mut.gene.name,
                     chrom=mut.chrom, position=mut.pos, freq=mut.freq * 100,
                     mutType=mut.eff_type, aaChg=mut.aa_change, cdnaChange=mut.codon_change))
-            d['maxY'] = max([mut.freq for mut in muts]) * 105
+            d['minY'] = 0
+
+            data[e.key.lower()] = d
+
+        if len(mutations_by_experiment.keys()) == 1:
+            return json.dumps(data.values()[0])
+        else:
+            return json.dumps(data)
+
+    def make_substitutions_json(self, mutations_by_experiment):
+        data = dict()
+        nucleotides = ['A', 'C', 'G', 'T']
+
+        def _add_nuc(nuc, substitutions):
+            for nuc2 in nucleotides:
+                if nuc != nuc2:
+                    substitutions[nuc + '>' + nuc2] = 0
+
+        for e, muts in mutations_by_experiment.items():
+            d = dict(
+                substitutions = OrderedDict()
+            )
+            for nuc in nucleotides:
+                _add_nuc(nuc, d['substitutions'])
+            for mut in muts:
+                if mut.var_type == 'SNV' and mut.alt in nucleotides:
+                    d['substitutions'][mut.ref + '>' + mut.alt] += 1
+            d['maxY'] = max([d['substitutions'][s] for s in d['substitutions']])
+            d['maxRate'] = d['maxY'] * 100 / sum([d['substitutions'][s] for s in d['substitutions']])
             d['minY'] = 0
 
             data[e.key.lower()] = d
@@ -442,6 +470,7 @@ class ClinicalReporting(BaseClinicalReporting):
         if self.experiment.mutations:
             self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
             self.mutations_plot_data = self.make_mutations_json({self.experiment: self.experiment.mutations})
+            self.substitutions_plot_data = self.make_substitutions_json({self.experiment: self.experiment.mutations})
         if self.experiment.sv_events:
             self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
         if self.experiment.seq2c_events_by_gene_name:
@@ -478,6 +507,7 @@ class ClinicalReporting(BaseClinicalReporting):
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_mutations_plot.js'),
+                            join(dirname(abspath(__file__)), 'static', 'draw_substitutions_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_seq2c_plot.js')],
            extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
@@ -497,6 +527,7 @@ class ClinicalReporting(BaseClinicalReporting):
             mutations_dict['total_variants'] = Metric.format_value(self.experiment.total_variants, is_html=True)
             mutations_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
             mutations_dict['plot_data'] = self.mutations_plot_data
+            mutations_dict['substitutions_plot_data'] = self.substitutions_plot_data
         return mutations_dict
 
     def __sv_section(self):
