@@ -222,9 +222,12 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     depth_col = None
     vd_col = None
     aa_chg_col = None
+    cdna_chg_col = None
     effect_col = None
     exon_col = None
     pcnt_sample_col = None
+    status_col = None
+    reason_col = None
 
     lines_written = 0
     header = ''
@@ -264,10 +267,20 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 depth_col = header.index('Depth')
                 vd_col = header.index('VD')
                 aa_chg_col = header.index('Amino_Acid_Change')
+                cdna_chg_col = header.index('cDNA_Change')
                 exon_col = header.index('Exon')
                 pcnt_sample_col = header.index('Pcnt_sample')
-                if not cnf.is_output_fm:
-                    out_f.write(l + '\tStatus\tReason\n')
+                try:
+                    status_col = header.index('Status')
+                except ValueError:
+                    status_col = None
+                try:
+                    reason_col = header.index('Reason')
+                except ValueError:
+                    reason_col = None
+                if not cnf.is_output_fm and not status_col and not reason_col:
+                    l += '\tStatus\tReason'
+                out_f.write(l + '\n')
                 continue
             fields = l.split('\t')
             if len(fields) < len(header):
@@ -275,6 +288,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             if fields[pass_col] != 'TRUE':
                 filter_matches_counter['PASS=False'] += 1
                 continue
+            # if reason_col:
+            #     fields = fields[:-1]
+            # if status_col:
+            #     fields = fields[:-1]
+
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
                 fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
@@ -283,6 +301,10 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 chr = 'chr' + chr
             key = '-'.join([chr, pos, ref, alt])
             allele_freq = float(fields[allele_freq_col])
+
+            if chr == 'chr7' and pos == '55259515':
+                pass
+
             is_act = False
             if all([rules, act_somatic, act_germline, actionable_hotspots, tp53_positions, tp53_groups]):
                 is_act = is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_somatic,
@@ -353,12 +375,12 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
                 if is_loss_of_function(reasons):
                     if gene in oncogenes:
-                        status, reasons = update_status(status, reasons, 'unlikely', ', '.join(reasons), force=True)
-                        info('gene ' + gene + ' is oncogene, and mutation is LOF. Updating status to unlikely')
+                        status, reasons = update_status(status, reasons, 'unlikely', reasons, force=True)
+                        info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status to unlikely')
                     elif gene in suppressors:
                         is_act = True
-                        status, reasons = update_status(status, reasons, 'known', 'lof in suppressor')
-                        info('gene ' + gene + ' is suppressors, and mutation is LOF. Updating status to known')
+                        status, reasons = update_status(status, reasons, 'known', 'lof_in_suppressor')
+                        info('gene ' + gene + ' is a suppressor, and mutation is LOF. Updating status to known')
 
                 if is_act:
                     if allele_freq < cnf.variant_filtering.min_hotspot_freq:
@@ -368,8 +390,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                         filter_matches_counter['act and AF < 0.2 and is act_germline'] += 1
                         continue
                 else:
-                    if allele_freq < cnf.variant_filtering.min_freq_vardict2mut:
-                        filter_matches_counter['not act and AF < ' + str(cnf.varfiltering.min_freq_vardict2mut) + ' (min_freq_vardict2mut)'] += 1
+                    if cnf.variant_filtering.min_freq_vardict2mut and allele_freq < cnf.variant_filtering.min_freq_vardict2mut:
+                        filter_matches_counter['not act and AF < ' + str(cnf.variant_filtering.min_freq_vardict2mut) + ' (min_freq_vardict2mut)'] += 1
                         continue
                     if var_type.startswith('INTRON'):
                         filter_matches_counter['not act and in INTRON'] += 1
@@ -418,32 +440,19 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                     if gene_aachg in sensitization_aa_changes:
                         sens_mut = sensitization_aa_changes[gene_aachg]
                         sensitizations.append(sens_mut)
-                    cur_gene_mutations.append([fields, status, reasons, gene_aachg])
+                    cur_gene_mutations.append([fields, status, reasons, gene_aachg, [sample, platform, prev_gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq]])
                 else:
                     if cur_gene_mutations:
-                        print_mutations_for_one_gene(cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations,
-                                     sensitive_mutations, resistance_mutations, sensitizations)
+                        lines_written = print_mutations_for_one_gene(out_f, lines_written,
+                            cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations, sensitive_mutations, resistance_mutations, sensitizations,
+                            is_output_fm=cnf.is_output_fm)
                         cur_gene_mutations = []
                         sensitizations = []
                 prev_gene = gene
-                if gene in genes_with_sens_or_res_mutations:
-                    filter_matches_counter['gene in genes_with_sens_or_res_mutations'] += 1
-                    continue
 
-            # Chaning status to tier
-            # status = {
-            #     'known': 'pathogenic',
-            #     'likely': 'likely',
-            #     'unknown': 'unlikely'
-            # }
-
-            if cnf.is_output_fm:
-                out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[header.index('cDNA_Change')], 'chr:' + fields[chr_col],
-                                 str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
-                lines_written += 1
-            else:
-                out_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
-                lines_written += 1
+            if not SIMULATE_OLD_VARDICT2MUT and gene not in genes_with_sens_or_res_mutations:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
+                lines_written = print_mutation(out_f, lines_written, status, reasons, fields,
+                    is_output_fm=cnf.is_output_fm, fm_data=[sample, platform, gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq])
 
     info()
     info('Written ' + str(lines_written) + ' lines')
@@ -507,9 +516,16 @@ def update_status(cur_status, reasons, new_status, new_reason, force=False):
     if not force and statuses.index(new_status) > statuses.index(cur_status):
         return cur_status, reasons
     if cur_status != new_status:
-        reasons = [new_reason]
+        if isinstance(new_reason, list):
+            reasons = new_reason
+        else:
+            reasons = [new_reason]
     else:
-        reasons.append(new_reason)
+        if isinstance(new_reason, list):
+            reasons.extend(new_reason)
+        else:
+            reasons.append(new_reason)
+
     return new_status, reasons
 
 
@@ -651,14 +667,14 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
         gene_aachg = '-'.join([gene, aa_chg[1:]])
         if gene_aachg in specific_mutations:
             tier = specific_mutations[gene_aachg]
-            status, reasons = update_status(status, reasons, statuses[tier], 'manually curated)')
+            status, reasons = update_status(status, reasons, statuses[tier], 'manually_curated')
             return status, reasons, True
     if region and effect in ['HIGH', 'MODERATE']:
         codon = re.sub('[^0-9]', '', aa_chg)
         gene_codon_chg = '-'.join([gene, region, codon])
         if gene_codon_chg in specific_mutations:
             tier = specific_mutations[gene_codon_chg]
-            status, reasons = update_status(status, reasons, statuses[tier], 'manually curated')
+            status, reasons = update_status(status, reasons, statuses[tier], 'manually_curated')
             return status, reasons, True
 
     return status, reasons, False
@@ -667,14 +683,11 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
 def check_by_general_rules(var_type, status, reasons, aa_chg):
     if 'splice_site' in reasons:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
-        return status, reasons
-    if is_loss_of_function(reasons):
+    elif is_loss_of_function(reasons):
         status, reasons = update_status(status, reasons, 'known', 'actionable')
-        return status, reasons
-    if 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
+    elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
-        return status, reasons
-    if status != 'unlikely':
+    elif status != 'unlikely':
         status, reasons = update_status(status, reasons, 'unlikely', '', force=True)
     return status, reasons
 
@@ -691,10 +704,23 @@ def parse_genes_list(fpath):
     return genes
 
 
-def print_mutations_for_one_gene(cur_gene_mutations, gene, genes_with_sens_or_res_mutations,
-                                 sensitive_mutations, resistance_mutations, sensitizations):
+def print_mutation(out_f, lines_written, status, reasons, fields, fm_data=None, is_output_fm=False):
+    lines_written += 1
+    if fm_data and is_output_fm:
+        sample, platform, gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq = fm_data
+        out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[cdna_chg_col], 'chr:' + fields[chr_col],
+                         str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
+    else:
+        if status != fields[-2] or ','.join(reasons) != fields[-1]:
+            out_f.write('\t'.join(fields[1:15] + fields[-3:] + [status]) + ('\t' + ','.join(reasons) + '\n'))
+    return lines_written
+
+
+def print_mutations_for_one_gene(out_f, lines_written, cur_gene_mutations, gene, genes_with_sens_or_res_mutations,
+                                 sensitive_mutations, resistance_mutations, sensitizations,
+                                 is_output_fm=False):
     for line in cur_gene_mutations:
-        text, status, reasons, gene_aachg = line
+        fields, status, reasons, gene_aachg, fm_data = line
         for sens_mut in genes_with_sens_or_res_mutations[gene]:
             if sens_mut in sensitizations:
                 tier = sensitive_mutations[sens_mut][gene_aachg] if gene_aachg in sensitive_mutations else 0
@@ -702,7 +728,8 @@ def print_mutations_for_one_gene(cur_gene_mutations, gene, genes_with_sens_or_re
                 tier = resistance_mutations[sens_mut][gene_aachg] if gene_aachg in resistance_mutations else 0
             if tier != 0:
                 status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
-        print '\t'.join(text + [status]) + ('\t' + ', '.join(reasons))
+        lines_written = print_mutation(out_f, lines_written, status, reasons, fields, fm_data, is_output_fm)
+    return lines_written
 
 
 if __name__ == '__main__':
