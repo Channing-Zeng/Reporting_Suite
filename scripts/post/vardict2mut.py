@@ -22,7 +22,9 @@ aa_chg_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
 stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
 fs_pattern = re.compile('^[A-Z]+(\d+)fs')
 
-statuses = ['', 'known', 'likely', 'unknown']  # Tier 1,2,3
+statuses = ['', 'known', 'likely', 'unlikely', 'unknown']  # Tier 1, 2, 3, 3
+
+SIMULATE_OLD_VARDICT2MUT = False
 
 
 def get_args():
@@ -90,16 +92,16 @@ def main():
 
 
 def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
-    suppressors = parse_genes_list(adjust_path(cnf.suppressor))
+    suppressors = parse_genes_list(adjust_path(cnf.suppressors))
     oncogenes = parse_genes_list(adjust_path(cnf.oncogenes))
 
     tp53_positions = []
     tp53_groups = dict()
-    if cnf.genome.ruledir:
-        cnf.genome.ruledir = verify_dir(cnf.genome.ruledir, is_critical=True)
-        tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.genome.ruledir, 'DNE.txt')),
-                       'Group 2': parse_mut_tp53(join(cnf.genome.ruledir, 'TA0-25.txt')),
-                       'Group 3': parse_mut_tp53(join(cnf.genome.ruledir, 'TA25-50_SOM_10x.txt'))}
+    if cnf.ruledir:
+        cnf.ruledir = verify_dir(cnf.ruledir, is_critical=True)
+        tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'DNE.txt')),
+                       'Group 2': parse_mut_tp53(join(cnf.ruledir, 'TA0-25.txt')),
+                       'Group 3': parse_mut_tp53(join(cnf.ruledir, 'TA25-50_SOM_10x.txt'))}
         if cnf.genome.name.startswith('hg38'):
             tp53_positions = (
                 '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
@@ -232,6 +234,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     cur_gene_mutations = []
     prev_gene = ''
 
+    platform_regexp = re.compile('-\d\d[_-]([^_\d]+?)$')  # TODO: fix pattern
+    sample_regexp = re.compile(cnf.reg_exp_sample) if cnf.reg_exp_sample else None
+
+    filter_matches_counter = defaultdict(int)
+
     with open(adjust_path(vcf2txt_res_fpath)) as f, open(adjust_path(out_fpath), 'w') as out_f:
         if cnf.is_output_fm:
             out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
@@ -266,6 +273,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             if len(fields) < len(header):
                 critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(header)) + ')')
             if fields[pass_col] != 'TRUE':
+                filter_matches_counter['PASS=False'] += 1
                 continue
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
@@ -279,21 +287,35 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             if all([rules, act_somatic, act_germline, actionable_hotspots, tp53_positions, tp53_groups]):
                 is_act = is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_somatic,
                                        act_germline, actionable_hotspots, tp53_positions, tp53_groups)
-            if not is_act and (key in filter_snp or ('-'.join([gene, aa_chg]) in snpeff_snp) or
-                                   (key in filter_artifacts and allele_freq < 0.5)):
+            if not is_act:
+                if key in filter_snp:
+                    filter_matches_counter['not act and in filter_common_snp'] += 1
+                    continue
+                if '-'.join([gene, aa_chg]) in snpeff_snp:
+                    filter_matches_counter['not act and in snpeff_snp'] += 1
+                    continue
+                if key in filter_artifacts and allele_freq < 0.5:
+                    filter_matches_counter['not act and in filter_artifacts and AF < 0.5'] += 1
+                    continue
+
+            if depth < cnf.variant_filtering.filt_depth:
+                filter_matches_counter['depth < ' + str(cnf.variant_filtering.filt_depth) + ' (filt_depth)'] += 1
                 continue
-            if depth < cnf.variant_filtering.filt_depth or fields[vd_col] < cnf.variant_filtering.min_vd:
-                continue
-            snps = re.findall(r'rs\d+', fields[3])
-            if any(snp in snpeff_snp_ids for snp in snps):
+            if fields[vd_col] < cnf.variant_filtering.min_vd:
+                filter_matches_counter['VD < ' + str(cnf.variant_filtering.min_vd) + ' (min_vd)'] += 1
                 continue
 
-            sample_pattern = re.compile('-\d\d[_-]([^_\d]+?)$')
-            platform = re.findall(sample_pattern, sample)[0] if sample_pattern.match(sample) else ''
-            if cnf.reg_exp_sample:
-                if re.compile(cnf.reg_exp_sample).match(sample):
+            snps = re.findall(r'rs\d+', fields[3])
+            if any(snp in snpeff_snp_ids for snp in snps):
+                filter_matches_counter['snp in snpeffect_export_polymorphic'] += 1
+                continue
+
+            platform = re.findall(platform_regexp, sample)[0] if platform_regexp.match(sample) else ''
+            if sample_regexp:
+                if sample_regexp.match(sample):
                     sample = re.findall(cnf.reg_exp_sample, sample)[0]
                 else:
+                    filter_matches_counter['sample not matching ' + cnf.reg_exp_sample] += 1
                     continue
             status = 'unknown'
             reasons = []
@@ -320,62 +342,117 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 if 'intron' in var_type:
                     region = 'intron' + region
 
-            status, reasons, is_specific_mutation = check_for_specific_mutation(specific_mutations, gene, aa_chg,
-                                                                                effect, region, status, reasons)
+            is_specific_mutation = False
+            if not SIMULATE_OLD_VARDICT2MUT:
+                status, reasons, is_specific_mutation = check_for_specific_mutation(specific_mutations, gene, aa_chg,
+                                                                                    effect, region, status, reasons)
 
-            if not is_specific_mutation:
-                if status != 'known' and gene in genes_with_generic_rules:
+            if not SIMULATE_OLD_VARDICT2MUT and not is_specific_mutation:
+                if not SIMULATE_OLD_VARDICT2MUT and status != 'known' and gene in genes_with_generic_rules:
                     status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg)
 
                 if is_loss_of_function(reasons):
                     if gene in oncogenes:
-                        status, reasons = update_status(status, reasons, 'unknown', ','.join(reasons), force=True)
+                        status, reasons = update_status(status, reasons, 'unlikely', ', '.join(reasons), force=True)
+                        info('gene ' + gene + ' is oncogene, and mutation is LOF. Updating status to unlikely')
                     elif gene in suppressors:
                         is_act = True
-                        status, reasons = update_status(status, reasons, 'known', 'actionable')
+                        status, reasons = update_status(status, reasons, 'known', 'lof in suppressor')
+                        info('gene ' + gene + ' is suppressors, and mutation is LOF. Updating status to known')
 
                 if is_act:
-                    if allele_freq < cnf.variant_filtering.min_hotspot_freq or (allele_freq < 0.2 and key in act_germline):
+                    if allele_freq < cnf.variant_filtering.min_hotspot_freq:
+                        filter_matches_counter['act and AF < ' + str(cnf.variant_filtering.min_hotspot_freq) + ' (min_hotspot_freq)'] += 1
+                        continue
+                    if allele_freq < 0.2 and key in act_germline:
+                        filter_matches_counter['act and AF < 0.2 and is act_germline'] += 1
                         continue
                 else:
-                    if allele_freq < cnf.variant_filtering.min_freq_vardict2mut or var_type.startswith('INTRON') or var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT' \
-                            or (var_type == 'SPLICE_REGION_VARIANT' and not aa_chg):
+                    if allele_freq < cnf.variant_filtering.min_freq_vardict2mut:
+                        filter_matches_counter['not act and AF < ' + str(cnf.varfiltering.min_freq_vardict2mut) + ' (min_freq_vardict2mut)'] += 1
+                        continue
+                    if var_type.startswith('INTRON'):
+                        filter_matches_counter['not act and in INTRON'] += 1
+                        continue
+                    if var_type.startswith('SYNONYMOUS'):
+                        filter_matches_counter['not act and SYNONYMOUS'] += 1
+                        continue
+                    if fclass.upper() == 'SILENT':
+                        filter_matches_counter['not act and SILENT'] += 1
+                        continue
+                    if var_type == 'SPLICE_REGION_VARIANT' and not aa_chg:
+                        filter_matches_counter['not act and SPLICE_REGION_VARIANT'] += 1
                         continue
 
                 if status != 'known':
-                    if var_type.startswith('UPSTREAM') or var_type.startswith('DOWNSTREAM') or var_type.startswith(
-                            'INTERGENIC') or var_type.startswith('INTRAGENIC') or ('UTR_' in var_type and 'CODON' not in var_type) \
-                            or 'NON_CODING' in gene_coding.upper() or fclass.upper().startswith('NON_CODING'):
+                    if var_type.startswith('UPSTREAM'):
+                        filter_matches_counter['not known and UPSTREAM'] += 1
+                        continue
+                    if var_type.startswith('DOWNSTREAM'):
+                        filter_matches_counter['not known and DOWNSTREAM'] += 1
+                        continue
+                    if var_type.startswith('INTERGENIC'):
+                        filter_matches_counter['not known and INTERGENIC'] += 1
+                        continue
+                    if var_type.startswith('INTRAGENIC'):
+                        filter_matches_counter['not known and INTRAGENIC'] += 1
+                        continue
+                    if 'UTR_' in var_type and 'CODON' not in var_type:
+                        filter_matches_counter['not known and not UTR_/CODON'] += 1
+                        continue
+                    if 'NON_CODING' in gene_coding.upper():
+                        filter_matches_counter['not known and NON_CODING'] += 1
+                        continue
+                    if fclass.upper().startswith('NON_CODING'):
+                        filter_matches_counter['not known and NON_CODING'] += 1
                         continue
                     if var_class == 'dbSNP':
+                        filter_matches_counter['not known and dbSNP'] += 1
                         continue
                     if float(fields[pcnt_sample_col]) > cnf.variant_filtering.max_ratio:
+                        filter_matches_counter['not known and Pcnt_sample > variant_filtering (' + str(cnf.variant_filtering.max_ratio) + ')'] += 1
                         continue
 
-            if gene in genes_with_sens_or_res_mutations and (prev_gene == gene or not cur_gene_mutations):
-                if gene_aachg in sensitization_aa_changes:
-                    sens_mut = sensitization_aa_changes[gene_aachg]
-                    sensitizations.append(sens_mut)
-                cur_gene_mutations.append([fields, status, reasons, gene_aachg])
-            else:
-                if cur_gene_mutations:
-                    print_mutations_for_one_gene(cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations,
-                                 sensitive_mutations, resistance_mutations, sensitizations)
-                    cur_gene_mutations = []
-                    sensitizations = []
-            prev_gene = gene
-
-            if gene not in genes_with_sens_or_res_mutations:
-                if cnf.is_output_fm:
-                    out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[header.index('cDNA_Change')], 'chr:' + fields[chr_col],
-                                     str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
-                    lines_written += 1
+            if not SIMULATE_OLD_VARDICT2MUT:
+                if gene in genes_with_sens_or_res_mutations and (prev_gene == gene or not cur_gene_mutations):
+                    if gene_aachg in sensitization_aa_changes:
+                        sens_mut = sensitization_aa_changes[gene_aachg]
+                        sensitizations.append(sens_mut)
+                    cur_gene_mutations.append([fields, status, reasons, gene_aachg])
                 else:
-                    out_f.write('\t'.join(fields + [status]) + ('\t' + ','.join(reasons) + '\n'))
-                    lines_written += 1
+                    if cur_gene_mutations:
+                        print_mutations_for_one_gene(cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations,
+                                     sensitive_mutations, resistance_mutations, sensitizations)
+                        cur_gene_mutations = []
+                        sensitizations = []
+                prev_gene = gene
+                if gene in genes_with_sens_or_res_mutations:
+                    filter_matches_counter['gene in genes_with_sens_or_res_mutations'] += 1
+                    continue
+
+            # Chaning status to tier
+            # status = {
+            #     'known': 'pathogenic',
+            #     'likely': 'likely',
+            #     'unknown': 'unlikely'
+            # }
+
+            if cnf.is_output_fm:
+                out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[header.index('cDNA_Change')], 'chr:' + fields[chr_col],
+                                 str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
+                lines_written += 1
+            else:
+                out_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
+                lines_written += 1
 
     info()
     info('Written ' + str(lines_written) + ' lines')
+
+    info()
+    info('Filtered stats:')
+    for reason, count in filter_matches_counter.items():
+        info('  ' + str(count) + ' ' + reason)
+    info()
 
 
 def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, act_hotspots, tp53_pos, tp53_groups):
@@ -574,14 +651,14 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
         gene_aachg = '-'.join([gene, aa_chg[1:]])
         if gene_aachg in specific_mutations:
             tier = specific_mutations[gene_aachg]
-            status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
+            status, reasons = update_status(status, reasons, statuses[tier], 'manually curated)')
             return status, reasons, True
     if region and effect in ['HIGH', 'MODERATE']:
         codon = re.sub('[^0-9]', '', aa_chg)
         gene_codon_chg = '-'.join([gene, region, codon])
         if gene_codon_chg in specific_mutations:
             tier = specific_mutations[gene_codon_chg]
-            status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
+            status, reasons = update_status(status, reasons, statuses[tier], 'manually curated')
             return status, reasons, True
 
     return status, reasons, False
@@ -589,8 +666,8 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
 
 def check_by_general_rules(var_type, status, reasons, aa_chg):
     if aa_chg_pattern.match(aa_chg) or var_type.startswith('INFRAME'):
-        if status != 'unknown':
-            status, reasons = update_status(status, reasons, 'unknown', ','.join(reasons), force=True)
+        if status != 'unlikely':  # update even if likely
+            status, reasons = update_status(status, reasons, 'unlikely', ', '.join(reasons), force=True)
     if 'splice_site' in reasons:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
     if is_loss_of_function(reasons):
@@ -621,7 +698,7 @@ def print_mutations_for_one_gene(cur_gene_mutations, gene, genes_with_sens_or_re
                 tier = resistance_mutations[sens_mut][gene_aachg] if gene_aachg in resistance_mutations else 0
             if tier != 0:
                 status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
-        print '\t'.join(text + [status]) + ('\t' + ','.join(reasons))
+        print '\t'.join(text + [status]) + ('\t' + ', '.join(reasons))
 
 
 if __name__ == '__main__':
