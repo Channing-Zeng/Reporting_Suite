@@ -428,14 +428,12 @@ def _snpeff(cnf, input_fpath):
     # db_path = cnf.genome.snpeff.reference
     # if db_path and isinstance(db_path, basestring): opts += ' -dataDir ' + db_path
 
-    if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
-        opts += ' -canon '
+    custom_transcripts = cnf.genome.snpeff.transcripts or cnf.snpeff_transcripts
+    if custom_transcripts and verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
+        opts += ' -onlyTr ' + custom_transcripts + ' '
     else:
-        custom_transcripts = cnf.genome.snpeff.transcripts or cnf.snpeff_transcripts
-        if custom_transcripts:
-            if not verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
-                return None, None, None
-            opts += ' -onlyTr ' + custom_transcripts + ' '
+    # if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
+        opts += ' -canon '
 
     if cnf.resources.snpeff.config:
         conf = get_system_path(cnf, cnf.resources.snpeff.config)

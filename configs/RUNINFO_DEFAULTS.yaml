@@ -143,7 +143,7 @@ annotation:
     - CLNSIG  # Variant Clinical Significance, 0 - Uncertain significance, 1 - not provided, 2 - Benign, 3 - Likely benign, 4 - Likely pathogenic, 5 - Pathogenic, 6 - drug response, 7 - histocompatibility, 255 - other
 
   snpeff:  ## no "annotations" section here, always applied all annotations
-#    clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
+    clinical_reporting: True    ## Canonical transcripts + output in HGVS notation
     cancer: False
     extra_options: ''
     skip-annotation: False
