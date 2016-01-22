@@ -204,6 +204,7 @@ class BaseClinicalReporting:
 
             type_dict = {
                 'BND': 'Fusion',
+                'INV': 'Invertion',
                 'INS': 'Insertion',
                 'DEL': 'Deletion',
                 'DUP': 'Duplication',
