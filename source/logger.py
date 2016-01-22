@@ -72,6 +72,7 @@ email_by_prid = {
     'kmtc481': 'Sakina.Saif@astrazeneca.com',
     'kxqf517': 'Tristan.Lubinski@astrazeneca.com',
     'kdqq790': 'Sally.Luke@astrazeneca.com',
+    'kkjd069': 'Alla.Micheenko@astrazeneca.com',
 }
 
 def send_email(msg_other='', subj='', only_me=False):
