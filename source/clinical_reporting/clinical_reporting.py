@@ -424,7 +424,6 @@ class BaseClinicalReporting:
         return dict(value=gray(c + ':') + p, num=mut.get_chrom_key() * 100000000000 + mut.pos)
 
     cdna_chg_regexp = re.compile(r'(c\.)([-\d_+*]+)(.*)')
-
     @staticmethod
     def _cdna_chg_recargs(mut):
         chg = mut.cdna_change

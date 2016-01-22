@@ -271,13 +271,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 exon_col = header.index('Exon')
                 pcnt_sample_col = header.index('Pcnt_sample')
                 try:
-                    status_col = header.index('Status')
-                except ValueError:
-                    status_col = None
-                try:
                     reason_col = header.index('Reason')
                 except ValueError:
                     reason_col = None
+                else:
+                    status_col = reason_col - 1
                 if not cnf.is_output_fm and not status_col and not reason_col:
                     l += '\tStatus\tReason'
                 out_f.write(l + '\n')
@@ -301,9 +299,6 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 chr = 'chr' + chr
             key = '-'.join([chr, pos, ref, alt])
             allele_freq = float(fields[allele_freq_col])
-
-            if chr == 'chr19' and pos == '17958754':
-                pass
 
             is_act = False
             if all([rules, act_somatic, act_germline, actionable_hotspots, tp53_positions, tp53_groups]):
