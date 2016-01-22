@@ -1,6 +1,6 @@
 from collections import OrderedDict, defaultdict
 import os
-from os.path import basename, join, isfile, islink, splitext, isdir
+from os.path import basename, join, isfile, islink, splitext, isdir, dirname
 from random import random
 from time import sleep
 import traceback
@@ -247,6 +247,9 @@ def postprocess_vcf(
         info(var_sample.filt_vcf_fpath + '.gz' + ' and ' + var_sample.pass_filt_vcf_fpath + ' exist; reusing.')
 
     else:
+        safe_mkdir(dirname(var_sample.filt_vcf_fpath))
+        safe_mkdir(dirname(var_sample.pass_filt_vcf_fpath))
+
         with open_gzipsafe(var_sample.anno_vcf_fpath) as vcf_f, \
              file_transaction(work_dir, var_sample.filt_vcf_fpath) as filt_tx, \
              file_transaction(work_dir, var_sample.pass_filt_vcf_fpath) as pass_tx:
