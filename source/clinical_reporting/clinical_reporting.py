@@ -2,6 +2,8 @@ from collections import OrderedDict, defaultdict
 import json
 from os.path import join, dirname, abspath, relpath
 
+import re
+
 from source import info
 from source.logger import warn
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
@@ -171,20 +173,21 @@ class BaseClinicalReporting:
             Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
             Metric('Type'),
             Metric('Location', with_heatmap=False, align='left', sort_direction='ascending'),
-            Metric('Genes', max_width=200, class_='long_line'),
-            Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
+            Metric('Genes', class_='long_line'),
+            # Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
+            # Metric('Effects', with_heatmap=False, align='left', class_='long_line'),
         ]
 
         if len(svs_by_experiment) == 1:
             ms.extend([
-                Metric('Split read support', short_name='Split /', with_heatmap=False),
-                Metric('Paired read support', short_name='paired read support', with_heatmap=False),
+                Metric('Split read support', short_name='Split /'),
+                Metric('Paired read support', short_name='paired read support'),
             ])
         else:
             for e in svs_by_experiment.keys():
                 ms.extend([
-                    Metric(e.key + ' Split read support', short_name='Split /', with_heatmap=False),
-                    Metric(e.key + ' Paired read support', short_name='paired read support', with_heatmap=False),
+                    Metric(e.key + ' Split read support', short_name='Split /'),
+                    Metric(e.key + ' Paired read support', short_name='paired read support'),
                 ])
 
         metric_storage = MetricStorage(sections=[ReportSection(name='main_sv_section', metrics=ms)])
@@ -195,7 +198,8 @@ class BaseClinicalReporting:
         svs_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         for e, svs in svs_by_experiment.items():
             for sv in svs:
-                svs_by_key_by_experiment[sv.get_key()][e] = sv
+                if any(a.known or a.effect == 'EXON_DEL' for a in sv.annotations):
+                    svs_by_key_by_experiment[sv.get_key()][e] = sv
 
         for sv_key, sv_by_experiment in svs_by_key_by_experiment.items():
             sv = next((s for s in sv_by_experiment.values() if s is not None), None)
@@ -212,8 +216,9 @@ class BaseClinicalReporting:
             row.add_record('Chr', sv.chrom)
             row.add_record('Type', type_dict.get(sv.type, sv.type) if sv else None)
             row.add_record('Location', Metric.format_value(sv.start) + (('..' + Metric.format_value(sv.end)) if sv.end else '') if sv else None, num=sv.start if sv else None)
-            row.add_record('Genes', ', '.join('/'.join(a.genes) for a in sv.annotations))
-            row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
+            row.add_record('Genes', ', '.join(set('/'.join(set(a.genes)) for a in sv.key_annotations if a.genes)))
+            # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
+            # row.add_record('Effects', ', '.join(set(a.effect.lower().replace('_', ' ') for a  in sv.annotations if a in ['EXON_DEL', 'FUSION'])))
 
             if len(sv_by_experiment.values()) == 1:
                 row.add_record('Split read support', sv.split_read_support if sv else None)
@@ -223,8 +228,8 @@ class BaseClinicalReporting:
                     row.add_record(e.key + ' Split read support', sv.split_read_support if sv else None)
                     row.add_record(e.key + ' Paired read support', sv.paired_end_support if sv else None)
 
-            if any(a.known for a in sv.annotations):
-                row.highlighted = True
+            # if any(a.known for a in sv.annotations):
+            #     row.highlighted = True
 
             if len(sv_by_experiment.keys()) == len(svs_by_experiment.keys()):
                 row.highlighted_green = True
@@ -416,15 +421,25 @@ class BaseClinicalReporting:
         p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
         return dict(value=gray(c + ':') + p, num=mut.get_chrom_key() * 100000000000 + mut.pos)
 
+    cdna_chg_regexp = re.compile(r'(c\.)([-\d_+*]+)(.*)')
+
     @staticmethod
     def _chg_recargs(mut):
-        chg = mut.ref + '>' + mut.alt
-        if mut.var_type:
-            t = mut.var_type
-            if t in ['Insertion', 'Deletion']:
-                t = t[:3]
-            chg = gray(t) + ' ' + chg
+        chg = mut.cdna_change
+        if chg:
+            p1, num, p3 = BaseClinicalReporting.cdna_chg_regexp.match(chg).groups()
+            chg = (gray(str(p1)) if p1 is not None else '') + \
+                  (gray(str(num)) if num is not None else '') + \
+                  (str(p3) if p3 is not None else '')
         return dict(value=chg)
+
+        # chg = mut.ref + '>' + mut.alt
+        # if mut.var_type:
+        #     t = mut.var_type
+        #     if t in ['Insertion', 'Deletion']:
+        #         t = t[:3]
+        #     chg = gray(t) + ' ' + chg
+        # return dict(value=chg)
 
     @staticmethod
     def _status_field(mut):
@@ -493,13 +508,14 @@ class ClinicalReporting(BaseClinicalReporting):
             'sample': self.sample_section(self.experiment),
             'variants': self.__mutations_section(),
             'coverage': self.__coverage_section(),
-            'actionable_genes': self.__actionable_genes_section()
+            'actionable_genes': self.__actionable_genes_section(),
+            'total_key_genes': Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
         }
         if self.sv_report:
             data['sv'] = {}
             section = self.__sv_section()
             if section:
-                data['sv'] = {'report': section}
+                data['sv'] = {'report': section, 'sv_link': relpath(self.experiment.sv_fpath, start=dirname(output_fpath))}
         if self.seq2c_plot_data:
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
             if self.seq2c_report:
@@ -526,7 +542,6 @@ class ClinicalReporting(BaseClinicalReporting):
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(self.mutations_report, sortable=True)
             mutations_dict['total_variants'] = Metric.format_value(self.experiment.total_variants, is_html=True)
-            mutations_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
             mutations_dict['plot_data'] = self.mutations_plot_data
             mutations_dict['substitutions_plot_data'] = self.substitutions_plot_data
         return mutations_dict
@@ -535,7 +550,6 @@ class ClinicalReporting(BaseClinicalReporting):
         sv_dict = dict()
         if self.sv_report and self.sv_report.rows:
             sv_dict['table'] = build_report_html(self.sv_report, sortable=True)
-            sv_dict['total_key_genes'] = Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
         return sv_dict
 
     def __coverage_section(self):
@@ -650,8 +664,9 @@ class ClinicalReporting(BaseClinicalReporting):
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            variants.append(mut.aa_change if mut.aa_change else '.')
-                            types.append(mut.var_type)
+                            if mut.status != 'unknown' and mut.status != 'unlikely':
+                                variants.append(mut.aa_change if mut.aa_change else '.')
+                                types.append(mut.var_type)
 
             if cnv_mutation_types:
                 for se in gene.seq2c_events:
@@ -662,11 +677,12 @@ class ClinicalReporting(BaseClinicalReporting):
 
             if sv_mutation_types:
                 for se in gene.sv_events:
-                    if ('Fusion' in possible_mutation_types or 'Rearrangement' in possible_mutation_types) and se.type == 'BND' or \
-                       'Deletion' in possible_mutation_types and se.type == 'DEL' or \
-                       'Amplification' in possible_mutation_types and se.type == 'DUP':
-                        variants.append(se.type)
-                        types.append(se.type)
+                    if any(a.known or a.effect == 'EXON_DEL' for a in se.annotations):
+                        if ('Fusion' in possible_mutation_types or 'Rearrangement' in possible_mutation_types) and se.type == 'BND' or \
+                           'Deletion' in possible_mutation_types and se.type == 'DEL' or \
+                           'Amplification' in possible_mutation_types and se.type == 'DUP':
+                            variants.append(se.type)
+                            types.append(se.type)
 
             if not variants:
                 continue

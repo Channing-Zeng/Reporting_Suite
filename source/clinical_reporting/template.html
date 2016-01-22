@@ -63,8 +63,8 @@
                 {.section target_section}
                     {.section targqc_link}<b>QC metrics: </b><a href="{targqc_link}">TargQC report</a><br>{.or}{.end}
                     <b>Target: </b>{.section bed_path}<a href="{bed_path}">{panel}</a>{.or}{panel}{.end}
-                    covered {target_fraction} of all positions
-                    at {ave_depth} average coverage
+                    {.section target_fraction}covered {target_fraction} of all positions{.or}{.end}
+                    {.section ave_depth}at {ave_depth} average coverage{.or}{.end}
                     <br>
                 {.end}
                 </p>
@@ -112,16 +112,16 @@
         <div class="space_8px"></div>
         <div class="space_8px"></div>
         <div>
-            <a class="dotted-link" href="#variants">Mutations in {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
-            {.section sv}<a class="dotted-link" href="#sv">Structural variants in {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>{.or}{.end}
-            <a class="dotted-link" href="#actionable">Actionable {key_or_target} genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#variants">Mutations</a><span>&nbsp;&nbsp;&nbsp;</span>
+            {.section sv}<a class="dotted-link" href="#sv">Structural variants</a><span>&nbsp;&nbsp;&nbsp;</span>{.or}{.end}
+            <a class="dotted-link" href="#actionable">Alterations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#coverage">Coverage analysis for the {key_or_target} genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="space_4px"></div>
 
         <a name="variants"></a>
-        <h1>Mutations in {key_or_target} genes</h1>
+        <h1>Mutations in {total_key_genes} {key_or_target} genes</h1>
         {.section variants}
             <div id="variants_div">
                 <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>
@@ -191,12 +191,13 @@
                 </div>
             </div>
         {.or}
-            <p>No variants detected in {key_or_target} regions.</p>
+            <p>No variants detected in {total_key_genes} {key_or_target} regions.</p>
         {.end}
 
         {.section sv}
             <a name="sv"></a>
-            <h1>Structural variants in {key_or_target} genes</h1>
+            <h1>Structural variants in {total_key_genes} {key_or_target} genes</h1>
+            <p>Reported only and whole exon deletions and known fusions. See <a href="{sv_link}">the full list here</a>.</p>
             {.section report}
                 <div id="sv_div">
                     <div id="sv_table_div">
@@ -204,24 +205,24 @@
                     </div>
                 </div>
             {.or}
-                <p>No structural variants detected in {key_or_target} regions.</p>
+                <p>No whole exon deletion or known fusions detected in {total_key_genes} {key_or_target} regions.</p>
             {.end}
         {.or}
         {.end}
 
         <a name="actionable"></a>
-        <h1>Actionable {key_or_target} genes - variants and larger alterations of interest</h1>
+        <h1>Actionable {total_key_genes} {key_or_target} genes - variants and larger alterations of interest</h1>
         {.section actionable_genes}
             <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
             <div class="actionable_table">
                 {table}
             </div>
         {.or}
-            <p>No mutations found in actionable genes.</p>
+            <p>No mutations found in {total_key_genes} actionable genes.</p>
         {.end}
 
         <a name="seq2c"></a>
-        <h1>Seq2C log2 ratios (CNV)</h1>
+        <h1>Seq2C log2 ratios (CNV) in {total_key_genes} {key_or_target} genes</h1>
         {.section seq2c}
             <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
                 <span style="color: green;">Green</span> means amplification,
@@ -278,16 +279,16 @@
                     <!--</div>-->
                     </tr>
                 </table>
-            {.or}
-                <p>No CNVs found in {key_or_target} genes.</p>
-            {.end}
+            <!--{.or}-->
+                <!--<p>No CNVs found in in {total_key_genes} {key_or_target} genes.</p>-->
+            <!--{.end}-->
         {.or}
-            <p>No Seq2C events found in {key_or_target} genes.</p>
+            <p>No Seq2C events found in in {total_key_genes} {key_or_target} genes.</p>
         {.end}
 
         <a name="coverage"></a>
         {.section coverage}
-        <h1>Coverage analysis for the {key_or_target} genes</h1>
+        <h1>Coverage analysis for the in {total_key_genes} {key_or_target} genes</h1>
         <div class="coverage_plot">
             <p style="margin-top: -5px;">
                 Height indicates gene average coverage,

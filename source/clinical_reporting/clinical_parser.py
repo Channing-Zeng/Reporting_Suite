@@ -130,12 +130,12 @@ class SVEvent:
             genes_val = fs[2]
             if a.type == 'BND':
                 if '/' in genes_val:
-                    a.genes = genes_val.split('/')
+                    a.genes = sorted(genes_val.split('/'))
                 elif genes_val.count('-') == 1:
-                    a.genes = genes_val.split('-')
+                    a.genes = sorted(genes_val.split('-'))
                 else:
                     return None
-            else:
+            elif genes_val:
                 a.genes = [genes_val]
             a.transcript = fs[3]
             return a
@@ -201,6 +201,7 @@ class SVEvent:
         self.end_gene = None
         self.lof = None
         self.annotations = []
+        self.key_annotations = set()
         self.split_read_support = None
         self.paired_end_support = None
 
@@ -322,6 +323,7 @@ class ClinicalExperimentInfo:
         self.mutations = None
         self.sv_events = None
         self.seq2c_events_by_gene_name = None
+        self.sv_fpath = sv_fpath
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
@@ -415,6 +417,7 @@ class ClinicalExperimentInfo:
                                     sv_events_by_gene_name[g] = event
                                     sv_events.add(event)
                                     key_gene_by_name[g].sv_events.add(event)
+                                    event.key_annotations.add(annotation)
         return sv_events
 
     def parse_seq2c_report(self, seq2c_tsv_fpath):
