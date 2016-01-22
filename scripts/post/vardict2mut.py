@@ -288,10 +288,10 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             if fields[pass_col] != 'TRUE':
                 filter_matches_counter['PASS=False'] += 1
                 continue
-            # if reason_col:
-            #     fields = fields[:-1]
-            # if status_col:
-            #     fields = fields[:-1]
+            if reason_col:
+                fields = fields[:-1]
+            if status_col:
+                fields = fields[:-1]
 
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
@@ -302,7 +302,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             key = '-'.join([chr, pos, ref, alt])
             allele_freq = float(fields[allele_freq_col])
 
-            if chr == 'chr7' and pos == '55259515':
+            if chr == 'chr19' and pos == '17958754':
                 pass
 
             is_act = False
@@ -711,8 +711,9 @@ def print_mutation(out_f, lines_written, status, reasons, fields, fm_data=None, 
         out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[cdna_chg_col], 'chr:' + fields[chr_col],
                          str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
     else:
-        if status != fields[-2] or ','.join(reasons) != fields[-1]:
-            out_f.write('\t'.join(fields[1:15] + fields[-3:] + [status]) + ('\t' + ','.join(reasons) + '\n'))
+        out_f.write('\t'.join(fields + [status]) + ('\t' + ','.join(reasons) + '\n'))
+        # if status != fields[-2] or ','.join(reasons) != fields[-1]:
+        #     out_f.write('\t'.join(fields[1:15] + fields[-3:] + [status]) + ('\t' + ','.join(reasons) + '\n'))
     return lines_written
 
 

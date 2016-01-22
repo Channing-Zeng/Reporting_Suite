@@ -48,7 +48,8 @@ class BaseClinicalReporting:
             # Metric('Allele'),             # Het.
             # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-            Metric('Change', max_width=95, class_='long_line', description='cDNA change'),       # G>A
+            Metric('Change', max_width=100, class_='long_line', description='cDNA change'),       # G>A
+            Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Pathogenicity', class_='long_line'),     # Likely
@@ -92,7 +93,8 @@ class BaseClinicalReporting:
             row.add_record('Transcript', mut.transcript)
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', **self._pos_recargs(mut))
-            row.add_record('Change', **self._chg_recargs(mut))
+            # row.add_record('Change', **self._g_chg_recargs(mut))
+            row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict status', **self._status_field(mut))
@@ -424,22 +426,25 @@ class BaseClinicalReporting:
     cdna_chg_regexp = re.compile(r'(c\.)([-\d_+*]+)(.*)')
 
     @staticmethod
-    def _chg_recargs(mut):
+    def _cdna_chg_recargs(mut):
         chg = mut.cdna_change
         if chg:
             p1, num, p3 = BaseClinicalReporting.cdna_chg_regexp.match(chg).groups()
             chg = (gray(str(p1)) if p1 is not None else '') + \
                   (gray(str(num)) if num is not None else '') + \
                   (str(p3) if p3 is not None else '')
+
         return dict(value=chg)
 
-        # chg = mut.ref + '>' + mut.alt
-        # if mut.var_type:
-        #     t = mut.var_type
-        #     if t in ['Insertion', 'Deletion']:
-        #         t = t[:3]
-        #     chg = gray(t) + ' ' + chg
-        # return dict(value=chg)
+    @staticmethod
+    def _g_chg_recargs(mut):
+        chg = mut.ref + '>' + mut.alt
+        if mut.var_type:
+            t = mut.var_type
+            if t in ['Insertion', 'Deletion']:
+                t = t[:3]
+            chg = gray(t) + ' ' + chg
+        return dict(value=chg)
 
     @staticmethod
     def _status_field(mut):
