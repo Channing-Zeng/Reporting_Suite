@@ -165,7 +165,9 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
 
-        if Steps.contains(cnf.steps, 'ClinicalReport') or Steps.contains(cnf.steps, 'ClinicalReports'):
+        if Steps.contains(cnf.steps, 'ClinicalReport') or \
+                Steps.contains(cnf.steps, 'ClinicalReports') or \
+                Steps.contains(cnf.steps, source.clinreport_name):
             self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):

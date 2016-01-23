@@ -113,6 +113,7 @@ def _seq2c(cnf, bcbio_structure):
             err('No BAM file for ' + s.name)
             continue
         cnf.work_dir = join(ori_work_dir, source.targqc_name + '_' + s.name)
+        safe_mkdir(cnf.work_dir)
         s.dedup_bam = intermediate_fname(cnf, s.bam, source.dedup_bam)
         # s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
         dedupped_bam_by_sample[s.name] = s.dedup_bam

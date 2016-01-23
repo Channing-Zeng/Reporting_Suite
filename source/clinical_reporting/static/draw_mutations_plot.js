@@ -45,17 +45,18 @@ function drawMutPlot(key, data, placeholder_el) {
 
             for (var i = 0; i < mutationTypes.length; i++) {
                 var mutTypes = mutationTypes[i];
-                curMutation = data.mutations[k].mutType.toLowerCase();
+                var curMutation = data.mutations[k].mutType.toLowerCase();
                 if (curMutation.indexOf(mutTypes[0].split('_')[0]) != -1 ||
-                    (mutTypes.length > 1 && curMutation.indexOf(mutTypes[1].split('_')[0]) != -1)) {
-                        color = colors[i];
-                        if (usedMutations.indexOf(i) == -1) usedMutations.push(i);
+                       (mutTypes.length > 1 && curMutation.indexOf(mutTypes[1].split('_')[0]) != -1)) {
+                    color = colors[i];
+                    if (usedMutations.indexOf(i) == -1)
+                        usedMutations.push(i);
                 }
             }
             if (color == 'black') {
                 curMutation = data.mutations[k].mutType.toLowerCase();
                 mutationTypes.push(curMutation);
-                var index = mutationTypes.length - 1;
+                index = mutationTypes.length - 1;
                 color = colors[index];
                 usedMutations.push(index);
             }
