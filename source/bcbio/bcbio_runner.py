@@ -860,7 +860,6 @@ class BCBioRunner:
             if html_report_url:
                 info()
                 info('HTML report url: ' + html_report_url)
-
         except:
             raise
         finally:
@@ -902,12 +901,13 @@ class BCBioRunner:
             else:
                 if not is_waiting:
                     is_waiting = True
-                    strs = []
+                    strs = set()
                     for j in self.jobs_running:
                         if not j.is_done:
                             l = sum(1 for j2 in self.jobs_running if not j2.is_done and j2.step.name == j.step.name)
-                            strs.append(j.step.name + ' (' + str(l) + ')')
-                    info('Waiting for the jobs to be processed on a GRID (monitor with qstat). Jobs running: ' + ', '.join(strs))
+                            strs.add(j.step.name + ' (' + str(l) + ')')
+                    info('Waiting for the jobs to be processed on a GRID (monitor with qstat). '
+                         'Jobs running: ' + ', '.join(strs))
                     info('', print_date=True, ending='')
                 sleep(20)
                 info('.', print_date=False, ending='')
@@ -960,7 +960,6 @@ class BCBioRunner:
                         except OSError:
                             err(format_exc())
                             info()
-                            pass
 
                         # Symlink to <datestamp>/cnv/<cnvcaller>
                         dst_dirpath = join(cnv_summary_dirpath, cnv_caller[1:])
