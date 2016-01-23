@@ -147,7 +147,7 @@
                     {table}
                 </div>
             </div>
-            <div class="js_plot" id="mut_plot">
+            <div class="js_plot" id="mut_plot" style="position: relative">
                 <table>
                     <tr>
                         <td colspan="2">
@@ -161,30 +161,30 @@
                         </td>
                     </tr>
                 </table>
+                <div class="js_plot" id="substitutions_plot">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <div class='plot_placeholder substitutions_plot_placeholder' id="substitutions_plot_placeholder">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class='legend_placeholder' id="substitutions_plot_legend_placeholder"></div>
+                            </td>
+                        </tr>
+                    </table>
+                    <div class="json_code">
+                        <div id="substitutions_plot_data_json">
+                            {substitutions_plot_data}
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="json_code">
                 <div id="mut_plot_data_json">
                     {plot_data}
-                </div>
-            </div>
-            <div class="js_plot" id="substitutions_plot">
-                <table>
-                    <tr>
-                        <td colspan="2">
-                            <div class='plot_placeholder substitutions_plot_placeholder' id="substitutions_plot_placeholder">
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td>
-                            <div class='legend_placeholder' id="substitutions_plot_legend_placeholder"></div>
-                        </td>
-                    </tr>
-                </table>
-                <div class="json_code">
-                    <div id="substitutions_plot_data_json">
-                        {substitutions_plot_data}
-                    </div>
                 </div>
             </div>
         {.or}

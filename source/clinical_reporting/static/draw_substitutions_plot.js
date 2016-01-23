@@ -36,18 +36,18 @@ function drawSubstitutionsPlot(key, data, placeholder_el) {
     };
     var substitutionsTypes = Object.keys(data.substitutions);
     var ticksX = [];
-    substitutionsTypes.forEach(function(substitutionsType, i) {
-        ticksX.push([lenTickX * i + barMaxWidth / 2, substitutionsType]);
-    });
+    for (var i = 0; i < substitutionsTypes.length; i++) {
+        ticksX.push([lenTickX * i + barMaxWidth / 2, substitutionsTypes[i]]);
+    }
     var maxX = substitutionsTypes.length * lenTickX;
     if (!info.isInitialized) {
         info.series = [];
 
-        substitutionsTypes.forEach(function(substitutionsType, k) {
+        for (var k = 0; k < substitutionsTypes.length; k++) {
             var color = subColors[Math.floor(k / 3)];
 
             var series = {
-                data: [[lenTickX * k, data.substitutions[substitutionsType]]],
+                data: [[lenTickX * k, data.substitutions[substitutionsTypes[k]]]],
                 color: color
             };
             series.bars = {
@@ -58,7 +58,7 @@ function drawSubstitutionsPlot(key, data, placeholder_el) {
                 fillColor: color
             };
             info.series.push(series);
-        });
+        }
 
         var series = {
           data: [[0, 0]],

@@ -33,26 +33,32 @@ function drawMutPlot(key, data, placeholder_el) {
         series: null,
         showWithData: null
     };
-    var mutationTypes = ['frameshift variant', 'inframe variant', 'nonsense variant', 'missense variant', 'stop gained',
-        'splice site', 'start lost', 'UTR variant'];
-    mutationTypes.forEach(function(mutType, i) {
-        var id = 'label_' + i + '_id';
-        $('#mut_plot_legend_placeholder').append('<div style="display: inline-block; margin-right: 2em;">' +
-            '<div style="display: inline-block; width: 5px; height: 5px; border-radius: 5px; background-color: ' + colors[i] + '"></div>' +
-            '&nbsp<label for="' + id + '" style="color: ' + colors[i] + '">' + mutType  + '</label>' +
-            '</div>');
-    });
+    var mutationTypes = [['frameshift_variant', 'frame shift'], ['inframe_variant', 'codon_variant'],
+    ['nonsense_variant'], ['missense_variant', 'non synonymous_variant'], ['splice_site'], ['stop gained'], ['start gained'],
+    ['start lost'], ['stop lost'], ['utr_variant'], ['exon_variant']];
+    var usedMutations = [];
     if (!info.isInitialized) {
         info.series = [];
 
         for (var k = 0; k < data.mutations.length; k++) {
             var color = 'black';
 
-            mutationTypes.forEach(function(mutType, i) {
-                if (data.mutations[k].mutType.indexOf(mutType.split(' ')[0]) != -1)
-                color = colors[i];
-            });
-
+            for (var i = 0; i < mutationTypes.length; i++) {
+                var mutTypes = mutationTypes[i];
+                curMutation = data.mutations[k].mutType.toLowerCase();
+                if (curMutation.indexOf(mutTypes[0].split('_')[0]) != -1 ||
+                    (mutTypes.length > 1 && curMutation.indexOf(mutTypes[1].split('_')[0]) != -1)) {
+                        color = colors[i];
+                        if (usedMutations.indexOf(i) == -1) usedMutations.push(i);
+                }
+            }
+            if (color == 'black') {
+                curMutation = data.mutations[k].mutType.toLowerCase();
+                mutationTypes.push(curMutation);
+                var index = mutationTypes.length - 1;
+                color = colors[index];
+                usedMutations.push(index);
+            }
             var series = {
                 data: [[ticksX * k, data.mutations[k].freq]],
                 geneName: data.mutations[k].geneName,
@@ -73,6 +79,15 @@ function drawMutPlot(key, data, placeholder_el) {
             info.series.push(series);
         }
 
+        for (var i = 0; i < usedMutations.length; i++) {
+            var index = usedMutations[i];
+            var mutType = mutationTypes[index][0].replace('_', ' ');
+            var id = 'label_' + index + '_id';
+            $('#mut_plot_legend_placeholder').append('<div style="display: inline-block; margin-right: 2em;">' +
+                '<div style="display: inline-block; width: 5px; height: 5px; border-radius: 5px; background-color: ' + colors[index] + '"></div>' +
+                '&nbsp<label for="' + id + '" style="color: ' + colors[index] + '">' + mutType  + '</label>' +
+                '</div>');
+        }
         info.showWithData = function(series, colors) {
             var plot = $.plot(placeholder_el, series, {
                 shadowSize: 0,
@@ -120,7 +135,8 @@ function drawMutPlot(key, data, placeholder_el) {
     var mut_plot_pos = placeholder_el.offset();
     console.log(subst_plot_width);
     console.log(mut_plot_pos);
-    mut_plot_pos.left += mut_plot_width - subst_plot_width + 151;
+    mut_plot_pos.top = 3;
+    mut_plot_pos.left += mut_plot_width - subst_plot_width + 31;
     subt_placeholder
         .css('position', 'absolute')
         .css(mut_plot_pos);

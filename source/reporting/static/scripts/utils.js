@@ -443,6 +443,15 @@ $(function() {
     });
 });
 
+if (!Array.prototype.indexOf) {
+    Array.prototype.indexOf = function(obj, start) {
+         for (var i = (start || 0), j = this.length; i < j; i++) {
+             if (this[i] === obj) { return i; }
+         }
+         return -1;
+    }
+}
+
 // http://krijnhoetmer.nl/stuff/javascript/table-align-char/
 //function make_table_align_char() {
 //     var currencies = /(\$|€|&euro;)/;
