@@ -80,10 +80,13 @@ class BaseClinicalReporting:
             metric_storage=clinical_mut_metric_storage, expandable=True)
 
         # Writing records
+        print_cdna = False
         muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         for e, muts in mutations_by_experiment.items():
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
+                if mut.cdna_change:
+                    print_cdna = True
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
@@ -94,7 +97,8 @@ class BaseClinicalReporting:
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', **self._pos_recargs(mut))
             # row.add_record('Change', **self._g_chg_recargs(mut))
-            row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
+            if print_cdna:
+                row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
             row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict status', **self._status_field(mut))
@@ -169,6 +173,14 @@ class BaseClinicalReporting:
         else:
             return json.dumps(data)
 
+    sv_type_dict = {
+        'BND': 'Fusion',
+        'INV': 'Invertion',
+        'INS': 'Insertion',
+        'DEL': 'Deletion',
+        'DUP': 'Duplication',
+    }
+
     @staticmethod
     def make_sv_report(svs_by_experiment):
         ms = [
@@ -208,15 +220,8 @@ class BaseClinicalReporting:
 
             row = report.add_row()
 
-            type_dict = {
-                'BND': 'Fusion',
-                'INV': 'Invertion',
-                'INS': 'Insertion',
-                'DEL': 'Deletion',
-                'DUP': 'Duplication',
-            }
             row.add_record('Chr', sv.chrom)
-            row.add_record('Type', type_dict.get(sv.type, sv.type) if sv else None)
+            row.add_record('Type', BaseClinicalReporting.sv_type_dict.get(sv.type, sv.type) if sv else None)
             row.add_record('Location', Metric.format_value(sv.start) + (('..' + Metric.format_value(sv.end)) if sv.end else '') if sv else None, num=sv.start if sv else None)
             row.add_record('Genes', ', '.join(set('/'.join(set(a.genes)) for a in sv.key_annotations if a.genes)))
             # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
@@ -639,7 +644,7 @@ class ClinicalReporting(BaseClinicalReporting):
         clinical_action_metric_storage = MetricStorage(
             sections=[ReportSection(metrics=[
                 Metric('Gene', min_width=70, max_width=70),  # Gene & Transcript
-                Metric('Variant', min_width=80, max_width=80, style='white-space: pre !important;', class_='long_line'),            # p.Glu82Lys
+                Metric('Variant', min_width=80, max_width=120, style='white-space: pre !important;', class_='long_line'),            # p.Glu82Lys
                 Metric('Type', min_width=120, max_width=120, style='white-space: pre; !important', class_='long_line'),               # Frameshift
                 Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations',
                     min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
@@ -680,13 +685,17 @@ class ClinicalReporting(BaseClinicalReporting):
                         types.append(se.amp_del)
 
             if sv_mutation_types:
-                for se in gene.sv_events:
-                    if any(a.known or a.effect == 'EXON_DEL' for a in se.annotations):
-                        if ('Fusion' in possible_mutation_types or 'Rearrangement' in possible_mutation_types) and se.type == 'BND' or \
-                           'Deletion' in possible_mutation_types and se.type == 'DEL' or \
-                           'Amplification' in possible_mutation_types and se.type == 'DUP':
-                            variants.append(se.type)
-                            types.append(se.type)
+                svs_by_key = OrderedDict()
+                for sv in gene.sv_events:
+                    if any(a.known or a.effect == 'EXON_DEL' for a in sv.annotations):
+                        svs_by_key[sv.type, tuple(tuple(sorted(a.genes)) for a in sv.annotations)] = sv
+
+                for se in svs_by_key.values():
+                    if ('Fusion' in possible_mutation_types or 'Rearrangement' in possible_mutation_types) and se.type == 'BND' or \
+                       'Deletion' in possible_mutation_types and se.type == 'DEL' or \
+                       'Amplification' in possible_mutation_types and se.type == 'DUP':
+                        variants.append(', '.join(set('/'.join(set(a.genes)) for a in se.key_annotations if a.genes)))
+                        types.append(BaseClinicalReporting.sv_type_dict.get(se.type, se.type))
 
             if not variants:
                 continue

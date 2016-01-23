@@ -291,14 +291,14 @@ def clinical_sample_info_from_cnf(cnf):
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes=cnf.key_genes,
         target_type=cnf.target_type,
-        bed_fpath=verify_file(cnf.bed_fpath, silent=True),
-        mutations_fpath=verify_file(cnf.mutations_fpath, silent=True),
-        sv_fpath=verify_file(cnf.sv_fpath, silent=True),
-        varqc_json_fpath=verify_file(cnf.varqc_json_fpath, silent=True),
-        seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, silent=True),
+        bed_fpath=verify_file(cnf.bed_fpath, is_critical=True) if cnf.bed_fpath else None,
+        mutations_fpath=verify_file(cnf.mutations_fpath, is_critical=True) if cnf.mutations_fpath else None,
+        sv_fpath=verify_file(cnf.sv_fpath, is_critical=True) if cnf.sv_fpath else None,
+        varqc_json_fpath=verify_file(cnf.varqc_json_fpath, is_critical=True) if cnf.varqc_json_fpath else None,
+        seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, is_critical=True) if cnf.seq2c_tsv_fpath else None,
         project_name=cnf.project_name,
-        project_report_path=verify_file(cnf.project_report_path, silent=True),
-        targqc_report_path=verify_file(cnf.targqc_report_path, silent=True))
+        project_report_path=verify_file(cnf.project_report_path, is_critical=True) if cnf.project_report_path else None,
+        targqc_report_path=verify_file(cnf.targqc_report_path, silent=True) if cnf.targqc_report_path else None)
 
 
 class ClinicalExperimentInfo:
@@ -361,16 +361,17 @@ class ClinicalExperimentInfo:
         info('Parsing actionable genes...')
         self.actionable_genes_dict = parse_broad_actionable()
 
-        if varqc_json_fpath and mutations_fpath:
+        if mutations_fpath:
             info('Parsing mutations from ' + str(mutations_fpath))
-            self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
+            if varqc_json_fpath:
+                self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
             self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
                 self.key_gene_by_name[mut.gene.name].mutations.append(mut)
             info('Retrieving SolveBio...')
             self.get_mut_info_from_solvebio()
         else:
-            warn('No varqc_json_fpath or mutations_fpath provided, skipping mutation stats.')
+            warn('No mutations_fpath provided, skipping mutation stats.')
 
         if sv_fpath:
             info('Parsing prioritized SV from ' + str(sv_fpath))
@@ -547,39 +548,41 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                 if len(fs) == 51:
                     reason = fs[50]
 
-            if sample_name == sample.name and gname in key_gene_by_name:
-                if (chrom, start, ref, alt) in alts_met_before:
-                    continue
-                alts_met_before.add((chrom, start, ref, alt))
+            if sample_name == sample.name:
+                if gname in key_gene_by_name:
+                    if (chrom, start, ref, alt) in alts_met_before:
+                        continue
+                    alts_met_before.add((chrom, start, ref, alt))
 
-                mut = Mutation(chrom=chrom, genome=cnf.genome.name)
-                mut.gene = KeyGene(gname)
-                mut.transcript = transcript
-                mut.codon_change = codon_change
-                mut.cdna_change = cdna_change
-                mut.aa_change = aa_change
-                mut.aa_len = aa_len
-                mut.pos = int(start)
-                mut.ref = ref
-                mut.alt = alt
-                mut.depth = int(depth)
-                mut.freq = float(af)
-                mut.dbsnp_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
-                mut.cosmic_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
-                mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
-                mut.var_type = var_type
-                mut.var_class = var_class
-                mut.status = status
-                if reason:
-                    reason = reason.replace('_', ' ')
-                    if reason == 'actionable somatic':
-                        reason = 'actionable som.'
-                    if reason == 'actionable germline':
-                        reason = 'actionable germ.'
-                    reason = reason.replace('change', 'chg.')
-                mut.reason = reason
+                    mut = Mutation(chrom=chrom, genome=cnf.genome.name)
+                    mut.gene = KeyGene(gname)
+                    mut.transcript = transcript
+                    mut.codon_change = codon_change
+                    mut.cdna_change = cdna_change
+                    mut.aa_change = aa_change
+                    mut.aa_len = aa_len
+                    mut.pos = int(start)
+                    mut.ref = ref
+                    mut.alt = alt
+                    mut.depth = int(depth)
+                    mut.freq = float(af)
+                    mut.dbsnp_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
+                    mut.cosmic_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
+                    mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
+                    mut.var_type = var_type
+                    mut.var_class = var_class
+                    mut.status = status
+                    if reason:
+                        reason = reason.replace('_', ' ')
+                        if reason == 'actionable somatic':
+                            reason = 'actionable som.'
+                        if reason == 'actionable germline':
+                            reason = 'actionable germ.'
+                        reason = reason.replace('change', 'chg.')
+                    mut.reason = reason
 
-                mutations.append(mut)
+                    mutations.append(mut)
+
     info('Found ' + str(len(mutations)) + ' mutations in ' + key_collection_type + ' genes')
     return mutations
 

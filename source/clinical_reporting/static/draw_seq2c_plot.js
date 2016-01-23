@@ -2,19 +2,18 @@ $(function() {
     var fullData = readJsonFromElement($('#seq2c_plot_data_json'));
     var colors = distinctColors();
 
-    if (fullData == null) {
-
-    }
-    if (fullData.hasOwnProperty('ticksX')) {
-        drawSeq2cPlot('seq2c', fullData, $('#seq2c_plot_placeholder'));
-    } else {
-        var i = 0;
-        for (var k in fullData) {
-            if (fullData.hasOwnProperty(k)) {
-                var data = fullData[k];
-                drawSeq2cPlot(k + '_seq2c', data, $('#' + k + '_seq2c_plot_placeholder'));
-                $('#' + k + '_seq2c_header').css({color: colors[i]});
-                i += 1;
+    if (fullData != null) {
+        if (fullData.hasOwnProperty('ticksX')) {
+            drawSeq2cPlot('seq2c', fullData, $('#seq2c_plot_placeholder'));
+        } else {
+            var i = 0;
+            for (var k in fullData) {
+                if (fullData.hasOwnProperty(k)) {
+                    var data = fullData[k];
+                    drawSeq2cPlot(k + '_seq2c', data, $('#' + k + '_seq2c_plot_placeholder'));
+                    $('#' + k + '_seq2c_header').css({color: colors[i]});
+                    i += 1;
+                }
             }
         }
     }

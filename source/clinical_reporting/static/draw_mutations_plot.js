@@ -2,20 +2,18 @@ $(function() {
     var fullData = readJsonFromElement($('#mut_plot_data_json'));
     var colors = distinctColors();
 
-    if (fullData == null) {
-
-    }
-
-    if (fullData.hasOwnProperty('mutations')) {
-        drawMutPlot('mut', fullData, $('#mut_plot_placeholder'));
-    } else {
-        var i = 0;
-        for (var k in fullData) {
-            if (fullData.hasOwnProperty(k)) {
-                var data = fullData[k];
-                drawMutPlot(k + '_mut', data, $('#' + k + '_mut_plot_placeholder'));
-                $('#' + k + '_mut_header').css({color: colors[i]});
-                i += 1;
+    if (fullData != null) {
+        if (fullData.hasOwnProperty('mutations')) {
+            drawMutPlot('mut', fullData, $('#mut_plot_placeholder'));
+        } else {
+            var i = 0;
+            for (var k in fullData) {
+                if (fullData.hasOwnProperty(k)) {
+                    var data = fullData[k];
+                    drawMutPlot(k + '_mut', data, $('#' + k + '_mut_plot_placeholder'));
+                    $('#' + k + '_mut_header').css({color: colors[i]});
+                    i += 1;
+                }
             }
         }
     }

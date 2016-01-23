@@ -21,7 +21,7 @@ MUTATIONS_NAME        = 'Mutations'
 MUTATIONS_SINGLE_NAME = 'Mutations for single samples'
 MUTATIONS_PAIRED_NAME = 'Mutations for paired samples'
 GENDER                = 'Gender'
-CLINICAL_NAME         = 'Clinical report'
+CLINICAL_NAME         = 'Oncology NGS report'
 
 
 metric_storage = MetricStorage(

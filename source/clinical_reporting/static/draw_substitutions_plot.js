@@ -2,20 +2,18 @@ $(function() {
     var fullData = readJsonFromElement($('#substitutions_plot_data_json'));
     var colors = distinctColors();
 
-    if (fullData == null) {
-
-    }
-
-    if (fullData.hasOwnProperty('substitutions')) {
-        drawSubstitutionsPlot('substitutions', fullData, $('#substitutions_plot_placeholder'));
-    } else {
-        var i = 0;
-        for (var k in fullData) {
-            if (fullData.hasOwnProperty(k)) {
-                var data = fullData[k];
-                drawSubstitutionsPlot(k + '_substitutions', data, $('#' + k + '_substitutions_plot_placeholder'));
-                $('#' + k + '_substitutions_header').css({color: colors[i]});
-                i += 1;
+    if (fullData != null) {
+        if (fullData.hasOwnProperty('substitutions')) {
+            drawSubstitutionsPlot('substitutions', fullData, $('#substitutions_plot_placeholder'));
+        } else {
+            var i = 0;
+            for (var k in fullData) {
+                if (fullData.hasOwnProperty(k)) {
+                    var data = fullData[k];
+                    drawSubstitutionsPlot(k + '_substitutions', data, $('#' + k + '_substitutions_plot_placeholder'));
+                    $('#' + k + '_substitutions_header').css({color: colors[i]});
+                    i += 1;
+                }
             }
         }
     }
