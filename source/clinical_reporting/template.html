@@ -146,29 +146,27 @@
                 <div id="variants_table_div">
                     {table}
                 </div>
-                <div class="js_plot" id="mut_plot">
-                    <table>
-                        <tr>
-                            <td colspan="2">
-                                <div class='plot_placeholder mut_plot_placeholder' id="mut_plot_placeholder">
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td>
-                                <div class='legend_placeholder' id="mut_plot_legend_placeholder"></div>
-                            </td>
-                        </tr>
-                    </table>
-                    <div class="json_code">
-                        <div id="mut_plot_data_json">
-                            {plot_data}
-                        </div>
-                    </div>
+            </div>
+            <div class="js_plot" id="mut_plot">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder mut_plot_placeholder' id="mut_plot_placeholder">
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class='legend_placeholder' id="mut_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div class="json_code">
+                <div id="mut_plot_data_json">
+                    {plot_data}
                 </div>
             </div>
-            <br>
-            <h2>Substitutions</h2>
             <div class="js_plot" id="substitutions_plot">
                     <table>
                         <tr>
@@ -221,6 +219,8 @@
             <p>No mutations found in {total_key_genes} actionable genes.</p>
         {.end}
 
+        <div class="space_10px"></div>
+        <div class="space_10px"></div>
         <a name="seq2c"></a>
         <h1>Seq2C log2 ratios (CNV) in {total_key_genes} {key_or_target} genes</h1>
         {.section seq2c}
@@ -286,6 +286,7 @@
             <p>No Seq2C events found in in {total_key_genes} {key_or_target} genes.</p>
         {.end}
 
+        <div class="space_10px"></div>
         <a name="coverage"></a>
         {.section coverage}
         <h1>Coverage analysis for the in {total_key_genes} {key_or_target} genes</h1>

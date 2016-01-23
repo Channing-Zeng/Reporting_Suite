@@ -31,6 +31,7 @@ def main():
             )),
             (['--target-type'], dict(
                 dest='target_type',
+                default='exome',
             )),
             (['--bed'], dict(
                 dest='bed_fpath',

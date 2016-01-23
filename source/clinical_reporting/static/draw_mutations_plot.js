@@ -113,6 +113,18 @@ function drawMutPlot(key, data, placeholder_el) {
     }
 
     showPlotWithInfo(info);
+
+    var subt_placeholder = $('#substitutions_plot_placeholder');
+    var subst_plot_width = subt_placeholder.width();
+    var mut_plot_width = placeholder_el.width();
+    var mut_plot_pos = placeholder_el.offset();
+    console.log(subst_plot_width);
+    console.log(mut_plot_pos);
+    mut_plot_pos.left += mut_plot_width - subst_plot_width + 151;
+    subt_placeholder
+        .css('position', 'absolute')
+        .css(mut_plot_pos);
+        //.css('right', mut_plot_right - subst_plot_width);
 }
 
 function showMutationTip(key, item, plot, direction, generalData) {

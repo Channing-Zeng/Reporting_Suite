@@ -455,7 +455,7 @@ class ClinicalExperimentInfo:
         return seq2c_events_by_gene_name
 
     def parse_targetseq_detailed_report(self):
-        info('Preparing coverage stats ' + self.genes_collection_type + ' gene tables')
+        info('Preparing coverage stats for ' + self.genes_collection_type + ' gene')
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):

@@ -85,7 +85,7 @@ class BaseClinicalReporting:
         for e, muts in mutations_by_experiment.items():
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
-                if mut.cdna_change:
+                if mut.cdna_change.strip():
                     print_cdna = True
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():

@@ -998,15 +998,17 @@ def build_report_html(report, sortable=True):
     report_html = ''
     report_html += _build_common_records(report.get_common_records())
 
-    report_html += '<div class="space_8px"></div>'
-    report_html += '<div>'
-    for section in report.metric_storage.sections:
-        report_html += '<a class="dotted-link" href="#' + section.name + '">' + section.title + '</a><span>&nbsp;&nbsp;&nbsp;</span>'
-    report_html += '</div>'
-    report_html += '<div class="space_4px"></div>'
+    if len(report.metric_storage.sections) > 1:
+        report_html += '<div class="space_8px"></div>'
+        report_html += '<div>'
+        for section in report.metric_storage.sections:
+            report_html += '<a class="dotted-link" href="#' + section.name + '">' + section.title + '</a><span>&nbsp;&nbsp;&nbsp;</span>'
+        report_html += '</div>'
+        report_html += '<div class="space_4px"></div>'
 
     for section in report.metric_storage.sections:
-        report_html += '<a name="' + section.name + '"></a>'
+        if len(report.metric_storage.sections) > 1:
+            report_html += '<a name="' + section.name + '"></a>'
         report_html += build_section_html(report, section, sortable=sortable)
 
     return report_html
@@ -1037,7 +1039,7 @@ def __get_metric_name_html(metric, use_full_name=False):
     if metric.short_name and not use_full_name:
         metric_name = metric.short_name
         description = metric.description or metric.name
-        return '<a class="metric_name" rel="tooltip" title="' + description + '">' + metric_name + '</a>'
+        return '<a class="metric_name tooltip-link" rel="tooltip" title="' + description + '">' + metric_name + '</a>'
     else:
         return metric.name
 
@@ -1390,6 +1392,7 @@ def calc_cell_contents(report, rows):
     #                 rec.metric.values.append(rec.num)
 
     for metric in metrics:
+        if metric.name == 'Types of recurrent alterations': pass
         if metric.numbers and metric.with_heatmap:
             # For metrics where we know the "normal value" - we want to color everything above normal white,
             #   and everything below - red, starting from normal, finishing with bottom
