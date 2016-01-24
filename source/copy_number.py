@@ -335,9 +335,12 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
     # print any(not verify_file(seq2cov_fpath_by_sample[s.name], silent=True) for s in samples)
     seq2c_bed = None
     if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name,
-                           silent=True) for s in samples) or not cnf.reuse_intermediate:
-        _, _, _, seq2c_bed = \
-            prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
+            silent=True) for s in samples) or not cnf.reuse_intermediate:
+        if cnf.prep_bed:
+            _, _, _, seq2c_bed = \
+                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
+        else:
+            seq2c_bed = target_bed or exons_bed_fpath
 
     # info('Running first for the de-dupped version, then for the original version.')
     # Parallel(n_jobs=cnf.threads) \

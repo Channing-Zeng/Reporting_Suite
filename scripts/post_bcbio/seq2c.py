@@ -41,7 +41,12 @@ def main():
                 action='store_true',
                 default=False)
             ),
-           # (['--dedup'], dict(
+            (['--no-prep-bed'], dict(
+                dest='prep_bed',
+                help='do not fix input beds and exons',
+                action='store_false',
+                default=True)
+             ),           # (['--dedup'], dict(
            #      dest='dedup',
            #      help='Remove duplicates from the input bedfile.')
            #  ),

@@ -264,7 +264,7 @@ class BCBioRunner:
         )
 
         self.is_wgs = False
-        target_bed, exons_bed, exons_no_genes_bed, genes_fpath = self.prep_bed()
+        target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
         if not target_bed:
             self.is_wgs = True
 
@@ -391,7 +391,7 @@ class BCBioRunner:
 
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         if target_bed:
-            seq2c_cmdline += ' --bed ' + target_bed
+            seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
         normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
         if normal_snames or cnf.seq2c_controls:
             controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
@@ -464,7 +464,7 @@ class BCBioRunner:
                 _, _, target_bed, exons_bed, exons_no_genes_bed = \
                     extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
 
-        return target_bed, exons_bed, exons_no_genes_bed, genes_fpath
+        return target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed
 
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
         if sample_name:
