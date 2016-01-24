@@ -154,23 +154,6 @@ def launch_bedcoverage_hist(cnf, bed, bam, bedcov_output_fpath=None, qsub=False,
         return submit_job(cnf, cmdline, job_name, output_fpath=bedcov_output_fpath, **kwargs)
     else:
         return call(cnf, cmdline, bedcov_output_fpath, exit_on_error=False)
-        # if isfile(bedcov_output_fpath):
-        #     return bedcov_output_fpath
-        # else:
-        #     tries += 1
-        #     msg = 'bedtools coverage crashed:\n' + cmdline + ' > ' + bedcov_output_fpath + '\n' + \
-        #           (''.join(['\t' + l for l in stderr_dump]) if stderr_dump else '')
-        #     if tries < MAX_TRIES:
-        #         msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ' )'
-        #
-        #     send_email(msg_other=msg,
-        #                subj='bedtools coverage crashed [' + str(cnf.project_name) + ']',
-        #                only_me=True)
-        #     err(msg)
-        #     if tries == MAX_TRIES:
-        #         break
-        #     sleep(WAIT_MINUTES * 60)
-        #     info()
 
 
 def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num):

@@ -14,9 +14,9 @@ from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
-    verify_module, intermediate_fname
+    verify_module, intermediate_fname, splitext_plus
 from source.logger import info, err, step_greetings, critical, warn
-from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed, verify_bed
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
@@ -208,9 +208,15 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         return output_fpath
 
     info('Preparing BED files')
-    exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
-    _, _, target_bed, seq2c_bed = \
-        prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.bed or cnf.genome.refseq)
+    if cnf.prep_bed:
+        exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
+        if cnf.bed or bcbio_structure.bed:
+            _, _, _, seq2c_bed = \
+                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=cnf.bed or bcbio_structure.bed)
+        else:
+            seq2c_bed = verify_bed(cnf.genome.refseq)
+    else:
+        seq2c_bed = verify_bed(cnf.bed)
 
     output_dirpath = dirname(output_fpath)
     seq2c_exposed_fpath = join(output_dirpath, 'seq2c_target.bed')
@@ -250,9 +256,9 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
         else:
-            if target_bed != seq2c_bed:
-                info('target_bed ' + target_bed + ' != seq2c_bed ' + seq2c_bed + ', cannot reuse ' +
-                     s.targetcov_detailed_tsv + ' for Seq2C')
+            # if target_bed != seq2c_bed:
+            #     info('target_bed ' + target_bed + ' != seq2c_bed ' + seq2c_bed + ', cannot reuse ' +
+            #          s.targetcov_detailed_tsv + ' for Seq2C')
             if not verify_file(s.targetcov_detailed_tsv, silent=True):
                 info(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C')
 
@@ -264,8 +270,15 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             if cnf.reuse_intermediate and verify_file(bedcov_output, silent=True):
                 info(bedcov_output + ' exists, reusing')
             else:
-                j = launch_bedcoverage_hist(cnf, seq2c_bed, bam_fpath,
-                                            bedcov_output_fpath=bedcov_output, qsub=True, sample=s)
+                bedcov_hist = get_script_cmdline(cnf, 'python', join('tools', 'bedprocessing', 'bedcoverage_hist.py'))
+                chr_lengths_fpath = get_chr_len_fpath(cnf)
+                bedtools = get_system_path(cnf, 'bedtools')
+                cmdl = '{bedcov_hist} {cnf.work_dir} {seq2c_bed} {bam_fpath} {chr_lengths_fpath} ' \
+                       '{bedcov_output} {bedtools}'.format(**locals())
+                job_name = splitext_plus(basename(seq2c_bed))[0] + '__' + \
+                           splitext_plus(basename(bam_fpath))[0] + '_bedcov'
+                j = submit_job(cnf, cmdl, job_name, output_fpath=bedcov_output,
+                               stdout_to_outputfile=False, sample=s)
                 jobs_to_wait.append(j)
         info()
     info('*' * 50)
