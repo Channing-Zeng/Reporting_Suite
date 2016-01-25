@@ -370,12 +370,12 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
                 if is_loss_of_function(reasons):
                     if gene in oncogenes:
+                        info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
                         status, reasons = update_status(status, reasons, 'unlikely', reasons, force=True)
-                        info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status to unlikely')
                     elif gene in suppressors:
                         is_act = True
+                        info('gene ' + gene + ' is a suppressor, and mutation is LOF. Updating status from ' + status + ' to known')
                         status, reasons = update_status(status, reasons, 'known', 'lof_in_suppressor')
-                        info('gene ' + gene + ' is a suppressor, and mutation is LOF. Updating status to known')
 
                 if is_act:
                     if allele_freq < cnf.variant_filtering.min_hotspot_freq:
@@ -462,13 +462,13 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, act_hotspots, tp53_pos, tp53_groups):
     key = '-'.join([chr, pos, ref, alt])
     if key in act_som:
-        return act_som[key]
+        return True
     if key in act_germ:
         return 'germline'
     if len(ref) == 1 and len(ref) == len(alt):
         key = '-'.join([chr, pos, ref])
         if key in act_som:
-            return act_som[key]
+            return True
     if aa_chg_pattern.match(aa_chg) and gene in act_hotspots:
         act_hotspots = act_hotspots[gene]
         if aa_chg in act_hotspots:
