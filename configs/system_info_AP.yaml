@@ -6,6 +6,8 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /ngs/RDI/PROGRAMS/snpEff/SnpSift.jar
+  gatk:
+    path: /ngs/RDI/PROGRAMS/GenomeAnalysisTK/GenomeAnalysisTK.jar
   qualimap:
     path: ext_tools/qualimap/qualimap
   samtools:
