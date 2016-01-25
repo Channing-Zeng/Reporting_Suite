@@ -119,6 +119,7 @@ def main():
         safe_mkdir(output_dir)
         make_fastqc_reports(cnf, fastq_fpaths, output_dir)
 
+
     # Making project-level report
     # make_project_level_report(cnf, dataset_structure=ds, dataset_project=project)
 
@@ -182,83 +183,6 @@ def main():
     #         shutil.rmtree(cnf.work_dir)
     #     except OSError:
     #         err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
-
-
-def downsample_fastq(cnf, sample, reads_num=5e5):
-    # downsampled_reads_fpath = join(cnf.work_dir, sample.name + '_' + str(reads_num) + '.fastq')
-    info('Downsampling ' + sample.name + ' to ' + str(int(reads_num)))
-    l_fpath, r_fpath = downsample(cnf, sample.l_fpath, sample.r_fpath, int(reads_num))
-    return l_fpath, r_fpath
-
-
-def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):
-    sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
-    bam_fpath = splitext(sam_fpath)[0] + '.bam'
-    sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
-
-    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {bwa_prefix} -'.format(**locals())
-    res = call(cnf, bwa_cmdline, output_fpath=sam_fpath, exit_on_error=False)
-    if not res:
-        return None
-
-    cmdline = '{sambamba} view -t {cnf.threads} -S -f bam {sam_fpath}'.format(**locals())
-    call(cnf, cmdline, output_fpath=bam_fpath)
-
-    prefix = splitext(sorted_bam_fpath)[0]
-    cmdline = '{sambamba} sort -t {cnf.threads} {bam_fpath} -o {sorted_bam_fpath}'.format(**locals())
-    call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
-
-    if not is_pcr:
-        markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath, bammarkduplicates)
-        if markdup_bam_fpath:
-            sorted_bam_fpath = markdup_bam_fpath
-
-    index_bam(cnf, sorted_bam_fpath, sambamba=sambamba)
-    return sorted_bam_fpath
-
-
-def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
-    info('Running MetaMapping for downsampled BAMs')
-
-
-def run_targqc(cnf, project, bam_by_sample, bed_fpath):
-    info('Running TargQC for downsampled BAMs')
-
-    targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
-    bam_fpaths = ' '.join(bam_by_sample[s.name] + ',' + s.name for s in project.sample_by_name.values())
-    targqc_work_dir = join(cnf.work_dir, 'TargQC')
-    targqc_log_dir = join(cnf.log_dir, 'TargQC')
-    safe_mkdir(targqc_work_dir)
-    safe_mkdir(targqc_log_dir)
-    bed_cmdl = ''
-    if bed_fpath:
-        bed_cmdl = '--bed ' + bed_fpath
-    cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} {bed_cmdl} ' \
-           '--work-dir {targqc_work_dir} --log-dir {targqc_log_dir} --project-name {cnf.project_name} ' \
-           '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
-    if cnf.reuse_intermediate:
-        cmdl += ' --reuse'
-    call(cnf, cmdl)
-    info('Waiting for targqc to be done...')
-    while True:
-        if isfile(project.downsample_targqc_report_fpath):
-            break
-    verify_file(project.downsample_targqc_report_fpath, is_critical=True)
-    return project.downsample_targqc_report_fpath
-
-    # samples = [TargQCSample(
-    #     s.name,
-    #     output_dir=join(targqc_dirpath, s.name),
-    #     bed=cnf.bed,
-    #     bam=bam_by_sample[s.name])
-    #            for s in samples]
-
-    # Parallel(n_jobs=threads)(delayed(make_targetseq_reports(
-    #     CallCnf(cnf.__dict__), sample.dirpath, sample,
-    #     sample.bam, exons_bed, exons_no_genes_bed, target_bed
-    # )(CallCnf(cnf.__dict__), sample) for sample in samples))
-    #
-    # return summarize_targqc(cnf, 1, targqc_dirpath, samples, bed_fpath, exons_bed)
 
 
 def run_fastqc(cnf, fastq_fpath, output_basename, fastqc_dirpath, need_downsample=True):
