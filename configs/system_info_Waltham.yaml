@@ -212,7 +212,7 @@ genomes:
 
 snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/snpeffect_export_Polymorphic.txt
 actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/actionable_hotspot.txt
-ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules
+ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules/Rules
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
 key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt

@@ -371,7 +371,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 if is_loss_of_function(reasons):
                     if gene in oncogenes:
                         info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
-                        status, reasons = update_status(status, reasons, 'unlikely', reasons, force=True)
+                        status, reasons = update_status(status, reasons, 'unlikely', reasons + ['oncogene'], force=True)
                     elif gene in suppressors:
                         is_act = True
                         info('gene ' + gene + ' is a suppressor, and mutation is LOF. Updating status from ' + status + ' to known')
@@ -706,7 +706,7 @@ def print_mutation(out_f, lines_written, status, reasons, fields, fm_data=None, 
         out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[cdna_chg_col], 'chr:' + fields[chr_col],
                          str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
     else:
-        out_f.write('\t'.join(fields + [status]) + ('\t' + ','.join(reasons) + '\n'))
+        out_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
         # if status != fields[-2] or ','.join(reasons) != fields[-1]:
         #     out_f.write('\t'.join(fields[1:15] + fields[-3:] + [status]) + ('\t' + ','.join(reasons) + '\n'))
     return lines_written

@@ -345,7 +345,8 @@ class BCBioRunner:
             varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
         if cnf.min_freq is not None:
             varfilter_paramline += ' --freq ' + str(cnf.min_freq)
-        varfilter_paramline += ' -t ' + str(self.filtering_threads) + ' --wgs '
+        if self.is_wgs:
+            varfilter_paramline += ' -t ' + str(self.filtering_threads) + ' --wgs '
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vfs',

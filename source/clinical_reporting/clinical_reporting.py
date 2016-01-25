@@ -495,7 +495,7 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
-        if not mut.status or mut.status.lower() == 'unknown':
+        if not mut.status or mut.status.lower() == 'unknown' or mut.status.lower() == 'unlikely':
             if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
                 warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
             row.hidden = True

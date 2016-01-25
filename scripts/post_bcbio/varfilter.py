@@ -39,8 +39,8 @@ def main():
 
         (['--wgs'], dict(
             dest='is_wgs',
-            action='store_false',
-            default=True,
+            action='store_true',
+            default=False,
             help='Splits vcf2txt runs by samples, thus turns off cohort filtering'
         )),
 

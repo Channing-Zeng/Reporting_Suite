@@ -660,7 +660,7 @@ class BCBioStructure(BaseProjectStructure):
         if self.bed:
             self.target_type = 'exome'
             if cnf.deep_seq:
-                self.target_type = 'small panel'
+                self.target_type = 'panel'
 
         # setting up batch properties
         for b in self.batches.values():
