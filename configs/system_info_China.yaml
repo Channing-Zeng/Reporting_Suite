@@ -44,6 +44,7 @@ genomes:
 
     snpeff:
       reference: hg19
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
@@ -70,6 +71,7 @@ genomes:
 
     snpeff:
       reference: GRCh37.75
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt
 #    polymorphic_variants: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/snpeffect_export_Polymorphic.txt
 #    dbsnp_multi_mafs: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbSNP_multi_mafs_latest.txt
 

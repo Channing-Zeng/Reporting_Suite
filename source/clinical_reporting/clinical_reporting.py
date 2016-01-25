@@ -88,15 +88,42 @@ class BaseClinicalReporting:
                 if mut.cdna_change.strip():
                     print_cdna = True
 
+        mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
+        mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
+
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
+            if mut.pos not in mut_positions:
+                mut_positions.append(mut.pos)
+                row = report.add_row()
+                row.add_record('Gene', mut.gene.name)
+                row_class = ' expandable_gene_row collapsed'
+                row.add_record('Position', **self._pos_recargs(mut))
+                row.add_record('Change', **self._g_chg_recargs(mut))
+
+                if len(mutations_by_experiment.values()) == 1:
+                    row.add_record('Freq', mut.freq if mut else None)
+                    row.add_record('Depth', mut.depth if mut else None)
+                else:
+                    for e, m in mut_by_experiment.items():
+                        row.add_record(e.key + ' Freq', m.freq if m else None)
+                        row.add_record(e.key + ' Depth', m.depth if m else None)
+                row.class_ = row_class
+                self._highlighting_and_hiding_mut_row(row, mut)
+                if len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
+                    row.highlighted_green = True
 
             row = report.add_row()
-            row.add_record('Gene', mut.gene.name)
-            row.add_record('Transcript', mut.transcript)
+            row.add_record('Gene', mut.gene.name, show_content=mut.is_canonical)
+            if mut.is_canonical:
+                row.add_record('Transcript', '<b>' + mut.transcript + '</b>')
+                row_class = ' expandable_gene_row collapsed'
+            else:
+                row.add_record('Transcript', mut.transcript)
+                row_class = ' row_to_hide row_hidden'
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
-            row.add_record('Position', **self._pos_recargs(mut))
-            row.add_record('Change', **self._g_chg_recargs(mut))
+            row.add_record('Position', show_content=mut.is_canonical, **self._pos_recargs(mut))
+            row.add_record('Change', show_content=mut.is_canonical, **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
@@ -108,13 +135,14 @@ class BaseClinicalReporting:
             #     row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             if len(mutations_by_experiment.values()) == 1:
-                row.add_record('Freq', mut.freq if mut else None)
-                row.add_record('Depth', mut.depth if mut else None)
+                row.add_record('Freq', mut.freq if mut else None, show_content=mut.is_canonical)
+                row.add_record('Depth', mut.depth if mut else None, show_content=mut.is_canonical)
             else:
                 for e, m in mut_by_experiment.items():
-                    row.add_record(e.key + ' Freq', m.freq if m else None)
-                    row.add_record(e.key + ' Depth', m.depth if m else None)
+                    row.add_record(e.key + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
+                    row.add_record(e.key + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
 
+            row.class_ = row_class
             self._highlighting_and_hiding_mut_row(row, mut)
             if len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
                 row.highlighted_green = True

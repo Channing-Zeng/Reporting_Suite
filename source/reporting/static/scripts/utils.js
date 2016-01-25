@@ -433,7 +433,7 @@ $(function() {
     $('.expandable_row').click(function () {
         $(this).toggleClass('collapsed').toggleClass('expanded');
     });
-    $('.expandable_gene_row').click(function () {
+    $(document.body).on('click', '.expandable_gene_row', function () {
         $(this).toggleClass('collapsed').toggleClass('expanded');
         var nextRow = $(this).next('.row_to_hide');
         while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {

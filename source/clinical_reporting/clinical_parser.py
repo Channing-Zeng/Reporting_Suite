@@ -81,7 +81,7 @@ class Mutation(SortableByChrom):
         return SortableByChrom.get_key(self)
 
     def get_key(self):
-        return SortableByChrom.get_key(self), self.pos, self.ref, self.alt
+        return SortableByChrom.get_key(self), self.pos, self.ref, self.alt, self.transcript
 
 
 class Seq2CEvent:
@@ -520,6 +520,11 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
             err('Cannot find PASSed mutations fpath')
             return []
 
+    canonical_transcripts_fpath = cnf.genome.canonical_transcripts
+    custom_transcripts = cnf.genome.snpeff.transcripts or cnf.snpeff_transcripts
+    if verify_file(canonical_transcripts_fpath) and not custom_transcripts:
+        canonical_transcripts = [tr.strip() for tr in open(canonical_transcripts_fpath)]
+
     info('Reading mutations from ' + mutations_fpath)
     alts_met_before = set()
     with open(mutations_fpath) as f:
@@ -550,13 +555,14 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
 
             if sample_name == sample.name:
                 if gname in key_gene_by_name:
-                    if (chrom, start, ref, alt) in alts_met_before:
+                    if (chrom, start, ref, alt, transcript) in alts_met_before:
                         continue
-                    alts_met_before.add((chrom, start, ref, alt))
+                    alts_met_before.add((chrom, start, ref, alt, transcript))
 
                     mut = Mutation(chrom=chrom, genome=cnf.genome.name)
                     mut.gene = KeyGene(gname)
                     mut.transcript = transcript
+                    mut.is_canonical = transcript in canonical_transcripts if canonical_transcripts else True
                     mut.codon_change = codon_change
                     mut.cdna_change = cdna_change
                     mut.aa_change = aa_change

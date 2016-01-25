@@ -40,7 +40,8 @@ class Record:
             frac_width=None,
             right_shift=None,
             color=None,
-            text_color=None):  # TODO: get rid of those
+            text_color=None,
+            show_content=True):  # TODO: get rid of those
 
         self.metric = metric
         if self.metric.parse:
@@ -61,6 +62,7 @@ class Record:
         self.right_shift = None
         self.color = color
         self.text_color = text_color
+        self.show_content = show_content
         # self.color = lambda: self._color
         # self.text_color = lambda: self._text_color
 
@@ -90,6 +92,8 @@ class Record:
         return self.metric.format(self.value, human_readable=human_readable)
 
     def format_html(self):
+        if not self.show_content:
+            return ''
         val = self.value
         # if self.html_fpath:
         #     if isinstance(self.html_fpath, dict):

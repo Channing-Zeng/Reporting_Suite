@@ -315,7 +315,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     if not db_path:
         db_path = vcf_conf.get('path')
         if not db_path:
-            err('Please, privide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
+            err('Please, provide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
             return
         verify_file(db_path, is_critical=True)
 
@@ -431,7 +431,7 @@ def _snpeff(cnf, input_fpath):
     custom_transcripts = cnf.genome.snpeff.transcripts or cnf.snpeff_transcripts
     if custom_transcripts and verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
         opts += ' -onlyTr ' + custom_transcripts + ' '
-    else:
+    elif not cnf.genome.canonical_transcripts:  # to avoid too many results in clinical report
     # if cnf.annotation.snpeff.clinical_reporting or cnf.annotation.snpeff.canonical:
         opts += ' -canon '
 

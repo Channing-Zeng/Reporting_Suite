@@ -69,7 +69,7 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf
     snpeff:
       reference: GRCh38.78
-      transcripts: /ngs/reference_data/genomes/Hsapiens/hg38/snpeff/canonical_transcripts.txt
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg38/snpeff/canonical_transcripts.txt
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
@@ -91,7 +91,7 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/CosmicV72CodingMuts.vcf
     snpeff:
       reference: GRCh38.78
-      transcripts: /ngs/reference_data/genomes/Hsapiens/hg38/snpeff/canonical_transcripts.txt
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg38/snpeff/canonical_transcripts.txt
     # the rest is taken from hg19 crossmap
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
@@ -128,7 +128,7 @@ genomes:
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
       reference: hg19
-      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt  # used if -canon is not set for snpEff
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt  # used if -canon is not set for snpEff
 
     exons:     /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
@@ -165,7 +165,7 @@ genomes:
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19-noalt/snpeff/  # data dir path
     snpeff:
       reference: hg19
-      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt  # used if -canon is not set for snpEff
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt  # used for clinical report
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exome-AZ.bed
@@ -196,7 +196,7 @@ genomes:
     oncomine:    /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine_latest.vcf.gz
     snpeff:
       reference: GRCh37.75
-      transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt
+    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt
 
     exons:    /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exome-AZ.bed
