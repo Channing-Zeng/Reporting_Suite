@@ -96,7 +96,7 @@ class BaseClinicalReporting:
             row.add_record('Transcript', mut.transcript)
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', **self._pos_recargs(mut))
-            # row.add_record('Change', **self._g_chg_recargs(mut))
+            row.add_record('Change', **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
