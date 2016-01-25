@@ -191,7 +191,8 @@ class BaseClinicalReporting:
                 if mut.var_type == 'SNV' and mut.alt in nucleotides:
                     d['substitutions'][mut.ref + '>' + mut.alt] += 1
             d['maxY'] = max([d['substitutions'][s] for s in d['substitutions']])
-            d['maxRate'] = d['maxY'] * 100 / sum([d['substitutions'][s] for s in d['substitutions']])
+            substitutions_sum = sum([d['substitutions'][s] for s in d['substitutions']])
+            d['maxRate'] = d['maxY'] * 100 / substitutions_sum if substitutions_sum > 0 else 0
             d['minY'] = 0
 
             data[e.key.lower()] = d
