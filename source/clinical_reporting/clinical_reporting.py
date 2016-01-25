@@ -48,7 +48,7 @@ class BaseClinicalReporting:
             # Metric('Allele'),             # Het.
             # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-            Metric('Change', max_width=100, class_='long_line', description='cDNA change'),       # G>A
+            Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
             Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
