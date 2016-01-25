@@ -30,7 +30,7 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
             info('Downsampling to ' + str(N))
             rand_records = range(N)
         else:
-            rand_records = random.sample(xrange(records_num), N)
+            rand_records = sorted(random.sample(xrange(records_num), N))
 
     fh1 = open_gzipsafe(fastq_L_fpath)
     fh2 = open_gzipsafe(fastq_R_fpath) if fastq_R_fpath else None

@@ -452,7 +452,7 @@ class BCBioRunner:
                 info('Reusing previous BED files.')
                 reuse = True
             else:
-                info('Annotating BED file')
+                info('Pre-processing input BED file')
                 if prev_md5:
                     info('Prev BED md5: ' + str(prev_md5))
                     info('New BED md5: ' + str(new_md5))
