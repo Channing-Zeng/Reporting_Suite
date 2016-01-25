@@ -270,7 +270,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             if cnf.reuse_intermediate and verify_file(bedcov_output, silent=True):
                 info(bedcov_output + ' exists, reusing')
             else:
-                bedcov_hist = get_script_cmdline(cnf, 'python', join('tools', 'bedprocessing', 'bedcoverage_hist.py'))
+                bedcov_hist = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'bedcoverage_hist.py'))
                 chr_lengths_fpath = get_chr_len_fpath(cnf)
                 bedtools = get_system_path(cnf, 'bedtools')
                 cmdl = '{bedcov_hist} {cnf.work_dir} {seq2c_bed} {bam_fpath} {chr_lengths_fpath} ' \

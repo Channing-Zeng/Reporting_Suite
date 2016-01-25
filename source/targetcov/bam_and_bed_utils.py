@@ -1,9 +1,11 @@
+import os
 import subprocess
 from itertools import dropwhile
 from os.path import isfile, join, abspath, basename, dirname
 import sys
 from subprocess import check_output
 from collections import OrderedDict
+
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
     safe_mkdir
@@ -69,9 +71,15 @@ def bam_to_bed(cnf, bam_fpath):
 def bam_to_bed_nocnf(bam_fpath, bedtools='bedtools', gzip='gzip'):
     info('Converting the BAM to BED to save some memory.')  # from here: http://davetang.org/muse/2015/08/05/creating-a-coverage-plot-using-bedtools-and-r/
     bam_bed_fpath = splitext_plus(bam_fpath)[0] + '.bed.gz'
-    cmdline = '{bedtools} bamtobed -i {bam_fpath} | {gzip}'.format(**locals())
-    subprocess.call(cmdline.split(), stdout=open(bam_bed_fpath, 'w'))
-    return verify_file(bam_bed_fpath)
+    cmdline = '{bedtools} bamtobed -i {bam_fpath} | {gzip} > {bam_bed_fpath}'.format(**locals())
+    info(cmdline)
+    os.system(cmdline)
+    bam_bed_fpath = verify_file(bam_bed_fpath)
+    if bam_bed_fpath:
+        info('Done, saved to ' + bam_bed_fpath)
+    else:
+        err('Error, result is non-existent or empty')
+    return bam_bed_fpath
 
 
 def count_bed_cols(bed_fpath):

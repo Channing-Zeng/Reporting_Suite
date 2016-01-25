@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import subprocess
+import os
 from os.path import basename, join
 
 import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
@@ -8,7 +8,8 @@ import sys
 from logging import info
 
 from source.file_utils import splitext_plus, verify_file
-from source.targetcov.bam_and_bed_utils import bam_to_bed, bedtools_version
+from source.logger import err
+from source.targetcov.bam_and_bed_utils import bam_to_bed, bedtools_version, bam_to_bed_nocnf
 
 
 def main():
@@ -29,16 +30,22 @@ def launch_bedcoverage_hist(work_dir, bed, bam, chr_lengths_fpath, bedcov_output
             splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
 
     if bam.endswith('bam'):
-        bam = bam_to_bed(bam, bedtools)
+        bam = bam_to_bed_nocnf(bam, bedtools)
+    verify_file(bam, is_critical=True, description='bam to bed conversion result')
 
     v = bedtools_version(bedtools)
     if v and v >= 24:
-        cmdline = '{bedtools} coverage -sorted -g {chr_lengths} -a {bed} -b {bam} -hist'.format(**locals())
+        cmdline = '{bedtools} coverage -sorted -g {chr_lengths_fpath} -a {bed} -b {bam} -hist'.format(**locals())
     else:
         cmdline = '{bedtools} coverage -a {bam} -b {bed} -hist'.format(**locals())
-
-    subprocess.call(cmdline, stdout=open(bedcov_output_fpath, 'w'))
-    return verify_file(bedcov_output_fpath)
+    cmdline += ' > ' + bedcov_output_fpath
+    info(cmdline)
+    os.system(cmdline)
+    res = verify_file(bedcov_output_fpath)
+    if res:
+        info('Done, saved to ' + bedcov_output_fpath)
+    else:
+        err('Error, result is non-existent or empty')
 
 
 if __name__ == '__main__':
