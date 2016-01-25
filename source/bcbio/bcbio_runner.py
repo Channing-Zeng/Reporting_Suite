@@ -468,7 +468,7 @@ class BCBioRunner:
                 with open(bed_md5_fpath, 'w') as f:
                     f.write(str(new_md5))
 
-            with with_cnf(self.cnf, reuse=reuse) as cnf:
+            with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
                 exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
                 _, _, target_bed, exons_bed, exons_no_genes_bed = \
                     extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
