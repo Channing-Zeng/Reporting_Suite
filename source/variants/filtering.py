@@ -135,7 +135,7 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
         if not res:
             err('vardict2mut.py run returned non-0')
         else:
-            py_mut_fpath = res
+            mut_fpath = py_mut_fpath = res
             pl_mut_url = convert_path_to_url(pl_mut_fpath)
             py_mut_url = convert_path_to_url(py_mut_fpath)
 
