@@ -25,8 +25,12 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
         rand_records = range(N)
     else:
         records_num = sum(1 for _ in open(fastq_L_fpath)) / 4
-        N = records_num if N > records_num else N
-        rand_records = random.sample(xrange(records_num), N)
+        if N > records_num:
+            N = records_num
+            info('Downsampling to ' + str(N))
+            rand_records = range(N)
+        else:
+            rand_records = random.sample(xrange(records_num), N)
 
     fh1 = open_gzipsafe(fastq_L_fpath)
     fh2 = open_gzipsafe(fastq_R_fpath) if fastq_R_fpath else None
