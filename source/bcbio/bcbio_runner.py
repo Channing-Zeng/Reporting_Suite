@@ -740,8 +740,6 @@ class BCBioRunner:
                         project_report_path=self.bcbio_structure.project_report_html_fpath,
                         wait_for_steps=wait_for_steps,
                         threads=self.threads_per_sample)
-                else:
-                    warn('Warning: Clinical report cannot be created.')
 
             # TargetSeq reports
             if self.abnormal_regions in self.steps:

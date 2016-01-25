@@ -57,7 +57,7 @@ def main():
                    'bed_fpath',
                    'seq2c_tsv_fpath',
                    'sv_fpath',
-                   'project_report_path',
+                   #'project_report_path',  # DO NOT UNCOMMENT! Project level report might not yet exist
                    ],
             # do not check mutations_fpath! could be either of:
             #   vardict.PASS.txt,
