@@ -379,6 +379,14 @@ class BCBioRunner:
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '.log'),
             paramln=clinreport_paramline
         )
+        self.clin_report_perl = Step(cnf, run_id,
+            name=source.clinreport_name, short_name='clin_perl',
+            interpreter='python',
+            script=join('scripts', 'post', 'clinical_report.py'),
+            dir_name=source.clinreport_dir + '_perl',
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '.log'),
+            paramln=clinreport_paramline
+        )
 
         self.mongo_loader = Step(cnf, run_id,
             name='MongoLoader', short_name='ml',
@@ -690,12 +698,15 @@ class BCBioRunner:
                     self.bcbio_structure.variant_callers.get('vardict-java')
 
                 mutation_cmdl = ''
+                mutation_perl_cmdl = ''
                 varqc_cmdl = ''
                 if clinical_report_caller:
                     vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
-                    vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
+                    vardict_txt_fpath = join(self.bcbio_structure.var_dirpath, vardict_txt_fname)
                     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+                    mutations_perl_fpath = add_suffix(vardict_txt_fpath, 'pl.' + source.mut_pass_suffix)
                     mutation_cmdl = ' --mutations ' + mutations_fpath
+                    mutation_perl_cmdl = ' --mutations ' + mutations_perl_fpath
 
                 seq2c_cmdl = ''
                 if self.seq2c in self.steps or verify_file(self.bcbio_structure.seq2c_fpath, silent=True):
@@ -734,6 +745,18 @@ class BCBioRunner:
                         sample.name,
                         sample=sample.name, genome=sample.genome,
                         match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
+                        varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
+                        seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
+                        targqc_summary_cmdl=targqc_summary_cmdl,
+                        project_report_path=self.bcbio_structure.project_report_html_fpath,
+                        wait_for_steps=wait_for_steps,
+                        threads=self.threads_per_sample)
+
+                    self._submit_job(
+                        self.clin_report_perl,
+                        sample.name,
+                        sample=sample.name, genome=sample.genome,
+                        match_cmdl=match_cmdl, mutations_cmdl=mutation_perl_cmdl,
                         varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
                         seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
                         targqc_summary_cmdl=targqc_summary_cmdl,

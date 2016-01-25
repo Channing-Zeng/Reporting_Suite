@@ -119,7 +119,7 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
     vardict2mut_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
 
     res = run_vardict2mut(cnf, vcf2txt_out_fpath,
-                          add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
+                          add_suffix(vcf2txt_out_fpath, 'pl.' + source.mut_pass_suffix),
                           sample_min_freq=sample_min_freq,
                           vardict2mut_executable=vardict2mut_perl)
     if not res:
@@ -130,7 +130,7 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
     if vardict2mut_py:
         info('Running python version ' + vardict2mut_py)
         res = run_vardict2mut(cnf, vcf2txt_out_fpath,
-            add_suffix(vcf2txt_out_fpath, 'py.' + source.mut_pass_suffix),
+            add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
             sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_py)
         if not res:
             err('vardict2mut.py run returned non-0')
