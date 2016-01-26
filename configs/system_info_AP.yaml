@@ -143,5 +143,6 @@ snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canoni
 queue: ngs.q
 
 qsub_runner: scripts/runner_AP.sh
+qsub_priority: 0
 
 smtp_host: 'localhost'

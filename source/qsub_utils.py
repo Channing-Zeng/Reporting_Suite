@@ -22,6 +22,7 @@ class JobRunning:
         self.error_marker = error_marker_fpath
         self.repr = job_id
         self.is_done = False
+        self.is_failed = False
         self.output_fpath = output_fpath
         self.tx_output_fpath = tx_output_fpath
         self.stdout_to_outputfile = stdout_to_outputfile
@@ -68,12 +69,15 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     runner_script = adjust_system_path(cnf.qsub_runner)
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     mem = threads * 15
+    priority = 0
+    if cnf.qsub_priority:
+        priority = cnf.qsub_priority
     extra_qsub_opts = ''
     if run_on_chara and is_us():
         extra_qsub_opts += '-l h="chara|rask"'
     cmdline = cmdline.replace('"', '\\"').replace('\\\\"', '\\"')
     qsub_cmdline = (
-        '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} '
+        '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} -p {priority} '
         '-j n -o {log_fpath} -e {err_fpath} {hold_jid_line} '
         '-N {job_id} {runner_script} {done_marker_fpath} {error_marker_fpath} "{cmdline}"'.format(**locals()))
     info('Submitting job ' + job_id)
@@ -103,6 +107,7 @@ def wait_for_jobs(cnf, jobs):
                             if not verify_file(j.tx_output_fpath, description='j.tx_output_fpath for ' + str(j.repr)):
                                 err('Job ' + j.repr + ' was unsuccessful: ' + str(j.tx_output_fpath) + ' does not exist or empty.' +
                                    ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                                j.is_failed = True
                             else:
                                 os.rename(j.tx_output_fpath, j.output_fpath)
                                 info('Done ' + j.repr + ', saved to ' + j.output_fpath +
@@ -111,6 +116,7 @@ def wait_for_jobs(cnf, jobs):
                             if not verify_file(j.output_fpath, description='j.output_fpath for ' + str(j.repr)):
                                 err('Job ' + j.repr + ' was unsuccessful: ' + str(j.output_fpath) + ' does not exist or empty.' +
                                    ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
+                                j.is_failed = True
                             else:
                                 info('Done ' + j.repr + ', saved to ' + j.output_fpath +
                                     ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
@@ -121,6 +127,7 @@ def wait_for_jobs(cnf, jobs):
                     waiting = False
                 if not j.is_done and isfile(j.error_marker):
                     j.is_done = True
+                    j.is_failed = True
                     err('Job ' + j.repr + ' returned non-0. ' +
                        ((' Log saved to ' + j.log_fpath) if j.log_fpath else ''))
                     if waiting:

@@ -218,5 +218,7 @@ snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canoni
 queue: batch.q
 
 qsub_runner: scripts/runner_Waltham.sh
+qsub_priority: 0
 
 smtp_host: 'relay.astrazeneca.net'
+
