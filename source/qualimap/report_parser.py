@@ -49,6 +49,8 @@ metric_storage = MetricStorage(
             Metric('Mapped paired reads %',                         'Mapped paired reads %',            ),
             Metric('Duplicated reads (flagged)',                    'Dup rate',                ),
             Metric('Duplicated reads (flagged) %',                  'Dup rate %',                ),
+            Metric('Duplicated reads (flagged) (on target)',        'Dup rate',                ),
+            Metric('Duplicated reads (flagged) (on target) %',      'Dup rate %',                ),
             Metric('Read min length',                               'Min len',                     'Read min length'),
             Metric('Read max length',                               'Max len',                     'Read max length'),
             Metric('Read mean length',                              'Ave len',                     'Read mean length'),
