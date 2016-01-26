@@ -68,7 +68,7 @@ genomes:
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf
     snpeff:
-      reference: GRCh38.78
+      reference: hg38
     canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg38/snpeff/canonical_transcripts.txt
 
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
@@ -90,7 +90,7 @@ genomes:
     clinvar: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/clinvar.vcf
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/CosmicV72CodingMuts.vcf
     snpeff:
-      reference: GRCh38.78
+      reference: hg38
     canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg38/snpeff/canonical_transcripts.txt
     # the rest is taken from hg19 crossmap
 
@@ -217,6 +217,7 @@ specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specif
 key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
+canonical_transcripts:        /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
 
 queue: batch.q
 
