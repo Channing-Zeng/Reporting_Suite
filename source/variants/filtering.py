@@ -124,48 +124,49 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
                           vardict2mut_executable=vardict2mut_perl)
     if not res:
         err('vardict2mut.pl run returned non-0')
-        return None
-    mut_fpath = pl_mut_fpath = res
+    pl_mut_fpath = res
 
-    if vardict2mut_py:
-        info('Running python version ' + vardict2mut_py)
-        res = run_vardict2mut(cnf, vcf2txt_out_fpath,
-            add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
-            sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_py)
-        if not res:
-            err('vardict2mut.py run returned non-0')
+    if not vardict2mut_py:
+        critical('vardict2mut_py not found')
+
+    info('Running python version ' + vardict2mut_py)
+    res = run_vardict2mut(cnf, vcf2txt_out_fpath,
+        add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
+        sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_py)
+    if not res:
+        critical('vardict2mut.py run returned non-0')
+    mut_fpath = py_mut_fpath = res
+    if pl_mut_fpath:
+        pl_mut_url = convert_path_to_url(pl_mut_fpath)
+    py_mut_url = convert_path_to_url(py_mut_fpath)
+
+    # Compare results, send email
+    msg = 'VarDict2mut comparison\n'
+    if pl_mut_fpath:
+        msg += 'Perl:\n\t' + pl_mut_fpath + '\n'
+        msg += '\t' + pl_mut_url + '\n'
+    msg += 'Python:\n\t' + py_mut_fpath + '\n'
+    msg += '\t' + py_mut_url + '\n\n'
+
+    if pl_mut_fpath:
+        py_line_num = num_lines(py_mut_fpath)
+        pl_line_num = num_lines(pl_mut_fpath)
+        if py_line_num == pl_line_num:
+            msg += 'Line numbers is equal: ' + str(pl_line_num) + '\n'
         else:
-            mut_fpath = py_mut_fpath = res
-            pl_mut_url = convert_path_to_url(pl_mut_fpath)
-            py_mut_url = convert_path_to_url(py_mut_fpath)
-
-            # Compare results, send email
-            msg = ('VarDict2mut comparison\nPerl:\n\t' + pl_mut_fpath + '\n')
-            if pl_mut_url:
-                msg += '\t' + pl_mut_url + '\n'
-            msg += 'Python:\n\t' + py_mut_fpath + '\n'
-            if py_mut_url:
-                msg += '\t' + py_mut_url + '\n\n'
-
-            py_line_num = num_lines(py_mut_fpath)
-            pl_line_num = num_lines(pl_mut_fpath)
-            if py_line_num == pl_line_num:
-                msg += 'Line numbers is equal: ' + str(pl_line_num) + '\n'
+            msg += 'Line numbers differ: perl (' + str(pl_line_num) + '), py (' + str(py_line_num) + ')\n'
+        try:
+            if call(cnf, get_system_path(cnf, 'diff') + ' -q ' + pl_mut_fpath +
+                    ' ' + py_mut_fpath, exit_on_error=False, return_err_code=True) != 0:
+                msg += 'Differ found.\n'
             else:
-                msg += 'Line numbers differ: perl (' + str(pl_line_num) + '), py (' + str(py_line_num) + ')\n'
+                msg += 'Files equal.\n'
+        except:
+            traceback.print_exc()
+            msg += 'Diff failed with exception.\n'
 
-            try:
-                if call(cnf, get_system_path(cnf, 'diff') + ' -q ' + pl_mut_fpath +
-                        ' ' + py_mut_fpath, exit_on_error=False, return_err_code=True) != 0:
-                    msg += 'Differ found.\n'
-                else:
-                    msg += 'Files equal.\n'
-            except:
-                traceback.print_exc()
-                msg += 'Diff failed with exception.\n'
-
-            info(msg)
-            send_email(msg_other=msg, only_me=True)
+    info(msg)
+    # send_email(msg_other=msg, only_me=True)
     info()
 
     write_vcfs(cnf, var_samples,
@@ -392,7 +393,9 @@ def write_vcfs(cnf, var_samples, output_dirpath,
                      cnf.work_dir,
                      var_sample,
                      caller_name,
-                     variants_by_sample[var_sample.name], mutations_by_sample[var_sample.name], vcf2txt_res_fpath)
+                     variants_by_sample[var_sample.name],
+                     mutations_by_sample[var_sample.name],
+                     vcf2txt_res_fpath)
                      for var_sample in var_samples)
             info('Done postprocessing all filtered VCFs.')
 

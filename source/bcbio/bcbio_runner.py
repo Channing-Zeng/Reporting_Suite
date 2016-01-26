@@ -890,13 +890,15 @@ class BCBioRunner:
         except:
             raise
         finally:
+            info('Interrupted. Deleting running jobs.')
+            del_jobs(self.cnf, self.jobs_running)
+            info('Interrupted. Changing permissions.')
             if isdir(self.bcbio_structure.final_dirpath):
                 change_permissions(self.bcbio_structure.final_dirpath)
             if isdir(self.bcbio_structure.work_dir):
                 change_permissions(self.bcbio_structure.work_dir)
             if isdir(join(self.bcbio_structure.work_dir, '..', 'config')):
                 change_permissions(join(self.bcbio_structure.work_dir, '..', 'config'))
-            del_jobs(self.cnf, self.jobs_running)
 
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
