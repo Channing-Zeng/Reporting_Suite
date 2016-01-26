@@ -116,7 +116,7 @@ class BaseClinicalReporting:
             row = report.add_row()
             row.add_record('Gene', mut.gene.name, show_content=mut.is_canonical)
             if mut.is_canonical:
-                row.add_record('Transcript', '<b>' + mut.transcript + '</b>')
+                row.add_record('Transcript', mut.transcript)
                 row_class = ' expandable_gene_row collapsed'
             else:
                 row.add_record('Transcript', mut.transcript)
