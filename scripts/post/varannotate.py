@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
-from optparse import SUPPRESS_HELP
 
 import bcbio_postproc
 
@@ -9,6 +8,7 @@ import gzip
 import os
 import sys
 import shutil
+from optparse import SUPPRESS_HELP
 
 import source
 from source import VarSample

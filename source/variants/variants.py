@@ -1,15 +1,12 @@
-import hashlib
-import base64
 from os.path import basename, join
 
 import source
-from source.logger import info
-from source.bcbio.bcbio_runner import Step
+from source.logger import info, err
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.file_utils import verify_file
-from source.variants.filtering import filter_with_vcf2txt
+from source.file_utils import verify_file, safe_mkdir, add_suffix
+from source.variants.filtering import run_vardict2mut
 
 
 def run_variants(cnf, samples, main_script_name):
@@ -53,8 +50,38 @@ def run_variants(cnf, samples, main_script_name):
         var_s.pass_filt_vcf_fpath = join(var_s.dirpath, var_s.name + '.anno.filt.pass.vcf')
         var_s.varfilter_dirpath = join(var_s.dirpath)
 
-    vcftxt_res_fpath = join(cnf.output_dir, (cnf.caller_name or 'variants') + '.txt')
-    mut_fpath = filter_with_vcf2txt(cnf, samples, cnf.output_dir, vcftxt_res_fpath, cnf.caller_name)
+    jobs = []
+    for var_s in samples:
+        output_fpath = join(var_s.varfilter_dirpath, 'vardict.txt')
+        jobs.append(submit_vcf2txt(cnf, var_s, output_fpath))
+    wait_for_jobs(cnf, jobs)
+
+    info('Combining vcf2txt.pl results...')
+    vcf2txt_res_fpath = join(cnf.output_dir, (cnf.caller_name or 'variants') + '.txt')
+    with open(vcf2txt_res_fpath, 'w') as out:
+        for j in jobs:
+            verify_file(j.output_fpath, is_critical=True)
+            with open(j.output_fpath) as f:
+                out.write(f.read())
+
+    info('Saved to ' + vcf2txt_res_fpath + ', running vardict2mut...')
+    mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
+    if not mut_fpath:
+        err('vardict2mut.py run returned non-0')
+        return None
+    info()
+
+
+def submit_vcf2txt(cnf, sample, vcf2txt_out_fpath):
+    vcf2txt_one_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vcf2txt_one.py'))
+    cmdl = '{vcf2txt_one_py} '.format(**locals())
+    return submit_job(cnf, cmdl, job_name='_vcf2txt_' + sample.name, output_fpath=vcf2txt_out_fpath, stdout_to_outputfile=False)
+
+
+# def submit_post_filter(cnf, sample, vcf2txt_out_fpath):
+#     vcf2txt_one_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vcf2txt_one.py'))
+#     cmdl = '{vcf2txt_one_py} '.format(**locals())
+#     return submit_job(cnf, cmdl, job_name='_vcf2txt_' + sample.name, output_fpath=vcf2txt_out_fpath, stdout_to_outputfile=False)
 
 
 def summarize_varqc(cnf, output_dir, samples, caption):
@@ -73,7 +100,7 @@ def summarize_varqc(cnf, output_dir, samples, caption):
             htmls_by_sample[s.name] = fpath
 
     report = FullReport.construct_from_sample_report_jsons(
-            samples, output_dir, jsons_by_sample=jsons_by_sample, htmls_by_sample=htmls_by_sample)
+        samples, output_dir, jsons_by_sample=jsons_by_sample, htmls_by_sample=htmls_by_sample)
     full_summary_fpaths = report.save_into_files(cnf, join(output_dir, 'varQC'), caption='Variant QC, ' + caption)
 
     info()

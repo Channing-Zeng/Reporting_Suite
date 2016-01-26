@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
-from optparse import SUPPRESS_HELP
 
 import bcbio_postproc
 
@@ -10,6 +9,7 @@ from os.path import isfile, join, basename, splitext, dirname
 import sys
 from traceback import format_exc
 import shutil
+from optparse import SUPPRESS_HELP
 from source import BaseSample, TargQC_Sample
 from source.calling_process import call
 from source.logger import critical

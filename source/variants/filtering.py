@@ -183,7 +183,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
         vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
     if not vardict2mut_executable:
-        vardict2mut_executable = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'), is_critical=True)
+        vardict2mut_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
 
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq
@@ -229,11 +229,12 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
 glob_cnf = None
 
 
-def postprocess_vcf(
+def postprocess_vcf(cnf,
         work_dir, var_sample, caller_name,
         variants, mutations, vcf2txt_res_fpath):
-    global glob_cnf
-    cnf = glob_cnf
+    if cnf is None:
+        global glob_cnf
+        cnf = glob_cnf
 
     info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': writing filtered VCFs')
 
@@ -308,6 +309,38 @@ def postprocess_vcf(
     info('Done postprocessing filtered VCF.')
 
 
+def write_vcf(cnf, sample, output_dirpath, caller_name, vcf2txt_res_fpath, mut_res_fpath):
+    info('')
+    info('-' * 70)
+    info('Writing VCF')
+
+    variants_dict = dict()
+    mutations = set()
+
+    info('Collecting passed variants...')
+    with open(mut_res_fpath) as fh:
+        for l in fh:
+            ts = l.split('\t')
+            s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
+            mutations.add((chrom, pos, alt))
+
+    info('Collecting all vcf2txt variants...')
+    with open(vcf2txt_res_fpath) as vcf2txt_f:
+        pass_col = None
+        for l in vcf2txt_f:
+            if l.startswith('Sample'):
+                pass_col = l.split('\t').index('PASS')
+            else:
+                ts = l.split('\t')
+                s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
+                filt = ts[pass_col]
+                variants_dict[(chrom, pos, alt)] = filt
+
+    info()
+    info('Writing filtered VCFs')
+    postprocess_vcf(cnf, cnf.work_dir, sample, caller_name, variants_dict, mutations, vcf2txt_res_fpath)
+
+
 def write_vcfs(cnf, var_samples, output_dirpath,
                caller_name, vcf2txt_res_fpath, mut_res_fpath, threads_num):
     info('')
@@ -355,7 +388,8 @@ def write_vcfs(cnf, var_samples, output_dirpath,
         try:
             Parallel(n_jobs=1) \
                 (delayed(postprocess_vcf) \
-                    (cnf.work_dir,
+                    (cnf,
+                     cnf.work_dir,
                      var_sample,
                      caller_name,
                      variants_by_sample[var_sample.name], mutations_by_sample[var_sample.name], vcf2txt_res_fpath)
