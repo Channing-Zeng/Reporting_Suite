@@ -292,7 +292,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
                 fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
-            gene_aachg = '-'.join([gene, aa_chg[1:]])
+            gene_aachg = '-'.join([gene, aa_chg])
             if 'chr' not in chr:
                 chr = 'chr' + chr
             key = '-'.join([chr, pos, ref, alt])
@@ -642,7 +642,7 @@ def parse_specific_mutations(specific_mut_fpath):
                             sens_pattern = re.compile('\((\D+)\s+\D+\)')
                             sens_mutation = re.findall(sens_pattern, mut)[0]
                             prot_chg = mut.split()[0].replace('p.', '')
-                            mutation = '-'.join([gene, prot_chg[1:]])
+                            mutation = '-'.join([gene, prot_chg])
                             genes_with_sens_or_res_mutations[gene].add(sens_mutation)
                             if 'sens' in mut:
                                 sensitive_mutations[sens_mutation][mutation] = index - 1
@@ -650,14 +650,14 @@ def parse_specific_mutations(specific_mut_fpath):
                                 resistance_mutations[sens_mutation][mutation] = index - 1
                         else:
                             mut = line[index].replace('p.', '')
-                            specific_mutations['-'.join([gene, mut[1:]])] = index - 1
+                            specific_mutations['-'.join([gene, mut])] = index - 1
 
     return specific_mutations, genes_with_generic_rules, sensitive_mutations, resistance_mutations, genes_with_sens_or_res_mutations
 
 
 def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region, status, reasons):
     if aa_chg:
-        gene_aachg = '-'.join([gene, aa_chg[1:]])
+        gene_aachg = '-'.join([gene, aa_chg])
         if gene_aachg in specific_mutations:
             tier = specific_mutations[gene_aachg]
             status, reasons = update_status(status, reasons, statuses[tier], 'manually_curated')

@@ -401,7 +401,7 @@ class BaseClinicalReporting:
     def sample_section(self, experiment):
         d = dict()
         d['patient'] = {'sex': 'unknown'}
-        d['project_report_rel_path'] = 'not generagted'
+        d['project_report_rel_path'] = 'not generated'
         # d['panel'] = 'unknown'
         # d['bed_path'] = 'unknown'
         # d['target_type'] = 'unknown'
@@ -457,7 +457,7 @@ class BaseClinicalReporting:
         p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
         return dict(value=gray(c + ':') + p, num=mut.get_chrom_key() * 100000000000 + mut.pos)
 
-    cdna_chg_regexp = re.compile(r'(c\.)([-\d_+*]+)(.*)')
+    cdna_chg_regexp = re.compile(r'([c,n]\.)([-\d_+*]+)(.*)')
     @staticmethod
     def _cdna_chg_recargs(mut):
         chg = mut.cdna_change
