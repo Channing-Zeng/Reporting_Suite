@@ -1,6 +1,7 @@
 from collections import defaultdict
 import os
 import sys
+import time
 from os.path import join
 from optparse import OptionParser, SUPPRESS_HELP
 
@@ -42,6 +43,7 @@ def main():
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
 
+    cnf.run_date = time.localtime()
     cnf_project_name = cnf.project_name
     if len(bcbio_project_dirpaths) > 1:
         cnf.project_name = None

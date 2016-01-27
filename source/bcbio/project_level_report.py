@@ -1,10 +1,15 @@
 import json
-from os.path import join, relpath, dirname, basename
+import os
+import time
+from inspect import getsourcefile
+from os.path import join, relpath, dirname, basename, abspath
 from collections import OrderedDict
 from collections import defaultdict
 
 import source
+from scripts.post.vardict2mut import set_filtering_params
 from source.bcbio.bcbio_structure import BCBioStructure
+from source.config import defaults
 from source.logger import info, step_greetings
 from source.file_utils import verify_file, add_suffix
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
@@ -86,7 +91,7 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
         project_report_html_fpath = bcbio_structure.project_report_html_fpath
         project_name = bcbio_structure.project_name
 
-    _save_static_html(cnf, full_report, project_report_html_fpath, project_name)
+    _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure)
 
     info()
     info('*' * 70)
@@ -337,7 +342,7 @@ def _relpath_all(value, base_dirpath):
         return value
 
 
-def _save_static_html(cnf, full_report, html_fpath, project_name):
+def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -378,6 +383,7 @@ def _save_static_html(cnf, full_report, html_fpath, project_name):
     for rec in common_records:
         if rec.value:
             common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
+    common_dict['run_section'] = get_run_info(cnf, bcbio_structure)
 
     main_dict = dict()
     if full_report.sample_reports:
@@ -412,3 +418,24 @@ def _save_static_html(cnf, full_report, html_fpath, project_name):
             main_dict["sample_reports"].append(sample_report_dict)
 
     return write_static_html_report(cnf, {"common": common_dict, "main": main_dict}, html_fpath)
+
+def get_run_info(cnf, bcbio_structure):
+    run_info_dict = dict()
+    cur_fpath = abspath(getsourcefile(lambda:0))
+    reporting_suite_dirpath = os.path.dirname(os.path.dirname(os.path.dirname(cur_fpath)))
+    run_date = cnf.run_date if cnf.run_date else time.localtime()
+    last_modification_time = max(os.path.getmtime(root) for root,_,_ in os.walk(reporting_suite_dirpath))
+    run_info_dict["run_date"] = time.strftime('%d %b %Y, %H:%M (GMT%z)', run_date)
+    run_info_dict["last_commit_date"] = time.strftime('%d %b %Y, %H:%M (GMT%z)', time.localtime(last_modification_time))
+
+    var_filtering_params = []
+    set_filtering_params(cnf, bcbio_structure=bcbio_structure)  # get variant filtering parameters from run_info yaml
+    dfts = defaults['variant_filtering']
+    for parameter in dfts:
+        if dfts[parameter] != cnf.variant_filtering[parameter]:
+            var_filtering_params.append('%s: %s' % (parameter, cnf.variant_filtering[parameter]))
+    if var_filtering_params:
+        run_info_dict["filtering_params"] = ', '.join(var_filtering_params)
+    else:
+        run_info_dict["filtering_params"] = 'default'
+    return run_info_dict

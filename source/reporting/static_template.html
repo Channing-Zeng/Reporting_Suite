@@ -17,7 +17,14 @@
     <div id='report'>
         {.section common}
         <h1 class="report-header">{project_name}</h1>
-
+        <div>
+            {.section run_section}
+            <span>Post-processing was started on {run_date}<br></span>
+            <span>Reporting Suite was last modified on {last_commit_date}<br><br></span>
+            <span>Variant filtering parameters: {filtering_params}<br></span>
+            {.or}
+            {.end}
+        </div>
         <div class="row placeholders">
             <div class="col-xs-6 col-sm-3 placeholder">
                 <!--<img data-src="holder.js/200x200/auto/sky" class="img-responsive" alt="Generic placeholder thumbnail">-->

@@ -6,11 +6,12 @@ from collections import defaultdict
 from optparse import OptionParser
 from os.path import join
 from os.path import exists
+import time
 import sys
 import re
 
 from source import info, verify_file
-from source.config import Config
+from source.config import Config, defaults
 from source import logger
 from source.file_utils import adjust_path, verify_dir
 from source.logger import critical
@@ -70,10 +71,7 @@ def get_args():
     if not cnf.output_file:
         critical('Please, specify the output fpath with -o')
 
-    cnf.variant_filtering.min_freq_vardict2mut = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut or cnf.variant_filtering.min_freq
-    cnf.variant_filtering.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
-    if cnf.variant_filtering.min_hotspot_freq is None or cnf.variant_filtering.min_hotspot_freq == 'default':
-        cnf.variant_filtering.min_hotspot_freq = min(0.01, cnf.variant_filtering.min_freq_vardict2mut / 2)
+    set_filtering_params(cnf)
 
     info()
 
@@ -727,6 +725,15 @@ def print_mutations_for_one_gene(out_f, lines_written, cur_gene_mutations, gene,
         lines_written = print_mutation(out_f, lines_written, status, reasons, fields, fm_data, is_output_fm)
     return lines_written
 
+
+def set_filtering_params(cnf, bcbio_structure=None):
+    cnf.variant_filtering.min_freq_vardict2mut = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut or cnf.variant_filtering.min_freq
+    if cnf.variant_filtering.min_freq_vardict2mut == 'bcbio' or cnf.variant_filtering.min_freq_vardict2mut is None:
+        sample_min_freq = bcbio_structure.samples[0].min_af if bcbio_structure else None
+        cnf.variant_filtering.min_freq_vardict2mut = sample_min_freq or defaults.default_min_freq
+    cnf.variant_filtering.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
+    if cnf.variant_filtering.min_hotspot_freq is None or cnf.variant_filtering.min_hotspot_freq == 'default':
+        cnf.variant_filtering.min_hotspot_freq = min(0.01, cnf.variant_filtering.min_freq_vardict2mut / 2)
 
 if __name__ == '__main__':
     main()
