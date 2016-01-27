@@ -376,10 +376,13 @@ def write_vcfs(cnf, var_samples, output_dirpath,
     try:
         Parallel(n_jobs=threads_num) \
             (delayed(postprocess_vcf) \
-                (cnf.work_dir,
+                (None,
+                 cnf.work_dir,
                  var_sample,
                  caller_name,
-                 variants_by_sample[var_sample.name], mutations_by_sample[var_sample.name], vcf2txt_res_fpath)
+                 variants_by_sample[var_sample.name],
+                 mutations_by_sample[var_sample.name],
+                 vcf2txt_res_fpath)
                  for var_sample in var_samples)
         info('Done postprocessing all filtered VCFs.')
 
@@ -389,7 +392,7 @@ def write_vcfs(cnf, var_samples, output_dirpath,
         try:
             Parallel(n_jobs=1) \
                 (delayed(postprocess_vcf) \
-                    (cnf,
+                    (None,
                      cnf.work_dir,
                      var_sample,
                      caller_name,
@@ -436,6 +439,9 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=Non
         cmdline += ' -A ' + dbsnp_multi_mafs
     else:
         cmdline += ' -A ""'
+
+    if c.amplicon_based:
+        cmdline += ' -a '
 
     if cnf.is_wgs:
         info('WGS; running vcftxt separately for each sample to save memory.')

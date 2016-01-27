@@ -50,7 +50,6 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
     refseq:   /ngs/reference_data/genomes/Hsapiens/hg38/bed/CDS_RefSeq.bed
 
-    polymorphic_variants:         /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
 #    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
@@ -71,7 +70,6 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
     refseq:   /ngs/reference_data/genomes/Hsapiens/hg38/bed/CDS_RefSeq.bed
 
-    polymorphic_variants:         /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
 #    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
@@ -97,7 +95,6 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
     refseq:   /ngs/reference_data/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed
 
-    polymorphic_variants:         /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
@@ -122,7 +119,6 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exome-AZ.bed
     refseq:   /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/CDS_RefSeq.bed
 
-    polymorphic_variants:         /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/snpeffect_export_Polymorphic.txt
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt

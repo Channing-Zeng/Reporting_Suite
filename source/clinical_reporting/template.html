@@ -133,7 +133,7 @@
                     <ol>
                     <li><b>Germline variants</b> – germline SNPs occur at approximately 100%, 50%, or 0% frequency and every effort is made to filter out germline variants (some exceptions like BRCA1/2).
                     <li><b>Somatic variants</b> – somatic variants occur at nearly any allele frequency but as allele frequencies approach 20% and lower, data become noisier and false positive variants increase.
-                    <li><b>Sample types</b> - In general, focus on somatic variants above ~30% allele frequency for cell line and explant models, above ~5% and above for tumors, and above ~0.7% for ctDNA. Formalin treated tumors have the added complication of C>T and G>A de-amination artefacts.
+                    <li><b>Sample types</b> - in general, focus on somatic variants above ~30% allele frequency for cell line and explant models, above ~5% and above for tumors, and above ~0.7% for ctDNA. Formalin treated tumors have the added complication of C>T and G>A de-amination artefacts.
                     <li><b>False positive mutations</b> – advance algorithms were employed to generate the highest quality variant calls, but false positive will still occur and are likely present in the candidate mutation output below. False positive variants are more found in homopolymer tracts, in genes with repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes residing in repetitive or unstable regions of the genome.
                     </ol>
                 </p>
@@ -274,12 +274,9 @@
                             </table>
                         </td>
                     {.end}
-                    <!--</div>-->
                     </tr>
                 </table>
-            <!--{.or}-->
-                <!--<p>No CNVs found in in {total_key_genes} {key_or_target} genes.</p>-->
-            <!--{.end}-->
+            {.end}
         {.or}
             <p>No Seq2C events found in in {total_key_genes} {key_or_target} genes.</p>
         {.end}
@@ -310,7 +307,6 @@
                     </div>
                 </div>
             </div>
-            <!--<div class="space_30px"></div>-->
         </div>
 
         <table width="100%">
