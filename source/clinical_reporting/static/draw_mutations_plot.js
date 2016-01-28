@@ -55,7 +55,7 @@ function drawMutPlot(key, data, placeholder_el) {
             }
             if (color == 'black') {
                 curMutation = data.mutations[k].mutType.toLowerCase();
-                mutationTypes.push(curMutation);
+                mutationTypes.push([curMutation]);
                 index = mutationTypes.length - 1;
                 color = colors[index];
                 usedMutations.push(index);

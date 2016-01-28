@@ -158,11 +158,12 @@ class BaseClinicalReporting:
             )
 
             for i, mut in enumerate(sorted(muts, key=lambda m: m.freq, reverse=True)):
-                d['mutations'].append(dict(
-                    x=i+1,
-                    geneName=mut.gene.name,
-                    chrom=mut.chrom, position=mut.pos, freq=mut.freq * 100,
-                    mutType=mut.eff_type, aaChg=mut.aa_change, cdnaChange=mut.codon_change))
+                if mut.is_canonical:
+                    d['mutations'].append(dict(
+                        x=i+1,
+                        geneName=mut.gene.name,
+                        chrom=mut.chrom, position=mut.pos, freq=mut.freq * 100,
+                        mutType=mut.eff_type, aaChg=mut.aa_change, cdnaChange=mut.codon_change))
             d['minY'] = 0
 
             data[e.key.lower()] = d
