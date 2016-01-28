@@ -408,6 +408,12 @@ class ClinicalExperimentInfo:
                 else:
                     event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
                     if event and event.sample == self.sample.name:
+                        if event.is_deletion():
+                            affected_genes = set([gene for annotation in event.annotations for gene in annotation.genes])
+                            if len(affected_genes) == 1:
+                                effects = set([annotation.effect.lower() for annotation in event.annotations])
+                                if not any('exon_del' in effect or 'exon_loss' in effect for effect in effects):
+                                    continue
                         for annotation in event.annotations:
                             if event.is_fusion() and sorted(annotation.genes) in sorted_known_fusions:
                                 info('Found ' + '/'.join(annotation.genes) + ' in known')
