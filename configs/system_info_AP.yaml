@@ -56,6 +56,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
+
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
@@ -75,6 +77,8 @@ genomes:
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa

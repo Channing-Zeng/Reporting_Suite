@@ -74,6 +74,8 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
     refseq:   /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq.no_genes.cut4.merge.bed
 
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
+
 #    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
@@ -94,6 +96,8 @@ genomes:
     exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
     refseq:   /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq.no_genes.cut4.merge.bed
+
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
 
 #    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
