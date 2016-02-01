@@ -55,9 +55,14 @@ def query_mutations(cnf, mutations):
             info('Done, read ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
             return mutations
 
+    ds = None
     from solvebio import login, Dataset, BatchQuery, SolveError
-    login()
-    ds = Dataset.retrieve('ClinVar/Variants')
+    try:
+        login()
+        ds = Dataset.retrieve('ClinVar/Variants')
+    except SolveError:
+        err(format_exc())
+        err('Could not retrieve information for SolveBio, skipping')
 
     queries = [
         ds.query().filter(gene_symbol=m.gene.name) \
