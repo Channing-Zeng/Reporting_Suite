@@ -646,15 +646,21 @@ class BCBioStructure(BaseProjectStructure):
 
         # setting bed files for samples
         if cnf.bed:
-            verify_file(cnf.bed)
-            self.bed = cnf.bed = adjust_path(cnf.bed)
+            self.sv_bed = self.bed = cnf.bed = verify_bed(cnf.bed, is_critical=True)
         else:
             bed_files_used = [s.bed for s in self.samples]
+            sv_bed_files_used = [s.sv_bed for s in self.samples]
             if len(set(bed_files_used)) > 2:
-                err('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
-                self.bed = None
-            else:
-                self.bed = bed_files_used[0] if bed_files_used else None
+                critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
+            if len(set(sv_bed_files_used)) > 2:
+                critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
+            self.bed = bed_files_used[0] if bed_files_used else None
+            self.sv_bed = sv_bed_files_used[0] if sv_bed_files_used else None
+
+        is_wgs_flags = [s.is_wgs for s in self.samples]
+        if len(set(is_wgs_flags)) > 2:
+            critical('Error: more than 1 variant_regions file found: ' + str(is_wgs_flags))
+            self.is_wgs = is_wgs_flags[0] if is_wgs_flags else False
 
         self.target_type = 'genome'
         if self.bed:
@@ -812,33 +818,28 @@ class BCBioStructure(BaseProjectStructure):
         info('Final dirpath: ' + self.final_dirpath)
 
     def _set_bed_file(self, sample, sample_info):
-        bed = None
+        if sample_info['algorithm'].get('sv_regions'):  # SV regions?
+            sv_bed = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['sv_regions']))
+            if sv_bed and sv_bed.endswith('.bed'):
+                verify_bed(sv_bed, is_critical=True)
+                sample.sv_bed = sv_bed
+                info('sv_regions file for ' + sample.name + ': ' + str(sample.sv_bed))
+            else:
+                warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(sv_bed))
+        if not sample.sv_bed:
+            info('No sv_regions file for ' + sample.name)
+
+        if sample_info['algorithm'].get('variant_regions'):  # SV regions?
+            variant_regions = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['variant_regions']))
+            if not variant_regions:
+                sample.is_wgs = True
+                info('No variant_regions file for ' + sample.name + ', assuming WGS')
 
         if self.cnf.bed:  # Custom BED provided in command line?
             sample.bed = verify_bed(self.cnf.bed, is_critical=True)
             info('BED file for ' + sample.name + ': ' + str(sample.bed))
-
         else:
-            # if sample_info['algorithm'].get('variant_regions'):  # Variant regions?
-            #     bed = adjust_path(sample_info['algorithm']['variant_regions'])
-            #     if bed and bed.endswith('.bed'):
-            #         verify_bed(bed, is_critical=True)
-            #         sample.bed = bed
-            #         info('SV BED file for ' + sample.name + ': ' + str(sample.bed))
-            #     else:
-            #         warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(bed))
-
-            if sample_info['algorithm'].get('sv_regions'):  # SV regions?
-                bed = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['sv_regions']))
-                if bed and bed.endswith('.bed'):
-                    verify_bed(bed, is_critical=True)
-                    sample.bed = bed
-                    info('BED file for ' + sample.name + ': ' + str(sample.bed))
-                else:
-                    warn('sv_regions for ' + sample.name + ' is not BED: ' + str(bed))
-
-        if not sample.bed:
-            info('No BED file and no sv_regions bed file for ' + sample.name + '. Assuming WGS')
+            info('No BED file for ' + sample.name)
 
     def _set_bam_file(self, sample):
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))

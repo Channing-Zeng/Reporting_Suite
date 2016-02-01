@@ -63,11 +63,12 @@ class BaseSample:
     def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None,
                  targqc_dirpath=None, ngscat_dirpath=None, qualimap_dirpath=None,
                  fastqc_dirpath=None, picard_dirpath=None, clinical_report_dirpath=None,
-                 flagged_regions_dirpath=None, normal_match=None, sv_fpath=None):
+                 flagged_regions_dirpath=None, normal_match=None, sv_fpath=None, sv_bed=None):
         self.name = name
         self.bam = bam
         self.dedup_bam = None
         self.bed = bed
+        self.sv_bed = sv_bed
         self.qualimap_bed = None
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.vcf = vcf
