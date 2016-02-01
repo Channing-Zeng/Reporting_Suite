@@ -11,6 +11,10 @@ HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0), ('Un', 25)]
 for i in range(22, 0, -1):
     HG19_CHROMS.append((str(i), i))
 
+HG38_CHROMS = [('X', 23), ('Y', 24), ('M', 25), ('Un', 26)]
+for i in range(22, 0, -1):
+    HG38_CHROMS.append((str(i), i))
+
 MM10_CHROMS = [('X', 22), ('Y', 23), ('M', 24), ('Un', 25)]
 for i in range(21, -1, -1):
     MM10_CHROMS.append((str(i), i))
@@ -23,7 +27,11 @@ class SortableByChrom:
         self._chrom_key = self.__make_chrom_key(genome)
 
     def __make_chrom_key(self, genome):
-        chroms = HG19_CHROMS if self.genome != 'mm10' else MM10_CHROMS
+        chroms = HG19_CHROMS
+        if self.genome == 'mm10':
+            chroms = MM10_CHROMS
+        if 'hg38' in self.genome:
+            chroms = HG38_CHROMS
 
         chr_remainder = self.chrom
         if self.chrom.startswith('chr'):
