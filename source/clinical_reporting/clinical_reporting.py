@@ -218,6 +218,7 @@ class BaseClinicalReporting:
             Metric('Type'),
             Metric('Location', with_heatmap=False, align='left', sort_direction='ascending'),
             Metric('Genes', class_='long_line'),
+            Metric('Transcript', class_='long_line'),
             # Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
             # Metric('Effects', with_heatmap=False, align='left', class_='long_line'),
         ]
@@ -239,36 +240,55 @@ class BaseClinicalReporting:
                                        metric_storage=metric_storage)
 
         # Writing records
-        svs_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
+        svanns_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         for e, svs in svs_by_experiment.items():
-            for sv in svs:
-                if any(a.known or a.effect == 'EXON_DEL' for a in sv.annotations):
-                    svs_by_key_by_experiment[sv.get_key()][e] = sv
+            for sv_event in svs:
+                for an in sv_event.key_annotations:
+                    # reporting all whole exon deletions
+                    if sv_event.is_deletion() and ('exon_del' in an.effect.lower() or 'exon_loss' in an.effect.lower()):
+                        svanns_by_key_by_experiment[an.get_key()][e] = an
 
-        for sv_key, sv_by_experiment in svs_by_key_by_experiment.items():
-            sv = next((s for s in sv_by_experiment.values() if s is not None), None)
+                    # reporting all known (fusion)
+                    elif an.known:
+                        svanns_by_key_by_experiment[an.get_key()][e] = an
+
+                    # reporting all non-fusion events affecting 2 or more genes (start and end should not be the same gene. handling overlapping gene cases.)
+                    elif all(ann_g not in sv_event.end_genes for ann_g in an.genes):
+                        svanns_by_key_by_experiment[an.get_key()][e] = an
+
+        for sv_key, svann_by_experiment in svanns_by_key_by_experiment.items():
+            sv_ann = next((s for s in svann_by_experiment.values() if s is not None), None)
 
             row = report.add_row()
 
-            row.add_record('Chr', sv.chrom)
-            row.add_record('Type', BaseClinicalReporting.sv_type_dict.get(sv.type, sv.type) if sv else None)
-            row.add_record('Location', Metric.format_value(sv.start) + (('..' + Metric.format_value(sv.end)) if sv.end else '') if sv else None, num=sv.start if sv else None)
-            row.add_record('Genes', ', '.join(set('/'.join(set(a.genes)) for a in sv.key_annotations if a.genes)))
+            row.add_record('Chr', sv_ann.event.chrom)
+            type_str = None
+            if sv_ann:
+                type_str = BaseClinicalReporting.sv_type_dict.get(sv_ann.event.type, sv_ann.event.type)
+                if sv_ann.effect == 'EXON_DEL':
+                    type_str += ' ' + sv_ann.exon_info
+
+            row.add_record('Type', type_str)
+            row.add_record('Location', Metric.format_value(sv_ann.event.start) +
+                                       (('..' + Metric.format_value(sv_ann.event.end)) if sv_ann.event.end else '') if sv_ann else None,
+                           num=sv_ann.event.start if sv_ann else None)
+            row.add_record('Genes', '/'.join(set(sv_ann.genes)) if sv_ann else None)
+            row.add_record('Transcript', sv_ann.transcript if sv_ann else None)
             # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
             # row.add_record('Effects', ', '.join(set(a.effect.lower().replace('_', ' ') for a  in sv.annotations if a in ['EXON_DEL', 'FUSION'])))
 
-            if len(sv_by_experiment.values()) == 1:
-                row.add_record('Split read support', sv.split_read_support if sv else None)
-                row.add_record('Paired read support', sv.paired_end_support if sv else None)
+            if len(svann_by_experiment.values()) == 1:
+                row.add_record('Split read support', sv_ann.event.split_read_support if sv_ann else None)
+                row.add_record('Paired read support', sv_ann.event.paired_end_support if sv_ann else None)
             else:
-                for e, m in sv_by_experiment.items():
-                    row.add_record(e.key + ' Split read support', sv.split_read_support if sv else None)
-                    row.add_record(e.key + ' Paired read support', sv.paired_end_support if sv else None)
+                for _sv_ann, m in svann_by_experiment.items():
+                    row.add_record(e.key + ' Split read support', _sv_ann.event.split_read_support if _sv_ann else None)
+                    row.add_record(e.key + ' Paired read support', _sv_ann.event.paired_end_support if _sv_ann else None)
 
             # if any(a.known for a in sv.annotations):
             #     row.highlighted = True
 
-            if len(sv_by_experiment.keys()) == len(svs_by_experiment.keys()):
+            if len(svann_by_experiment.keys()) == len(svs_by_experiment.keys()):
                 row.highlighted_green = True
 
         return report

@@ -120,6 +120,11 @@ class SVEvent:
             self.transcript = None
 
             self.known = False
+            self.event = None
+
+        def get_key(self):
+            if self.event:
+                return self.event.get_key(), self.type, self.effect, self.transcript
 
         @staticmethod
         def parse_annotation(string):
@@ -138,6 +143,7 @@ class SVEvent:
             elif genes_val:
                 a.genes = [genes_val]
             a.transcript = fs[3]
+            a.exon_info = fs[4]
             return a
 
     @staticmethod
@@ -165,7 +171,10 @@ class SVEvent:
 
         e.known_gene_val = kwargs.get('known')
         e.known_gene = e.known_gene_val.split('-with-')[1] if '-with-' in e.known_gene_val else e.known_gene_val
-        e.end_gene = kwargs.get('end_gene')
+        if kwargs.get('end_gene'):
+            e.end_genes = kwargs.get('end_gene').split(',')
+        else:
+            e.end_genes = []
         e.lof = kwargs.get('lof')
         e.annotations = []
         if kwargs.get('annotation'):
@@ -198,7 +207,7 @@ class SVEvent:
         self.mate_id = None
         self.known_gene_val = None
         self.known_gene = None
-        self.end_gene = None
+        self.end_genes = []
         self.lof = None
         self.annotations = []
         self.key_annotations = set()
@@ -231,7 +240,7 @@ class SVEvent:
         return hash((self.caller, self.chrom, self.start, self.type, self.id, self.mate_id))
 
     def get_key(self):
-        return self.chrom, self.type, tuple(tuple(sorted(a.genes)) for a in self.annotations)
+        return self.chrom, self.type  #, tuple(tuple(sorted(a.genes)) for a in self.annotations)
 
 
 # class FusionEvent(SVEvent):
@@ -408,23 +417,19 @@ class ClinicalExperimentInfo:
                 else:
                     event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
                     if event and event.sample == self.sample.name:
-                        if event.is_deletion():
-                            affected_genes = set([gene for annotation in event.annotations for gene in annotation.genes])
-                            if len(affected_genes) == 1:
-                                effects = set([annotation.effect.lower() for annotation in event.annotations])
-                                if not any('exon_del' in effect or 'exon_loss' in effect for effect in effects):
-                                    continue
                         for annotation in event.annotations:
                             if event.is_fusion() and sorted(annotation.genes) in sorted_known_fusions:
                                 info('Found ' + '/'.join(annotation.genes) + ' in known')
                                 annotation.known = True
 
-                            for g in annotation.genes:
+                            genes_to_check = annotation.genes + event.end_genes
+                            for g in genes_to_check:
                                 if g in key_gene_by_name:
                                     sv_events_by_gene_name[g] = event
                                     sv_events.add(event)
                                     key_gene_by_name[g].sv_events.add(event)
                                     event.key_annotations.add(annotation)
+                                    annotation.event = event
         return sv_events
 
     def parse_seq2c_report(self, seq2c_tsv_fpath):
