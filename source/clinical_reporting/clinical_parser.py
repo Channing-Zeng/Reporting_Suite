@@ -297,7 +297,7 @@ def clinical_sample_info_from_cnf(cnf):
         varqc_json_fpath=verify_file(cnf.varqc_json_fpath, is_critical=True) if cnf.varqc_json_fpath else None,
         seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, is_critical=True) if cnf.seq2c_tsv_fpath else None,
         project_name=cnf.project_name,
-        project_report_path=verify_file(cnf.project_report_path, is_critical=True) if cnf.project_report_path else None,
+        project_report_path=cnf.project_report_path,
         targqc_report_path=verify_file(cnf.targqc_report_path, silent=True) if cnf.targqc_report_path else None)
 
 

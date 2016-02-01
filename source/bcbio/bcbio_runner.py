@@ -889,7 +889,6 @@ class BCBioRunner:
                 info('HTML report url: ' + html_report_url)
         except:
             info('Interrupted.')
-            info('Interrupted.')
         finally:
             info('Deleting running jobs...')
             del_jobs(self.cnf, self.jobs_running)
