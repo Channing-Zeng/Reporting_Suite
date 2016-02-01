@@ -21,7 +21,7 @@ for i in range(21, -1, -1):
 
 
 class SortableByChrom:
-    def __init__(self, chrom, genome=None):
+    def __init__(self, chrom, genome):
         self.chrom = chrom
         self.genome = genome
         self._chrom_key = self.__make_chrom_key(genome)

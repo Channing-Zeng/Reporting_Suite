@@ -3,21 +3,21 @@ import bcbio_postproc  # do not remove it: checking for python version and addin
 
 import sys
 
-from source.logger import err
+from source.logger import err, critical
 from source.file_utils import file_exists, verify_file, file_transaction
 from source.targetcov.Region import SortableByChrom
 
 
 def main():
-    if len(sys.argv) > 1 :
-        seq_fpath = sys.argv[1]
-    else:
-        seq_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
+    if len(sys.argv) <= 2:
+        critical('Usage: ' + __file__ + ' path_to_.fa genome_build_name')
 
-    get_chr_lengths(seq_fpath)
+    seq_fpath = sys.argv[1]
+    genome_build = sys.argv[2]
+    get_chr_lengths(seq_fpath, genome_build)
 
 
-def get_chr_lengths(seq_fpath):
+def get_chr_lengths(seq_fpath, genome_build):
     chr_lengths = []
 
     verify_file(seq_fpath, is_critical=True)
@@ -29,7 +29,7 @@ def get_chr_lengths(seq_fpath):
                 line = line.strip()
                 if line:
                     chrom, length = line.split()[0], line.split()[1]
-                    chr_lengths.append([SortableByChrom(chrom), length])
+                    chr_lengths.append([SortableByChrom(chrom, genome_build), length])
     else:
         err('Reading genome sequence (.fa) to get chromosome lengths')
         with open(seq_fpath, 'r') as handle:

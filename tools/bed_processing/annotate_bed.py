@@ -129,7 +129,7 @@ def log(msg=''):
 
 
 class Region(SortableByChrom):
-    def __init__(self, chrom, start, end, genome_build=None, gene_symbol=None, exon=None, strand=None, feature=None, biotype=None):
+    def __init__(self, chrom, start, end, genome_build, gene_symbol=None, exon=None, strand=None, feature=None, biotype=None):
         SortableByChrom.__init__(self, chrom, genome_build)
         self.chrom = chrom
         self.start = start
@@ -157,11 +157,11 @@ def merge_fields(consensus_field, other_field):
     return consensus_field
 
 
-def _resolve_ambiguities(annotated_by_loc_by_gene):
+def _resolve_ambiguities(annotated_by_loc_by_gene, genome_build):
     annotated = []
     for (chrom, start, end), overlaps_by_gene in annotated_by_loc_by_gene.iteritems():
         for g_name, overlaps in overlaps_by_gene.iteritems():
-            consensus = Region(chrom, start, end, gene_symbol=g_name, exon='', strand='', feature='', biotype='')
+            consensus = Region(chrom, start, end, genome_build=genome_build, gene_symbol=g_name, exon='', strand='', feature='', biotype='')
             for r, overlap_size in overlaps:
                 if consensus.strand:
                     # RefSeq has exons from different strands with the same gene name (e.g. CTAGE4 for hg19),
@@ -217,7 +217,7 @@ def _annotate(cnf, bed, ref_bed):
             total_uniq_lines += 1
 
         if e_chr == '.':
-            off_targets.append(Region(a_chr, int(a_start), int(a_end)))
+            off_targets.append(Region(a_chr, int(a_start), int(a_end), genome_build=cnf.genome.name))
         else:
             total_annotated += 1
             if (a_chr, a_start, a_end) not in met:
@@ -238,7 +238,7 @@ def _annotate(cnf, bed, ref_bed):
     log()
 
     log('Resolving ambiguities...')
-    annotated = _resolve_ambiguities(annotated_by_loc_by_gene)
+    annotated = _resolve_ambiguities(annotated_by_loc_by_gene, cnf.genome.name)
 
     return annotated, off_targets
 
