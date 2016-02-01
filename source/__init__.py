@@ -69,6 +69,7 @@ class BaseSample:
         self.dedup_bam = None
         self.bed = bed
         self.sv_bed = sv_bed
+        self.is_wgs = False
         self.qualimap_bed = None
         self.vcf_by_callername = OrderedDict()  # string -> vcf_fpath
         self.vcf = vcf
