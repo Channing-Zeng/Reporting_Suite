@@ -321,11 +321,11 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set, suffix=None):
     return iterate_file(cnf, bed_fpath, fn, suffix=suffix or 'filt_genes', check_result=False)
 
 
-def sort_bed(cnf, bed_fpath, genome=None):
+def sort_bed(cnf, bed_fpath, genome):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
 
     cmdl = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sort_bed.py'), is_critical=True)
-    if genome: cmdl += ' ' + genome
+    cmdl += ' ' + genome
 
     res = call(cnf, cmdl, stdin_fpath=bed_fpath, output_fpath=output_fpath)
     if not res:

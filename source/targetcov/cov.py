@@ -248,7 +248,7 @@ MALE_READS_THRES = 100
 MALE_TARGET_REGIONS_FACTOR = 0.5
 
 def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
-    male_genes_bed = total_merge_bed(cnf, sort_bed(cnf, MALE_GENES_BED_FPATH))
+    male_genes_bed = total_merge_bed(cnf, sort_bed(cnf, MALE_GENES_BED_FPATH, cnf.genome.name))
     male_area_size = calc_sum_of_regions(male_genes_bed)
     info('Male region total size: ' + str(male_area_size))
 
