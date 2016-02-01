@@ -888,17 +888,20 @@ class BCBioRunner:
                 info()
                 info('HTML report url: ' + html_report_url)
         except:
-            raise
+            info('Interrupted.')
+            info('Interrupted.')
         finally:
-            info('Interrupted. Deleting running jobs.')
+            info('Deleting running jobs...')
             del_jobs(self.cnf, self.jobs_running)
-            info('Interrupted. Changing permissions.')
+            info('Changing permissions...')
             if isdir(self.bcbio_structure.final_dirpath):
                 change_permissions(self.bcbio_structure.final_dirpath)
             if isdir(self.bcbio_structure.work_dir):
                 change_permissions(self.bcbio_structure.work_dir)
             if isdir(join(self.bcbio_structure.work_dir, '..', 'config')):
                 change_permissions(join(self.bcbio_structure.work_dir, '..', 'config'))
+            info()
+            info('Done post-processiong.')
 
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
