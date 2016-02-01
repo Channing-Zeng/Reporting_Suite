@@ -263,10 +263,8 @@ class BCBioRunner:
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
 
-        self.is_wgs = False
+        self.is_wgs = self.bcbio_structure.is_wgs
         target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
-        if not target_bed:
-            self.is_wgs = True
 
         targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
