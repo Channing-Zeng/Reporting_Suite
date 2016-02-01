@@ -226,6 +226,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     pcnt_sample_col = None
     status_col = None
     reason_col = None
+    lof_col = None
 
     lines_written = 0
     header = ''
@@ -274,6 +275,10 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                     reason_col = None
                 else:
                     status_col = reason_col - 1
+                try:
+                    lof_col = header.index('LOF')
+                except ValueError:
+                    lof_col = None
                 if not cnf.is_output_fm and not status_col and not reason_col:
                     l += '\tStatus\tReason'
                 out_f.write(l + '\n')
@@ -363,10 +368,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                                                                                     effect, region, status, reasons)
 
             if not SIMULATE_OLD_VARDICT2MUT and not is_specific_mutation:
+                is_lof = fields[lof_col] if lof_col else None
                 if not SIMULATE_OLD_VARDICT2MUT and status != 'known' and gene in genes_with_generic_rules:
-                    status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg)
+                    status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg, is_lof)
 
-                if is_loss_of_function(reasons):
+                if is_loss_of_function(reasons, is_lof):
                     if gene in oncogenes:
                         info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
                         status, reasons = update_status(status, reasons, 'unlikely', reasons + ['oncogene'], force=True)
@@ -428,6 +434,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                         filter_matches_counter['not known and Pcnt_sample > variant_filtering (' + str(cnf.variant_filtering.max_ratio) + ')'] += 1
                         continue
 
+            fields = fields[:lof_col] + fields[(lof_col + 1):] if lof_col else fields
             if not SIMULATE_OLD_VARDICT2MUT:
                 if gene in genes_with_sens_or_res_mutations and (prev_gene == gene or not cur_gene_mutations):
                     if gene_aachg in sensitization_aa_changes:
@@ -673,10 +680,10 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
     return status, reasons, False
 
 
-def check_by_general_rules(var_type, status, reasons, aa_chg):
+def check_by_general_rules(var_type, status, reasons, aa_chg, is_lof):
     if 'splice_site' in reasons:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
-    elif is_loss_of_function(reasons):
+    elif is_loss_of_function(reasons, is_lof):
         status, reasons = update_status(status, reasons, 'known', 'actionable')
     elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
@@ -685,7 +692,9 @@ def check_by_general_rules(var_type, status, reasons, aa_chg):
     return status, reasons
 
 
-def is_loss_of_function(reasons):
+def is_loss_of_function(reasons, is_lof=None):
+    if is_lof is not None:
+        return is_lof
     lof_reasons = ['frame_shift', 'stop_gained', 'start_lost', 'splice_site']
     return any(reason in lof_reasons for reason in reasons)
 
