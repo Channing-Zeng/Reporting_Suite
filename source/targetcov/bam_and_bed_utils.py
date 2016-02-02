@@ -109,6 +109,9 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
     if target_bed:
         target_bed = verify_bed(target_bed, is_critical=True)
 
+    if seq2c_bed:
+        seq2c_bed = verify_bed(seq2c_bed, is_critical=True)
+
     if exons_bed:
         exons_bed = verify_bed(exons_bed, is_critical=True)
 
@@ -133,6 +136,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed_1)
         call(cnf, 'grep -vw Multi_Gene ' + exons_no_genes_bed_1, output_fpath=exons_no_genes_bed)
 
+    ori_target_bed_path = target_bed
     if target_bed:
         info()
         info('Remove comments in target...')
@@ -146,7 +150,6 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         info('Sorting target...')
         target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
 
-    if target_bed:
         cols = count_bed_cols(target_bed)
         if cnf.reannotate or cols < 4:
             info()
@@ -158,7 +161,43 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
 
-    seq2c_bed = prep_bed_for_seq2c(cnf, seq2c_bed or target_bed or verify_bed(cnf.genome.refseq) or cut(cnf, exons_no_genes_bed, 4))
+    # remove regions with no gene annotation
+    def f(l, i):
+        if l.split('\t')[3].strip() == '.': return None
+        else: return l
+
+    if not seq2c_bed and target_bed or seq2c_bed and seq2c_bed == ori_target_bed_path:
+        seq2c_bed = target_bed
+        seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
+
+    elif seq2c_bed:
+        info()
+        info('Remove comments in seq2c bed...')
+        seq2c_bed = remove_comments(cnf, seq2c_bed)
+
+        info()
+        info('Sorting seq2c bed...')
+        seq2c_bed = sort_bed(cnf, seq2c_bed, cnf.genome.name)
+
+        cols = count_bed_cols(seq2c_bed)
+        if cols < 4:
+            info()
+            if not exons_bed:
+                critical(str(cols) + ' columns (less than 4), and no exons to annotate regions '
+                                     '(please make sure you have set the "exons" key in the corresponding genomes section '
+                                     '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
+            info('Number columns in SV bed is ' + str(cols) + '. Annotating amplicons with gene names from Ensembl...')
+            seq2c_bed = annotate_amplicons(cnf, seq2c_bed, exons_bed)
+        elif 8 > cols > 4:
+            seq2c_bed = cut(cnf, seq2c_bed, 4)
+        elif cols > 8:
+            seq2c_bed = cut(cnf, seq2c_bed, 8)
+        info('Filtering non-annotated entries in seq2c bed')
+        seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
+
+    else:
+        info('Filtering non-annotated entries in seq2c bed')
+        seq2c_bed = verify_bed(cnf.genome.refseq) or cut(cnf, exons_no_genes_bed, 4)
 
     if target_bed:
         info()
@@ -297,11 +336,12 @@ def prep_bed_for_seq2c(cnf, bed_fpath):
     else:
         seq2c_bed = bed_fpath
 
-    # removing regions with no gene annotation
-    def f(l, i):
-        if l.split('\t')[3].strip() == '.': return None
-        else: return l
-    seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
+    if cols >= 4:
+        # removing regions with no gene annotation
+        def f(l, i):
+            if l.split('\t')[3].strip() == '.': return None
+            else: return l
+        seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
 
     info('Done: ' + seq2c_bed)
     return seq2c_bed

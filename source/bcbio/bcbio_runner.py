@@ -368,15 +368,14 @@ class BCBioRunner:
            ' --target-type ' + self.bcbio_structure.target_type +
           (' --bed ' + target_bed if target_bed else '') +
            ' -o {output_dir} ' +
-           ' --project-level-report {project_report_path}' +
-           ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name))
+           ' --project-level-report {project_report_path}')
         self.clin_report = Step(cnf, run_id,
             name=source.clinreport_name, short_name='clin',
             interpreter='python',
             script=join('scripts', 'post', 'clinical_report.py'),
             dir_name=source.clinreport_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '.log'),
-            paramln=clinreport_paramline
+            paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name)
         )
         self.clin_report_perl = Step(cnf, run_id,
             name=source.clinreport_name + '_perl', short_name='clin_perl',
@@ -384,7 +383,7 @@ class BCBioRunner:
             script=join('scripts', 'post', 'clinical_report.py'),
             dir_name=source.clinreport_dir + '_perl',
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '_perl.log'),
-            paramln=clinreport_paramline
+            paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name + '_perl')
         )
 
         self.mongo_loader = Step(cnf, run_id,
@@ -896,7 +895,7 @@ class BCBioRunner:
             if isdir(join(self.bcbio_structure.work_dir, '..', 'config')):
                 change_permissions(join(self.bcbio_structure.work_dir, '..', 'config'))
             info()
-            info('Done post-processiong.')
+            info('Done post-processing.')
 
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
