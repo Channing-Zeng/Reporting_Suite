@@ -1,5 +1,6 @@
 from collections import defaultdict, OrderedDict
 import math
+import re
 import os
 from os.path import isfile
 from source.file_utils import file_transaction, verify_file
@@ -11,7 +12,7 @@ HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0), ('Un', 25)]
 for i in range(22, 0, -1):
     HG19_CHROMS.append((str(i), i))
 
-HG38_CHROMS = [('X', 23), ('Y', 24), ('M', 25), ('Un', 26)]
+HG38_CHROMS = [('X', 23), ('Y', 24), ('M', 25), ('random', 100), ('Un', 200), ('alt', 300)]
 for i in range(22, 0, -1):
     HG38_CHROMS.append((str(i), i))
 
@@ -39,11 +40,18 @@ class SortableByChrom:
         for (c, i) in chroms:
             if chr_remainder == c:
                 return i
-            elif chr_remainder.startswith(c):
-                return i + 25
+            elif chr_remainder.startswith(c):  # chr22_KI270739v1_random
+                offset = 0
+                for (c, num_c) in chroms:
+                    if c in chr_remainder and not chr_remainder.startswith(c) and not c.isdigit():  # random
+                        offset = num_c
+                cur_offset = float(re.findall('_\D*(\d+)\D*', chr_remainder)[0]) / 10 ** 6  # 0.270739
+                return offset + i + cur_offset
 
         err('Warning: cannot parse chromosome ' + self.chrom)
-        return 99
+        additional_num = re.findall('_\D*(\d+)\D*', chr_remainder)
+        cur_offset = float(additional_num[0]) / 10 ** 6 if additional_num else 0
+        return 999 + cur_offset
 
     def get_key(self):
         return self._chrom_key

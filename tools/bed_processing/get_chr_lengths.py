@@ -37,9 +37,9 @@ def get_chr_lengths(seq_fpath, genome_build):
             reference_records = SeqIO.parse(handle, 'fasta')
             for record in reference_records:
                 chrom = record.id
-                chr_lengths.append([SortableByChrom(chrom), len(record.seq)])
+                chr_lengths.append([SortableByChrom(chrom, genome_build), len(record.seq)])
 
-    chr_lengths = sorted(chr_lengths, key=lambda (k, l): (k.get_key(), l))
+    chr_lengths = sorted(chr_lengths, key=lambda (k, l): k.get_key())
 
     for c, l in chr_lengths:
         sys.stdout.write(c.chrom + '\t' + str(l) + '\n')

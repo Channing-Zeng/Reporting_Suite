@@ -97,7 +97,7 @@ def get_chr_len_fpath(cnf):
         else:
             critical('Can\'t find ' + genome_seq_fpath + ' and ' + genome_seq_fpath + '.fai in ' + cnf.sys_cnf + ' for "' + cnf.genome.name + '" section')
 
-    chr_lengths = sorted(chr_lengths, key=lambda (k, l): (k.get_key(), l))
+    chr_lengths = sorted(chr_lengths, key=lambda (k, l): k.get_key())
 
     with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
         with open(tx, 'w') as handle:
