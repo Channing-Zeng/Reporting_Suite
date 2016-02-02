@@ -27,6 +27,8 @@ MUTATIONS_SINGLE_NAME = 'Mutations for single samples'
 MUTATIONS_PAIRED_NAME = 'Mutations for paired samples'
 GENDER                = 'Gender'
 CLINICAL_NAME         = 'Oncology NGS report'
+PHENOTYPE             = 'Phenotype'
+NORM_MATCH            = 'Normal Match'
 
 
 metric_storage = MetricStorage(
@@ -53,6 +55,8 @@ metric_storage = MetricStorage(
         Metric(VARQC_AFTER_NAME),
         Metric(GENDER, description='If not defined, means that the target does not contain key male Y genes that we could check'),
         Metric(CLINICAL_NAME),
+        Metric(PHENOTYPE),
+        Metric(NORM_MATCH),
     ])])
 
 
@@ -220,6 +224,7 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
         # if not gender_record_by_sample:
         #     individual_reports_section.
 
+        normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
         for s in bcbio_structure.samples:
             targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
             varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
@@ -232,14 +237,23 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                 _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
             ])
 
-            if s.phenotype != 'normal':
-                verify_file(s.clinical_html, is_critical=False)
-                rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
-                if rec and rec.value:
-                    sample_reports_records[s.name].append(rec)
+            verify_file(s.clinical_html, is_critical=False)
+            rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
+            if rec and rec.value:
+                sample_reports_records[s.name].append(rec)
 
             if gender_record_by_sample.get(s.name):
                 sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
+
+            if normal_samples:
+                rec = Record(individual_reports_section.find_metric(PHENOTYPE), s.phenotype)
+                sample_reports_records[s.name].append(rec)
+                if s.phenotype != 'normal' and s.normal_match:
+                    if len(bcbio_structure.samples) > 30:
+                        rec = _make_relative_link_record(s.normal_match.name, individual_reports_section.find_metric(NORM_MATCH))
+                    else:
+                        rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
+                    sample_reports_records[s.name].append(rec)
 
     # for (repr_name, links_by_sample) in to_add:
     #     cur_metric = Metric(repr_name)
@@ -439,3 +453,7 @@ def get_run_info(cnf, bcbio_structure):
     else:
         run_info_dict["filtering_params"] = 'default'
     return run_info_dict
+
+def _make_relative_link_record(name, metric):
+    url = '#{}'.format(name)
+    return Record(metric=metric, value=name, url=url)
