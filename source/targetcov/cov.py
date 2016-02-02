@@ -29,7 +29,8 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
             Metric('Reads', short_name='reads'),
             Metric('Mapped reads', short_name='mapped', description='samtools view -c -F 4', ok_threshold='Percentage of mapped reads', bottom=0),
             Metric('Percentage of mapped reads', short_name='%', unit='%', ok_threshold=0.98, bottom=0),
-            Metric('Properly paired mapped reads percent', short_name='mapped paired', unit='%', description='Pecent of properly paired mapped reads (-f 2).', ok_threshold=0.9, bottom=0),
+            Metric('Properly paired mapped reads percent', short_name='mapped paired', unit='%', description='Pecent of properly paired mapped reads.', ok_threshold=0.9, bottom=0),
+            Metric('Properly paired reads percent', short_name='paired', unit='%', description='Pecent of properly paired reads (-f 2).', ok_threshold=0.9, bottom=0),
             Metric('Duplication rate', short_name='dup rate', description='Percent of mapped reads (-F 4), marked as duplicates (-f 1024)', quality='Less is better', unit='%'),
             Metric('Read min length', short_name='min len', description='Read minimum length'),
             Metric('Read max length', short_name='max len', description='Read maximum length'),
@@ -222,6 +223,8 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
         # mapped_rate_on_target    = find_rec('Mapped reads % (on target)'),
         mapped_paired            = find_rec('Mapped paired reads'),
         mapped_paired_rate       = find_rec('Mapped paired reads %'),
+        paired                   = find_rec('Paired reads'),
+        paired_rate              = find_rec('Paired reads %'),
         dup                      = find_rec('Duplicated reads (flagged)'),
         dup_rate                 = find_rec('Duplicated reads (flagged) %'),
         min_len                  = find_rec('Read min length'),
@@ -380,9 +383,14 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     # percent_unmapped = 1.0 * (reads_stats['total'] - reads_stats['mapped']) / reads_stats['total'] if reads_stats['total'] else None
     # assert percent_unmapped <= 1.0 or percent_unmapped is None, str(percent_unmapped)
     # report.add_record('Percentage of unmapped reads', percent_unmapped)
-    total_paired_reads_pecent = 1.0 * (reads_stats['mapped_paired'] or 0) / reads_stats['total'] if reads_stats['total'] else None
-    assert total_paired_reads_pecent <= 1.0 or total_paired_reads_pecent is None, str(total_paired_reads_pecent)
-    report.add_record('Properly paired mapped reads percent', total_paired_reads_pecent)
+    if reads_stats.get('mapped_paired') is not None:
+        total_paired_reads_pecent = 1.0 * (reads_stats['mapped_paired'] or 0) / reads_stats['total'] if reads_stats['total'] else None
+        assert total_paired_reads_pecent <= 1.0 or total_paired_reads_pecent is None, str(total_paired_reads_pecent)
+        report.add_record('Properly paired mapped reads percent', total_paired_reads_pecent)
+    if reads_stats.get('paired') is not None:
+        total_paired_reads_pecent = 1.0 * (reads_stats['paired'] or 0) / reads_stats['total'] if reads_stats['total'] else None
+        assert total_paired_reads_pecent <= 1.0 or total_paired_reads_pecent is None, str(total_paired_reads_pecent)
+        report.add_record('Properly paired reads percent', total_paired_reads_pecent)
     # if dedup_bam_stats:
     # dup_rate = 1 - (1.0 * dedup_bam_stats['mapped'] / bam_stats['mapped']) if bam_stats['mapped'] else None
     report.add_record('Duplication rate', reads_stats['dup_rate'])

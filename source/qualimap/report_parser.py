@@ -47,6 +47,8 @@ metric_storage = MetricStorage(
             Metric('Mapped reads (on target) %',                    'Mapped % (on trg)',         ),
             Metric('Mapped paired reads',                           'Mapped paired reads',            ),
             Metric('Mapped paired reads %',                         'Mapped paired reads %',            ),
+            Metric('Paired reads',                                  'Paired reads',            ),
+            Metric('Paired reads %',                                'Paired reads %',            ),
             Metric('Duplicated reads (flagged)',                    'Dup rate',                ),
             Metric('Duplicated reads (flagged) %',                  'Dup rate %',                ),
             Metric('Duplicated reads (flagged) (on target)',        'Dup rate',                ),

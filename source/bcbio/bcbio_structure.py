@@ -657,7 +657,7 @@ class BCBioStructure(BaseProjectStructure):
             critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
         self.sv_bed = sv_bed_files_used[0] if sv_bed_files_used else self.bed
         info('Using ' + (self.sv_bed or 'CDS') + ' for Seq2C')
-        if not cnf.bed:
+        if not cnf.bed and self.sv_bed:
             self.bed = self.sv_bed
             info('Using sv_regions for TargQC: ' + self.bed)
 
