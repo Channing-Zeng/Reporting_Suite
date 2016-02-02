@@ -699,7 +699,8 @@ class ClinicalReporting(BaseClinicalReporting):
                 Metric('Types of recurrent alterations', short_name='Types of recurrent\nalterations',
                     min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
                 Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
-                Metric('Therapeutic Agents'),  # Sorafenib
+                Metric('Therapeutic Agents', max_width=120, style='white-space: normal;'),  # Sorafenib
+                Metric('Freq', short_name='Freq', max_width=55, class_='shifted_column', style='white-space: pre;', with_heatmap=False)
             ])])
 
         report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_action_metric_storage)
@@ -717,15 +718,17 @@ class ClinicalReporting(BaseClinicalReporting):
 
             variants = []
             types = []
+            frequencies = []
 
             if self.experiment.mutations:
                 vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            if mut.status != 'unknown' and mut.status != 'unlikely':
+                            if mut.status != 'unknown' and mut.status != 'unlikely' and mut.is_canonical:
                                 variants.append(mut.aa_change if mut.aa_change else '.')
                                 types.append(mut.var_type)
+                                frequencies.append(Metric.format_value(mut.freq, unit='%'))
 
             if cnv_mutation_types:
                 for se in gene.seq2c_events:
@@ -733,6 +736,7 @@ class ClinicalReporting(BaseClinicalReporting):
                             'Deletion' in possible_mutation_types and se.amp_del == 'Del':
                         variants.append(se.amp_del + ', ' + se.fragment)
                         types.append(se.amp_del)
+                        frequencies.append('')
 
             if sv_mutation_types:
                 svs_by_key = OrderedDict()
@@ -746,6 +750,7 @@ class ClinicalReporting(BaseClinicalReporting):
                        'Amplification' in possible_mutation_types and se.type == 'DUP':
                         variants.append(', '.join(set('/'.join(set(a.genes)) for a in se.key_annotations if a.genes)))
                         types.append(BaseClinicalReporting.sv_type_dict.get(se.type, se.type))
+                        frequencies.append('')
 
             if not variants:
                 continue
@@ -757,6 +762,7 @@ class ClinicalReporting(BaseClinicalReporting):
             reg.add_record('Types of recurrent alterations', actionable_genes_dict[gene.name][1].replace('; ', '\n'))
             reg.add_record('Rationale', actionable_genes_dict[gene.name][0])
             reg.add_record('Therapeutic Agents', actionable_genes_dict[gene.name][2])
+            reg.add_record('Freq', '\n'.join(frequencies))
 
         return report
 
