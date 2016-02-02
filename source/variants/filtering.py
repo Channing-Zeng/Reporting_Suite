@@ -426,7 +426,7 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=Non
     cmdline = '{vcf2txt} ' \
         '-f {min_freq} -n {c.sample_cnt} -F {c.ave_freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
         '-r {c.fraction} -R {c.max_ratio} -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} ' \
-        '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} '.format(**locals())
+        '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} -L'.format(**locals())
 
     if c.bias:
         cmdline += ' -b '

@@ -543,8 +543,16 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
     info('Reading mutations from ' + mutations_fpath)
     alts_met_before = set()
     with open(mutations_fpath) as f:
+        status_col = None
+        reason_col = None
         for i, l in enumerate(f):
             if i == 0:
+                header = l.strip().split('\t')
+                status_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
+                try:
+                    reason_col = header.index('Reason')
+                except ValueError:
+                    reason_col = None
                 continue
             fs = l.strip().split('\t')
             reason = None
@@ -555,8 +563,8 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                     mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
                     m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
                     n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:67]  # 67 of them
-                if len(fs) == 68:
-                    reason = fs[67]
+                if len(fs) >= 68:
+                    reason = fs[-1]
             else:
                 sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
                     aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
@@ -567,7 +575,8 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                     reason = fs[51]
                 if len(fs) == 51:
                     reason = fs[50]
-
+            status = fs[status_col] if (status_col and status_col < len(fs)) else status
+            reason = fs[reason_col] if (reason_col and reason_col < len(fs)) else reason
             if sample_name == sample.name:
                 if gname in key_gene_by_name:
                     if (chrom, start, ref, alt, transcript) in alts_met_before:
