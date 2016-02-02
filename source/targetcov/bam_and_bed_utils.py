@@ -101,7 +101,7 @@ def remove_comments(cnf, bed_fpath):
     return iterate_file(cnf, bed_fpath, f, suffix='rmcmt')
 
 
-def prepare_beds(cnf, exons_bed=None, target_bed=None):
+def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
     if exons_bed is None and target_bed is None:
         warn('No bed and no exons in the system config. Not making detailed per-gene reports.')
         return None, None, None, None
@@ -158,7 +158,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None):
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
 
-    seq2c_bed = prep_bed_for_seq2c(cnf, target_bed or cnf.genome.refseq or cut(cnf, exons_no_genes_bed, 4))
+    seq2c_bed = prep_bed_for_seq2c(cnf, seq2c_bed or target_bed or verify_bed(cnf.genome.refseq) or cut(cnf, exons_no_genes_bed, 4))
 
     if target_bed:
         info()

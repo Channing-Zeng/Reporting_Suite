@@ -524,6 +524,7 @@ class BCBioStructure(BaseProjectStructure):
 
         self.original_bed = None
         self.bed = None
+        self.is_wgs = False
         self.project_name = None
         self.target_type = None
 
@@ -647,26 +648,29 @@ class BCBioStructure(BaseProjectStructure):
         # setting bed files for samples
         if cnf.bed:
             self.sv_bed = self.bed = cnf.bed = verify_bed(cnf.bed, is_critical=True)
-        else:
-            bed_files_used = [s.bed for s in self.samples]
-            sv_bed_files_used = [s.sv_bed for s in self.samples]
-            if len(set(bed_files_used)) > 2:
-                critical('Error: more than 1 BED file found: ' + str(set(bed_files_used)))
-            if len(set(sv_bed_files_used)) > 2:
-                critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
-            self.bed = bed_files_used[0] if bed_files_used else None
-            self.sv_bed = sv_bed_files_used[0] if sv_bed_files_used else None
+            for s in self.samples:
+                s.bed = self.bed  # for TargQC
+            info('Using ' + (self.bed or 'no bed file') + ' for TargQC')
+
+        sv_bed_files_used = [s.sv_bed for s in self.samples]
+        if len(set(sv_bed_files_used)) > 2:
+            critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
+        self.sv_bed = sv_bed_files_used[0] if sv_bed_files_used else self.bed
+        info('Using ' + (self.sv_bed or 'CDS') + ' for Seq2C')
 
         is_wgs_flags = [s.is_wgs for s in self.samples]
         if len(set(is_wgs_flags)) > 2:
             critical('Error: more than 1 variant_regions file found: ' + str(is_wgs_flags))
             self.is_wgs = is_wgs_flags[0] if is_wgs_flags else False
-
-        self.target_type = 'genome'
-        if self.bed:
+        if self.is_wgs:
+            self.target_type = 'genome'
+            info('Using WGS parameters for filtering')
+        elif cnf.deep_seq:
+            self.target_type = 'panel'
+            info('Using DeepSeq parameters for filtering')
+        else:
             self.target_type = 'exome'
-            if cnf.deep_seq:
-                self.target_type = 'panel'
+            info('Using Exome parameters for filtering')
 
         # setting up batch properties
         for b in self.batches.values():
@@ -837,9 +841,10 @@ class BCBioStructure(BaseProjectStructure):
 
         if self.cnf.bed:  # Custom BED provided in command line?
             sample.bed = verify_bed(self.cnf.bed, is_critical=True)
-            info('BED file for ' + sample.name + ': ' + str(sample.bed))
+            info('TargQC BED file for ' + sample.name + ': ' + str(sample.bed))
         else:
-            info('No BED file for ' + sample.name)
+            sample.bed = sample.sv_bed
+            info('Setting TargQC BED file for ' + sample.name + ' same as sv_regions: ' + str(sample.bed))
 
     def _set_bam_file(self, sample):
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))

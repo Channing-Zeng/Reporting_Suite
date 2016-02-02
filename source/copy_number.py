@@ -212,7 +212,8 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
         if cnf.bed or bcbio_structure.bed:
             _, _, _, seq2c_bed = \
-                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=cnf.bed or bcbio_structure.bed)
+                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=cnf.bed or bcbio_structure.bed,
+                             seq2c_bed=cnf.bed or bcbio_structure.bed)
         else:
             seq2c_bed = verify_bed(cnf.genome.refseq)
     else:
@@ -351,7 +352,7 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
             silent=True) for s in samples) or not cnf.reuse_intermediate:
         if cnf.prep_bed:
             _, _, _, seq2c_bed = \
-                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed)
+                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed, seq2c_bed=target_bed)
         else:
             seq2c_bed = target_bed or exons_bed_fpath
 

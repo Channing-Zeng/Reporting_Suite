@@ -379,11 +379,11 @@ class BCBioRunner:
             paramln=clinreport_paramline
         )
         self.clin_report_perl = Step(cnf, run_id,
-            name=source.clinreport_name, short_name='clin_perl',
+            name=source.clinreport_name + '_perl', short_name='clin_perl',
             interpreter='python',
             script=join('scripts', 'post', 'clinical_report.py'),
             dir_name=source.clinreport_dir + '_perl',
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '.log'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '_perl.log'),
             paramln=clinreport_paramline
         )
 
@@ -396,26 +396,26 @@ class BCBioRunner:
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
 
-        seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
-        if target_bed:
+        if seq2c_bed:
+            seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
             seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
-        normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
-        if normal_snames or cnf.seq2c_controls:
-            controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
-            seq2c_cmdline += ' -c ' + ':'.join(controls)
-        if cnf.seq2c_opts:
-            seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
-        if cnf.reannotate:
-            seq2c_cmdline += ' --reannotate '
-        self.seq2c = Step(cnf, run_id,
-            name=BCBioStructure.seq2c_name, short_name='seq2c',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'seq2c.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
-            dir_name=BCBioStructure.cnv_summary_dir,
-            paramln=seq2c_cmdline,
-            run_on_chara=True
-        )
+            normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
+            if normal_snames or cnf.seq2c_controls:
+                controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
+                seq2c_cmdline += ' -c ' + ':'.join(controls)
+            if cnf.seq2c_opts:
+                seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
+            if cnf.reannotate:
+                seq2c_cmdline += ' --reannotate '
+            self.seq2c = Step(cnf, run_id,
+                name=BCBioStructure.seq2c_name, short_name='seq2c',
+                interpreter='python',
+                script=join('scripts', 'post_bcbio', 'seq2c.py'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
+                dir_name=BCBioStructure.cnv_summary_dir,
+                paramln=seq2c_cmdline,
+                run_on_chara=True
+            )
 
         targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if target_bed:
@@ -443,7 +443,7 @@ class BCBioRunner:
     def prep_bed(self):
         target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(self.cnf, self.bcbio_structure.bed)
         exons_no_genes_bed = None
-        seq2c_bed = None
+        seq2c_bed = self.bcbio_structure.sv_bed
 
         bed_md5_fpath = join(self.cnf.work_dir, 'bed_md5.txt')
 
@@ -468,11 +468,9 @@ class BCBioRunner:
                     f.write(str(new_md5))
 
             with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
-                exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+                exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed, seq2c_bed)
                 _, _, target_bed, exons_bed, exons_no_genes_bed = \
                     extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
-        if not target_bed:
-            seq2c_bed = verify_bed(self.cnf.genome.refseq)
 
         return target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed
 
