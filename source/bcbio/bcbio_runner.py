@@ -120,9 +120,9 @@ class BCBioRunner:
         self.max_threads = self.cnf.threads
         total_samples_num = len(self.bcbio_structure.samples)
         total_callers_num = total_samples_num * len(self.bcbio_structure.variant_callers)
-        self.filtering_threads = min(self.max_threads, total_samples_num)
-        if not is_us():
-            self.filtering_threads = min(self.max_threads, total_samples_num, 10)
+        self.filtering_threads = min(4, self.max_threads, total_samples_num)
+        # if not is_us():
+        #     self.filtering_threads = min(self.max_threads, total_samples_num, 10)
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         self._init_steps(cnf, self.run_id)

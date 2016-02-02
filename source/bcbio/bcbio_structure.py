@@ -956,11 +956,15 @@ def load_bcbio_cnf(config_dirpath):
 
     yaml_fpath = config_fpaths[0]
     if len(config_fpaths) > 1:
-        project_named_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] in config_dirpath]
+        proj_dir_name = basename(dirname(config_dirpath))
+        project_named_yaml_files = [f for f in config_fpaths if splitext(basename(f))[0] == proj_dir_name]
         if len(project_named_yaml_files) == 0:
             critical('More than one YAML file in the config directory ' +
                      config_dirpath + ': ' + ' '.join(config_fpaths) +
-                     ', and no YAML file named after the project.')
+                     ', and no YAML file named after the project ' + proj_dir_name + '.')
+        if len(project_named_yaml_files) > 1:
+            critical('More than one YAML file named after the project ' + proj_dir_name +
+                     ' in the config directory ' + config_dirpath + ': ' + ' '.join(config_fpaths))
         yaml_fpath = project_named_yaml_files[0]
 
     yaml_file = abspath(yaml_fpath)
