@@ -613,8 +613,8 @@ class Reader(object):
                 samples = self._parse_samples(row[9:], fmt, record)
                 record.samples = samples
         except:
-            print line
-            traceback.print_exc()
+            # print line
+            # traceback.print_exc()
             # sys.exit(1)
             return None
         else:

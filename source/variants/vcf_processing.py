@@ -20,7 +20,7 @@ from source.targetcov.bam_and_bed_utils import verify_bam
 from source.tools_from_cnf import get_java_tool_cmdline, get_system_path, get_script_cmdline
 from source.file_utils import file_transaction
 from source.file_utils import open_gzipsafe, which, file_exists
-from source.logger import step_greetings, info, critical, err, warn
+from source.logger import step_greetings, info, critical, err, warn, debug
 from source.variants.Effect import Effect
 
 
@@ -250,23 +250,38 @@ class Record(_Record):
 def verify_vcf(vcf_fpath, silent=True, is_critical=False):
     if not verify_file(vcf_fpath, silent=silent, is_critical=is_critical):
         return None
+    debug('File ' + vcf_fpath + ' exists and not empty')
     vcf = open_gzipsafe(vcf_fpath)
+    debug('File ' + vcf_fpath + ' opened')
     try:
         reader = vcf_parser.Reader(vcf)
     except:
         (critical if is_critical else err)('Error: cannot open the VCF file ' + vcf_fpath)
         return None
     else:
+        debug('File ' + vcf_fpath + ' opened as VCF')
         try:
             rec = next(reader)
+        except IndexError:
+            (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            debug('IndexError parsing VCF file ' + vcf_fpath)
+            return None
+        except ValueError:
+            (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            debug('ValueError parsing VCF file ' + vcf_fpath)
+            return None
         except StopIteration:
+            debug('No records in the VCF file ' + vcf_fpath)
             if not silent:
                 warn('VCF file ' + vcf_fpath + ' has no records.')
             return vcf_fpath
         except:
             (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            debug('Other error parsing VCF file ' + vcf_fpath)
             return None
-        return vcf_fpath
+        else:
+            debug('A record was read from the VCF file ' + vcf_fpath)
+            return vcf_fpath
         # f = open_gzipsafe(output_fpath)
         # l = f.readline()
         # if 'Cannot allocate memory' in l:
