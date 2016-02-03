@@ -16,16 +16,13 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None, *args, **kwargs):
         info('*' * 70)
         finalize_one_fun(cnf, *results_one)
 
-    for fpath in results_one:
-        if fpath:
-            try:
+    for fpaths in results_one:
+        if fpaths:
+            info('Checking expeced results')
+            if isinstance(fpaths, basestring):
+                fpaths = [fpaths]
+            for fpath in fpaths:
                 verify_file(fpath)
-            except:
-                try:
-                    for fpath in fpath:
-                        verify_file(fpath)
-                except:
-                    pass
 
     return results_one
 

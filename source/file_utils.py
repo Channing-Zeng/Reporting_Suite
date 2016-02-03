@@ -759,7 +759,7 @@ def splitext_plus(fname):
 
 def add_suffix(fname, suf):
     base, ext = splitext_plus(fname)
-    return base + '.' + suf + ext
+    return base + (('.' + suf) if suf is not None else '') + ext
 
 
 def intermediate_fname(cnf, fpath, suf):
@@ -964,6 +964,22 @@ def safe_symlink_to(fpath, dst_dirpath):
     if not isfile(dst):
         os.symlink(fpath, dst)
     return dst
+
+
+def is_gz(fpath, mode='rb'):
+    try:
+        h = gzip.open(fpath)
+    except IOError, e:
+        return False
+    else:
+        try:
+            h.read(1)
+        except IOError, e:
+            h.close()
+            return False
+        else:
+            h.close()
+            return True
 
 
 #################################################

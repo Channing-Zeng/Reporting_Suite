@@ -9,7 +9,7 @@ import re
 import source
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction, \
-    safe_mkdir, open_gzipsafe
+    safe_mkdir, open_gzipsafe, is_gz
 from source.logger import step_greetings, critical, info, err, warn, debug
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
@@ -255,12 +255,13 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         info('Adding SAMPLE=' + sample.name + ' annotation...')
         vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')
 
-    final_vcf_fname = sample.name + (('-' + callername) if callername else '') + '.anno.vcf'
-    if cnf.output_file:
-        final_vcf_fname = basename(cnf.output_file)
-    final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
+    final_vcf_fpath = join(cnf.output_dir, sample.name + (('-' + callername) if callername else '') + '.anno.vcf')
     if cnf.output_file:
         final_vcf_fpath = cnf.output_file
+    if not vcf_fpath.endswith('.gz') and final_vcf_fpath.endswith('.gz'):
+        final_vcf_fpath = splitext(final_vcf_fpath)[0]
+    if vcf_fpath.endswith('.gz') and not final_vcf_fpath.endswith('.gz'):
+        final_vcf_fpath = final_vcf_fpath + '.gz'
 
     info('Moving final VCF ' + vcf_fpath + ' to ' + final_vcf_fpath)
     if isfile(final_vcf_fpath):
@@ -270,10 +271,24 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
     shutil.copy(vcf_fpath, final_vcf_fpath)
 
     if cnf.qc:
-        report = qc.make_report(cnf, vcf_fpath, sample)
+        report = qc.make_report(cnf, final_vcf_fpath, sample)
         qc_dirpath = join(cnf.output_dir, 'qc')
         safe_mkdir(qc_dirpath)
         qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
+
+    if final_vcf_fpath.endswith('.gz'):
+        if not is_gz(final_vcf_fpath):
+            err(final_vcf_fpath + ' is in incorrect gzip format')
+            anno_vcf_fpath_ungz = splitext(final_vcf_fpath)[0]
+            anno_vcf_fpath_gz = final_vcf_fpath
+            os.rename(anno_vcf_fpath_gz, anno_vcf_fpath_ungz)
+        else:
+            info(final_vcf_fpath + ' is a good gzipped file.')
+            return [final_vcf_fpath]
+    else:
+        info('Compressing and indexing with bgzip+tabix again ' + final_vcf_fpath)
+        final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
+        info('Saved VCF again to ' + final_vcf_fpath)
 
     return [final_vcf_fpath]
 
