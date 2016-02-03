@@ -45,7 +45,7 @@ def main(args):
     check_genome_resources(cnf)
 
     info('Preparing VCFs for vcf2txt (filtering PASS only)')
-    prep_vcf_fpath = prep_vcf(cnf.vcf, cnf.sample, cnf.caller)
+    prep_vcf_fpath = prep_vcf(cnf, cnf.vcf, cnf.sample, cnf.caller)
     info('Prepared VCF: ' + prep_vcf_fpath)
 
     safe_mkdir(dirname(cnf.output_file))

@@ -9,12 +9,13 @@ import re
 import source
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction, \
-    safe_mkdir
+    safe_mkdir, open_gzipsafe
 from source.logger import step_greetings, critical, info, err, warn, debug
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
 from source.variants import qc
-from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index
+from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index, \
+    verify_vcf
 
 
 def intersect_vcf(cnf, input_fpath, db_fpath, key):
@@ -348,6 +349,16 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
     if not output_fpath:
         err('Error: snpsift resulted ' + str(output_fpath) + ' for ' + dbname)
         return output_fpath
+    verify_vcf(output_fpath, is_critical=True)
+    # f = open(output_fpath)
+    # l = f.readline()
+    # if 'Cannot allocate memory' in l:
+    #     f.close()
+    #     f = open(output_fpath)
+    #     contents = f.read()
+    #     critical('SnpSift failed with memory issue:\n' + contents)
+    #     f.close()
+    #     return None
 
     if not cnf.no_check:
         info_pattern = re.compile(r'''\#\#INFO=<
@@ -378,6 +389,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             return line
 
         output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='fx', ctx=dict(met_CHROM=False))
+        verify_vcf(output_fpath, is_critical=True)
 
     return output_fpath
 
@@ -407,7 +419,7 @@ def _snpsift_db_nsfp(cnf, input_fpath):
     if output_fpath.endswith('.gz'):
         output_fpath = output_fpath[:-3]
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath, stdout_to_outputfile=True, exit_on_error=False):
-        return output_fpath
+        return verify_vcf(output_fpath, is_critical=True)
     else:
         return None
 
@@ -471,6 +483,8 @@ def _snpeff(cnf, input_fpath):
         output_fpath = output_fpath[:-3]
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True)
+    output_fpath = verify_vcf(output_fpath, is_critical=True)
+
     if res:
         return output_fpath, stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
     else:
@@ -523,7 +537,8 @@ def _tracks(cnf, track_fpath, input_fpath):
         return line
 
     assert output_fpath
-    return iterate_file(cnf, output_fpath, proc_line, suffix='trk')
+    output_fpath = iterate_file(cnf, output_fpath, proc_line, suffix='trk')
+    return verify_vcf(output_fpath, is_critical=True)
 
 
 def _add_annotation(cnf, input_fpath, key, value, number, type_, description):
@@ -542,7 +557,7 @@ def _add_annotation(cnf, input_fpath, key, value, number, type_, description):
             return ext_l + l
         return l
     output_fpath = iterate_file(cnf, output_fpath, _add_format_header)
-    return output_fpath
+    return verify_vcf(output_fpath, is_critical=True)
 
 
 def _filter_malformed_fields(cnf, input_fpath):

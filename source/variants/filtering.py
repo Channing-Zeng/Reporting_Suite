@@ -70,9 +70,10 @@ def index_vcf(sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None):
             bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 
-def prep_vcf(vcf_fpath, sample_name, caller_name):
-    global glob_cnf
-    cnf = glob_cnf
+def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
+    if cnf is None:
+        global glob_cnf
+        cnf = glob_cnf
 
     def fix_fields(rec):
         if rec.FILTER and rec.FILTER != 'PASS':
@@ -101,7 +102,7 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
     info()
     info('Preparing VCFs for vcf2txt in ' + str(threads_num) + ' threads')
     prep_vcf_fpaths = Parallel(n_jobs=threads_num) \
-       (delayed(prep_vcf)(s.anno_vcf_fpath, s.name, caller_name)
+       (delayed(prep_vcf)(None, s.anno_vcf_fpath, s.name, caller_name)
         for s in var_samples)
 
     prep_vcf_fpath_by_sample = dict()

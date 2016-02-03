@@ -53,7 +53,8 @@ def run_variants(cnf, samples, main_script_name):
     jobs = []
     for var_s in samples:
         output_fpath = join(var_s.varfilter_dirpath, 'vardict.txt')
-        jobs.append(submit_vcf2txt(cnf, var_s, output_fpath))
+        work_dir = join(cnf.work_dir, 'vcf2txt_' + var_s.name)
+        jobs.append(submit_vcf2txt(cnf, var_s, output_fpath, work_dir))
     wait_for_jobs(cnf, jobs)
 
     info('Combining vcf2txt.pl results...')
@@ -72,9 +73,14 @@ def run_variants(cnf, samples, main_script_name):
     info()
 
 
-def submit_vcf2txt(cnf, sample, vcf2txt_out_fpath):
+def submit_vcf2txt(cnf, sample, vcf2txt_out_fpath, work_dir):
     vcf2txt_one_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vcf2txt_one.py'))
-    cmdl = '{vcf2txt_one_py} '.format(**locals())
+    cmdl = ('{vcf2txt_one_py}' +
+            ' --vcf {sample.anno_vcf_fpath}' +
+            ' -o {vcf2txt_out_fpath}' +
+            ' --genome {cnf.genome.name}' +
+            ' --work-dir {work_dir}'
+            ).format(**locals())
     return submit_job(cnf, cmdl, job_name='_vcf2txt_' + sample.name, output_fpath=vcf2txt_out_fpath, stdout_to_outputfile=False)
 
 

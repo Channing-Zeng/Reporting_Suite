@@ -28,13 +28,6 @@ def read_opts_and_cnfs(extra_opts,
                        with_output_file=False,
                        with_output_dir=True):
     options = extra_opts
-    if with_output_file:
-        options += [
-            (['-o', '--output-file'], dict(
-                 dest='output_file',
-                 metavar='FILE',
-                 help='Output file')
-             )]
     if with_output_dir:
         options += [
             (['-o', '--output-dir'], dict(
@@ -43,6 +36,21 @@ def read_opts_and_cnfs(extra_opts,
                  help='Output directory (or directory name in case of bcbio final dir)',
                  default=os.getcwd())
              )]
+    if with_output_file:
+        if not with_output_dir:
+            options += [
+                (['-o', '--output-file'], dict(
+                     dest='output_file',
+                     metavar='FILE',
+                     help='Output file')
+                 )]
+        else:
+            options += [
+                (['--output-file'], dict(
+                     dest='output_file',
+                     metavar='FILE',
+                     help='Output file')
+                 )]
 
     options += [
         (['-s', '--sample', '--name'], dict(

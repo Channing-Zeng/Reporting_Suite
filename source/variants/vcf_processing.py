@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import traceback
 from genericpath import exists, isfile
 import os
 import sys
@@ -246,6 +247,45 @@ class Record(_Record):
         return self._variant
 
 
+def verify_vcf(vcf_fpath, silent=True, is_critical=False):
+    if not verify_file(vcf_fpath, silent=silent, is_critical=is_critical):
+        return None
+    vcf = open_gzipsafe(vcf_fpath)
+    try:
+        reader = vcf_parser.Reader(vcf)
+    except:
+        (critical if is_critical else err)('Error: cannot open the VCF file ' + vcf_fpath)
+        return None
+    else:
+        try:
+            rec = next(reader)
+        except StopIteration:
+            if not silent:
+                warn('VCF file ' + vcf_fpath + ' has no records.')
+            return vcf_fpath
+        except:
+            (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            return None
+        return vcf_fpath
+        # f = open_gzipsafe(output_fpath)
+        # l = f.readline()
+        # if 'Cannot allocate memory' in l:
+        #     f.close()
+        #     f = open_gzipsafe(output_fpath)
+        #     contents = f.read()
+        #     if not silent:
+        #         if is_critical:
+        #             critical('SnpSift failed with memory issue:\n' + contents)
+        #         else:
+        #             err('SnpSift failed with memory issue:\n' + contents)
+        #             return None
+        #     f.close()
+        #     return None
+        # return output_fpath
+    finally:
+        vcf.close()
+
+
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None, check_result=True,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
     info('iterate_vcf: overwrite=' + str(overwrite))
@@ -279,9 +319,10 @@ def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None, check_result=True,
         info('Written lines: ' + str(written_records))
 
     info('before convert_file: overwrite=' + str(overwrite))
-    return convert_file(
+    res = convert_file(
         cnf, input_fpath, _convert_vcf, suffix,
         check_result=check_result, overwrite=overwrite, reuse_intermediate=reuse_intermediate)
+    return verify_vcf(res, is_critical=check_result)
 
 
 def vcf_is_empty(cnf, vcf_fpath):
