@@ -70,7 +70,7 @@ function toPrettyString(num, unit) {
 
     if (num < 0) {
         num *= -1;
-        str = '–';
+        str = '\u2212';
     }
 
     var frac_digits = 0;

@@ -181,7 +181,7 @@ function showTip(key, item, plot, direction, generalData) {
             (fragment ? ', ' +  fragment : '') +
         '</span></div>')
         .css({
-            height: LINE_HEIGHT})
+            height: LINE_HEIGHT * 2})
         .appendTo('#' + key + '_plot_tip');
 }
 
