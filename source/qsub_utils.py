@@ -144,6 +144,16 @@ def wait_for_jobs(cnf, jobs):
                 info('.', print_date=False, ending='')
             else:
                 break
+    except KeyboardInterrupt:
+        not_done = sum(1 for j in jobs if not j.is_done)
+        done = sum(1 for j in jobs if j.is_done)
+        failed = sum(1 for j in jobs if j.is_failed)
+        warn('Interrupted. Done: ' + str(done) + ', not done: ' + str(not_done) + ', failed: ' + str(failed))
+    except SystemExit:
+        not_done = sum(1 for j in jobs if not j.is_done)
+        done = sum(1 for j in jobs if j.is_done)
+        failed = sum(1 for j in jobs if j.is_failed)
+        warn('System exit. Done: ' + str(done) + ', not done: ' + str(not_done) + ', failed: ' + str(failed))
     except:
         raise
     finally:
