@@ -35,7 +35,7 @@ def read_opts_and_cnfs(extra_opts,
                  metavar='FILE',
                  help='Output file')
              )]
-    elif with_output_dir:
+    if with_output_dir:
         options += [
             (['-o', '--output-dir'], dict(
                  dest='output_dir',

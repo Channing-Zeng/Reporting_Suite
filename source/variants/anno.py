@@ -255,7 +255,11 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')
 
     final_vcf_fname = sample.name + (('-' + callername) if callername else '') + '.anno.vcf'
+    if cnf.output_file:
+        final_vcf_fname = basename(cnf.output_file)
     final_vcf_fpath = join(cnf.output_dir, final_vcf_fname)
+    if cnf.output_file:
+        final_vcf_fpath = cnf.output_file
 
     info('Moving final VCF ' + vcf_fpath + ' to ' + final_vcf_fpath)
     if isfile(final_vcf_fpath):
