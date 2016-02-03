@@ -39,7 +39,7 @@ def main(args):
         file_keys=['vcf'],
         key_for_sample_name='vcf',
         proc_name=source.varfilter_name + '_post',
-        with_output_file=True)
+        main_output_is_file=True)
 
     check_system_resources(cnf, required=['perl'])
     check_genome_resources(cnf)

@@ -25,10 +25,10 @@ def read_opts_and_cnfs(extra_opts,
                        extra_msg=None,
                        proc_name=None,
                        fpath_for_sample_name=None,
-                       with_output_file=False,
-                       with_output_dir=True):
+                       main_output_is_file=False,
+                       main_output_is_dir=True):
     options = extra_opts
-    if with_output_dir:
+    if main_output_is_dir:
         options += [
             (['-o', '--output-dir'], dict(
                  dest='output_dir',
@@ -36,21 +36,26 @@ def read_opts_and_cnfs(extra_opts,
                  help='Output directory (or directory name in case of bcbio final dir)',
                  default=os.getcwd())
              )]
-    if with_output_file:
-        if not with_output_dir:
-            options += [
-                (['-o', '--output-file'], dict(
-                     dest='output_file',
-                     metavar='FILE',
-                     help='Output file')
-                 )]
-        else:
-            options += [
-                (['--output-file'], dict(
-                     dest='output_file',
-                     metavar='FILE',
-                     help='Output file')
-                 )]
+        options += [
+            (['--output-file'], dict(
+                 dest='output_file',
+                 metavar='FILE',
+                 help='Output file')
+             )]
+    if main_output_is_file:
+        options += [
+            (['-o', '--output-file'], dict(
+                 dest='output_file',
+                 metavar='FILE',
+                 help='Output file')
+             )]
+        options += [
+            (['--output-dir'], dict(
+                 dest='output_dir',
+                 metavar='DIR',
+                 help='Output directory (or directory name in case of bcbio final dir)',
+                 default=os.getcwd())
+             )]
 
     options += [
         (['-s', '--sample', '--name'], dict(

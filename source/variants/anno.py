@@ -275,11 +275,6 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         safe_mkdir(qc_dirpath)
         qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
 
-    # Indexing
-    info()
-    info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
-    final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
-
     return [final_vcf_fpath]
 
 

@@ -78,7 +78,7 @@ def main():
         file_keys=['reference'],
         key_for_sample_name=None,
         fpath_for_sample_name=input_bed_fpath,
-        with_output_file=True
+        main_output_is_file=True
     )
     check_system_resources(cnf)
     check_genome_resources(cnf)

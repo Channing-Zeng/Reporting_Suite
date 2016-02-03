@@ -12,10 +12,12 @@ from optparse import SUPPRESS_HELP
 
 import source
 from source import VarSample
-from source.file_utils import iterate_file, open_gzipsafe
+from source.calling_process import call
+from source.file_utils import iterate_file, open_gzipsafe, intermediate_fname
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix
+from source.tools_from_cnf import get_system_path
+from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix, verify_vcf
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
@@ -78,6 +80,14 @@ def process_one(cnf):
 
     # this method will also gunzip the vcf file
     # sample.vcf = fix_chromosome_names(cnf, sample.vcf)
+    if cnf.vcf.endswith('.gz'):
+        vcf_fpath = intermediate_fname(cnf, sample.vcf[:-3], '')
+        info('Ungzipping ' + sample.vcf + ', writing to ' + vcf_fpath)
+        gunzip = get_system_path(cnf, 'gunzip', is_critical=True)
+        cmdl = '{gunzip} {sample.vcf} --to-stdout'.format(**locals())
+        call(cnf, cmdl, output_fpath=vcf_fpath)
+        verify_vcf(vcf_fpath)
+        sample.vcf = vcf_fpath
 
     if cnf.get('filter_reject'):
         info('Filtering rejected')
