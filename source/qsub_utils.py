@@ -67,6 +67,7 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
 
     queue = cnf.queue
     runner_script = adjust_system_path(cnf.qsub_runner)
+    verify_file(runner_script, is_critical=True, description='qsub_runner')
     hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
     mem = threads * 15
     priority = 0

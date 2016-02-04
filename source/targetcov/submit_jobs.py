@@ -11,7 +11,7 @@ from source.targetcov.summarize_targetcov import summarize_targqc
 from source.tools_from_cnf import get_system_path
 
 
-def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpath):
+def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, exons_bed, genes_fpath=None):
     # if not target_bed:
     #     target_bed = exons_bed
     #     info('No target_bed, using exons_bed instead')
@@ -66,7 +66,7 @@ def run_targqc(cnf, samples, main_script_name, target_bed, exons_bed, genes_fpat
     wait_for_jobs(cnf, jobs_to_wait)
 
     info('Making targqc summary')
-    return summarize_targqc(cnf, summary_threads, cnf.output_dir, samples,
+    return summarize_targqc(cnf, summary_threads, output_dir, samples,
                             bed_fpath=target_bed, exons_fpath=exons_bed)
 
 

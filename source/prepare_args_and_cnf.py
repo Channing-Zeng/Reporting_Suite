@@ -33,7 +33,7 @@ def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
     parser.add_option('--genome', '-g', dest='genome', help='Genome build')
     parser.add_option('--done-marker', dest='done_marker', help=SUPPRESS_HELP)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help=SUPPRESS_HELP)  # Default is temporary directory
-    parser.add_option('--debug', dest='debug', help=SUPPRESS_HELP, action='store_true', default=False)  # Debug mode; keep work directory.
+    parser.add_option('--debug', dest='debug', help=SUPPRESS_HELP, action='store_true', default=False)
     parser.add_option('--queue', dest='queue', help=SUPPRESS_HELP)  # Queue name for qsub
 
 

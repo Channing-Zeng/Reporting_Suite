@@ -70,7 +70,6 @@ def proc_args(argv):
     check_genome_resources(cnf)
 
     target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
-    exons_no_genes_bed = None
     if not target_bed:
         info('No bed is specified, using exons instead: ' + str(exons_bed))
 
@@ -85,7 +84,7 @@ def proc_args(argv):
 def main():
     cnf, samples, target_bed, exons_bed, genes_fpath = proc_args(sys.argv)
 
-    targqc_html_fpath = run_targqc(cnf, samples, basename(__file__), target_bed, exons_bed, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf, cnf.output_dir, samples, basename(__file__), target_bed, exons_bed, genes_fpath)
 
     # if targqc_html_fpath:
     #     send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)

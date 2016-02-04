@@ -46,6 +46,7 @@ def _annotate(cnf, samples):
       ((' --caller ' + cnf.caller) if cnf.caller else '')
     )
 
+    reused = 0
     for sample in samples:
         if not sample.varannotate_dirpath:
             sample.varannotate_dirpath = join(sample.dirpath, source.varannotate_name)
@@ -57,6 +58,7 @@ def _annotate(cnf, samples):
         debug('Checking ' + output_fpath)
         if cnf.reuse_intermediate and isfile(output_fpath) and verify_vcf(output_fpath):
             info('Annotated results ' + output_fpath + ' exist, reusing.')
+            reused += 1
         else:
             info('Annotating "' + basename(sample.vcf) + '"')
             work_dir = join(cnf.work_dir, source.varannotate_name + '_' + sample.name)
@@ -78,8 +80,12 @@ def _annotate(cnf, samples):
 
     info()
     info('-' * 70)
-    info('Submittion finished.')
-    wait_for_jobs(cnf, jobs_to_wait)
+    if jobs_to_wait:
+        info('Submittion of annotation jobs is finished.')
+        jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+    else:
+        info('No annotation jobs to submit.')
+    info('Reused: ' + str(reused))
     info('')
     info('-' * 70)
     info('Done annotating')
@@ -99,33 +105,43 @@ def _annotate(cnf, samples):
 
 
 def _filter(cnf, samples, mut_fname):
+    reused = 0
     jobs_to_wait = []
-    for var_s in samples:
-        output_dirpath = var_s.varfilter_dirpath = var_s.dirpath
-        output_fpath = var_s.mut_fpath = var_s.join(var_s.varfilter_dirpath, mut_fname)
+    for sample in samples:
+        output_dirpath = sample.varfilter_dirpath = sample.dirpath
+        output_fpath = sample.mut_fpath = join(sample.varfilter_dirpath, mut_fname)
 
         if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
             info('Filtered results ' + output_fpath + ' exist, reusing.')
-
-        varfilter_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varfilter.py'))
-        work_dir = join(cnf.work_dir, 'filt_' + var_s.name)
-        cmdl = ('{varfilter_py}' +
-                ' --vcf {sample.anno_vcf_fpath}' +
-                ' -o {output_dirpath}' +
-                ' --output-file {mut_fpath}' +
-                ' --genome {cnf.genome.name}' +
-                ' --work-dir {work_dir}' +
-               (' --reuse ' if cnf.reuse_intermediate else '') +
-              ((' --caller ' + cnf.caller) if cnf.caller else '') +
-                ' --qc'
-            ).format(**locals())
-        j = submit_job(cnf, cmdl, job_name='_filt_' + var_s.name,
-            output_fpath=output_fpath, stdout_to_outputfile=False)
-        jobs_to_wait.append(j)
+            reused += 1
+        else:
+            varfilter_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varfilter.py'))
+            work_dir = join(cnf.work_dir, 'filt_' + sample.name)
+            cmdl = ('{varfilter_py}' +
+                    ' --sys-cnf ' + cnf.sys_cnf +
+                    ' --run-cnf ' + cnf.run_cnf +
+                    ' --log-dir -' +
+                    ' --vcf {sample.anno_vcf_fpath}' +
+                    ' -o {output_dirpath}' +
+                    ' --output-file {sample.mut_fpath}' +
+                    ' --project-name ' + cnf.project_name +
+                    ' --genome {cnf.genome.name}' +
+                    ' --work-dir {work_dir}' +
+                   (' --reuse ' if cnf.reuse_intermediate else '') +
+                  ((' --caller ' + cnf.caller) if cnf.caller else '') +
+                    ' --qc').format(**locals())
+            j = submit_job(cnf, cmdl, job_name='_filt_' + sample.name,
+                output_fpath=output_fpath, stdout_to_outputfile=False)
+            jobs_to_wait.append(j)
     info()
     info('-' * 70)
-    info('Submittion finished.')
-    wait_for_jobs(cnf, jobs_to_wait)
+    if jobs_to_wait:
+        info('Submittion of filtering jobs is finished.')
+        jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+    else:
+        info('No filtering jobs to submit.')
+    info('Reused: ' + str(reused))
+
     info('')
     info('-' * 70)
     info('Done filtering')
@@ -145,13 +161,13 @@ def _combine_results(cnf, samples, mut_fpath):
     verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
     info('Saved all mutations to ' + mut_fpath)
 
-    _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name)
+    _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
 
 def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):
-    name = 'varqc'
+    name = source.varqc_name
     if post_filter:
-        name = 'varqc_postfilter'
+        name = source.varqc_after_name
 
     info('VarQC ' + ('(post-filtering) ' if post_filter else '') + 'summary...')
 
