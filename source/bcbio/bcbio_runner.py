@@ -367,6 +367,7 @@ class BCBioRunner:
            ' {targqc_summary_cmdl}' +
            ' --target-type ' + self.bcbio_structure.target_type +
           (' --bed ' + target_bed if target_bed else '') +
+          (' --jira ' + self.cnf.jira if self.cnf.jira else '') +
            ' -o {output_dir} ' +
            ' --project-level-report {project_report_path}')
         self.clin_report = Step(cnf, run_id,

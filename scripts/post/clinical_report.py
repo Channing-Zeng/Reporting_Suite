@@ -48,6 +48,10 @@ def main():
             (['--match'], dict(
                 dest='match_sample_name',
             )),
+            (['--jira'], dict(
+                dest='jira_url',
+            )),
+
         ],
         key_for_sample_name=None,
         required_keys=[],

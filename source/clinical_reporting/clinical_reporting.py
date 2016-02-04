@@ -4,6 +4,7 @@ from os.path import join, dirname, abspath, relpath
 
 import re
 
+from ext_modules.genologics import lims
 from source import info
 from source.logger import warn
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
@@ -451,12 +452,49 @@ class BaseClinicalReporting:
             #     d['target_section']['panel'] = experiment.target.type + ', AZ300 IDT panel'
             #     d['target_section']['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
-        d['sample_type'] = experiment.sample.normal_match
+        d['analysis_type'] = experiment.sample.normal_match
+        sample_type = self.get_data_from_lims(experiment.cnf, experiment.project_name, experiment.sample.name)
+        if sample_type:
+            d['sample_type'] = ', '.join(sample_type)
         d['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
         # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
         if experiment.ave_depth is not None:
             d['ave_depth'] = Metric.format_value(experiment.ave_depth, is_html=True)
         return d
+
+    @staticmethod
+    def get_data_from_lims(cnf, project_name, sample_name):
+        # Create the LIMS interface instance
+        lims_instance = lims.Lims()
+        lims_sample = None
+        sample_type = None
+        jira_url = cnf.jira_url
+        if not jira_url:
+            return None
+        from source.jira_utils import retrieve_jira_info
+        jira_case = retrieve_jira_info(jira_url)
+        container_id = re.findall(r'_[A-Z0-9]+XX', jira_case.data_hub)  # '/ngs/oncology/datasets/hiseq4000/160115_K00172_0044_H3GCYBBXX'
+        if container_id:
+            container_id = container_id[0][1:]
+            lims_artifacts = lims_instance.get_artifacts(containername=container_id)
+            for artifact in lims_artifacts:
+                for sample in artifact.samples:
+                    if sample.name.replace(' ', '_') == sample_name.replace(' ', '_'):
+                        lims_sample = sample
+        if lims_sample:
+            sample_tissue, collection_type, tumor_type = None, None, None
+            for key, value in lims_sample.udf.items():
+                if key == 'Sample Tissue':
+                    sample_tissue = value
+                if key == 'Collection Type' and value == 'FFPE':
+                    collection_type = value
+                if key == 'Normal Primary Metastasis':
+                    tumor_type = value
+            sample_type = [sample_tissue, collection_type, tumor_type]
+            sample_type = [s for s in sample_type if s]
+        else:
+            info('Project was not found in LIMS')
+        return sample_type
 
     @staticmethod
     def _db_recargs(mut):
