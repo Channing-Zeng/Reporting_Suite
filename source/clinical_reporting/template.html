@@ -151,7 +151,7 @@
                 <p id="variants_switch">
                     <span>Likely pathogenic</span>
                     /
-                    <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">
+                    <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
                         all variants</a>
                 </p>
                 <div id="variants_table_div">
@@ -220,12 +220,12 @@
 
         <div class="space_10px"></div>
         <a name="seq2c"></a>
-        <h1>Seq2C log2 ratios (CNV) in {total_key_genes} {key_or_target} genes</h1>
+        <h1>Seq2C log2 ratios (CNV)</h1>
         {.section seq2c}
             <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
                 <span style="color: green;">Green</span> means amplification,
                 <span style="color: red;">red</span> means deletion,
-                <b>black</b> means no event.</p>
+                <b>black</b> means no event.{description_for_whole_genomic_profile}</p>
             <!--<div class="seq2c_plot" style="margin-left: -20px;">-->
                 <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
             <!--</div>-->
@@ -248,34 +248,81 @@
                 </div>
             </div>
             {.section amp_del}
-                <table width="100%">
-                    <tr style="vertical-align: top;">
-                    <!--<div class="multi-col-layout">-->
-                    {.repeated section columns}
-                        <td style="">
-                            <table class="report_table static_report"
-                                   style="margin-right: 40px;">
-                                <thead>
-                                    <tr class="top_row_tr">
-                                        {.repeated section metric_names}
-                                            {@}
-                                        {.end}
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {.repeated section rows}
-                                        <tr>
-                                            {.repeated section records}
+                {.section seq2c_switch}
+                <p id="seq2c_switch">
+                    <span>{key_or_target} genes</span>
+                    /
+                    <a class="dotted-link" id="extend_link_seq2c" onclick="extendClick($(this))">
+                        all genes</a>
+                </p>
+                {.or}
+                {.end}
+                <div id="seq2c_table_div">
+                {.section short_table}
+                    <table width="100%" cellspacing="0" class="table_short">
+                        <tr style="vertical-align: top;">
+                        <!--<div class="multi-col-layout">-->
+                        {.repeated section columns}
+                            <td style="">
+                                <table class="report_table static_report"
+                                       style="margin-right: 40px;">
+                                    <thead>
+                                        <tr class="top_row_tr">
+                                            {.repeated section metric_names}
                                                 {@}
                                             {.end}
                                         </tr>
-                                    {.end}
-                                </tbody>
-                            </table>
-                        </td>
+                                    </thead>
+                                    <tbody>
+                                        {.repeated section rows}
+                                            <tr>
+                                                {.repeated section records}
+                                                    {@}
+                                                {.end}
+                                            </tr>
+                                        {.end}
+                                    </tbody>
+                                </table>
+                            </td>
+                        {.end}
+                        </tr>
+                    </table>
+                    {.or}
+                    <table width="100%" cellspacing="0" class="table_short">
+                    </table>
                     {.end}
-                    </tr>
-                </table>
+                    {.section full_table}
+                    <table width="100%" cellspacing="0" class="table_full" style="display:none">
+                        <tr style="vertical-align: top;">
+                        <!--<div class="multi-col-layout">-->
+                        {.repeated section columns}
+                            <td style="">
+                                <table class="report_table static_report"
+                                       style="margin-right: 40px;">
+                                    <thead>
+                                        <tr class="top_row_tr">
+                                            {.repeated section metric_names}
+                                                {@}
+                                            {.end}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {.repeated section rows}
+                                            <tr>
+                                                {.repeated section records}
+                                                    {@}
+                                                {.end}
+                                            </tr>
+                                        {.end}
+                                    </tbody>
+                                </table>
+                            </td>
+                        {.end}
+                        </tr>
+                    </table>
+                    {.or}
+                    {.end}
+                </div>
             {.end}
         {.or}
             <p>No Seq2C events found in in {total_key_genes} {key_or_target} genes.</p>
@@ -283,7 +330,7 @@
 
         <a name="coverage"></a>
         {.section coverage}
-        <h1>Coverage analysis for the in {total_key_genes} {key_or_target} genes</h1>
+        <h1>Coverage analysis for the {total_key_genes} {key_or_target} genes</h1>
         <div class="coverage_plot">
             <p style="margin-top: -5px;">
                 Height indicates gene average coverage,

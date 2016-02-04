@@ -307,14 +307,15 @@ class BaseClinicalReporting:
                 linesX=chr_cum_lens
             )
 
-            for gene in e.key_gene_by_name.values():
-                for se in gene.seq2c_events:
-                    d['events'].append(dict(
-                        x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
-                        geneName=gene.name,
-                        logRatio=se.ab_log2r if se.ab_log2r is not None else se.log2r,
-                        ampDel=se.amp_del,
-                        fragment=se.fragment))
+            for gene in e.seq2c_events_by_gene_name:
+                se = e.seq2c_events_by_gene_name[gene]
+                d['events'].append(dict(
+                    x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
+                    geneName=gene.name,
+                    logRatio=se.ab_log2r if se.ab_log2r is not None else se.log2r,
+                    ampDel=se.amp_del,
+                    fragment=se.fragment,
+                    isKeyGene=gene.name in e.key_gene_by_name))
 
                     # if not gene.seq2c_event.ab_log2r or gene.seq2c_event.fragment == 'BP':  # breakpoint, meaning part of exon is not amplified
 
@@ -330,11 +331,11 @@ class BaseClinicalReporting:
 
     def make_seq2c_report(self, seq2c_by_experiment):
         ms = [
-            Metric('Gene', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),  # Gene
+            Metric('Gene', align='left', sort_direction='ascending'),  # Gene
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
-            Metric('Log ratio', max_width=80),
-            Metric('Amp/Del', max_width=70),
-            Metric('BP/Whole', max_width=50),
+            Metric('Log ratio'),
+            Metric('Amp/Del'),
+            Metric('BP/Whole'),
         ]
 
         reports = []
@@ -343,8 +344,9 @@ class BaseClinicalReporting:
         for e, seq2c in seq2c_by_experiment.items():
             metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
             report = PerRegionSampleReport(sample=seq2c_by_experiment.keys()[0].sample,
-                                           metric_storage=metric_storage)
+                                           metric_storage=metric_storage, expandable=True)
             seq2c_events = seq2c.values()
+            is_whole_genomic_profile = len(e.seq2c_events_by_gene_name.values()) > len(e.key_gene_by_name.values())
             for event in sorted(seq2c_events, key=lambda e: e.gene.name):
                 if event.is_amp() or event.is_del():
                     row = report.add_row()
@@ -353,6 +355,8 @@ class BaseClinicalReporting:
                     row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
                     row.add_record('Amp/Del', event.amp_del)
                     row.add_record('BP/Whole', event.fragment)
+                    if is_whole_genomic_profile and event.gene.name not in e.key_gene_by_name:
+                        row.hidden = True
             reports.append(report)
 
         if len(seq2c_by_experiment.keys()) == 1:
@@ -579,6 +583,12 @@ class ClinicalReporting(BaseClinicalReporting):
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
             if self.seq2c_report:
                 data['seq2c']['amp_del'] = self.__seq2c_section()
+                if len(self.experiment.seq2c_events_by_gene_name.values()) > len(self.experiment.key_gene_by_name.values()):
+                    data['seq2c']['description_for_whole_genomic_profile'] = \
+                    '<br><b>Note:</b> The whole genomic profile is shown.'.format(self.experiment.genes_collection_type)
+                    data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
+                else:
+                    data['seq2c']['description_for_whole_genomic_profile'] = ''
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
@@ -637,22 +647,29 @@ class ClinicalReporting(BaseClinicalReporting):
     def __seq2c_section(self):
         seq2c_dict = dict()
         if self.seq2c_report and self.seq2c_report.rows:
-            seq2c_dict = dict(columns=[])
-            GENE_COL_NUM = min(3, len(self.seq2c_report.rows))
-            genes_in_col = [len(self.seq2c_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
-            for i in range(len(self.seq2c_report.rows) % GENE_COL_NUM):
-                genes_in_col[i] += 1
-            calc_cell_contents(self.seq2c_report, self.seq2c_report.get_rows_of_records())
-            printed_genes = 0
-            for i in range(GENE_COL_NUM):
-                column_dict = dict()
-                column_dict['metric_names'] = [make_cell_th(m) for m in self.seq2c_report.metric_storage.get_metrics()]
-                column_dict['rows'] = [
-                    dict(records=[make_cell_td(r) for r in region.records])
-                        for region in self.seq2c_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
-                seq2c_dict['columns'].append(column_dict)
-                printed_genes += genes_in_col[i]
+            not_hidden_rows = [r for r in self.seq2c_report.rows if not r.hidden]
+            if not_hidden_rows:
+                seq2c_dict['short_table'] = self.__seq2c_create_tables(not_hidden_rows)
+            seq2c_dict['full_table'] = self.__seq2c_create_tables(self.seq2c_report.rows)
         return seq2c_dict
+
+    def __seq2c_create_tables(self, rows):
+        table_dict = dict(columns=[])
+        GENE_COL_NUM = min(3, len(rows))
+        genes_in_col = [len(rows) / GENE_COL_NUM] * GENE_COL_NUM
+        for i in range(len(rows) % GENE_COL_NUM):
+            genes_in_col[i] += 1
+        calc_cell_contents(self.seq2c_report, rows)
+        printed_genes = 0
+        for i in range(GENE_COL_NUM):
+            column_dict = dict()
+            column_dict['metric_names'] = [make_cell_th(m) for m in self.seq2c_report.metric_storage.get_metrics()]
+            column_dict['rows'] = [
+                dict(records=[make_cell_td(r) for r in region.records])
+                    for region in rows[printed_genes:printed_genes + genes_in_col[i]]]
+            table_dict['columns'].append(column_dict)
+            printed_genes += genes_in_col[i]
+        return table_dict
 
     def __actionable_genes_section(self):
         actionable_genes_dict = dict()

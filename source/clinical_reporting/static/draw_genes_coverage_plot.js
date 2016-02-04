@@ -4,6 +4,7 @@ $(function() {
 
     function drawGeneCovPlot(data_el, placeholder_el, legend_placeholder_el) {
         var data = readJsonFromElement(data_el);
+        if (data == null) return;
 
         var geneNames = data.gene_names;
         var coordsX = data.coords_x;

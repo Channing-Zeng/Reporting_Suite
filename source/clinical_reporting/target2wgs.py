@@ -215,20 +215,21 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
 
     def __seq2c_section(self, seq2c_report):
         seq2c_dict = dict()
-        if seq2c_report and seq2c_report.rows:
+        rows = [r for r in seq2c_report.rows if not r.hidden]
+        if seq2c_report and rows:
             seq2c_dict = dict(columns=[])
-            GENE_COL_NUM = min(2, len(seq2c_report.rows))
-            genes_in_col = [len(seq2c_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
-            for i in range(len(seq2c_report.rows) % GENE_COL_NUM):
+            GENE_COL_NUM = min(2, len(rows))
+            genes_in_col = [len(rows) / GENE_COL_NUM] * GENE_COL_NUM
+            for i in range(len(rows) % GENE_COL_NUM):
                 genes_in_col[i] += 1
-            calc_cell_contents(seq2c_report, seq2c_report.get_rows_of_records())
+            calc_cell_contents(seq2c_report, rows)
             printed_genes = 0
             for i in range(GENE_COL_NUM):
                 column_dict = dict()
                 column_dict['metric_names'] = [make_cell_th(m) for m in seq2c_report.metric_storage.get_metrics()]
                 column_dict['rows'] = [
                     dict(records=[make_cell_td(r) for r in region.records])
-                        for region in seq2c_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
+                        for region in rows[printed_genes:printed_genes + genes_in_col[i]]]
                 seq2c_dict['columns'].append(column_dict)
                 printed_genes += genes_in_col[i]
         return seq2c_dict

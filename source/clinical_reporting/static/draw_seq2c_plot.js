@@ -46,16 +46,27 @@ function drawSeq2cPlot(key, data, placeholder_el) {
             var color = 'black';
             var radius = 1;
 
-            if (data.events.length <= 10) {
-                radius = 2;
+            if (!data.events[k].isKeyGene) {
+                color = '#ccc';
+                if (data.events[k].ampDel == 'Amp') {
+                    color = '#19A600';
+                }
+                if (data.events[k].ampDel == 'Del') {
+                    color = '#950000';
+                }
             }
-            if (data.events[k].ampDel == 'Amp') {
-                color = 'green';
-                radius = 2;
-            }
-            if (data.events[k].ampDel == 'Del') {
-                color = 'red';
-                radius = 2;
+            else {
+                if (data.events.length <= 10) {
+                    radius = 2;
+                }
+                if (data.events[k].ampDel == 'Amp') {
+                    color = 'green';
+                    radius = 2;
+                }
+                if (data.events[k].ampDel == 'Del') {
+                    color = 'red';
+                    radius = 2;
+                }
             }
 
             var series = {

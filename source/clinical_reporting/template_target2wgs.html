@@ -98,12 +98,23 @@
         <div class="space_8px"></div>
         <div class="space_8px"></div>
         <div>
-            <a class="dotted-link" href="#variants">Mutations in key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#actionable">Actionable key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#variants">Mutations in key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#coverage">Coverage analysis for the key genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="space_4px"></div>
+
+        <a name="actionable"></a>
+        <h1>Actionable key genes</h1>
+        {.section actionable_genes}
+            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
+            <div class="actionable_table">
+                {table}
+            </div>
+        {.or}
+            <p>No mutations found in actionable genes.</p>
+        {.end}
 
         <a name="variants"></a>
         <h1>Mutations in key genes</h1>
@@ -118,7 +129,7 @@
                 <p id="variants_switch">
                     <span>Likely pathogenic</span>
                     /
-                    <a class="dotted-link" id="extend_link" onclick="extendClick($(this))">
+                    <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
                         all variants</a>
                 </p>
                 <div id="variants_table_div">
@@ -173,19 +184,8 @@
             <p>No variants detected in key regions.</p>
         {.end}
 
-        <a name="actionable"></a>
-        <h1>Actionable key genes</h1>
-        {.section actionable_genes}
-            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
-            <div class="actionable_table">
-                {table}
-            </div>
-        {.or}
-            <p>No mutations found in actionable genes.</p>
-        {.end}
-
         <a name="seq2c"></a>
-        <h1>Seq2C log2 ratios (CNV)</h1>
+        <h1>Seq2C log2 ratios (CNV) in {key_or_target} genes</h1>
         {.section seq2c}
             <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
                 <span style="color: green;">Green</span> means amplification,

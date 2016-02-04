@@ -442,26 +442,30 @@ class ClinicalExperimentInfo:
                 if i == 0: continue
                 fs = l[:-1].split('\t')
                 sname, gname = fs[0], fs[1]
-                if gname not in self.key_gene_by_name: continue
+                #if gname not in self.key_gene_by_name: continue
                 if sname != self.sample.name: continue
+                if 'not_a_gene' in gname: continue
 
                 sname, gname, chrom, start, end, length, log2r, sig, fragment, amp_del, ab_seg, total_seg, \
                     ab_log2r, log2r_diff, ab_seg_loc, ab_samples, ab_samples_pcnt = fs[:17]
-
+                gene = KeyGene(gname)
+                gene.chrom, gene.start, gene.end = chrom, int(start), int(end)
                 event = Seq2CEvent(
-                    gene=self.key_gene_by_name[gname],
+                    gene=gene,
                     fragment=fragment or None,
                     ab_log2r=float(ab_log2r) if ab_log2r else None,
                     log2r=float(log2r) if log2r else None,
                     amp_del=amp_del or None)
-                seq2c_events_by_gene_name[gname] = event
-
-        info('Found ' + str(len(seq2c_events_by_gene_name.values())) + ' Seq2C events in key genes, ' +
-             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_amp())) + ' amplifications and ' +
-             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_del())) + ' deletions.')
+                seq2c_events_by_gene_name[gene] = event
 
         for gn, event in seq2c_events_by_gene_name.items():
-            self.key_gene_by_name[gn].seq2c_events.append(event)
+            if gn.name in self.key_gene_by_name:
+                self.key_gene_by_name[gn.name].seq2c_events.append(event)
+        key_gene_events = sum(1 for gn in self.key_gene_by_name for e in self.key_gene_by_name[gn].seq2c_events)
+
+        info('Found ' + str(len(seq2c_events_by_gene_name.values())) + ' Seq2C events (' + str(key_gene_events) + ' in key genes), ' +
+             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_amp())) + ' amplifications and ' +
+             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_del())) + ' deletions.')
 
         return seq2c_events_by_gene_name
 
