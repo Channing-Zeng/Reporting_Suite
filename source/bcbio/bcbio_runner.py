@@ -882,7 +882,9 @@ class BCBioRunner:
             if html_report_url:
                 info()
                 info('HTML report url: ' + html_report_url)
-        except:
+        except KeyboardInterrupt:
+            info('Interrupted.')
+        except SystemExit:
             info('Interrupted.')
         finally:
             info('Deleting running jobs...')

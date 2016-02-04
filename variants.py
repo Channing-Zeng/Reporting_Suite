@@ -32,7 +32,8 @@ def proc_args(argv):
     parser.add_option('--is-deep-seq', dest='is_deep_seq', action='store_true', default=False, help='deep targeted sequencing')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
-    parser.add_option('-c', '--caller', dest='caller_name')
+    parser.add_option('-c', '--caller', dest='caller')
+    parser.add_option('--qc-caption', dest='qc_caption')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug

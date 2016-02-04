@@ -237,7 +237,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                 _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
             ])
 
-            verify_file(s.clinical_html, is_critical=False)
+            if not verify_file(s.clinical_html, is_critical=False):
+                clinical_html = join(dirname(dirname(s.clinical_html)), 'clinicalReport', basename(s.clinical_html))
+                if verify_file(clinical_html):
+                    s.clinical_html = clinical_html
             rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
             if rec and rec.value:
                 sample_reports_records[s.name].append(rec)

@@ -255,11 +255,11 @@ class VarSample(BaseSample):
         BaseSample.__init__(self, name, dirpath, **kwargs)
 
         self.anno_vcf_fpath = None
+        self.mut_fpath = None
         self.filt_vcf_fpath = None
         self.pass_filt_vcf_fpath = None
         self.filt_tsv_fpath = None
         self.varfilter_dirpath = None
-        self.prep_vcf_fpath = None
 
 
 # class TargQCStandaloneSample(BaseSample):

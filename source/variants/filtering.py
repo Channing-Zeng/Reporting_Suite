@@ -70,22 +70,6 @@ def index_vcf(sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None):
             bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 
-def prep_vcf(cnf, vcf_fpath, sample_name, caller_name):
-    if cnf is None:
-        global glob_cnf
-        cnf = glob_cnf
-
-    def fix_fields(rec):
-        if rec.FILTER and rec.FILTER != 'PASS':
-            return None
-
-        rec.FILTER = 'PASS'
-        return rec
-
-    vcf_fpath = iterate_vcf(cnf, vcf_fpath, fix_fields, 'vcf2txt')
-    return vcf_fpath
-
-
 def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
         caller_name=None, sample_min_freq=None, threads_num=1):
 
@@ -94,24 +78,8 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
 
     safe_mkdir(output_dirpath)
 
-    # vcf_fpaths = [s.vcf for s in samples if verify_file(s.vcf, 'VCF fpath')]
-
-    global glob_cnf
-    glob_cnf = cnf
-
-    info()
-    info('Preparing VCFs for vcf2txt in ' + str(threads_num) + ' threads')
-    prep_vcf_fpaths = Parallel(n_jobs=threads_num) \
-       (delayed(prep_vcf)(None, s.anno_vcf_fpath, s.name, caller_name)
-        for s in var_samples)
-
-    prep_vcf_fpath_by_sample = dict()
-    for s, prep_vcf_fpath in zip(var_samples, prep_vcf_fpaths):
-        if verify_file(prep_vcf_fpath, 'Prepared VCF for filtering'):
-            s.prep_vcf_fpath = verify_file(prep_vcf_fpath)
-            prep_vcf_fpath_by_sample[s.name] = prep_vcf_fpath
-
-    res = run_vcf2txt(cnf, prep_vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq)
+    vcf_fpath_by_sample = {s.name: s.anno_vcf_fpath for s in var_samples}
+    res = run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq)
     if not res:
         err('vcf2txt run returned non-0')
         return None
@@ -322,21 +290,23 @@ def write_vcf(cnf, sample, output_dirpath, caller_name, vcf2txt_res_fpath, mut_r
     info('Collecting passed variants...')
     with open(mut_res_fpath) as fh:
         for l in fh:
-            ts = l.split('\t')
-            s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
-            mutations.add((chrom, pos, alt))
+            if l.strip():
+                ts = l.split('\t')
+                s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
+                mutations.add((chrom, pos, alt))
 
     info('Collecting all vcf2txt variants...')
     with open(vcf2txt_res_fpath) as vcf2txt_f:
         pass_col = None
         for l in vcf2txt_f:
-            if l.startswith('Sample'):
-                pass_col = l.split('\t').index('PASS')
-            else:
-                ts = l.split('\t')
-                s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
-                filt = ts[pass_col]
-                variants_dict[(chrom, pos, alt)] = filt
+            if l.strip():
+                if l.startswith('Sample'):
+                    pass_col = l.split('\t').index('PASS')
+                else:
+                    ts = l.split('\t')
+                    s_name, chrom, pos, alt = ts[0], ts[1], ts[2], ts[5]
+                    filt = ts[pass_col]
+                    variants_dict[(chrom, pos, alt)] = filt
 
     info()
     info('Writing filtered VCFs')
