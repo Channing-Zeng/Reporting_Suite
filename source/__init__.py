@@ -259,7 +259,9 @@ class VarSample(BaseSample):
         self.filt_vcf_fpath = None
         self.pass_filt_vcf_fpath = None
         self.filt_tsv_fpath = None
+
         self.varfilter_dirpath = None
+        self.varannotate_dirpath = None
 
 
 # class TargQCStandaloneSample(BaseSample):

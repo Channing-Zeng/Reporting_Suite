@@ -1,12 +1,12 @@
 #!/bin/bash
 #set -x
 
-runner=${18}
-done_marker=${19}
-err_marker=${20}
-params=${21}
-out=${11}
-err=${13}
+runner=${20}
+done_marker=${21}
+err_marker=${22}
+params=${23}
+out=${13}
+err=${15}
 cmdline="${runner} ${done_marker} ${err_marker} \"${params}\""
 echo "${params}"
 echo "${out}"
@@ -16,7 +16,5 @@ status=$?
 if [ "${status}" -ne 0 ]; then
     exit 1
 fi
-
-#cat ${err}
 
 #set +x

@@ -41,6 +41,12 @@ def main(args):
                 default=None,
                 help=SUPPRESS_HELP)
              ),
+            (['--no-tsv'], dict(
+                dest='tsv',
+                action='store_false',
+                default=True,
+                help=SUPPRESS_HELP)
+             ),
         ],
         required_keys=['vcf'],
         file_keys=['vcf'],
@@ -66,7 +72,7 @@ def main(args):
     var_s.anno_vcf_fpath = cnf.vcf
     var_s.varfilter_dirpath = var_s.dirpath
     var_s.filt_vcf_fpath = join(cnf.output_dir, add_suffix(basename(cnf.vcf), 'filt'))
-    var_s.pass_filt_vcf_fpath = add_suffix(var_s.filt_tsv_fpath, 'pass')
+    var_s.pass_filt_vcf_fpath = add_suffix(var_s.filt_vcf_fpath, 'pass')
     var_s.varfilter_result = vcf2txt_res_fpath
     var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
@@ -76,7 +82,7 @@ def main(args):
         report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)
         qc_dirpath = join(cnf.output_dir, 'qc')
         safe_mkdir(qc_dirpath)
-        qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_name)
+        qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_after_name)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])

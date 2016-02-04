@@ -33,7 +33,8 @@ def proc_args(argv):
     parser.add_option('--only-summary', dest='only_summary', action='store_true')
     parser.add_option('-o', dest='output_dir', metavar='DIR', default=join(os.getcwd(), 'targetqc'))
     parser.add_option('-c', '--caller', dest='caller')
-    parser.add_option('--qc-caption', dest='qc_caption')
+    parser.add_option('--qc-caption', dest='qc_caption', help=SUPPRESS_HELP)
+    parser.add_option('--no-tsv', dest='tsv', action='store_false', default=True, help=SUPPRESS_HELP)
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug

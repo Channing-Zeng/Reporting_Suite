@@ -18,7 +18,7 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None, *args, **kwargs):
 
     for fpaths in results_one:
         if fpaths:
-            info('Checking expeced results...')
+            info('Checking expected results...')
             if isinstance(fpaths, basestring):
                 fpaths = [fpaths]
             for fpath in fpaths:

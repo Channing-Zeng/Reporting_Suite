@@ -28,7 +28,10 @@ def run_variants(cnf, samples, main_script_name=None, mut_fpath=None):
     info()
     info('Combining results...')
     _combine_results(cnf, samples, mut_fpath or join(cnf.output_dir, mut_fname))
+
     info()
+    info('*' * 70)
+    info('Saved results to ' + cnf.output_dir)
 
 
 def _annotate(cnf, samples):
@@ -108,8 +111,9 @@ def _filter(cnf, samples, mut_fname):
     reused = 0
     jobs_to_wait = []
     for sample in samples:
-        output_dirpath = sample.varfilter_dirpath = sample.dirpath
+        output_dirpath = sample.varfilter_dirpath = join(sample.dirpath, source.varfilter_name)
         output_fpath = sample.mut_fpath = join(sample.varfilter_dirpath, mut_fname)
+        # sample.filt_tsv_fpath = join(sample.varfilter_dirpath)
 
         if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
             info('Filtered results ' + output_fpath + ' exist, reusing.')
@@ -122,6 +126,7 @@ def _filter(cnf, samples, mut_fname):
                     ' --run-cnf ' + cnf.run_cnf +
                     ' --log-dir -' +
                     ' --vcf {sample.anno_vcf_fpath}' +
+                    ' --sample {sample.name}' +
                     ' -o {output_dirpath}' +
                     ' --output-file {sample.mut_fpath}' +
                     ' --project-name ' + cnf.project_name +
@@ -129,7 +134,9 @@ def _filter(cnf, samples, mut_fname):
                     ' --work-dir {work_dir}' +
                    (' --reuse ' if cnf.reuse_intermediate else '') +
                   ((' --caller ' + cnf.caller) if cnf.caller else '') +
-                    ' --qc').format(**locals())
+                    ' --qc' +
+                   (' --no-tsv' if not cnf.tsv else '')
+                ).format(**locals())
             j = submit_job(cnf, cmdl, job_name='_filt_' + sample.name,
                 output_fpath=output_fpath, stdout_to_outputfile=False)
             jobs_to_wait.append(j)
@@ -168,24 +175,26 @@ def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):
     name = source.varqc_name
     if post_filter:
         name = source.varqc_after_name
+    varqc_dir = join(output_dir, name)
+    safe_mkdir(varqc_dir)
 
-    info('VarQC ' + ('(post-filtering) ' if post_filter else '') + 'summary...')
+    info('VarQC ' + ('(post-filtering) ' if post_filter else '') + 'summary, saving to ' + output_dir)
 
     jsons_by_sample = dict()
     for s in samples:
-        fpath = join(s.dirpath, 'qc', s.name + '.' + name + '.json')
+        fpath = join((s.varannotate_dirpath if not post_filter else s.varfilter_dirpath), 'qc', s.name + '.' + name + '.json')
         if verify_file(fpath):
             jsons_by_sample[s.name] = fpath
 
     htmls_by_sample = dict()
     for s in samples:
-        fpath = join(s.dirpath, 'qc', s.name + '.' + name + '.html')
+        fpath = join((s.varannotate_dirpath if not post_filter else s.varfilter_dirpath), 'qc', s.name + '.' + name + '.html')
         if verify_file(fpath):
             htmls_by_sample[s.name] = fpath
 
     report = FullReport.construct_from_sample_report_jsons(
         samples, output_dir, jsons_by_sample=jsons_by_sample, htmls_by_sample=htmls_by_sample)
-    full_summary_fpaths = report.save_into_files(cnf, join(output_dir, name),
+    full_summary_fpaths = report.save_into_files(cnf, join(varqc_dir, name),
         caption='Variant QC' + (' post-varfilter' if post_filter else '') +
                 ((', ' + caption) if caption else ''))
 

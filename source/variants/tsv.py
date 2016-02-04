@@ -20,7 +20,7 @@ def make_tsv(cnf, vcf_fpath, samplename, main_sample_index=None):
     vcf_fpath = vcf_one_per_line(cnf, vcf_fpath)
 
     if main_sample_index is None:
-        main_sample_index = get_sample_column_index(vcf_fpath, samplename)
+        main_sample_index = get_sample_column_index(vcf_fpath, samplename) or 0
 
     tsv_fpath = _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index)
     if not tsv_fpath:
