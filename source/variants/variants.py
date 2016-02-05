@@ -61,9 +61,7 @@ def _annotate(cnf, samples):
         if cnf.reuse_intermediate and isfile(output_fpath) and verify_vcf(output_fpath):
             if 'validation_match' in sample.__dict__:
                 info('validation_match found for ' + sample.name + ', rerunning this sample.')
-                cmd = 'rm -rf ' + sample.dirpath
-                raw_input(cmd)
-                os.system(cmd)
+                os.system('rm -rf ' + sample.dirpath)
                 safe_mkdir(sample.dirpath)
             else:
                 info('Annotated results ' + output_fpath + ' exist, reusing.')
