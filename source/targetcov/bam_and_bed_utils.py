@@ -363,9 +363,10 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set, suffix=None):
 
 def sort_bed(cnf, bed_fpath, genome):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
+    genome_seq_fpath = adjust_path(cnf.genome.seq)
 
     cmdl = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sort_bed.py'), is_critical=True)
-    cmdl += ' ' + genome
+    cmdl += ' ' + genome_seq_fpath + ' ' + genome
 
     res = call(cnf, cmdl, stdin_fpath=bed_fpath, output_fpath=output_fpath)
     if not res:

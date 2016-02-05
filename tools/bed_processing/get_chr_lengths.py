@@ -5,7 +5,6 @@ import sys
 
 from source.logger import err, critical
 from source.file_utils import file_exists, verify_file, file_transaction
-from source.targetcov.Region import SortableByChrom
 
 
 def main():
@@ -17,7 +16,7 @@ def main():
     get_chr_lengths(seq_fpath, genome_build)
 
 
-def get_chr_lengths(seq_fpath, genome_build):
+def get_chr_lengths(seq_fpath, genome_build, silence=False):
     chr_lengths = []
 
     verify_file(seq_fpath, is_critical=True)
@@ -29,7 +28,7 @@ def get_chr_lengths(seq_fpath, genome_build):
                 line = line.strip()
                 if line:
                     chrom, length = line.split()[0], line.split()[1]
-                    chr_lengths.append([SortableByChrom(chrom, genome_build), length])
+                    chr_lengths.append((chrom, length))
     else:
         err('Reading genome sequence (.fa) to get chromosome lengths')
         with open(seq_fpath, 'r') as handle:
@@ -37,12 +36,13 @@ def get_chr_lengths(seq_fpath, genome_build):
             reference_records = SeqIO.parse(handle, 'fasta')
             for record in reference_records:
                 chrom = record.id
-                chr_lengths.append([SortableByChrom(chrom, genome_build), len(record.seq)])
+                chr_lengths.append((chrom, len(record.seq)))
 
-    chr_lengths = sorted(chr_lengths, key=lambda (k, l): k.get_key())
-
+    #chr_lengths = sorted(chr_lengths, key=lambda (k, l): k.get_key())
+    if silence:
+        return chr_lengths
     for c, l in chr_lengths:
-        sys.stdout.write(c.chrom + '\t' + str(l) + '\n')
+        sys.stdout.write(c + '\t' + str(l) + '\n')
 
 
 if __name__ == '__main__':
