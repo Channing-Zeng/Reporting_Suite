@@ -203,7 +203,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 hotspot_proteins.add('-'.join([fields[0], fields[6]]))
 
     specific_mutations, genes_with_generic_rules, genes_with_spec_types, \
-        genes_with_dependent_mutations, specific_transcripts = parse_specific_mutations(adjust_path(specific_mutations_p))
+        genes_with_dependent_mutations, specific_transcripts = parse_specific_mutations(adjust_path(cnf.specific_mutations))
 
     pass_col = None
     sample_col = None
