@@ -485,7 +485,7 @@ class ClinicalExperimentInfo:
 
                 chrom = get_val(chrom)
                 if not chrom:
-                    err('For gene ' + str(symbol) + ', chrom value if empty in line ' + l + ' in ' + self.sample.targetcov_detailed_tsv)
+                    err('For gene ' + str(symbol) + ', chrom value is empty in line ' + l + ' in ' + self.sample.targetcov_detailed_tsv)
                     continue
 
                 start, end = int(start), int(end)

@@ -167,7 +167,7 @@ def wait_for_jobs(cnf, jobs):
     not_done = sum(1 for j in jobs if not j.is_done)
     done = sum(1 for j in jobs if j.is_done)
     failed = sum(1 for j in jobs if j.is_failed)
-    warn('Done: ' + str(done) + ', not done: ' + str(not_done) + ', failed: ' + str(failed))
+    (warn if failed else info)('Done: ' + str(done) + ', not done: ' + str(not_done) + ', failed: ' + str(failed))
     return jobs
 
 

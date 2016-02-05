@@ -40,12 +40,13 @@ def proc_args(argv):
     logger.is_debug = opts.debug
 
     if len(args) == 0:
-        critical('No BAMs provided to input.')
-
-    sample_names, vcf_fpaths = read_samples(args)
+        critical('No vcf files provided to input.')
 
     run_cnf = determine_run_cnf(opts, is_targetseq=opts.is_deep_seq, is_wgs=opts.is_wgs)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
+
+    sample_names, vcf_fpaths = read_samples(args, cnf.caller)
+    info()
 
     if not cnf.project_name:
         cnf.project_name = basename(cnf.output_dir)
@@ -77,11 +78,12 @@ def main():
     run_variants(cnf, samples, basename(__file__))
 
 
-def read_samples(args):
+def read_samples(args, caller_name=None):
     vcf_fpaths = []
     sample_names = []
     bad_vcf_fpaths = []
 
+    info('Reading samples...')
     for arg in args or [os.getcwd()]:
         vcf_fpath = verify_file(arg.split(',')[0])
         if not verify_file(vcf_fpath):
@@ -90,9 +92,28 @@ def read_samples(args):
         if len(arg.split(',')) > 1:
             sample_names.append(arg.split(',')[1])
         else:
-            sample_names.append(basename(splitext_plus(vcf_fpath)[0]))
+            sn = basename(splitext_plus(vcf_fpath)[0])
+            if caller_name and sn.endswith('-' + caller_name):
+                sn = sn[:-len(caller_name) - 1]
+            sample_names.append(sn)
+            info('  ' + sn)
     if bad_vcf_fpaths:
         critical('VCF files cannot be found, empty or not VCFs:' + ', '.join(bad_vcf_fpaths))
+    info('Done reading ' + str(len(sample_names)) + ' samples')
+
+    # TODO: read sample names from VCF
+    # def get_main_sample(self, main_sample_index=None):
+    #     if len(self._sample_indexes) == 0:
+    #         return None
+    #     if main_sample_index is not None:
+    #         return self.samples[main_sample_index]
+    #     try:
+    #         sample_index = [sname.lower() for sname in self._sample_indexes] \
+    #                         .index(self.sample_name_from_file.lower())
+    #     except ValueError:
+    #         return self.samples[0]
+    #     else:
+    #         return self.samples[sample_index]
 
     return sample_names, vcf_fpaths
 

@@ -16,7 +16,7 @@ project_fpath = None
 proc_name = None
 my_address = 'Vlad.Saveliev@astrazeneca.com'
 cnf_address = None
-is_debug = True
+is_debug = False
 
 smtp_host = None  # set up in source/config.py and system_info.yaml
 

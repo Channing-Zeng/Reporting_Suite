@@ -18,12 +18,15 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None, *args, **kwargs):
 
     for fpaths in results_one:
         if fpaths:
+            ok = True
             info('Checking expected results...')
             if isinstance(fpaths, basestring):
                 fpaths = [fpaths]
             for fpath in fpaths:
-                verify_file(fpath)
-            info('The results are good.')
+                if not verify_file(fpath):
+                    ok = False
+            if ok:
+                info('The results are good.')
 
     return results_one
 

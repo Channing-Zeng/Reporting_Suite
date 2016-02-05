@@ -1,7 +1,6 @@
+import os
 from genericpath import isfile, isdir
 from os.path import basename, join
-
-import shutil
 
 import source
 from source.logger import info, err, debug, critical
@@ -27,11 +26,11 @@ def run_variants(cnf, samples, main_script_name=None, mut_fpath=None):
     _filter(cnf, samples, mut_fname)
     info()
     info('Combining results...')
-    _combine_results(cnf, samples, mut_fpath or join(cnf.output_dir, mut_fname))
+    mut_fpath = _combine_results(cnf, samples, mut_fpath or join(cnf.output_dir, mut_fname))
 
     info()
     info('*' * 70)
-    info('Saved results to ' + cnf.output_dir)
+    info('Saved results to ' + mut_fpath)
 
 
 def _annotate(cnf, samples):
@@ -60,26 +59,35 @@ def _annotate(cnf, samples):
             output_fpath += '.gz'
         debug('Checking ' + output_fpath)
         if cnf.reuse_intermediate and isfile(output_fpath) and verify_vcf(output_fpath):
-            info('Annotated results ' + output_fpath + ' exist, reusing.')
-            reused += 1
-        else:
-            info('Annotating "' + basename(sample.vcf) + '"')
-            work_dir = join(cnf.work_dir, source.varannotate_name + '_' + sample.name)
-            j = submit_job(
-                cnf,
-                cmdline=varannotate_cmdl +
-                    ' --vcf ' + sample.vcf +
-                    ' -o ' + sample.varannotate_dirpath +
-                    ' -s ' + sample.name +
-                    ' --work-dir ' + work_dir +
-                    ' --output-file ' + output_fpath,
-                job_name='VA_' + cnf.project_name + '_' + sample.name,
-                output_fpath=output_fpath,
-                stdout_to_outputfile=False,
-                work_dir=work_dir
-            )
-            jobs_to_wait.append(j)
-            info()
+            if 'validation_match' in sample.__dict__:
+                info('validation_match found for ' + sample.name + ', rerunning this sample.')
+                cmd = 'rm -rf ' + sample.dirpath
+                raw_input(cmd)
+                os.system(cmd)
+                safe_mkdir(sample.dirpath)
+            else:
+                info('Annotated results ' + output_fpath + ' exist, reusing.')
+                reused += 1
+                info()
+                continue
+
+        info('Annotating "' + basename(sample.vcf) + '"')
+        work_dir = join(cnf.work_dir, source.varannotate_name + '_' + sample.name)
+        j = submit_job(
+            cnf,
+            cmdline=varannotate_cmdl +
+                ' --vcf ' + sample.vcf +
+                ' -o ' + sample.varannotate_dirpath +
+                ' -s ' + sample.name +
+                ' --work-dir ' + work_dir +
+                ' --output-file ' + output_fpath,
+            job_name='VA_' + cnf.project_name + '_' + sample.name,
+            output_fpath=output_fpath,
+            stdout_to_outputfile=False,
+            work_dir=work_dir
+        )
+        jobs_to_wait.append(j)
+        info()
 
     info()
     info('-' * 70)
@@ -98,7 +106,7 @@ def _annotate(cnf, samples):
             j.is_failed = True
         if j.is_done and not j.is_failed:
             if isdir(j.work_dir):
-                shutil.rmtree(j.work_dir)
+                os.system('rm -rf ' + j.work_dir)
             else:
                 err('Job was done, but ' + j.work_dir + ' does not exist')
 
@@ -118,6 +126,7 @@ def _filter(cnf, samples, mut_fname):
         if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
             info('Filtered results ' + output_fpath + ' exist, reusing.')
             reused += 1
+            info()
         else:
             varfilter_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varfilter.py'))
             work_dir = join(cnf.work_dir, 'filt_' + sample.name)
@@ -140,6 +149,7 @@ def _filter(cnf, samples, mut_fname):
             j = submit_job(cnf, cmdl, job_name='_filt_' + sample.name,
                 output_fpath=output_fpath, stdout_to_outputfile=False)
             jobs_to_wait.append(j)
+            info()
     info()
     info('-' * 70)
     if jobs_to_wait:
@@ -170,6 +180,8 @@ def _combine_results(cnf, samples, mut_fpath):
 
     _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
+    return mut_fpath
+
 
 def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):
     name = source.varqc_name
@@ -182,13 +194,15 @@ def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):
 
     jsons_by_sample = dict()
     for s in samples:
-        fpath = join((s.varannotate_dirpath if not post_filter else s.varfilter_dirpath), 'qc', s.name + '.' + name + '.json')
+        fpath = join((s.varannotate_dirpath if not post_filter else s.varfilter_dirpath), 'qc',
+                     s.name + (('-' + cnf.caller) if cnf.caller else '') + '.' + name + '.json')
         if verify_file(fpath):
             jsons_by_sample[s.name] = fpath
 
     htmls_by_sample = dict()
     for s in samples:
-        fpath = join((s.varannotate_dirpath if not post_filter else s.varfilter_dirpath), 'qc', s.name + '.' + name + '.html')
+        fpath = join((s.varannotate_dirpath if not post_filter else s.varfilter_dirpath), 'qc',
+                     s.name + (('-' + cnf.caller) if cnf.caller else '') + '.' + name + '.html')
         if verify_file(fpath):
             htmls_by_sample[s.name] = fpath
 
