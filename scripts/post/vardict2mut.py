@@ -184,9 +184,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                             key = '-'.join(fields[1:4])
                             act_somatic.add(key)
                         elif fields[5] == inframe_del:
-                            rules[inframe_del].setdefault(fields[0], []).append(fields[1:5])
+                            rules[inframe_del].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
                         elif fields[5] == inframe_ins:
-                            rules[inframe_ins].setdefault(fields[0], []).append(fields[1:5])
+                            rules[inframe_ins].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
                     else:
                         key = '-'.join(fields[1:5])
                         act_somatic.add(key)
@@ -202,8 +202,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 hotspot_nucleotides.add('-'.join(fields[1:5]))
                 hotspot_proteins.add('-'.join([fields[0], fields[6]]))
 
-    specific_mutations, genes_with_generic_rules, sensitive_mutations, resistance_mutations, \
-        genes_with_sens_or_res_mutations = parse_specific_mutations(adjust_path(cnf.specific_mutations))
+    specific_mutations, genes_with_generic_rules, genes_with_spec_types, \
+        genes_with_dependent_mutations, specific_transcripts = parse_specific_mutations(adjust_path(specific_mutations_p))
 
     pass_col = None
     sample_col = None
@@ -221,6 +221,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     vd_col = None
     aa_chg_col = None
     cdna_chg_col = None
+    transcript_col = None
     effect_col = None
     exon_col = None
     pcnt_sample_col = None
@@ -267,6 +268,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 vd_col = header.index('VD')
                 aa_chg_col = header.index('Amino_Acid_Change')
                 cdna_chg_col = header.index('cDNA_Change')
+                transcript_col = header.index('Transcript')
                 exon_col = header.index('Exon')
                 pcnt_sample_col = header.index('Pcnt_sample')
                 try:
@@ -339,8 +341,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                     continue
             status = 'unknown'
             reasons = []
-            var_class, var_type, fclass, gene_coding, effect = \
-                fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], fields[effect_col]
+            var_class, var_type, fclass, gene_coding, effect, cdna_chg, transcript = \
+                fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
             var_type = var_type.upper()
             status, reasons = check_by_var_class(var_class, status, reasons, fields, header)
             status, reasons = check_by_type(var_type, status, reasons, aa_chg, effect)
@@ -364,13 +366,15 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
             is_specific_mutation = False
             if not SIMULATE_OLD_VARDICT2MUT:
-                status, reasons, is_specific_mutation = check_for_specific_mutation(specific_mutations, gene, aa_chg,
-                                                                                    effect, region, status, reasons)
+                status, reasons, is_specific_mutation = check_for_specific_mutation(specific_mutations, gene, aa_chg, effect,
+                                                                                    region, status, reasons, transcript, specific_transcripts)
 
             if not SIMULATE_OLD_VARDICT2MUT and not is_specific_mutation:
                 is_lof = fields[lof_col] if lof_col else None
                 if not SIMULATE_OLD_VARDICT2MUT and status != 'known' and gene in genes_with_generic_rules:
                     status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg, is_lof)
+                if not SIMULATE_OLD_VARDICT2MUT and status != 'known' and gene in genes_with_spec_types:
+                    status, reasons = check_by_mut_type(cdna_chg, status, reasons, region, genes_with_spec_types[gene])
 
                 if is_loss_of_function(reasons, is_lof):
                     if gene in oncogenes:
@@ -436,7 +440,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
             fields = fields[:lof_col] + fields[(lof_col + 1):] if lof_col else fields
             if not SIMULATE_OLD_VARDICT2MUT:
-                if gene in genes_with_sens_or_res_mutations and (prev_gene == gene or not cur_gene_mutations):
+                if gene in genes_with_dependent_mutations and (prev_gene == gene or not cur_gene_mutations):
                     if gene_aachg in sensitization_aa_changes:
                         sens_mut = sensitization_aa_changes[gene_aachg]
                         sensitizations.append(sens_mut)
@@ -444,13 +448,13 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 else:
                     if cur_gene_mutations:
                         lines_written = print_mutations_for_one_gene(out_f, lines_written,
-                            cur_gene_mutations, prev_gene, genes_with_sens_or_res_mutations, sensitive_mutations, resistance_mutations, sensitizations,
+                            cur_gene_mutations, prev_gene, genes_with_dependent_mutations, sensitizations,
                             is_output_fm=cnf.is_output_fm)
                         cur_gene_mutations = []
                         sensitizations = []
                 prev_gene = gene
 
-            if not SIMULATE_OLD_VARDICT2MUT and gene not in genes_with_sens_or_res_mutations:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
+            if gene not in genes_with_dependent_mutations:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
                 lines_written = print_mutation(out_f, lines_written, status, reasons, fields,
                     is_output_fm=cnf.is_output_fm, fm_data=[sample, platform, gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq])
 
@@ -487,11 +491,11 @@ def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, ac
             return 'somatic'
     if gene in rules['inframe-del'] and len(ref) > len(alt) and (len(ref) - len(alt)) % 3 == 0:
         for r in rules['inframe-del'][gene]:
-            if r[0] == chr and r[1] <= pos <= r[2] and len(ref) - len(alt) >= r[3]:
+            if r[0] == chr and r[1] <= int(pos) <= r[2] and len(ref) - len(alt) >= r[3]:
                 return 'somatic'
     elif gene in rules['inframe-ins'] and len(ref) < len(alt) and (len(alt) - len(ref)) % 3 == 0:
         for r in rules['inframe-ins'][gene]:
-            if r[0] == chr and r[1] <= pos <= r[2] and len(alt) - len(ref) >= r[3]:
+            if r[0] == chr and r[1] <= int(pos) <= r[2] and len(alt) - len(ref) >= r[3]:
                 return 'somatic'
     return False
 
@@ -614,11 +618,10 @@ def classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups):
 def parse_specific_mutations(specific_mut_fpath):
     specific_mutations = {}
     genes_with_generic_rules = set()
+    genes_with_spec_types = defaultdict(dict)
+    specific_transcripts = defaultdict()
 
-    sensitive_mutations = defaultdict(dict)  # other mutation is required
-    resistance_mutations = defaultdict(dict)  # absence of other mutation is required
-
-    genes_with_sens_or_res_mutations = defaultdict(set)
+    genes_with_dependent_mutations = defaultdict(set) # other mutation is required
     with open(specific_mut_fpath) as f:
         for l in f:
             l = l.strip()
@@ -632,39 +635,52 @@ def parse_specific_mutations(specific_mut_fpath):
                     regions.append(str(region_num))
             if 'intron' in line[1]:
                 regions = ['intron' + region for region in regions]
-            for index in range(2, len(line)):
+            for index in range(2, len(line) - 1):
                 if line[index]:
                     mut = line[index]
+                    tier = index - 1
                     if mut == 'generic':
                         genes_with_generic_rules.add(gene)
+                    elif 'types' in mut:
+                        types = mut.split(':')[1].split(',')
+                        for region in regions:
+                            genes_with_spec_types[gene][region] = {}
+                            for type in types:
+                                genes_with_spec_types[gene][region][type] = tier
                     else:
+                        mutations = []
                         if 'codon' in mut:
                             codons = re.findall(r'\d+', mut)
                             if '-' in mut and len(codons) == 2:
                                 codons = range(int(codons[0]), int(codons[1]) + 1)
                             for region in regions:
                                 for codon in codons:
-                                    specific_mutations['-'.join([gene, region, str(codon)])] = index - 1
+                                    specific_mutations['-'.join([gene, region, str(codon)])] = tier
+                                    mutations.append('-'.join([gene, region, str(codon)]))
                         elif 'sens' in mut or 'res' in mut:
-                            sens_pattern = re.compile('\((\D+)\s+\D+\)')
-                            sens_mutation = re.findall(sens_pattern, mut)[0]
-                            prot_chg = mut.split()[0].replace('p.', '')
-                            mutation = '-'.join([gene, prot_chg])
-                            genes_with_sens_or_res_mutations[gene].add(sens_mutation)
-                            if 'sens' in mut:
-                                sensitive_mutations[sens_mutation][mutation] = index - 1
-                            else:
-                                resistance_mutations[sens_mutation][mutation] = index - 1
+                            pattern = re.compile('\((\D+)\s+\D+\)')
+                            dependent_mutation = re.findall(pattern, mut)[0]
+                            prot_chg = mut.split()[0].strip().replace('p.', '')
+                            mutations = ['-'.join([gene, prot_chg])]
+                            specific_mutations['-'.join([gene, prot_chg])] = tier
+                            genes_with_dependent_mutations[gene].add(dependent_mutation)
                         else:
-                            mut = line[index].replace('p.', '')
-                            specific_mutations['-'.join([gene, mut])] = index - 1
+                            prot_chg = line[index].replace('p.', '').strip()
+                            mutations = ['-'.join([gene, prot_chg])]
+                            specific_mutations['-'.join([gene, mut])] = tier
+                        if 'NM' in line[-1] and mutations:
+                            for mut in mutations:
+                                specific_transcripts[mut] = line[-1].strip()
 
-    return specific_mutations, genes_with_generic_rules, sensitive_mutations, resistance_mutations, genes_with_sens_or_res_mutations
+    return specific_mutations, genes_with_generic_rules,  genes_with_spec_types, genes_with_dependent_mutations, specific_transcripts
 
 
-def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region, status, reasons):
+def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region, status, reasons, transcript, specific_transcripts):
     if aa_chg:
         gene_aachg = '-'.join([gene, aa_chg])
+        if transcript and gene_aachg in specific_transcripts:
+            if specific_transcripts[gene_aachg] != transcript:
+                return status, reasons, False
         if gene_aachg in specific_mutations:
             tier = specific_mutations[gene_aachg]
             status, reasons = update_status(status, reasons, statuses[tier], 'manually_curated')
@@ -699,6 +715,14 @@ def is_loss_of_function(reasons, is_lof=None):
     return any(reason in lof_reasons for reason in reasons)
 
 
+def check_by_mut_type(cdna_chg, status, reasons, region, types_by_region):
+    if region in types_by_region:
+        for type_ in types_by_region[region]:
+            if type_ in cdna_chg:
+                tier = types_by_region[type_]
+                status, reasons = update_status(status, reasons, statuses[tier], 'manually_curated')
+    return status, reasons
+
 def parse_genes_list(fpath):
     genes = []
     if fpath and verify_file(fpath):
@@ -719,18 +743,15 @@ def print_mutation(out_f, lines_written, status, reasons, fields, fm_data=None, 
     return lines_written
 
 
-def print_mutations_for_one_gene(out_f, lines_written, cur_gene_mutations, gene, genes_with_sens_or_res_mutations,
-                                 sensitive_mutations, resistance_mutations, sensitizations,
-                                 is_output_fm=False):
+def print_mutations_for_one_gene(out_f, lines_written, cur_gene_mutations, gene, genes_with_dependent_mutations,
+                                 sensitizations, is_output_fm=False):
     for line in cur_gene_mutations:
         fields, status, reasons, gene_aachg, fm_data = line
-        for sens_mut in genes_with_sens_or_res_mutations[gene]:
-            if sens_mut in sensitizations:
-                tier = sensitive_mutations[sens_mut][gene_aachg] if gene_aachg in sensitive_mutations else 0
-            else:
-                tier = resistance_mutations[sens_mut][gene_aachg] if gene_aachg in resistance_mutations else 0
-            if tier != 0:
-                status, reasons = update_status(status, reasons, statuses[tier], 'actionable')
+        for sens_mut in genes_with_dependent_mutations[gene]:
+            if sens_mut not in sensitizations and status == 'known':
+                status, reasons = update_status(status, reasons, 'likely', reasons, force=True)
+            if sens_mut not in sensitizations and status == 'likely':
+                status, reasons = update_status(status, reasons, 'unlikely', '', force=True)
         lines_written = print_mutation(out_f, lines_written, status, reasons, fields, fm_data, is_output_fm)
     return lines_written
 
