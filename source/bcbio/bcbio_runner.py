@@ -721,6 +721,9 @@ class BCBioRunner:
                             wait_for_steps += [self.varqc.job_name(sample.name, caller=clinical_report_caller.name)] if self.varqc in self.steps else []
                             wait_for_steps += [self.varfilter.job_name(caller=clinical_report_caller.name)] if self.varfilter in self.steps else []
                         match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
+                    elif sample.phenotype and sample.phenotype == 'normal':
+                        mutation_cmdl = ''
+                        mutation_perl_cmdl = ''
 
                     targqc_cmdl = ''
                     targqc_summary_cmdl = ''
