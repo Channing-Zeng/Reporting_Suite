@@ -19,9 +19,6 @@ from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resource
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.prepare_args_and_cnf import determine_sys_cnf
 
-aa_chg_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
-stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
-fs_pattern = re.compile('^[A-Z]+(\d+)fs')
 
 statuses = ['', 'known', 'likely', 'unlikely', 'unknown']  # Tier 1, 2, 3, 3
 
@@ -97,9 +94,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     tp53_groups = dict()
     if cnf.ruledir:
         cnf.ruledir = verify_dir(cnf.ruledir, is_critical=True)
-        tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'DNE.txt')),
-                       'Group 2': parse_mut_tp53(join(cnf.ruledir, 'TA0-25.txt')),
-                       'Group 3': parse_mut_tp53(join(cnf.ruledir, 'TA25-50_SOM_10x.txt'))}
+        tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'DNE.txt')),
+                       'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
+                       'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
         if cnf.genome.name.startswith('hg38'):
             tp53_positions = (
                 '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
@@ -299,6 +296,10 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
                 fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
+
+            if gene == 'EGFR':
+                pass
+
             gene_aachg = '-'.join([gene, aa_chg])
             if 'chr' not in chr:
                 chr = 'chr' + chr
@@ -468,6 +469,9 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     info()
 
 
+aa_chg_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
+
+
 def is_actionable(chr, pos, ref, alt, gene, aa_chg, rules, act_som, act_germ, act_hotspots, tp53_pos, tp53_groups):
     key = '-'.join([chr, pos, ref, alt])
     if key in act_som:
@@ -574,6 +578,9 @@ def check_by_var_class(var_class, status, reasons, line, header):
     return status, reasons
 
 
+stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
+
+
 def check_by_type(var_type, status, reasons, aa_chg, effect):
     if 'FRAME_SHIFT' in var_type or 'FRAMESHIFT' in var_type:
         status, reasons = update_status(status, reasons, 'likely', 'frame_shift')
@@ -586,6 +593,9 @@ def check_by_type(var_type, status, reasons, aa_chg, effect):
     elif 'SPLICE_DONOR' in var_type or 'SPLICE_ACCEPTOR' in var_type:
         status, reasons = update_status(status, reasons, 'likely', 'splice_site')
     return status, reasons
+
+
+fs_pattern = re.compile('^[A-Z]+(\d+)fs')
 
 
 def classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups):
