@@ -135,7 +135,7 @@
         <h1>Mutations in {total_key_genes} {key_or_target} genes</h1>
         {.section variants}
             <div id="variants_div">
-                <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>
+                <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
                     These data were analyzed to identify previously reported and novel variants
                     in {total_key_genes} {genes_description} (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
@@ -148,6 +148,10 @@
                     <li><b>False positive mutations</b> – advance algorithms were employed to generate the highest quality variant calls, but false positive will still occur and are likely present in the candidate mutation output below. False positive variants are more found in homopolymer tracts, in genes with repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes residing in repetitive or unstable regions of the genome.
                     </ol>
                 </p>
+                <p>
+                    <a class="dotted-link" id="download_mut_table">Download</a> list of mutations (.TSV).
+                </p>
+
                 <p id="variants_switch">
                     <span>Likely pathogenic</span>
                     /

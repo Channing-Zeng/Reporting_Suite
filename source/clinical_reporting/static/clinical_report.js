@@ -26,6 +26,7 @@ $(function() {
       var switch_id = table_full.parent()[0].id.split('_')[0];
       var switch_el = $('#' + switch_id + '_switch');
       if (switch_id == 'seq2c' && switch_el[0]) key_or_target = switch_el.html().indexOf('target') != -1 ? 'target' : 'key';
+      else if (switch_id == 'variants') write_to_excel(table_full);
 
       table_short_clones.push({'id_': switch_id, 'table': $(table_short).clone()});
       table_full_clones.push({'id_': switch_id, 'table': $(table_full).clone()});
@@ -110,6 +111,44 @@ function reduceClick(switch_id) {
       }
     }
     table_short_clones.push({'id_': table_id, 'table': table_short_clone.clone()});
+}
+
+function write_to_excel(table) {
+    var csv = "";
+    var cosmRegexp = /id=([0-9]+)/;
+    var dbsnpRegexp = /rs=([0-9]+)/;
+
+    table.find("tr").each(function () {
+      var sep = "";
+      var val = "";
+      var db_id = "";
+      $(this).find("th").each(function () {
+          csv += sep + $(this).text();
+          sep = "\t";
+      });
+      $(this).find("td").each(function () {
+          val = $(this).text();
+          var links = $(this).find("a");
+          for (var a = 0; a < links.length; a++) {
+            if (links[a].text.indexOf('COSM') != -1) {
+              db_id = links[a].href.match(cosmRegexp);
+              val = val.replace('COSM', 'COSM' + db_id[1]);
+            }
+            if (links[a].text.indexOf('dbSNP') != -1) {
+              db_id = links[a].href.match(dbsnpRegexp);
+              val = val.replace('dbSNP', 'rs' + db_id[1]);
+            }
+          }
+          csv += sep + val;
+          sep = "\t";
+      });
+      csv += "\n";
+    });
+    window.URL = window.URL || window.webkiURL;
+    var data_type = 'data:application/csv;charset=utf-8,';
+    $("#download_mut_table").
+    attr("href", data_type + encodeURIComponent(csv)).
+    attr("download", "mutations.tsv");
 }
 
 //function extendedClick() {
