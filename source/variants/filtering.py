@@ -44,9 +44,10 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
         return None
 
 
-def index_vcf(sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None):
-    global glob_cnf
-    cnf = glob_cnf
+def index_vcf(cnf, sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None):
+    if cnf is None:
+        global glob_cnf
+        cnf = glob_cnf
 
     info()
     info(sample_name + ((', ' + caller_name) if caller_name else '') + ': indexing')
@@ -288,6 +289,7 @@ def postprocess_vcf(cnf,
                  ': saved filtered TSV to ' + var_sample.filt_tsv_fpath)
 
     info('Done postprocessing filtered VCF.')
+    return var_sample.filt_vcf_fpath
 
 
 def write_vcf(cnf, sample, output_dirpath, caller_name, vcf2txt_res_fpath, mut_res_fpath):
@@ -321,7 +323,7 @@ def write_vcf(cnf, sample, output_dirpath, caller_name, vcf2txt_res_fpath, mut_r
 
     info()
     info('Writing filtered VCFs')
-    postprocess_vcf(cnf, cnf.work_dir, sample, caller_name, variants_dict, mutations, vcf2txt_res_fpath)
+    return postprocess_vcf(cnf, cnf.work_dir, sample, caller_name, variants_dict, mutations, vcf2txt_res_fpath)
 
 
 def write_vcfs(cnf, var_samples, output_dirpath,

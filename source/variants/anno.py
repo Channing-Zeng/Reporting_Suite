@@ -321,6 +321,13 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     step_greetings('Annotating with ' + dbname)
 
+    output_fpath = intermediate_fname(cnf, input_fpath, dbname)
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
+    if cnf.reuse_intermediate and verify_vcf(output_fpath):
+        info('VCF ' + output_fpath + ' exists, reusing...')
+        return output_fpath
+
     executable = get_java_tool_cmdline(cnf, 'snpsift')
     java = get_system_path(cnf, 'java')
     info('Java version:')
@@ -352,9 +359,6 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
         anno_line = '-info ' + ','.join(annotations)
 
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(cnf, input_fpath, dbname)
-    if output_fpath.endswith('.gz'):
-        output_fpath = output_fpath[:-3]
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
         stdout_to_outputfile=True, exit_on_error=False)
     if not output_fpath:
@@ -400,9 +404,8 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
             return line
 
         output_fpath = iterate_file(cnf, output_fpath, _fix_after_snpsift, suffix='fx', ctx=dict(met_CHROM=False))
-        verify_vcf(output_fpath, is_critical=True)
 
-    return output_fpath
+    return verify_vcf(output_fpath, is_critical=True)
 
 
 def _snpsift_db_nsfp(cnf, input_fpath):
@@ -410,6 +413,13 @@ def _snpsift_db_nsfp(cnf, input_fpath):
         return None
 
     step_greetings('DB SNFP')
+
+    output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
+    if cnf.reuse_intermediate and verify_vcf(output_fpath):
+        info('VCF ' + output_fpath + ' exists, reusing...')
+        return output_fpath
 
     executable = get_java_tool_cmdline(cnf, 'snpsift')
 
@@ -426,9 +436,6 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
     cmdline = '{executable} dbnsfp {ann_line} -v -db {db_path} ' \
               '{input_fpath}'.format(**locals())
-    output_fpath = intermediate_fname(cnf, input_fpath, 'db_nsfp')
-    if output_fpath.endswith('.gz'):
-        output_fpath = output_fpath[:-3]
     if call_subprocess(cnf, cmdline, input_fpath, output_fpath, stdout_to_outputfile=True, exit_on_error=False):
         return verify_vcf(output_fpath, is_critical=True)
     else:
@@ -440,6 +447,13 @@ def _snpeff(cnf, input_fpath):
         return None, None, None
 
     step_greetings('SnpEff')
+
+    output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
+    if cnf.reuse_intermediate and verify_vcf(output_fpath):
+        info('VCF ' + output_fpath + ' exists, reusing...')
+        return output_fpath
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
@@ -489,9 +503,6 @@ def _snpeff(cnf, input_fpath):
     cmdline = ('{snpeff} eff {opts} -noLog -i vcf -o vcf {ref_name} '
                '{input_fpath}').format(**locals())
 
-    output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
-    if output_fpath.endswith('.gz'):
-        output_fpath = output_fpath[:-3]
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True)
     output_fpath = verify_vcf(output_fpath, is_critical=True)
@@ -510,6 +521,13 @@ def _tracks(cnf, track_fpath, input_fpath):
 
     step_greetings('Intersecting with ' + field_name)
 
+    output_fpath = intermediate_fname(cnf, input_fpath, field_name)
+    if output_fpath.endswith('.gz'):
+        output_fpath = output_fpath[:-3]
+    if cnf.reuse_intermediate and verify_vcf(output_fpath):
+        info('VCF ' + output_fpath + ' exists, reusing...')
+        return output_fpath
+
     toolpath = get_system_path(cnf, 'vcfannotate')
     if not toolpath:
         err('WARNING: Skipping annotation with tracks: vcfannotate '
@@ -522,12 +540,9 @@ def _tracks(cnf, track_fpath, input_fpath):
     cmdline = '{toolpath} -b {track_fpath} -k {field_name} {input_fpath}'.format(**locals())
 
     assert input_fpath
-    output_fpath = intermediate_fname(cnf, input_fpath, field_name)
-    if output_fpath.endswith('.gz'):
-        output_fpath = output_fpath[:-3]
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                                    stdout_to_outputfile=True)
-    if not output_fpath:
+    if not verify_vcf(output_fpath):
         err('Error: tracks resulted ' + str(output_fpath) + ' for ' + track_fpath)
         return output_fpath
 

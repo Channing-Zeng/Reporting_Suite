@@ -8,6 +8,7 @@ from time import sleep
 from traceback import format_exc
 
 import source
+from source.bcbio.bcbio_filtering import filter_bcbio_structure, vcf2txt_bcbio_structure
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
@@ -266,6 +267,39 @@ class BCBioRunner:
         self.is_wgs = self.bcbio_structure.is_wgs
         target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
 
+        varfilter_paramline = params_for_one_sample + (' ' +
+            '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
+            '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller}\' ')
+        if cnf.min_freq is not None:
+            varfilter_paramline += ' --freq ' + str(cnf.min_freq)
+
+        if self.is_wgs:
+            varfilter_paramline += ' --vcf {vcf}'
+        else:
+            vcf2txt_bcbio_structure(self.cnf, self.bcbio_structure)
+
+            # TODO: cohort filtering - running vcf2txt, then post-filter
+            self.varfilter = Step(cnf, run_id,
+                name=BCBioStructure.varfilter_name, short_name='vf',
+                interpreter='python',
+                script=join('scripts', 'post', 'vcf2txt_all.py'),
+                dir_name=BCBioStructure.varfilter_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
+                paramln=varfilter_paramline
+            )
+
+            # split vcf2txt
+            varfilter_paramline += ' --vcf2txt {vcf2txt}'
+
+        self.varfilter = Step(cnf, run_id,
+            name=BCBioStructure.varfilter_name, short_name='vf',
+            interpreter='python',
+            script=join('scripts', 'post', 'varfilter.py'),
+            dir_name=BCBioStructure.varfilter_dir,
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
+            paramln=varfilter_paramline
+        )
+
         targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
             '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
         if exons_bed:
@@ -337,23 +371,6 @@ class BCBioRunner:
             paramln=summaries_cmdline_params + ' ' + self.final_dir +
                 ' --varqc-name ' + BCBioStructure.varqc_after_name +
                 ' --varqc-dir ' + BCBioStructure.varqc_after_dir
-        )
-        varfilter_paramline = summaries_cmdline_params + ' ' + self.final_dir + ' --caller {caller} '
-        if cnf.datahub_path:
-            varfilter_paramline += ' --datahub-path ' + cnf.datahub_path
-        if cnf.min_freq is not None:
-            varfilter_paramline += ' --freq ' + str(cnf.min_freq)
-        if self.is_wgs:
-            varfilter_paramline += ' -t ' + str(self.filtering_threads) + ' --wgs '
-
-        self.varfilter = Step(cnf, run_id,
-            name=BCBioStructure.varfilter_name, short_name='vfs',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'varfilter.py'),
-            dir_name=BCBioStructure.varfilter_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
-            paramln=varfilter_paramline,
-            run_on_chara=True,
         )
 
         clinreport_paramline = (params_for_one_sample +
@@ -673,21 +690,21 @@ class BCBioRunner:
                         for s in v.samples
                         if self.varqc in self.steps])
 
-            if self.varfilter in self.steps:
-                wait_for_callers_steps = []
-                for caller in self.bcbio_structure.variant_callers.values():
-                    info('varFilter for ' + caller.name)
-                    self._submit_job(
-                        self.varfilter,
-                        caller_suf=caller.name, caller=caller.name,
-                        wait_for_steps=[
-                            self.varannotate.job_name(s.name, caller.name)
-                            for s in caller.samples
-                            if self.varannotate in self.steps] + wait_for_callers_steps,
-                        create_dir=False,
-                        threads=self.filtering_threads)
-                    if self.is_wgs:  # WGS
-                        wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
+            # if self.varfilter in self.steps:
+            #     wait_for_callers_steps = []
+            #     for caller in self.bcbio_structure.variant_callers.values():
+            #         info('varFilter for ' + caller.name)
+            #         self._submit_job(
+            #             self.varfilter,
+            #             caller_suf=caller.name, caller=caller.name,
+            #             wait_for_steps=[
+            #                 self.varannotate.job_name(s.name, caller.name)
+            #                 for s in caller.samples
+            #                 if self.varannotate in self.steps] + wait_for_callers_steps,
+            #             create_dir=False,
+            #             threads=self.filtering_threads)
+            #         if self.is_wgs:  # WGS
+            #             wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
             if self.clin_report in self.steps:
                 clinical_report_caller = \
@@ -776,9 +793,9 @@ class BCBioRunner:
 
                     wait_for_steps = []
                     wait_for_steps += [self.varqc.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varqc in self.steps else []
-                    wait_for_steps += [self.varfilter.job_name(caller=variant_caller.name)] if self.varfilter in self.steps else []
+                    wait_for_steps += [self.varfilter.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varfilter in self.steps else []
                     wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
-    
+
                     self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
 
             if self.varqc_after in self.steps:
@@ -965,11 +982,23 @@ class BCBioRunner:
         if self.varqc in steps:
             self._submit_job(
                 self.varqc, sample.name, caller_suf=caller_name, vcf=sample.get_anno_vcf_fpath_by_callername(caller_name, gz=True),
-                threads=threads, sample=sample.name, caller=caller_name, genome=sample.genome,
+                threads=1, sample=sample.name, caller=caller_name, genome=sample.genome,
                 wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)] if self.varannotate in self.steps else [])
 
         # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
         # annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
+
+        if self.varfilter in self.steps:
+            self._submit_job(
+                self.varfilter, sample.name, caller_suf=caller_name, vcf=sample.get_anno_vcf_fpath_by_callername(caller_name, gz=True),
+                threads=1, sample=sample.name, caller=caller_name, genome=sample.genome,
+                wait_for_steps=[self.varannotate.job_name(sample.name, caller_name)] if self.varannotate in self.steps else [])
+
+            # wait_for_callers_steps = []
+            # for caller in self.bcbio_structure.variant_callers.values():
+            #     info('varFilter for ' + caller.name)
+            #     if self.is_wgs:  # WGS
+            #         wait_for_callers_steps.append(self.varfilter.job_name(caller.name))
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_summary_dir)

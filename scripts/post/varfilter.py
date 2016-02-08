@@ -17,7 +17,7 @@ from source.file_utils import iterate_file, open_gzipsafe, safe_mkdir, add_suffi
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.variants import qc
-from source.variants.filtering import run_vcf2txt, run_vardict2mut, write_vcfs, write_vcf
+from source.variants.filtering import run_vcf2txt, run_vardict2mut, write_vcfs, write_vcf, index_vcf
 from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
@@ -64,9 +64,9 @@ def main(args):
         return None
     info('Saved variants to ' + vcf2txt_res_fpath)
 
-    mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath,
-        add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
-    info('Saved passed mutations to ' + mut_fpath)
+    mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
+    if mut_fpath:
+        info('Saved passed mutations to ' + mut_fpath)
 
     var_s = source.VarSample(cnf.sample, cnf.output_dir)
     var_s.anno_vcf_fpath = cnf.vcf
@@ -77,6 +77,7 @@ def main(args):
     var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
     write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
+    index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, var_s.filt_vcf_fpath, cnf.caller)
 
     if cnf.qc:
         report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)

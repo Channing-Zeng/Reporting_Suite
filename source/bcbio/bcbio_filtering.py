@@ -12,37 +12,7 @@ from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe
 from source.logger import info
 
 
-def filter_bcbio_structure(cnf, bcbio_structure):
-    info('Starting variant filtering.')
-    info('-' * 70)
-
-    callers = bcbio_structure.variant_callers.values()
-    if cnf.caller:
-        try:
-            callers = [next(c for c in callers if c.name == cnf.caller)]
-        except StopIteration:
-            critical('No variant caller ' + str(cnf.caller) + ' found')
-        info('Running only for ' + callers[0].name)
-
-    for c in callers:
-        filter_for_variant_caller(c, cnf, bcbio_structure)
-    info('Done filtering for all variant callers.')
-
-    global glob_cnf
-    glob_cnf = cnf
-
-    threads_num = min(len(bcbio_structure.samples) * len(callers), cnf.threads)
-    # write_vcfs(cnf, bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
-
-    info('Indexing final VCFs')
-    Parallel(n_jobs=threads_num) \
-        (delayed(index_vcf)(
-                sample.name,
-                sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False),
-                sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False),
-                caller.name)
-            for caller in callers for sample in caller.samples)
-
+def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
     email_msg = ['Variant filtering finished.']
 
     errory = _symlink_vcfs(callers, bcbio_structure.var_dirpath)
@@ -87,6 +57,59 @@ def filter_bcbio_structure(cnf, bcbio_structure):
                 err('  For ' + str(sample_name) + ' VCF cannot be found')
             else:
                 err('  For ' + str(sample_name) + ' VCF ' + str(fpath) + ' cannot be read')
+
+
+def vcf2txt_bcbio_structure(cnf, bcbio_structure):
+    info('Starting vcf2txt.')
+    info('-' * 70)
+
+    callers = bcbio_structure.variant_callers.values()
+    if cnf.caller:
+        try:
+            callers = [next(c for c in callers if c.name == cnf.caller)]
+        except StopIteration:
+            critical('No variant caller ' + str(cnf.caller) + ' found')
+        info('Running only for ' + callers[0].name)
+
+    for c in callers:
+        filter_for_variant_caller(c, cnf, bcbio_structure)
+
+    info('Done vcf2txt for all variant callers.')
+
+
+def filter_bcbio_structure(cnf, bcbio_structure):
+    info('Starting variant filtering.')
+    info('-' * 70)
+
+    callers = bcbio_structure.variant_callers.values()
+    if cnf.caller:
+        try:
+            callers = [next(c for c in callers if c.name == cnf.caller)]
+        except StopIteration:
+            critical('No variant caller ' + str(cnf.caller) + ' found')
+        info('Running only for ' + callers[0].name)
+
+    for c in callers:
+        filter_for_variant_caller(c, cnf, bcbio_structure)
+    info('Done filtering for all variant callers.')
+
+    global glob_cnf
+    glob_cnf = cnf
+
+    threads_num = min(len(bcbio_structure.samples) * len(callers), cnf.threads)
+    # write_vcfs(cnf, bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
+
+    info('Indexing final VCFs')
+    Parallel(n_jobs=threads_num) \
+        (delayed(index_vcf)(
+                None,
+                sample.name,
+                sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False),
+                sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False),
+                caller.name)
+            for caller in callers for sample in caller.samples)
+
+    finish_filtering_for_bcbio(cnf, bcbio_structure, callers)
 
 
 def _combine_vcfs(cnf, callers, datestamp_var_dirpath):

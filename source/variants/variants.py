@@ -91,6 +91,7 @@ def _annotate(cnf, samples):
                 not_submitted_samples = [s for s in not_submitted_samples if
                                          s not in submitted_samples and
                                          s not in reused_samples]
+
                 if not_submitted_samples:
                     info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
                              'submitting more ' + str(len(not_submitted_samples)))
@@ -162,7 +163,7 @@ def _filter(cnf, samples, mut_fname):
 
             if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
                 info('Filtered results ' + output_fpath + ' exist, reusing.')
-                reused_samples.append(samples)
+                reused_samples.append(sample)
                 info()
                 continue
 
@@ -184,8 +185,11 @@ def _filter(cnf, samples, mut_fname):
                     ' --qc' +
                    (' --no-tsv' if not cnf.tsv else '')
                 ).format(**locals())
-            j = submit_job(cnf, cmdl, job_name='_filt_' + sample.name,
-                output_fpath=output_fpath, stdout_to_outputfile=False)
+            j = submit_job(cnf, cmdl,
+                job_name='_filt_' + sample.name,
+                output_fpath=output_fpath,
+                stdout_to_outputfile=False,
+                work_dir=work_dir)
             jobs_to_wait.append(j)
             submitted_samples.append(sample)
             if len(jobs_to_wait) >= cnf.threads:
