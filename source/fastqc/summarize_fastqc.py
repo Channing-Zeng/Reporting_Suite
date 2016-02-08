@@ -8,7 +8,7 @@ from source.logger import step_greetings, info
 from source.tools_from_cnf import get_system_path
 
 
-jquery_fname = 'jquery-2.2.0.min.js'
+jquery_fname = 'jquery-1.12.0.min.js'
 
 
 def write_fastqc_combo_report(a_outfile, samples):
