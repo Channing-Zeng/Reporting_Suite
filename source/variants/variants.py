@@ -34,8 +34,6 @@ def run_variants(cnf, samples, main_script_name=None, mut_fpath=None):
 
 
 def _annotate(cnf, samples):
-    jobs_to_wait = []
-
     varannotate_cmdl = (get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varannotate.py')) +
         ' --sys-cnf ' + cnf.sys_cnf +
         ' --run-cnf ' + cnf.run_cnf +
@@ -48,84 +46,126 @@ def _annotate(cnf, samples):
       ((' --caller ' + cnf.caller) if cnf.caller else '')
     )
 
-    reused = 0
-    for sample in samples:
-        if not sample.varannotate_dirpath:
-            sample.varannotate_dirpath = join(sample.dirpath, source.varannotate_name)
-        if not sample.anno_vcf_fpath:
-            sample.anno_vcf_fpath = join(sample.varannotate_dirpath, add_suffix(basename(sample.vcf), 'anno'))
-        output_fpath = sample.anno_vcf_fpath
-        if not output_fpath.endswith('.gz'):
-            output_fpath += '.gz'
-        debug('Checking ' + output_fpath)
-        if cnf.reuse_intermediate and isfile(output_fpath) and verify_vcf(output_fpath):
-            if 'validation_match' in sample.__dict__:
-                info('validation_match found for ' + sample.name + ', rerunning this sample.')
-                os.system('rm -rf ' + sample.dirpath)
-                safe_mkdir(sample.dirpath)
-            else:
+    total_reused = 0
+    total_processed = 0
+    total_success = 0
+    total_failed = 0
+
+    not_submitted_samples = samples
+    while not_submitted_samples:
+        jobs_to_wait = []
+        submitted_samples = []
+        reused_samples = []
+        for sample in not_submitted_samples:
+            if not sample.varannotate_dirpath:
+                sample.varannotate_dirpath = join(sample.dirpath, source.varannotate_name)
+            if not sample.anno_vcf_fpath:
+                sample.anno_vcf_fpath = join(sample.varannotate_dirpath, add_suffix(basename(sample.vcf), 'anno'))
+            output_fpath = sample.anno_vcf_fpath
+            if not output_fpath.endswith('.gz'):
+                output_fpath += '.gz'
+            debug('Checking ' + output_fpath)
+            if cnf.reuse_intermediate and isfile(output_fpath) and verify_vcf(output_fpath):
                 info('Annotated results ' + output_fpath + ' exist, reusing.')
-                reused += 1
+                reused_samples.append(sample)
                 info()
                 continue
 
-        info('Annotating "' + basename(sample.vcf) + '"')
-        work_dir = join(cnf.work_dir, source.varannotate_name + '_' + sample.name)
-        j = submit_job(
-            cnf,
-            cmdline=varannotate_cmdl +
-                ' --vcf ' + sample.vcf +
-                ' -o ' + sample.varannotate_dirpath +
-                ' -s ' + sample.name +
-                ' --work-dir ' + work_dir +
-                ' --output-file ' + output_fpath,
-            job_name='VA_' + cnf.project_name + '_' + sample.name,
-            output_fpath=output_fpath,
-            stdout_to_outputfile=False,
-            work_dir=work_dir
-        )
-        jobs_to_wait.append(j)
+            work_dir = join(cnf.work_dir, source.varannotate_name + '_' + sample.name)
+            j = submit_job(
+                cnf,
+                cmdline=varannotate_cmdl +
+                    ' --vcf ' + sample.vcf +
+                    ' -o ' + sample.varannotate_dirpath +
+                    ' -s ' + sample.name +
+                    ' --work-dir ' + work_dir +
+                    ' --output-file ' + output_fpath,
+                job_name='VA_' + cnf.project_name + '_' + sample.name,
+                output_fpath=output_fpath,
+                stdout_to_outputfile=False,
+                work_dir=work_dir
+            )
+            jobs_to_wait.append(j)
+            submitted_samples.append(sample)
+            if len(jobs_to_wait) >= cnf.threads:
+                not_submitted_samples = [s for s in not_submitted_samples if
+                                         s not in submitted_samples and
+                                         s not in reused_samples]
+                if not_submitted_samples:
+                    info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
+                             'submitting more ' + str(len(not_submitted_samples)))
+                else:
+                    info('Submitted ' + str(len(jobs_to_wait)) + ' last jobs.')
+                info()
+                break
+            info()
+
+        info()
+        info('-' * 70)
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No annotation jobs to submit.')
+        info('')
+        info('-' * 70)
+        info('Finihsed annotating ' + str(len(jobs_to_wait)) + ' jobs')
+        for j in jobs_to_wait:
+            if j.is_done and not j.is_failed and not verify_vcf(j.output_fpath):
+                j.is_failed = True
+            if j.is_done and not j.is_failed:
+                if isdir(j.work_dir):
+                    os.system('rm -rf ' + j.work_dir)
+                else:
+                    err('Job was done, but ' + j.work_dir + ' does not exist')
+
+        processed = sum(1 for j in jobs_to_wait if j.is_done)
+        failed = sum(1 for j in jobs_to_wait if j.is_failed)
+        success = sum(1 for j in jobs_to_wait if j.is_done and not j.is_failed)
+        total_failed += failed
+        total_reused += len(reused_samples)
+        total_processed += processed
+        total_success += success
+        info('Reused: ' + str(len(reused_samples)))
+        info('Processed: ' + str(processed))
+        info('Success: ' + str(success))
+        info('Failed: ' + str(failed))
         info()
 
+        not_submitted_samples = [s for s in not_submitted_samples if
+                                 s not in submitted_samples and
+                                 s not in reused_samples]
+
+    info('-' * 70)
+    info('Done with all ' + str(len(samples)) + 'samples.')
+    info('Total reused: ' + str(total_reused))
+    info('Total processed: ' + str(total_processed))
+    info('Total success: ' + str(total_success))
+    info('Total failed: ' + str(total_failed))
     info()
-    info('-' * 70)
-    if jobs_to_wait:
-        info('Submittion of annotation jobs is finished.')
-        jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
-    else:
-        info('No annotation jobs to submit.')
-    info('Reused: ' + str(reused))
-    info('')
-    info('-' * 70)
-    info('Done annotating')
-
-    for j in jobs_to_wait:
-        if j.is_done and not j.is_failed and not verify_vcf(j.output_fpath):
-            j.is_failed = True
-        if j.is_done and not j.is_failed:
-            if isdir(j.work_dir):
-                os.system('rm -rf ' + j.work_dir)
-            else:
-                err('Job was done, but ' + j.work_dir + ' does not exist')
-
-    if any(j.is_failed for j in jobs_to_wait):
-        critical('Error: ' + str(sum(1 for j in jobs_to_wait if j.is_failed)) +
-                 ' annotation jobs out of ' + str(len(jobs_to_wait)) + ' are failed.')
 
 
 def _filter(cnf, samples, mut_fname):
-    reused = 0
-    jobs_to_wait = []
-    for sample in samples:
-        output_dirpath = sample.varfilter_dirpath = join(sample.dirpath, source.varfilter_name)
-        output_fpath = sample.mut_fpath = join(sample.varfilter_dirpath, mut_fname)
-        # sample.filt_tsv_fpath = join(sample.varfilter_dirpath)
+    total_reused = 0
+    total_processed = 0
+    total_success = 0
+    total_failed = 0
 
-        if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
-            info('Filtered results ' + output_fpath + ' exist, reusing.')
-            reused += 1
-            info()
-        else:
+    not_submitted_samples = samples
+    while not_submitted_samples:
+        reused_samples = []
+        jobs_to_wait = []
+        submitted_samples = []
+        for sample in not_submitted_samples:
+            output_dirpath = sample.varfilter_dirpath = join(sample.dirpath, source.varfilter_name)
+            output_fpath = sample.mut_fpath = join(sample.varfilter_dirpath, mut_fname)
+
+            if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
+                info('Filtered results ' + output_fpath + ' exist, reusing.')
+                reused_samples.append(samples)
+                info()
+                continue
+
             varfilter_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varfilter.py'))
             work_dir = join(cnf.work_dir, 'filt_' + sample.name)
             cmdl = ('{varfilter_py}' +
@@ -147,21 +187,62 @@ def _filter(cnf, samples, mut_fname):
             j = submit_job(cnf, cmdl, job_name='_filt_' + sample.name,
                 output_fpath=output_fpath, stdout_to_outputfile=False)
             jobs_to_wait.append(j)
+            submitted_samples.append(sample)
+            if len(jobs_to_wait) >= cnf.threads:
+                not_submitted_samples = [s for s in not_submitted_samples if
+                                         s not in submitted_samples and
+                                         s not in reused_samples]
+                if not_submitted_samples:
+                    info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
+                             'submitting more ' + str(len(not_submitted_samples)))
+                else:
+                    info('Submitted ' + str(len(jobs_to_wait)) + ' last jobs.')
+                info()
+                break
             info()
-    info()
-    info('-' * 70)
-    if jobs_to_wait:
-        info('Submittion of filtering jobs is finished.')
-        jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
-    else:
-        info('No filtering jobs to submit.')
-    info('Reused: ' + str(reused))
 
-    info('')
+        info()
+        info('-' * 70)
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No filtering jobs to submit.')
+        info('')
+        info('-' * 70)
+        info('Finihsed filtering ' + str(len(jobs_to_wait)) + ' jobs')
+        for j in jobs_to_wait:
+            if j.is_done and not j.is_failed and not verify_vcf(j.output_fpath):
+                j.is_failed = True
+            if j.is_done and not j.is_failed:
+                if isdir(j.work_dir):
+                    os.system('rm -rf ' + j.work_dir)
+                else:
+                    err('Job was done, but ' + j.work_dir + ' does not exist')
+
+        processed = sum(1 for j in jobs_to_wait if j.is_done)
+        failed = sum(1 for j in jobs_to_wait if j.is_failed)
+        success = sum(1 for j in jobs_to_wait if j.is_done and not j.is_failed)
+        total_failed += failed
+        total_reused += len(reused_samples)
+        total_processed += processed
+        total_success += success
+        info('Reused: ' + str(len(reused_samples)))
+        info('Processed: ' + str(processed))
+        info('Success: ' + str(success))
+        info('Failed: ' + str(failed))
+        info()
+
+        not_submitted_samples = [s for s in not_submitted_samples if
+                                 s not in submitted_samples and
+                                 s not in reused_samples]
     info('-' * 70)
-    info('Done filtering')
-    if any(j.is_failed for j in jobs_to_wait):
-        critical('Error: ' + str(sum(1 for j in jobs_to_wait if j.is_failed)) + ' filtering jobs out of ' + str(len(jobs_to_wait)) + ' are failed.')
+    info('Done with all ' + str(len(samples)) + 'samples.')
+    info('Total reused: ' + str(total_reused))
+    info('Total processed: ' + str(total_processed))
+    info('Total success: ' + str(total_success))
+    info('Total failed: ' + str(total_failed))
+    info()
 
 
 def _combine_results(cnf, samples, mut_fpath):
