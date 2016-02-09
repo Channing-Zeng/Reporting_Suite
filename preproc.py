@@ -206,7 +206,7 @@ def main():
             info('Downsampling the reads to ' + str(downsample_to))
             bam_by_sample = dict()
             fastqs = Parallel(n_jobs=threads) \
-                (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample, reads_num=downsample_to/2) \
+                (delayed(downsample_fastq)(CallCnf(cnf.__dict__), sample, reads_num=downsample_to) \
                     for sample in samples)
             lefts = [l for l, r in fastqs]
             rights = [r for l, r in fastqs]

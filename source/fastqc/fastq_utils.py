@@ -4,7 +4,9 @@ from os.path import splitext, dirname, join
 import random
 import gzip
 from source import info
+from source.calling_process import call_check_output
 from source.file_utils import open_gzipsafe, file_transaction, file_exists, intermediate_fname, verify_file
+from source.logger import critical
 
 
 def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
@@ -24,12 +26,18 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
     if quick:
         rand_records = range(N)
     else:
-        records_num = sum(1 for _ in open(fastq_L_fpath)) / 4
-        if N > records_num:
-            N = records_num
-            info('Downsampling to ' + str(N))
-            rand_records = range(N)
+        records_num = None
+        res = call_check_output(cnf, 'zcat ' + fastq_L_fpath + ' | wc -l')
+        try:
+            records_num = int(res)
+        except:
+            critical('Can\'t calculate the number of lines in ' + fastq_L_fpath)
+        info(str(records_num) + ' reads in ' + fastq_L_fpath)
+        if records_num < N:
+            info('...it is less than ' + str(N) + ', so no downsampling.')
+            return fastq_L_fpath, fastq_R_fpath
         else:
+            info('Downsampling to ' + str(N))
             rand_records = sorted(random.sample(xrange(records_num), N))
 
     fh1 = open_gzipsafe(fastq_L_fpath)
@@ -37,6 +45,7 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
 
     out_files = (outf1, outf2) if outf2 else (outf1)
 
+    written_records = 0
     with file_transaction(cnf.work_dir, out_files) as tx_out_files:
         if isinstance(tx_out_files, basestring):
             tx_out_f1 = tx_out_files
@@ -55,6 +64,7 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
                 sub1.write(fh1.readline())
                 if sub2:
                     sub2.write(fh2.readline())
+            written_records += 1
             rec_no += 1
         fh1.close()
         sub1.close()
@@ -62,4 +72,5 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, quick=False):
             fh2.close()
             sub2.close()
 
+    info('Done downsampling, saved to ' + outf1 + ' and ' + outf2 + ', total ' + str(written_records) + ' paired reads written')
     return outf1, outf2
