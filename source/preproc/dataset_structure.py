@@ -10,20 +10,21 @@ from source.logger import critical, err, info, warn
 from source.file_utils import verify_dir, verify_file, splitext_plus, safe_mkdir, file_transaction
 
 
+def _sample_name_special_chars(sn):
+    return re.sub(r'[\-_\. ]+', r'[\-_\.]+', re.sub(r'[\-_\. ]+$', r'', sn))
+
+
 def get_hiseq4000_miseq_regexp(sample, suf):
     sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
-    return sn.replace('-', '.').replace('_', '.').replace(' ', '.') + \
-        '_S\d+_L\d\d\d_' + suf + '.*\.fastq\.gz'
+    return _sample_name_special_chars(sn) + '_S\d+_L\d\d\d_' + suf + '.*\.fastq\.gz'
 
 def get_hiseq_regexp(sample, suf):
     sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
-    return sn.replace('-', '.').replace('_', '.').replace(' ', '.') + \
-        '_' + sample.index + '_L\d\d\d_' + suf + '.*\.fastq\.gz'
+    return _sample_name_special_chars(sn) + '_' + sample.index + '_L\d\d\d_' + suf + '.*\.fastq\.gz'
 
 def get_nextseq500_regexp(sample, suf):
     sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
-    return sn.replace('-', '.').replace('_', '.').replace(' ', '.') + \
-        '_S\d+_' + suf + '.*\.fastq\.gz'
+    return _sample_name_special_chars(sn) + '_S\d+_' + suf + '.*\.fastq\.gz'
 
 
 class DatasetStructure:
@@ -128,7 +129,7 @@ class DatasetStructure:
                 project_by_name[proj_name] = DatasetProject(proj_name)
             project = project_by_name[proj_name]
 
-            sname = info_d.get('Sample_ID', info_d.get('SampleID'))
+            sname = info_d.get('Sample_Name') or info_d.get('SampleName') or info_d.get('SampleID') or info_d.get('Sample_ID')
             if sname in project.sample_by_name:
                 s = project.sample_by_name[sname]
                 s.lane_numbers.add(info_d.get('Lane', 1))  # lanes are in HiSeq and HiSeq4000 (not in MiSeq!)
