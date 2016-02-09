@@ -71,7 +71,8 @@ def index_vcf(cnf, sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None
             bgzip_and_tabix(cnf, filt_vcf_fpath)
 
 
-def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
+def run_vcf2txt_vardict2mut_for_samples(
+        cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
         caller_name=None, sample_min_freq=None, threads_num=1):
 
     threads_num = min(len(var_samples), cnf.threads)
@@ -139,9 +140,6 @@ def filter_with_vcf2txt(cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
     # send_email(msg_other=msg, only_me=True)
     info()
 
-    write_vcfs(cnf, var_samples,
-               join(output_dirpath, source.varfilter_name),
-               caller_name, vcf2txt_out_fpath, mut_fpath, threads_num)
     info('Done filtering with vcf2txt/vardict2mut, saved to ' + str(mut_fpath))
     return mut_fpath
 
@@ -161,7 +159,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
     if min_freq == 'bcbio' or min_freq is None:
         min_freq = sample_min_freq
     if min_freq is None:
-        min_freq = defaults.default_min_freq
+        min_freq = defaults['default_min_freq']
 
     cmdline = '{vardict2mut_executable} {vcf2txt_res_fpath} -f {min_freq} '
     if vardict2mut_executable.endswith('.pl'):
@@ -394,20 +392,15 @@ def write_vcfs(cnf, var_samples, output_dirpath,
     info('Filtered VCFs are written.')
 
 
-def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=None):
-    info()
-    info('Running VarDict vcf2txt...')
-
-    vcf2txt = get_script_cmdline(cnf, 'perl', join('VarDict', 'vcf2txt.pl'), is_critical=True)
-
+def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=None):
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq
     if min_freq == 'bcbio' or min_freq is None:
         min_freq = sample_min_freq
     if min_freq is None:
-        min_freq = defaults.default_min_freq
+        min_freq = defaults['default_min_freq']
 
-    cmdline = '{vcf2txt} ' \
+    cmdline = \
         '-f {min_freq} -n {c.sample_cnt} -F {c.ave_freq} -p {c.min_p_mean} -q {c.min_q_mean} ' \
         '-r {c.fraction} -R {c.max_ratio} -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} ' \
         '-M {c.min_mq} -V {c.min_vd} -G {c.maf} -o {c.signal_noise} -L'.format(**locals())
@@ -427,38 +420,49 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=Non
     if c.amplicon_based:
         cmdline += ' -a '
 
-    if cnf.is_wgs:
-        info('WGS; running vcftxt separately for each sample to save memory.')
-        vcf2txt_outputs_by_vcf_fpath = OrderedDict()
-        for vcf_fpath in vcf_fpath_by_sample.values():
-            sample_output_fpath = add_suffix(vcf2txt_out_fpath, splitext(basename(vcf_fpath))[0])
-            res = __run_vcf2txt(cnf, cmdline + ' ' + '<(gunzip -c ' + vcf_fpath + ')', sample_output_fpath)
-            if res:
-                vcf2txt_outputs_by_vcf_fpath[vcf_fpath] = sample_output_fpath
-            info()
+    cmdline += ' ' + ' '.join('<(gunzip -c ' + vcf_fpath + ')' for vcf_fpath in vcf_fpath_by_sample.values())
+    return cmdline
 
-        info('Joining vcf2txt ouputs... (' + str(len(vcf2txt_outputs_by_vcf_fpath)) +
-             ' out of ' + str(len(vcf_fpath_by_sample)) + ' successful), ' +
-             'writing to ' + vcf2txt_out_fpath)
-        with file_transaction(cnf.work_dir, vcf2txt_out_fpath) as tx:
-            with open(tx, 'w') as out:
-                for i, (vcf_fpath, sample_output_fpath) in enumerate(vcf2txt_outputs_by_vcf_fpath.items()):
-                    info('   Reading ' + sample_output_fpath)
-                    with open(sample_output_fpath) as inp:
-                        for j, l in enumerate(inp):
-                            if j == 0 and i != 0:
-                                continue
-                            out.write(l)
-        if verify_file(vcf2txt_out_fpath):
-            info('Saved ' + vcf2txt_out_fpath)
-            return vcf2txt_out_fpath
-        else:
-            return None
 
+def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=None):
+    info()
+    info('Running VarDict vcf2txt...')
+
+    vcf2txt = get_script_cmdline(cnf, 'perl', join('VarDict', 'vcf2txt.pl'), is_critical=True)
+
+    cmdline = vcf2txt + ' ' + \
+        make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=sample_min_freq)
+
+    cmdline += ' ' + ' '.join('<(gunzip -c ' + vcf_fpath + ')' for vcf_fpath in vcf_fpath_by_sample.values())
+    res = __run_vcf2txt(cnf, cmdline, vcf2txt_out_fpath)
+    return res
+
+
+def join_vcf2txt_results(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath):
+    info('WGS; running vcftxt separately for each sample to save memory.')
+    vcf2txt_outputs_by_vcf_fpath = OrderedDict()
+    for vcf_fpath in vcf_fpath_by_sample.values():
+        sample_output_fpath = add_suffix(vcf2txt_out_fpath, splitext(basename(vcf_fpath))[0])
+        vcf2txt_outputs_by_vcf_fpath[vcf_fpath] = sample_output_fpath
+        info()
+
+    info('Joining vcf2txt ouputs... (' + str(len(vcf2txt_outputs_by_vcf_fpath)) +
+         ' out of ' + str(len(vcf_fpath_by_sample)) + ' successful), ' +
+         'writing to ' + vcf2txt_out_fpath)
+    with file_transaction(cnf.work_dir, vcf2txt_out_fpath) as tx:
+        with open(tx, 'w') as out:
+            for i, (vcf_fpath, sample_output_fpath) in enumerate(vcf2txt_outputs_by_vcf_fpath.items()):
+                info('   Reading ' + sample_output_fpath)
+                with open(sample_output_fpath) as inp:
+                    for j, l in enumerate(inp):
+                        if j == 0 and i != 0:
+                            continue
+                        out.write(l)
+    if verify_file(vcf2txt_out_fpath):
+        info('Saved ' + vcf2txt_out_fpath)
+        return vcf2txt_out_fpath
     else:
-        cmdline += ' ' + ' '.join('<(gunzip -c ' + vcf_fpath + ')' for vcf_fpath in vcf_fpath_by_sample.values())
-        res = __run_vcf2txt(cnf, cmdline, vcf2txt_out_fpath)
-        return res
+        return None
 
 
 def __run_vcf2txt(cnf, cmdline, output_fpath):

@@ -13,12 +13,12 @@ from os.path import dirname, join, basename
 
 import source
 from source import VarSample
-from source.file_utils import iterate_file, open_gzipsafe, safe_mkdir, add_suffix
+from source.file_utils import iterate_file, open_gzipsafe, safe_mkdir, add_suffix, file_transaction, verify_file
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.variants import qc
 from source.variants.filtering import run_vcf2txt, run_vardict2mut, write_vcfs, write_vcf, index_vcf
-from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix
+from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix, verify_vcf
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
@@ -32,8 +32,9 @@ def main(args):
                 dest='vcf',
                 help='variants to filter')
              ),
-            (['--min-freq'], dict(
-                dest='min_freq')
+            (['--vcf2txt'], dict(
+                dest='vcf2txt',
+                help='variants in vcf2txt to filter')
              ),
             (['--qc'], dict(
                 dest='qc',
@@ -47,6 +48,11 @@ def main(args):
                 default=True,
                 help=SUPPRESS_HELP)
              ),
+            (['--freq', '--min-freq'], dict(
+                dest='min_freq',
+                type='float',
+                help=SUPPRESS_HELP)
+             ),
         ],
         required_keys=['vcf'],
         file_keys=['vcf'],
@@ -56,13 +62,34 @@ def main(args):
     check_system_resources(cnf, required=['perl'])
     check_genome_resources(cnf)
 
-    safe_mkdir(dirname(cnf.output_file))
+    if not cnf.output_file:
+        cnf.output_file = join(cnf.output_dir, (cnf.caller or 'variants') + '.txt')
 
-    vcf2txt_res_fpath = run_vcf2txt(cnf, {cnf.sample: cnf.vcf}, cnf.output_file, cnf.min_freq)
-    if not vcf2txt_res_fpath:
-        critical('vcf2txt run returned non-0')
-        return None
-    info('Saved variants to ' + vcf2txt_res_fpath)
+    safe_mkdir(dirname(cnf.output_file))
+    safe_mkdir(cnf.output_dir)
+
+    if cnf.vcf.endswith('.vcf.gz') or cnf.vcf.endswith('.vcf'):
+        verify_vcf(cnf.vcf, is_critical=True)
+
+    if not cnf.vcf2txt:
+        vcf2txt_res_fpath = run_vcf2txt(cnf, {cnf.sample: cnf.vcf}, cnf.output_file, cnf.min_freq)
+        if not vcf2txt_res_fpath:
+            critical('vcf2txt run returned non-0')
+        info('Saved vcf2txt output to ' + vcf2txt_res_fpath)
+    else:
+        verify_file(cnf.vcf2txt)
+        info('Input is vcf2txt output, grepping by sample name ' + cnf.sample)
+        vcf2txt_res_fpath = cnf.output_file
+        with file_transaction(cnf.work_dir, vcf2txt_res_fpath) as tx:
+            with open(cnf.vcf2txt) as f, open(tx, 'w') as out:
+                for i, l in enumerate(f):
+                    if l.strip():
+                        if i == 0:
+                            out.write(l)
+                        else:
+                            if l.split('\t')[0] == cnf.sample:
+                                out.write(l)
+        info('Using vcf2txt from ' + vcf2txt_res_fpath)
 
     mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
     if mut_fpath:

@@ -17,7 +17,7 @@ from source import logger, BaseSample
 from source.logger import info, err, critical, warn
 from source.calling_process import call
 from source.config import load_yaml_config, Config, defaults
-from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path
+from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path, add_suffix
 from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log, set_up_work_dir, \
     detect_sys_cnf_by_location, check_genome_resources, check_dirs_and_files
@@ -363,6 +363,18 @@ class BCBioSample(BaseSample):
                     self.name + '-' + callername + BCBioStructure.pass_filt_vcf_ending +
                     ('.gz' if gz else ''))
 
+    def find_vcf2txt_by_callername(self, callername):
+        return verify_file(self.get_vcf2txt_by_callername(callername))
+
+    def find_mut_by_callername(self, callername):
+        return verify_file(self.get_mut_by_callername(callername))
+
+    def get_vcf2txt_by_callername(self, callername):
+        return join(self.dirpath, BCBioStructure.varfilter_dir, callername + '.txt')
+
+    def get_mut_by_callername(self, callername):
+        return add_suffix(self.get_vcf2txt_by_callername(callername), source.mut_single_suffix)
+
     # filtered TSV
     def get_filt_tsv_fpath_by_callername(self, callername):
         return join(self.dirpath, BCBioStructure.varfilter_dir,
@@ -405,10 +417,12 @@ class VariantCaller:
         self.summary_qc_report = None
         self.summary_qc_rep_fpaths = []
 
-        self.single_mut_res_fpath = None
-        self.paired_mut_res_fpath = None
+        self.single_vcf_by_sample = dict()
+        self.paired_vcf_by_sample = dict()
         self.single_vcf2txt_res_fpath = None
         self.paired_vcf2txt_res_fpath = None
+        self.single_mut_res_fpath = None
+        self.paired_mut_res_fpath = None
 
     def find_fpaths_by_sample(self, dir_name, name, ext, final_dirpaths=None):
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext, final_dirpaths)
@@ -680,9 +694,28 @@ class BCBioStructure(BaseProjectStructure):
             if b.normal and b.tumor:
                 b.paired = True
                 info('Batch ' + b.name + ' is paired')
+                for c in self.variant_callers.values():
+                    c.paired_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
             else:
                 b.paired = False
                 info('Batch ' + b.name + ' is single')
+                for c in self.variant_callers.values():
+                    c.single_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+
+        for c in self.variant_callers.values():
+            if c.single_vcf_by_sample:
+                vcf2txt_fname = source.mut_fname_template.format(caller_name=c.name)
+                if c.paired_vcf_by_sample:
+                    vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
+                c.single_vcf2txt_res_fpath = join(self.var_dirpath, vcf2txt_fname)
+                c.single_mut_res_fpath = add_suffix(c.single_vcf2txt_res_fpath, source.mut_pass_suffix)
+
+            if c.paired_vcf_by_sample:
+                vcf2txt_fname = source.mut_fname_template.format(caller_name=c.name)
+                if c.single_vcf_by_sample:
+                    vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
+                c.paired_vcf2txt_res_fpath = join(self.var_dirpath, vcf2txt_fname)
+                c.paired_mut_res_fpath = add_suffix(c.paired_vcf2txt_res_fpath, source.mut_pass_suffix)
 
         for b in self.batches.values():
             for t_sample in b.tumor:

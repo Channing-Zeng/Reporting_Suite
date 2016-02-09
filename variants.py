@@ -18,6 +18,7 @@ from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, 
     file_exists, isfile, splitext_plus
 from source.main import set_up_dirs
 from source.variants.variants import run_variants
+from source.variants.vcf_processing import verify_vcf
 
 
 def proc_args(argv):
@@ -84,8 +85,30 @@ def read_samples(args, caller_name=None):
     bad_vcf_fpaths = []
 
     info('Reading samples...')
+
+    if len(args) == 1:
+        first_fpath = args[0]
+        if not first_fpath.endswith('.vcf') and not first_fpath.endswith('.vcf.gz'):  # TODO: check ##fileformat=VCF ?
+            info('First argument file name does not look like VCF, assuming TSV with files names')
+
+            with open(first_fpath) as f:
+                for i, l in enumerate(f):
+                    fs = l.strip().split('\t')
+                    if len(fs) != 2:
+                        critical('Line ' + str(i) + ' has only ' + str(len(fs)) + ' fields. Expecting 2 (sample and vcf_fpath)')
+                    sn, vcf_fpath = fs
+                    if not verify_file(vcf_fpath):
+                        bad_vcf_fpaths.append(vcf_fpath)
+                    sample_names.append(sn)
+                    vcf_fpaths.append(adjust_path(vcf_fpath))
+
+            if bad_vcf_fpaths:
+                critical('VCF files cannot be found, empty or not VCFs:' + ', '.join(bad_vcf_fpaths))
+            info('Done reading ' + str(len(sample_names)) + ' samples')
+            return sample_names, vcf_fpaths
+
     for arg in args or [os.getcwd()]:
-        vcf_fpath = verify_file(arg.split(',')[0])
+        vcf_fpath = verify_vcf(arg.split(',')[0])
         if not verify_file(vcf_fpath):
             bad_vcf_fpaths.append(vcf_fpath)
         vcf_fpaths.append(vcf_fpath)
