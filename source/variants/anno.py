@@ -360,7 +360,7 @@ def _snpsift_annotate(cnf, vcf_conf, dbname, input_fpath):
 
     cmdline = '{executable} annotate -v {anno_line} {db_path} {input_fpath}'.format(**locals())
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-        stdout_to_outputfile=True, exit_on_error=False)
+        stdout_to_outputfile=True, exit_on_error=False, overwrite=True)
     if not output_fpath:
         err('Error: snpsift resulted ' + str(output_fpath) + ' for ' + dbname)
         return output_fpath
@@ -436,7 +436,8 @@ def _snpsift_db_nsfp(cnf, input_fpath):
 
     cmdline = '{executable} dbnsfp {ann_line} -v -db {db_path} ' \
               '{input_fpath}'.format(**locals())
-    if call_subprocess(cnf, cmdline, input_fpath, output_fpath, stdout_to_outputfile=True, exit_on_error=False):
+    if call_subprocess(cnf, cmdline, input_fpath, output_fpath, stdout_to_outputfile=True,
+                       exit_on_error=False, overwrite=True):
         return verify_vcf(output_fpath, is_critical=True)
     else:
         return None
@@ -449,15 +450,15 @@ def _snpeff(cnf, input_fpath):
     step_greetings('SnpEff')
 
     output_fpath = intermediate_fname(cnf, input_fpath, 'snpEff')
+    stats_fpath = join(cnf.work_dir, cnf.sample + (('-' + cnf.caller) if cnf.caller else '') + '.snpEff_summary.csv')
+
     if output_fpath.endswith('.gz'):
         output_fpath = output_fpath[:-3]
     if cnf.reuse_intermediate and verify_vcf(output_fpath):
         info('VCF ' + output_fpath + ' exists, reusing...')
-        return output_fpath
+        return output_fpath, stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'
 
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
-
-    stats_fpath = join(cnf.work_dir, cnf.sample + (('-' + cnf.caller) if cnf.caller else '') + '.snpEff_summary.csv')
 
     ref_name = cnf.genome.snpeff.reference or cnf.genome.name
     # if ref_name == 'GRCh37': ref_name += '.75'
@@ -504,7 +505,7 @@ def _snpeff(cnf, input_fpath):
                '{input_fpath}').format(**locals())
 
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                          exit_on_error=False, stdout_to_outputfile=True)
+                          exit_on_error=False, stdout_to_outputfile=True, overwrite=True)
     output_fpath = verify_vcf(output_fpath, is_critical=True)
 
     if res:
@@ -541,7 +542,7 @@ def _tracks(cnf, track_fpath, input_fpath):
 
     assert input_fpath
     output_fpath = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                                   stdout_to_outputfile=True)
+                                   stdout_to_outputfile=True, overwrite=True)
     if not verify_vcf(output_fpath):
         err('Error: tracks resulted ' + str(output_fpath) + ' for ' + track_fpath)
         return output_fpath

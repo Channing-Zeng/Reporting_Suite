@@ -253,6 +253,14 @@ def verify_vcf(vcf_fpath, silent=True, is_critical=False):
     debug('File ' + vcf_fpath + ' exists and not empty')
     vcf = open_gzipsafe(vcf_fpath)
     debug('File ' + vcf_fpath + ' opened')
+    l = next(vcf, None)
+    if l is None:
+        (critical if is_critical else err)('Error: cannot read the VCF file ' + vcf_fpath)
+        return None
+    if not l.startswith('##fileformat=VCF'):
+        (critical if is_critical else err)('Error: VCF must start with ##fileformat=VCF ' + vcf_fpath)
+        return None
+
     try:
         reader = vcf_parser.Reader(vcf)
     except:
