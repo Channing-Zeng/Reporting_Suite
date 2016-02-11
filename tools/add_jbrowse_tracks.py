@@ -1,0 +1,122 @@
+#!/usr/bin/env python
+import os
+from genericpath import isfile
+from os.path import join, basename, splitext
+
+from source.calling_process import call
+from source.file_utils import verify_dir, safe_mkdir, verify_file, add_suffix
+from source.logger import warn, info
+from source.targetcov.bam_and_bed_utils import index_bam
+from source.utils import is_uk
+
+
+def add_project_files_to_jbrowse(cnf, bcbio_structure):
+    genome = cnf.genome.name
+    jbrowse_data_path, _, _ = set_folders(genome)
+
+    jbrowse_dirpath = join(jbrowse_data_path, 'tracks')
+    jbrowse_project_dirpath = join(jbrowse_dirpath, bcbio_structure.project_name)
+    if verify_dir(jbrowse_project_dirpath):
+        warn('Warning: directory is exists in JBrowse folder.')
+        return
+
+    safe_mkdir(jbrowse_project_dirpath)
+    jbrowse_tracks_fpath = join(jbrowse_data_path, 'tracks.conf')
+
+    vcf_fpaths = None
+
+    caller = bcbio_structure.variant_callers.get('vardict') or \
+             bcbio_structure.variant_callers.get('vardict-java')
+    vcf_fpaths = caller.get_filt_vcf_by_sample()
+
+    for sample in bcbio_structure.samples:
+        vcf_link = None
+        if vcf_fpaths:
+            vcf_fpath = vcf_fpaths[sample.name] if sample.name in vcf_fpaths else None
+            if verify_file(vcf_fpath):
+                vcf_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath)
+                if not verify_file(vcf_fpath + '.tbi'):
+                    cmdline = '{tabix} {vcf_fpath}'.format(**locals())
+                    call(cnf, cmdline, exit_on_error=False)
+                create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath + '.tbi')
+
+        bam_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam)
+        if not isfile(sample.bam + '.bai'):
+            info('Indexing bam ' + sample.bam)
+            index_bam(cnf, sample.bam)
+        create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam + '.bai')
+        bigwig_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, splitext(sample.bam)[0] + '.bigwig')
+        print_sample_tracks_info(sample.name, bcbio_structure.project_name, trunc_symlink(bam_link), trunc_symlink(bigwig_link),
+                                 trunc_symlink(vcf_link), jbrowse_tracks_fpath)
+
+
+def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_link, jbrowse_tracks_fpath):
+    with open(jbrowse_tracks_fpath, 'a') as tracks:
+        print >> tracks, '\n[ tracks.{sample} ]\n' \
+                         '\nstoreClass     = JBrowse/Store/SeqFeature/BAM' \
+                         '\nurlTemplate    = {bam_link}' \
+                         '\nbaiUrlTemplate = {bam_link}.bai' \
+                         '\nchunkSizeLimit = 100000000' \
+                         '\nmaxHeight      = 10000' \
+                         '\ncategory = {project_name}' \
+                         '\ntype = JBrowse/View/Track/Alignments2' \
+                         '\nkey  = {sample}\n'.format(**locals())
+        print >> tracks, '\n[ tracks.{sample}_cov ]\n' \
+                         '\nstoreClass     = JBrowse/Store/SeqFeature/BAM' \
+                         '\nurlTemplate    = {bam_link}' \
+                         '\nbaiUrlTemplate = {bam_link}.bai' \
+                         '\nchunkSizeLimit = 100000000' \
+                         '\ncategory = {project_name}' \
+                         '\ntype = SNPCoverage' \
+                         '\nkey  = {sample}_coverage\n'.format(**locals())
+        print >> tracks, '\n[ tracks.{sample}_bigwig ]\n' \
+                         '\nstoreClass     = JBrowse/Store/SeqFeature/BigWig' \
+                         '\nurlTemplate    = {bigwig_link}' \
+                         '\ncategory = {project_name}' \
+                         '\ntype = JBrowse/View/Track/Wiggle/XYPlot' \
+                         '\nautoscale = local' \
+                         '\nkey  = {sample}\n'.format(**locals())
+        if vcf_link:
+            print >> tracks, '\n[ tracks.{sample}_vcf ]\n' \
+                         '\nstoreClass     = JBrowse/Store/SeqFeature/VCFTabix' \
+                         '\nurlTemplate    = {vcf_link}' \
+                         '\ncategory = {project_name}' \
+                         '\ntype = JBrowse/View/Track/CanvasVariants' \
+                         '\nkey  = {sample}_variants\n'.format(**locals())
+
+def trunc_symlink(link):
+    if not link:
+        return None
+    return 'tracks' + link.split('tracks', 1)[1]
+
+def set_folders(genome):
+    jbrowse_basepath = '/home/klpf990/public_html/JBrowse-1.11.6'
+    jbrowse_browser_path = 'http://blue.usbod.astrazeneca.net/~klpf990/JBrowse-1.11.6/'
+    if is_uk():
+        jbrowse_basepath = '/ngs/users/vlad/JBrowse'
+        jbrowse_browser_path = 'http://ukapdlnx115.ukapd.astrazeneca.net/~klpf990/JBrowse-1.11.6/'
+    data_dirname = 'data_hg19'
+    if 'hg38' in genome:
+        data_dirname = 'data_hg38'
+    elif not 'hg' in genome:
+        return None, None, None
+    jbrowse_data_path = join(jbrowse_basepath, data_dirname)
+    return jbrowse_data_path, data_dirname, jbrowse_browser_path
+
+def get_jbrowser_link(genome, sample, bed_fpath=None):
+    jbrowse_data_path, data_dirname, jbrowse_browser_path = set_folders(genome)
+    bed = ''
+    if bed_fpath:
+        bed = ',' + splitext(basename(bed_fpath))[0]
+    return '{jbrowse_browser_path}/?data={data_dirname}&tracks=DNA,' \
+           '{sample}_bigwig,{sample}_vcf{bed},{sample}&highlight='.format(**locals())
+
+
+def create_jbrowse_symlink(genome, project_name, sample, file_fpath):
+    jbrowse_data_path, _, _ = set_folders(genome)
+    jbrowse_dirpath = join(jbrowse_data_path, 'tracks')
+    jbrowse_project_dirpath = join(jbrowse_dirpath, project_name)
+    sym_link = join(jbrowse_project_dirpath, sample + splitext(file_fpath)[1])
+    if isfile(file_fpath):
+        os.symlink(file_fpath, sym_link)
+    return sym_link

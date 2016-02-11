@@ -24,6 +24,7 @@ from source.utils import is_us, md5
 from source.variants.filtering import make_vcf2txt_cmdl_params
 from source.webserver.exposing import sync_with_ngs_server, convert_path_to_url
 from source.config import defaults, with_cnf
+from tools.add_jbrowse_tracks import add_project_files_to_jbrowse
 
 
 class Step:
@@ -85,7 +86,7 @@ class Steps(list):
 
 class JobRunning:
     def __init__(self, step, job_id, sample_name, caller_suf, log_fpath,
-                 qsub_cmdline, done_marker_fpath, error_marker_fpath, threads):
+                 qsub_cmdline, done_marker_fpath, error_marker_fpath, threads, not_wait=False):
         self.step = step
         self.job_id = job_id
         self.sample_name = sample_name
@@ -96,6 +97,7 @@ class JobRunning:
         self.error_marker = error_marker_fpath
         self.repr = step.name
         self.threads = threads
+        self.not_wait = not_wait
         if sample_name:
             self.repr += ' for ' + sample_name
         if caller_suf:
@@ -180,7 +182,7 @@ class BCBioRunner:
         if set(defaults['steps']) == set(cnf.steps):
             self.steps.extend([self.fastqc_summary, self.clin_report])
 
-        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
+        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary, self.bw_converting])
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -480,6 +482,14 @@ class BCBioRunner:
             paramln=summaries_cmdline_params + ' ' + self.final_dir
         )
 
+        self.bw_converting = Step(cnf, run_id,
+            name=BCBioStructure.bigwig_name, short_name='bamtobw',
+            interpreter='python',
+            script=join('scripts', 'post', 'bam_to_bigwig.py'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
+            paramln=basic_params + ' --genome {genome}  -s \'{sample}\' --bam \'{bam}\''
+        )
+
     def prep_bed(self):
         target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(self.cnf, self.bcbio_structure.bed)
         exons_no_genes_bed = None
@@ -600,7 +610,7 @@ class BCBioRunner:
         if isfile(done_marker_fpath): os.remove(done_marker_fpath)
         if isfile(error_marker_fpath): os.remove(error_marker_fpath)
         job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline,
-                         done_marker_fpath, error_marker_fpath, threads=threads)
+                         done_marker_fpath, error_marker_fpath, threads=threads, not_wait=BCBioStructure.bigwig_name in step.name)
         self.jobs_running.append(job)
         call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars, exit_on_error=is_local())
 
@@ -825,6 +835,15 @@ class BCBioRunner:
                         wait_for_steps=wait_for_steps,
                         threads=self.threads_per_sample)
 
+            if self.bw_converting in self.steps:
+                self._submit_job(self.bw_converting,
+                                 sample=sample.name, genome=sample.genome,
+                                 bam=sample.bam,
+                                 wait_for_steps=[
+                                    self.clin_report.job_name(s.name)
+                                    for s in self.bcbio_structure.samples
+                                    if self.clin_report in self.steps])
+
             # TargetSeq reports
             if self.abnormal_regions in self.steps:
                 variant_caller = \
@@ -932,6 +951,7 @@ class BCBioRunner:
 
             finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers)
 
+            add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
             html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
 
             html_report_url = None
@@ -990,11 +1010,11 @@ class BCBioRunner:
                         j.has_errored = True
                         if is_waiting: info('', print_date=False)
                         info('Finished with error: ' + j.repr + '. Please, check the log: ' + str(j.log_fpath))
-                    if j.is_done:
+                    if j.is_done or j.not_wait:
                         is_waiting = False
 
             # check flags and wait if not all are done
-            if sum(1 for j in self.jobs_running if not j.is_done) <= number_of_jobs_allowed_to_left_running:
+            if sum(1 for j in self.jobs_running if not j.is_done and not j.not_wait) <= number_of_jobs_allowed_to_left_running:
                 break
             else:
                 if not is_waiting:

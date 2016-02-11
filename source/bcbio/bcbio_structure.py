@@ -498,6 +498,7 @@ class BaseProjectStructure:
     ngscat_name      = 'ngscat'
     qualimap_name = qualimap_dir = 'qualimap'
     picard_name      = 'picard'
+    bigwig_name      = 'bigwig'
 
     fastqc_repr      = 'FastQC'
     varqc_repr       = 'VarQC'

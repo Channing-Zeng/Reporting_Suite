@@ -9,6 +9,7 @@ from source import info
 from source.logger import warn
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.utils import get_chr_lengths, OrderedDefaultDict
+from tools.add_jbrowse_tracks import get_jbrowser_link
 
 
 def make_clinical_report(cnf, clinical_sample_info, output_fpath):
@@ -91,6 +92,7 @@ class BaseClinicalReporting:
 
         mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
         mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, self.cnf.bed_fpath)
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
@@ -123,7 +125,7 @@ class BaseClinicalReporting:
                 row.add_record('Transcript', mut.transcript)
                 row_class = ' row_to_hide row_hidden'
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
-            row.add_record('Position', show_content=mut.is_canonical, **self._pos_recargs(mut))
+            row.add_record('Position', show_content=mut.is_canonical, **self._pos_recargs(mut, jbrowser_link))
             row.add_record('Change', show_content=mut.is_canonical, **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
@@ -515,9 +517,12 @@ class BaseClinicalReporting:
         return dict(value=aa_chg)
 
     @staticmethod
-    def _pos_recargs(mut):
+    def _pos_recargs(mut, jbrowser_link=None):
         c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
         p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
+        if jbrowser_link:
+            p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(mut.pos) + '...' + str(mut.pos) +
+                 '" target="_blank">' + p + '</a>')
         return dict(value=gray(c + ':') + p, num=mut.get_chrom_key() * 100000000000 + mut.pos)
 
     cdna_chg_regexp = re.compile(r'([c,n]\.)([-\d_+*]+)(.*)')
