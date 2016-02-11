@@ -373,7 +373,7 @@ class BCBioSample(BaseSample):
         return join(self.dirpath, BCBioStructure.varfilter_dir, callername + '.txt')
 
     def get_mut_by_callername(self, callername):
-        return add_suffix(self.get_vcf2txt_by_callername(callername), source.mut_single_suffix)
+        return add_suffix(self.get_vcf2txt_by_callername(callername), source.mut_pass_suffix)
 
     # filtered TSV
     def get_filt_tsv_fpath_by_callername(self, callername):
@@ -423,6 +423,12 @@ class VariantCaller:
         self.paired_vcf2txt_res_fpath = None
         self.single_mut_res_fpath = None
         self.paired_mut_res_fpath = None
+
+    def get_single_samples(self):
+        return [s for s in self.samples if not s.normal_match]
+
+    def get_paired_samples(self):
+        return [s for s in self.samples if s.normal_match]
 
     def find_fpaths_by_sample(self, dir_name, name, ext, final_dirpaths=None):
         return self._find_files_by_sample(dir_name, '.' + name + '.' + ext, final_dirpaths)

@@ -57,6 +57,9 @@ def check_genome_resources(cnf):
                     if verify_file(gz_fpath, silent=True):
                         cnf.genome[key] = gz_fpath
 
+    if not cnf.genome.exons or not cnf.genome.refseq:
+        critical('"exons" or "refseq" fields are required in the system config.')
+
 
 def check_keys_presence(cnf, required_keys):
     errors = []

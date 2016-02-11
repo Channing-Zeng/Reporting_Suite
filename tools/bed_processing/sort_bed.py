@@ -39,7 +39,8 @@ def main(seq_fpath, genome):
         start = int(fs[1])
         end = int(fs[2])
         other_fields = fs[3:]
-        regions.append(Region(chrom, start, end, other_fields, chr_order.index(chrom), genome))
+        if chrom in chr_order:
+            regions.append(Region(chrom, start, end, other_fields, chr_order.index(chrom), genome))
 
     for region in sorted(regions, key=lambda r: r.get_key()):
         fs = [region.chrom, str(region.start), str(region.end)]

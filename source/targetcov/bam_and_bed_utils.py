@@ -104,7 +104,7 @@ def remove_comments(cnf, bed_fpath):
 def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
     if exons_bed is None and target_bed is None:
         warn('No bed and no exons in the system config. Not making detailed per-gene reports.')
-        return None, None, None, None
+        # return None, None, None, None
 
     if target_bed:
         target_bed = verify_bed(target_bed, is_critical=True)
@@ -361,14 +361,14 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_names_set, suffix=None):
     return iterate_file(cnf, bed_fpath, fn, suffix=suffix or 'filt_genes', check_result=False)
 
 
-def sort_bed(cnf, bed_fpath, genome):
+def sort_bed(cnf, bed_fpath, genome, **kwargs):
     output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
     genome_seq_fpath = adjust_path(cnf.genome.seq)
 
     cmdl = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sort_bed.py'), is_critical=True)
     cmdl += ' ' + genome_seq_fpath + ' ' + genome
 
-    res = call(cnf, cmdl, stdin_fpath=bed_fpath, output_fpath=output_fpath)
+    res = call(cnf, cmdl, stdin_fpath=bed_fpath, output_fpath=output_fpath, **kwargs)
     if not res:
         return None
 

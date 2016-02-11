@@ -20,11 +20,12 @@ def run_one(cnf, process_one_fun, finalize_one_fun=None, *args, **kwargs):
         if fpaths:
             ok = True
             info('Checking expected results...')
-            if isinstance(fpaths, basestring):
+            if not isinstance(fpaths, list):
                 fpaths = [fpaths]
             for fpath in fpaths:
-                if not verify_file(fpath):
-                    ok = False
+                if isinstance(fpath, basestring):
+                    if not verify_file(fpath):
+                        ok = False
             if ok:
                 info('The results are good.')
 

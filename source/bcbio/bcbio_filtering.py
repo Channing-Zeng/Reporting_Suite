@@ -13,15 +13,15 @@ from source.logger import info
 
 def combine_muts(cnf, bcbio_structure, callers):
     for c in callers:
-        for (samples, mut_fpath) in ((c.get_single_samples(), c.single_mut_res_fpath), (c.get_paired_sampels(), c.paired_mut_res_fpath)):
+        for (samples, mut_fpath) in ((c.get_single_samples(), c.single_mut_res_fpath), (c.get_paired_samples(), c.paired_mut_res_fpath)):
             if samples and mut_fpath:
                 if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
                     info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
                 with file_transaction(cnf.work_dir, mut_fpath) as tx:
                     with open(tx, 'w') as out:
-                        for var_s in samples:
-                            verify_file(var_s.mut_fpath, is_critical=True, description=c.name + 'mutations file')
-                            with open(var_s.mut_fpath) as f:
+                        for s in samples:
+                            verify_file(s.get_mut_by_callername(c.name), is_critical=True, description=c.name + ' mutations file')
+                            with open(s.get_mut_by_callername(c.name)) as f:
                                 out.write(f.read())
                 verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
                 info('Saved ' + c.name + ' mutations to ' + mut_fpath)
