@@ -1,6 +1,6 @@
 from collections import OrderedDict, defaultdict
 import json
-from os.path import join, dirname, abspath, relpath
+from os.path import join, dirname, abspath, relpath, basename
 
 import re
 
@@ -92,7 +92,8 @@ class BaseClinicalReporting:
 
         mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
         mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
-        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, self.cnf.bed_fpath)
+        bed_name = basename(self.cnf.bed_fpath).split('.')[0] + '.bed'
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_name)
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)

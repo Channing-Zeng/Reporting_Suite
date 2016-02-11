@@ -4,7 +4,7 @@ from genericpath import isfile
 from os.path import join, basename, splitext
 
 from source.calling_process import call
-from source.file_utils import verify_dir, safe_mkdir, verify_file, add_suffix
+from source.file_utils import verify_dir, safe_mkdir, verify_file, splitext_plus
 from source.logger import warn, info
 from source.targetcov.bam_and_bed_utils import index_bam
 from source.utils import is_uk
@@ -18,7 +18,6 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
     jbrowse_project_dirpath = join(jbrowse_dirpath, bcbio_structure.project_name)
     if verify_dir(jbrowse_project_dirpath):
         warn('Warning: directory is exists in JBrowse folder.')
-        return
 
     safe_mkdir(jbrowse_project_dirpath)
     jbrowse_tracks_fpath = join(jbrowse_data_path, 'tracks.conf')
@@ -30,6 +29,8 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
     vcf_fpaths = caller.get_filt_vcf_by_sample()
 
     for sample in bcbio_structure.samples:
+        if all(isfile(join(jbrowse_project_dirpath, sample.name + ext)) for ext in ['.bam', '.bam.bai', '.vcf.gz', '.vcf.gz.tbi', '.bigwig']):
+            continue
         vcf_link = None
         if vcf_fpaths:
             vcf_fpath = vcf_fpaths[sample.name] if sample.name in vcf_fpaths else None
@@ -107,7 +108,7 @@ def get_jbrowser_link(genome, sample, bed_fpath=None):
     jbrowse_data_path, data_dirname, jbrowse_browser_path = set_folders(genome)
     bed = ''
     if bed_fpath:
-        bed = ',' + splitext(basename(bed_fpath))[0]
+        bed = ',' + bed_fpath
     return '{jbrowse_browser_path}/?data={data_dirname}&tracks=DNA,' \
            '{sample}_bigwig,{sample}_vcf{bed},{sample}&highlight='.format(**locals())
 
@@ -116,7 +117,13 @@ def create_jbrowse_symlink(genome, project_name, sample, file_fpath):
     jbrowse_data_path, _, _ = set_folders(genome)
     jbrowse_dirpath = join(jbrowse_data_path, 'tracks')
     jbrowse_project_dirpath = join(jbrowse_dirpath, project_name)
-    sym_link = join(jbrowse_project_dirpath, sample + splitext(file_fpath)[1])
-    if isfile(file_fpath):
+    base, ext = splitext_plus(file_fpath)
+    if ext in ['.tbi', '.bai']:
+        base, ext2 = splitext_plus(base)
+        ext = ext2 + ext
+    sym_link = join(jbrowse_project_dirpath, sample + ext)
+    if not verify_dir(jbrowse_project_dirpath):
+        safe_mkdir(jbrowse_project_dirpath)
+    if isfile(file_fpath) and not isfile(sym_link):
         os.symlink(file_fpath, sym_link)
     return sym_link

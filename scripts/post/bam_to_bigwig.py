@@ -128,7 +128,7 @@ def main():
     cnf = proc_args(sys.argv)
     bigwig_fpath = process_bam(cnf, cnf.bam)
     if isfile(bigwig_fpath) and cnf.project_name and cnf.sample:
-        create_jbrowse_symlink(cnf.genome.name, cnf.project_name, cnf.sample.name, bigwig_fpath)
+        create_jbrowse_symlink(cnf.genome.name, cnf.project_name, cnf.sample, bigwig_fpath)
 
 
 if __name__ == '__main__':

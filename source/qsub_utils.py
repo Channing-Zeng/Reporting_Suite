@@ -172,7 +172,7 @@ def wait_for_jobs(cnf, jobs):
 
 
 def del_jobs(cnf, jobs_running):
-    done_job_ids = [j.job_id for j in jobs_running if not j.is_done]
+    done_job_ids = [j.job_id for j in jobs_running if not j.is_done and not j.not_wait]
     if done_job_ids:
         qdel = get_system_path(cnf, 'qdel', is_critical=False)
         command = ' '.join(done_job_ids)

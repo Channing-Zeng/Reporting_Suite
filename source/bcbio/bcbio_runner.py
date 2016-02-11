@@ -483,7 +483,7 @@ class BCBioRunner:
         )
 
         self.bw_converting = Step(cnf, run_id,
-            name=BCBioStructure.bigwig_name, short_name='bamtobw',
+            name='bam_to_bigwig', short_name='bamtobw',
             interpreter='python',
             script=join('scripts', 'post', 'bam_to_bigwig.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
@@ -1010,7 +1010,7 @@ class BCBioRunner:
                         j.has_errored = True
                         if is_waiting: info('', print_date=False)
                         info('Finished with error: ' + j.repr + '. Please, check the log: ' + str(j.log_fpath))
-                    if j.is_done or j.not_wait:
+                    if j.is_done:
                         is_waiting = False
 
             # check flags and wait if not all are done
