@@ -105,8 +105,8 @@ def main(args):
         var_s.varfilter_result = vcf2txt_res_fpath
         var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
-        write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
-        index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, var_s.filt_vcf_fpath, cnf.caller)
+        filt_vcf = write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
+        index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, filt_vcf, cnf.caller)
 
         if cnf.qc:
             report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)

@@ -219,20 +219,20 @@ def postprocess_vcf(cnf,
         ungz = var_sample.filt_vcf_fpath
         gz = var_sample.filt_vcf_fpath + '.gz'
     if not var_sample.filt_tsv_fpath:
-        var_sample.filt_tsv_fpath = splitext(var_sample.filt_vcf_fpath)[0] + '.tsv'
+        var_sample.filt_tsv_fpath = splitext(ungz)[0] + '.tsv'
 
     if cnf.reuse_intermediate \
-            and verify_file(gz) \
+            and verify_file(var_sample.filt_vcf_fpath) \
             and verify_file(var_sample.pass_filt_vcf_fpath)\
             and verify_file(var_sample.filt_tsv_fpath):
-        info(var_sample.filt_vcf_fpath + '.gz' + ' and ' + var_sample.pass_filt_vcf_fpath + ' exist; reusing.')
+        info(var_sample.filt_vcf_fpath + ' and ' + var_sample.pass_filt_vcf_fpath + ' exist; reusing.')
 
     else:
         safe_mkdir(dirname(var_sample.filt_vcf_fpath))
         safe_mkdir(dirname(var_sample.pass_filt_vcf_fpath))
 
         with open_gzipsafe(var_sample.anno_vcf_fpath) as vcf_f, \
-             file_transaction(work_dir, var_sample.filt_vcf_fpath) as filt_tx, \
+             file_transaction(work_dir, ungz) as filt_tx, \
              file_transaction(work_dir, var_sample.pass_filt_vcf_fpath) as pass_tx:
             with open(filt_tx, 'w') as filt_f, open(pass_tx, 'w') as pass_f:
                 info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': opened ' +
@@ -269,13 +269,13 @@ def postprocess_vcf(cnf,
                             filt_f.write('\t'.join(ts))
 
         info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': saved filtered VCFs to ' +
-             var_sample.filt_vcf_fpath + ' and ' + var_sample.pass_filt_vcf_fpath)
+             ungz + ' and ' + var_sample.pass_filt_vcf_fpath)
 
         info()
         info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': writing filtered TSVs')
         # Converting to TSV - saving .anno.filt.tsv
         if 'tsv_fields' in cnf.annotation and cnf.tsv:
-            tmp_tsv_fpath = make_tsv(cnf, var_sample.filt_vcf_fpath, var_sample.name)
+            tmp_tsv_fpath = make_tsv(cnf, ungz, var_sample.name)
             if not tmp_tsv_fpath:
                 err('TSV convertion didn\'t work')
             else:
@@ -287,7 +287,7 @@ def postprocess_vcf(cnf,
                  ': saved filtered TSV to ' + var_sample.filt_tsv_fpath)
 
     info('Done postprocessing filtered VCF.')
-    return var_sample.filt_vcf_fpath
+    return ungz
 
 
 def write_vcf(cnf, sample, output_dirpath, caller_name, vcf2txt_res_fpath, mut_res_fpath):
