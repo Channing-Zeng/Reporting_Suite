@@ -807,28 +807,27 @@ class BCBioStructure(BaseProjectStructure):
 
         self._set_bed_file(sample, sample_info)
 
+        batch_names = sample.name + '-batch'
+        sample.phenotype = 'tumor'
         if 'metadata' in sample_info:
             sample.phenotype = sample_info['metadata'].get('phenotype') or 'tumor'
             info('Phenotype: ' + str(sample.phenotype))
-
             if 'batch' in sample_info['metadata']:
                 batch_names = sample_info['metadata']['batch']
-            else:
-                batch_names = sample.name + '-batch'
 
-            if isinstance(batch_names, basestring):
-                batch_names = [batch_names]
+        if isinstance(batch_names, basestring):
+            batch_names = [batch_names]
 
-            for batch_name in batch_names:
-                self.batches[batch_name].name = batch_name
+        for batch_name in batch_names:
+            self.batches[batch_name].name = batch_name
 
-                if sample.phenotype == 'normal':
-                    if self.batches[batch_name].normal:
-                        critical('Multiple normal samples for batch ' + batch_name)
-                    self.batches[batch_name].normal = sample
+            if sample.phenotype == 'normal':
+                if self.batches[batch_name].normal:
+                    critical('Multiple normal samples for batch ' + batch_name)
+                self.batches[batch_name].normal = sample
 
-                elif sample.phenotype == 'tumor':
-                    self.batches[batch_name].tumor.append(sample)
+            elif sample.phenotype == 'tumor':
+                self.batches[batch_name].tumor.append(sample)
 
         sample.var_dirpath = adjust_path(join(sample.dirpath, BCBioStructure.var_dir))
         # self.move_vcfs_to_var(sample)  # moved to filtering.py

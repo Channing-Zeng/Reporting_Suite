@@ -92,28 +92,30 @@ def main(args):
         info('Using vcf2txt from ' + vcf2txt_res_fpath)
 
     mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
-    if mut_fpath:
+    if not mut_fpath:
+        err('vardict2mut failed')
+    else:
         info('Saved passed mutations to ' + mut_fpath)
 
-    var_s = source.VarSample(cnf.sample, cnf.output_dir)
-    var_s.anno_vcf_fpath = cnf.vcf
-    var_s.varfilter_dirpath = var_s.dirpath
-    var_s.filt_vcf_fpath = join(cnf.output_dir, add_suffix(basename(cnf.vcf), 'filt'))
-    var_s.pass_filt_vcf_fpath = add_suffix(var_s.filt_vcf_fpath, 'pass')
-    var_s.varfilter_result = vcf2txt_res_fpath
-    var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
+        var_s = source.VarSample(cnf.sample, cnf.output_dir)
+        var_s.anno_vcf_fpath = cnf.vcf
+        var_s.varfilter_dirpath = var_s.dirpath
+        var_s.filt_vcf_fpath = join(cnf.output_dir, add_suffix(basename(cnf.vcf), 'filt'))
+        var_s.pass_filt_vcf_fpath = add_suffix(var_s.filt_vcf_fpath, 'pass')
+        var_s.varfilter_result = vcf2txt_res_fpath
+        var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
-    write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
-    index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, var_s.filt_vcf_fpath, cnf.caller)
+        write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
+        index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, var_s.filt_vcf_fpath, cnf.caller)
 
-    if cnf.qc:
-        report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)
-        qc_dirpath = join(cnf.output_dir, 'qc')
-        safe_mkdir(qc_dirpath)
-        qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_after_name)
+        if cnf.qc:
+            report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)
+            qc_dirpath = join(cnf.output_dir, 'qc')
+            safe_mkdir(qc_dirpath)
+            qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_after_name)
 
-    if not cnf['keep_intermediate']:
-        shutil.rmtree(cnf['work_dir'])
+        if not cnf['keep_intermediate']:
+            shutil.rmtree(cnf['work_dir'])
 
 
 if __name__ == '__main__':

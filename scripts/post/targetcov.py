@@ -175,7 +175,7 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
                 gene_names_list = [g.strip() for g in f.read().split('\n')]
         else:
             gene_names_set, gene_names_list, _, _, _ = \
-                extract_gene_names_and_filter_exons(cnf, target_bed, None, None, None)
+                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
 
     avg_depth, gene_by_name, reports = make_targetseq_reports(
         cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list)

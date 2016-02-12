@@ -552,7 +552,8 @@ class BCBioRunner:
         for job_id_to_wait in wait_for_steps or []:
             job_to_wait = next((j for j in self.jobs_running if j.job_id == job_id_to_wait), None)
             if not job_to_wait or job_to_wait.has_errored:
-                warn('Job ' + job_to_wait.job_id + ' has failed, and it required to run this job ' + job_name)
+                if job_to_wait:
+                    warn('Job ' + job_to_wait.job_id + ' has failed, and it required to run this job ' + job_name)
                 info()
                 return None
 
