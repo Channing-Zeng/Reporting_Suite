@@ -549,10 +549,11 @@ class BCBioRunner:
                     log_out_fpath=None, wait_for_steps=None, threads=1, **kwargs):
         job_name = step.job_name(sample_name, caller_suf)
 
-        for jn in wait_for_steps or []:
-            j = next((j for j in self.jobs_running if j.job_id == jn), None)
-            if j and j.has_errored:
-                warn('Job ' + j.job_id + ' has failed, and it required to run this job ' + job_name)
+        for job_id_to_wait in wait_for_steps or []:
+            job_to_wait = next((j for j in self.jobs_running if j.job_id == job_id_to_wait), None)
+            if not job_to_wait or job_to_wait.has_errored:
+                warn('Job ' + job_to_wait.job_id + ' has failed, and it required to run this job ' + job_name)
+                info()
                 return None
 
         if sum(j.threads for j in self.jobs_running if not j.is_done) >= self.max_threads:

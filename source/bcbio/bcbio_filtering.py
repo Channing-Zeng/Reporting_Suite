@@ -249,7 +249,7 @@ def vcf2txt_for_variant_caller(cnf, caller, bcbio_structure):
 
     if single_vcf_by_sample:
         info('*' * 70)
-        info('Single samples (total ' + str(len(single_vcf_by_sample)) + '):')
+        info('Single samples - total ' + str(len(single_vcf_by_sample)))
 
         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
         if paired_vcf_by_sample:
@@ -264,7 +264,7 @@ def vcf2txt_for_variant_caller(cnf, caller, bcbio_structure):
 
     if paired_vcf_by_sample:
         info('*' * 70)
-        info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+        info('Paired samples - total ' + str(len(paired_vcf_by_sample)))
 
         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
         if single_vcf_by_sample:
@@ -377,7 +377,8 @@ def __proc_caller_samples(cnf, bcbio_structure, caller, vcf_by_sample, vcf2txt_f
         cnf, var_samples, bcbio_structure.var_dirpath, vcf2txt_fpath,
         caller_name=caller.name, sample_min_freq=bcbio_structure.samples[0].min_af)
 
-    __symlink_mut_pass(bcbio_structure, mut_fpath)
+    if mut_fpath:
+        __symlink_mut_pass(bcbio_structure, mut_fpath)
     return vcf2txt_fpath, mut_fpath
 
 

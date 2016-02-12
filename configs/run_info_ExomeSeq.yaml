@@ -59,5 +59,3 @@ variant_filtering:
 #  signal_noise:       1.5     # SN.     -o   Signal/noise value.
 
 #  bias:               False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
-
-#  amplicon_based: True

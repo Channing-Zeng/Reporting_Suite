@@ -60,4 +60,3 @@ variant_filtering:
 
 #  bias:               False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
 
-  amplicon_based: True         # Indicate it's amplicon based calling and variants not supported by all amplicons will be filtered
