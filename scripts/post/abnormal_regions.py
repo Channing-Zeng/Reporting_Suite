@@ -30,20 +30,21 @@ def main(args):
         cnf,
         required=['samtools', 'bedtools'],
         optional=[])
-    process_all(cnf, bcbio_structure.samples)
+    process_all(cnf, bcbio_structure)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
 
 
-def process_all(cnf, samples):
+def process_all(cnf, bcbio_structure):
+    samples = bcbio_structure.samples
     key_gene_by_name, use_custom_panel = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
     key_or_target_genes = 'target' if use_custom_panel else 'key'
     mutations = {}
     for sample in samples:
         mutations[sample.name] = parse_mutations(cnf, sample, key_gene_by_name, cnf.mutations_fpath, key_or_target_genes,
                                                  for_flagged_report=True)
-    _generate_summary_flagged_regions_report(cnf.output_dir, samples, cnf, mutations, key_or_target_genes)
+    _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, mutations, key_or_target_genes)
     pass
     # read all detail reports
     # normalize

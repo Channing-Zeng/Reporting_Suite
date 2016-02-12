@@ -278,7 +278,7 @@ class BCBioSample(BaseSample):
             ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
             qualimap_dirpath=join(targqc_dirpath, BCBioStructure.qualimap_name),
             picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
-            flagged_regions_dirpath=join(targqc_dirpath, source.flag_regions_name),
+            flagged_regions_dirpath=join(targqc_dirpath, BCBioStructure.flag_regions_name),
             clinical_report_dirpath=join(dirpath, source.clinreport_dir),
             **kwargs)
 
@@ -505,6 +505,7 @@ class BaseProjectStructure:
     qualimap_name = qualimap_dir = 'qualimap'
     picard_name      = 'picard'
     bigwig_name      = 'bigwig'
+    flag_regions_name = 'flaggedRegions'
 
     fastqc_repr      = 'FastQC'
     varqc_repr       = 'VarQC'
@@ -518,6 +519,8 @@ class BaseProjectStructure:
     varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
     targqc_dir       = targqc_summary_dir      = join('qc', targqc_name)
     ngscat_dir                                 = join(targqc_dir, ngscat_name)
+
+    flagged_dir = join(targqc_dir, flag_regions_name)
 
     cnv_dir = cnv_summary_dir = 'cnv'
     seq2c_name = 'Seq2C'
@@ -665,6 +668,7 @@ class BCBioStructure(BaseProjectStructure):
         self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath),
             ((k + '.') if len(self.variant_callers.values()) > 1 else '') + basename(self.varqc_after_report_fpath)))
             for k in self.variant_callers.keys()])
+        self.flagged_regions_dirpath = join(self.date_dirpath, BCBioStructure.flagged_dir)
 
         # setting bed files for samples
         if cnf.bed:

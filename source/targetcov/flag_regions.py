@@ -383,7 +383,7 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
         cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wa -wb -filenames'
         call(cnf, cmdline, output_fpath=vcf_bed_intersect, exit_on_error=False)
 
-    regions_by_reasons = {}
+    regions_by_reasons = defaultdict(set)
 
     with open(vcf_bed_intersect) as f:
         for l in f:
@@ -391,9 +391,10 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
             if not l or l.startswith('#'):
                 continue
             fs = l.split('\t')
-            pos = fs[1]
-            filename = fs[-4]
-            regions_by_reasons.setdefault(pos, set()).add(tricky_regions[os.path.basename(filename)])
+            start = int(fs[1])
+            end = int(fs[2])
+            filename = fs[5]
+            regions_by_reasons[(start, end)].add(tricky_regions[os.path.basename(filename)])
 
     return regions_by_reasons
 
