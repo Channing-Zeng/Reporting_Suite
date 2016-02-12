@@ -17,11 +17,11 @@ BRAF	Mutations predict sensitivity to RAF inhibitors. Amplification may predict 
 MEK inhibitors		
 BRCA1	Biallelic inactivation predict sensitivity to PARP inhibitors. May signal the presence of a germline mutation.	Biallelic Inactivation	PARP Inhibitor		
 BRCA2	Biallelic inactivation predict sensitivity to PARP inhibitors. May signal the presence of a germline mutation.	Biallelic Inactivation	PARP Inhibitor		
-BRD2	Alterations may preict sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
+BRD2	Alterations may predict sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
 Bromodomain inhibitors		
-BRD3	Alterations may preict sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
+BRD3	Alterations may predict sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
 Bromodomain inhibitors		
-BRD4	Alterations may preict sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
+BRD4	Alterations may predict sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
 Bromodomain inhibitors		
 c15orf55	Sensitivity to HDAC inhibitors, bromodomain inhibitors	Rearrangement	HDAC Inhibitors
 Bromodomain inhibitors		
@@ -45,7 +45,7 @@ Vemurafenib, Dabrafenib, RAF inhibitors
 Dasatinib, SRC inhibitors		
 CTNNB1	Some prognostic effects in colon cancer and gastric cancer.  Activation may mediate resistance to EGFR TKIs, PI3K inhibitors, and AKT inhibitors. Activation may predict sensitivity to inhibitors of WNT signaling	Mutations	WNT inhibitors		
 DDR2	Mutations may predict sensitivity to dasatinib	Mutations	Dasatinib		
-DNMT3A	May predict sensitivity to DNA methylransferace inhibitors.  May be prognostic in leukemia	Mutations	DNAMT inhibitors		
+DNMT3A	May predict sensitivity to DNA methyltransferase inhibitors.  May be prognostic in leukemia	Mutations	DNAMT inhibitors
 EGFR	Mutations targetable with TKIs (both FDA approved and novel). Other mutations predict resistance to TKIs.  Amplification associated with response to anti-EGFR Abs in colon cancer. Amplification also associated with resistance to TKIs in some cancers.  Rearangement is prognostic in GBM, HNSCC	Mutation; Amplification; Rearrangement	Erlotinib, Gefitinib, EGFR Inhibitors		
 EPHA3	Alterations may predict sensitivity to dasatinib or novel ephrin inhibitors.  Alterations may be prognostic in lung cancer	Mutation; Amplification	Dasatinib
 Ephrin inhibitors		
@@ -75,7 +75,7 @@ GNAS	Mutations may be diagnostic of tumors arising in McCune-Albright syndrome, 
 HRAS	Mutations may predict sensitivity to MAPK pathway inhibitors.  Mutations may predict resistance to TKIs.	Mutation	MAPK pathway inhibitors		
 IDH1	Prognostic in GBM.  Mutations may predict sensitivity to IDH inhibitors	Mutation	IDH inhibitorss		
 IDH2	Prognostic in GBM.  Mutations may predict sensitivity to IDH inhibitors	Mutation	IDH inhibitorss		
-IGF1R	Amplification may predict senitivity to IGFR1-R inhibitors	Amplification	IFG1-R Inhibitor		
+IGF1R	Amplification may predict sensitivity to IGFR1-R inhibitors	Amplification	IFG1-R Inhibitor
 JAK2	Mutations may predict sensitivity to JAK2 inhibitors	Mutation	ruxolitinib, JAK inhibitors		
 JAK3	Mutations may predict sensitivity to JAK3 inhibitors	Mutation	tofacitinib, JAK inhibitors		
 KDR	Activating mutations may predict sensitivity to specific inhibitors	Mutations	KDR inhibitors		
@@ -105,7 +105,7 @@ MSH6	Prognostic / Diagnostic in colon cancer	Biallelic Inactivation
 MTOR	Activating mutations may predict sensitivity to MTOR inhibitors. Secondary mutations may predict resistance to MTOR inhibitors	Mutation	Everolimus, Temsirolimus, MTOR inhibitors		
 MYC	May be prognostic / diagnostic in some cancer types	Amplification; Rearrangement			
 MYD88	Mutations may predict sensitivity to BTK inhibitors in Waldenstrom macroglobulinemia. Mutation may be diagnostic for Waldenstrom macroglobulinemia.	Mutation	BTK inhibitors		
-NF1	Biallelic inactivation may predict sensitivity to PI3K pathway inhibitors (PI3K/AKT/MTOR).  Biallelic inactivation mapy predict resistance to RAF and MEK inhibitors.	Biallelic Inactivation	PI3K/AKT/MTOR inhibitors
+NF1	Biallelic inactivation may predict sensitivity to PI3K pathway inhibitors (PI3K/AKT/MTOR).  Biallelic inactivation may predict resistance to RAF and MEK inhibitors.	Biallelic Inactivation	PI3K/AKT/MTOR inhibitors
 RAF inhibitors
 MEK inhibitors		
 NF2	Biallelic inactivation may predict sensitivity to PI3K pathway inhibitors (PI3K/AKT/MTOR)	Biallelic Inactivation	PI3K/AKT/MTOR inhibitors		
@@ -126,11 +126,11 @@ PIK3CB	Mutations may predict sensitivity to PI3K pathway inhibitors -- PI3K inhi
 PIK3R1	Mutations may predict sensitivity to PI3K pathway inhibitors -- PI3K inhibitors, AKT inhibitors, and MTOR inhibitors.	Mutations	PI3K/AKT/MTOR inhibitors		
 PTCH1	Mutations may predict sensitivity to hedgehog inhibitors	Mutations	Vismodegib, hedgehog inhibitors		
 PTEN	Biallelic inactivation may predict sensitivity to PI3K pathway inhibitors -- PI3K inhibitors, AKT inhibitors, and MTOR inhibitors.  Biallelic inactivation may predict resistance to anti-RTK therapy, including cetuximab, anti-EGFR TKIs, and trastuzumab and lapatinib.  Biallelic inactivation may predict sensitivity to PARP inhibitors	Biallelic Inactivation	PI3K/AKT/MTOR inhibitors
-PARP inhinitors		
+PARP inhibitors
 RAB35	Mutations may predict sensitivity to WNT inhibitors in breast cancer.	Mutation	WNT inhibitors		
 RAF1	Alterations may predict sensitivity to RAF inhibitors.  Amplification may predict resistance to mutant-specific RAF inhibitors (like vemurafenib). 	Mutation; Amplification; Rearrangement	Sorafenib
 RAF inhibitors		
-RARA	Transloactions predict sensitivity to ATRA and arsenic	Rearrangement; mutation	ATRA, Arsenic		
+RARA	Translocations predict sensitivity to ATRA and arsenic	Rearrangement; mutation	ATRA, Arsenic
 RB1	May be prognostic or diagnostic in some tumor types.  Loss may predict resistance to CDK inhibitors.	Biallelic Inactivation	CDK inhibitors		
 RET	Mutations and fusion may predict sensitivity to RET inhibitors	Mutation; Rearrangement	Sorafenib, vandetinib, RET Inhibitors		
 RHEB	Mutations may predict sensitivity to MTOR inhibitors	Mutation	MTOR inhibitors		
@@ -145,7 +145,7 @@ SMARCB1	Inactivation may predict sensitivity to CDK Inhibitors, Hedgehog Inhibit
 Vismodegib, Hedgehog inhibitors
 HDAC inhibitors		
 SMO	Mutations may predict sensitivity to hedgehog inhibitors	Mutations	Vismodegib, hedgehog inhibitors		
-STK11	Biallelic inactivation may predict sensitivity to MTOR inhibitors.  Biallelic inactiavtion may predict sensitivity to SRC inhibitors, FAK inhibitors, or phenformin.	Biallelic Inactivation	Everlolims, Temsirolimus, MTOR inhibitors
+STK11	Biallelic inactivation may predict sensitivity to MTOR inhibitors.  Biallelic inactivation may predict sensitivity to SRC inhibitors, FAK inhibitors, or phenformin.	Biallelic Inactivation	Everlolims, Temsirolimus, MTOR inhibitors
 Dasatinib, src inhibitors
 FAK inhibitors
 Phenformin		
