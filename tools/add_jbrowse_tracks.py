@@ -69,14 +69,14 @@ def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_li
                          '\nchunkSizeLimit = 100000000' \
                          '\ncategory = {project_name}' \
                          '\ntype = SNPCoverage' \
-                         '\nkey  = {sample}_coverage\n'.format(**locals())
+                         '\nkey  = {sample}_coverage_bam\n'.format(**locals())
         print >> tracks, '\n[ tracks.{sample}_bigwig ]\n' \
                          '\nstoreClass     = JBrowse/Store/SeqFeature/BigWig' \
                          '\nurlTemplate    = {bigwig_link}' \
                          '\ncategory = {project_name}' \
                          '\ntype = JBrowse/View/Track/Wiggle/XYPlot' \
                          '\nautoscale = local' \
-                         '\nkey  = {sample}\n'.format(**locals())
+                         '\nkey  = {sample}_coverage\n'.format(**locals())
         if vcf_link:
             print >> tracks, '\n[ tracks.{sample}_vcf ]\n' \
                          '\nstoreClass     = JBrowse/Store/SeqFeature/VCFTabix' \
