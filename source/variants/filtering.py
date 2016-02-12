@@ -52,14 +52,14 @@ def index_vcf(cnf, sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None
     info()
     info(sample_name + ((', ' + caller_name) if caller_name else '') + ': indexing')
 
-    for fpath in [pass_vcf_fpath, filt_vcf_fpath]:
-        if not cnf.reuse_intermediate and not verify_file(fpath, silent=True):
-            err(fpath + ' does not exist - cannot IGV index')
-        else:
-            if cnf.reuse_intermediate and verify_file(fpath + '.idx', silent=True):
-                info('Reusing existing ' + fpath + '.idx')
-            else:
-                igvtools_index(cnf, fpath)
+    # for fpath in [pass_vcf_fpath, filt_vcf_fpath]:
+    #     if not cnf.reuse_intermediate and not verify_file(fpath, silent=True):
+    #         err(fpath + ' does not exist - cannot IGV index')
+    #     else:
+    #         if cnf.reuse_intermediate and verify_file(fpath + '.idx', silent=True):
+    #             info('Reusing existing ' + fpath + '.idx')
+    #         else:
+    #             igvtools_index(cnf, fpath)
 
     if not cnf.reuse_intermediate and not verify_file(filt_vcf_fpath, silent=True):
         err(filt_vcf_fpath + ' does not exist - cannot gzip and tabix')
