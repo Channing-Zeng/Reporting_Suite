@@ -685,7 +685,7 @@ class BCBioStructure(BaseProjectStructure):
         is_wgs_flags = [s.is_wgs for s in self.samples]
         if len(set(is_wgs_flags)) > 2:
             critical('Error: more than 1 variant_regions file found: ' + str(is_wgs_flags))
-            self.is_wgs = is_wgs_flags[0] if is_wgs_flags else False
+        self.is_wgs = is_wgs_flags[0] if is_wgs_flags else False
         if self.is_wgs:
             self.target_type = 'genome'
             info('Using WGS parameters for filtering')
@@ -876,11 +876,12 @@ class BCBioStructure(BaseProjectStructure):
         if not sample.sv_bed:
             info('No sv_regions file for ' + sample.name)
 
+        variant_regions = False
         if sample_info['algorithm'].get('variant_regions'):  # SV regions?
             variant_regions = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['variant_regions']))
-            if not variant_regions:
-                sample.is_wgs = True
-                info('No variant_regions file for ' + sample.name + ', assuming WGS')
+        if not variant_regions:
+            sample.is_wgs = True
+            info('No variant_regions file for ' + sample.name + ', assuming WGS')
 
         if self.cnf.bed:  # Custom BED provided in command line?
             sample.bed = verify_bed(self.cnf.bed, is_critical=True)
