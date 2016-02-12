@@ -11,7 +11,7 @@ from scripts.post.vardict2mut import set_filtering_params
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.config import defaults
 from source.logger import info, step_greetings
-from source.file_utils import verify_file, add_suffix
+from source.file_utils import verify_file, add_suffix, verify_dir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
 
@@ -29,6 +29,7 @@ GENDER                = 'Gender'
 CLINICAL_NAME         = 'Oncology NGS report'
 PHENOTYPE             = 'Phenotype'
 NORM_MATCH            = 'Normal Match'
+ABNORMAL_NAME         = 'Flagged regions'
 
 
 metric_storage = MetricStorage(
@@ -43,6 +44,7 @@ metric_storage = MetricStorage(
         Metric(MUTATIONS_NAME),
         Metric(MUTATIONS_SINGLE_NAME),
         Metric(MUTATIONS_PAIRED_NAME),
+        Metric(ABNORMAL_NAME),
     ]),
     sections=[ReportSection(metrics=[
         Metric(PRE_FASTQC_NAME),
@@ -185,6 +187,11 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
         recs.append(_make_url_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
         recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
+
+        if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
+            recs.append(_make_url_record(OrderedDict([(region, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region + '.html'))
+                                          for region in ['amplicons', 'exons']]),
+                             general_section.find_metric(ABNORMAL_NAME), base_dirpath))
 
     return recs
 
