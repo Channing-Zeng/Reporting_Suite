@@ -223,7 +223,7 @@ def postprocess_vcf(cnf,
 
     if cnf.reuse_intermediate \
             and verify_file(var_sample.filt_vcf_fpath) \
-            and verify_file(var_sample.pass_filt_vcf_fpath)\
+            and verify_file(var_sample.pass_filt_vcf_fpath) \
             and verify_file(var_sample.filt_tsv_fpath):
         info(var_sample.filt_vcf_fpath + ' and ' + var_sample.pass_filt_vcf_fpath + ' exist; reusing.')
 
@@ -237,7 +237,7 @@ def postprocess_vcf(cnf,
             with open(filt_tx, 'w') as filt_f, open(pass_tx, 'w') as pass_f:
                 info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': opened ' +
                      var_sample.anno_vcf_fpath + ', writing to ' +
-                     var_sample.filt_vcf_fpath + ' and ' + var_sample.pass_filt_vcf_fpath)
+                     ungz + ' and ' + var_sample.pass_filt_vcf_fpath)
 
                 for l in vcf_f:
                     if l.startswith('#'):

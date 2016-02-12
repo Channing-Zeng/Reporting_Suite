@@ -9,7 +9,7 @@ import os
 import sys
 import shutil
 from optparse import SUPPRESS_HELP
-from os.path import dirname, join, basename
+from os.path import dirname, join, basename, splitext
 
 import source
 from source import VarSample
@@ -100,8 +100,12 @@ def main(args):
         var_s = source.VarSample(cnf.sample, cnf.output_dir)
         var_s.anno_vcf_fpath = cnf.vcf
         var_s.varfilter_dirpath = var_s.dirpath
-        var_s.filt_vcf_fpath = join(cnf.output_dir, add_suffix(basename(cnf.vcf), 'filt'))
-        var_s.pass_filt_vcf_fpath = add_suffix(var_s.filt_vcf_fpath, 'pass')
+
+        ungz_anno_vcf_fpath = var_s.anno_vcf_fpath if not var_s.anno_vcf_fpath.endswith('.gz') else splitext(var_s.anno_vcf_fpath)[0]
+        ungz_filt_vcf_fpath = join(cnf.output_dir, add_suffix(basename(ungz_anno_vcf_fpath), 'filt'))
+        var_s.filt_vcf_fpath = ungz_filt_vcf_fpath + '.gz'
+        var_s.pass_filt_vcf_fpath = add_suffix(ungz_filt_vcf_fpath, 'pass')
+
         var_s.varfilter_result = vcf2txt_res_fpath
         var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
