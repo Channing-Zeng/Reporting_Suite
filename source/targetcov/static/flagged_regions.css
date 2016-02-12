@@ -12,7 +12,7 @@ table.report_table {
   vertical-align:top; }
 
 .expandable_row.expanded span {
-  white-space: normal; }
+  white-space: pre; }
 
 .expandable_gene_row.collapsed td.td_position:after {
   content: ' (click to expand)'; }
