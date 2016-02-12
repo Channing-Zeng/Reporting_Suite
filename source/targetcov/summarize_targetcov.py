@@ -5,7 +5,7 @@ from os.path import relpath, join, exists, dirname, basename, abspath
 from collections import OrderedDict, defaultdict
 
 import source
-§from source.clinical_reporting.clinical_reporting import gray
+from source.clinical_reporting.clinical_reporting import gray
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import verify_bed
 from source.reporting.reporting import FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, PerRegionSampleReport, BaseReport, \
@@ -233,9 +233,9 @@ def _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, muta
             Metric('Position', td_class='td_position', min_width=70, max_width=120),
             Metric('Ave depth', td_class='long_expanded_line right_aligned', max_width=100, with_heatmap=False),
             Metric('#HS', quality='Less is better', align='right', max_width=30),
-            Metric('Hotspots & Deleterious', td_class='long_expanded_line', max_width=200),
+            Metric('Hotspots & Deleterious', td_class='long_expanded_line',  min_width=100, max_width=150),
             Metric('Found mutations', td_class='long_expanded_line', min_width=150, max_width=200),
-            Metric('Samples', td_class='long_expanded_line', min_width=150, max_width=150),
+            Metric('Samples', td_class='long_expanded_line', min_width=100, max_width=120),
             Metric('Possible reasons', td_class='long_expanded_line', max_width=120)]
     flagged_regions_metric_storage = MetricStorage(sections=[ReportSection(metrics=flagged_regions_metrics)])
     flagged_regions_report_dirpath = bcbio_structure.flagged_regions_dirpath
@@ -339,7 +339,7 @@ def _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, muta
                                        num=sum(avg_depth_per_samples)/len(avg_depth_per_samples))
                         reg.add_record('Hotspots & Deleterious', '')
                         reg.add_record('Possible reasons', ', '.join(all_tricky_regions))
-                        reg.add_record('Samples', '\n'.join(all_unique_samples))
+                        reg.add_record('Samples', ',\n'.join(all_unique_samples))
                         reg.add_record('Found mutations', '')
                         if sum(num_hotspots) == 0:
                             reg.class_ += non_hs_class
@@ -352,8 +352,10 @@ def _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, muta
                         reg.add_record('Gene', r.gene_name)
                         reg.add_record('Chr', r.chrom.replace('chr', ''))
                         avg_depths = [float(depth) for depth in r.avg_depth if depth != '.']
-                        reg.add_record('Ave depth', slash_with_zero_space.join([format(depth, '.2f') if depth != '.' else depth for depth in avg_depths]), num=sum(avg_depths)/len(avg_depths))
-                        reg.add_record('Position', Metric.format_value(r.start, human_readable=True, is_html=True) + '-' + Metric.format_value(r.end, human_readable=True, is_html=True))
+                        reg.add_record('Ave depth', slash_with_zero_space.join([format(depth, '.2f') if depth != '.'
+                                                                                else depth for depth in avg_depths]), num=sum(avg_depths)/len(avg_depths))
+                        reg.add_record('Position', Metric.format_value(r.start, human_readable=True, is_html=True) + '-' +
+                                       Metric.format_value(r.end, human_readable=True, is_html=True))
                         reg.add_record('#HS', len(r.missed_by_db))
                         if len(r.missed_by_db) == 0:
                             reg.class_ += non_hs_class
@@ -363,13 +365,13 @@ def _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, muta
                                         + ': ' + ','.join([h.replace('/', slash_with_zero_space) for h in hs_by_pos[pos]]) for pos in uniq_hs_positions]
                         reg.add_record('Hotspots & Deleterious', '\n'.join(hs_breakable))
                         reg.add_record('Possible reasons', ', '.join(r.extra_fields))
-                        reg.add_record('Samples', '\n'.join(r.sample_name))
+                        reg.add_record('Samples', ',\n'.join(r.sample_name))
                         found_mutations = []
                         for sample in samples:
                             if sample.name in r.sample_name:
                                 for mut in mutations[sample.name]:
                                     if mut.gene.name == r.gene_name and r.start <= mut.pos <= r.end:
-                                        found_mutations.append(gray(Metric.format_value(mut.pos, human_readable=True, is_html=True)) + ':' + mut.ref + '>' + mut.alt + '(' + sample.name +')')
+                                        found_mutations.append(gray(Metric.format_value(mut.pos, human_readable=True, is_html=True)) + ':' + mut.ref + '>' + mut.alt + ' (' + sample.name +')')
                         reg.add_record('Found mutations', '\n'.join(found_mutations))
             flagged_regions_report.expandable = True
             flagged_regions_report.unique = True
