@@ -369,6 +369,9 @@ class DatasetSample:
         self.name = name
         self.index = index
 
+        self.l_fpath = None
+        self.r_fpath = None
+
         self.lane_numbers = set()
         self.fcid = None  # for HiSeq
 

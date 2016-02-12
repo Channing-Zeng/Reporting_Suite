@@ -56,6 +56,8 @@ def proc_opts():
     #     jira_url = args[0]
 
     fastq_fpaths = [verify_file(fpath) for fpath in args]
+    fastq_fpaths = [fpath for fpath in fastq_fpaths if fpath]
+    info(str(len(fastq_fpaths)) + ' fastq files')
 
     run_cnf = determine_run_cnf(opts)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
@@ -134,6 +136,9 @@ def main():
         if fn.endswith('_R2'):
             sname = fn[:-3]
             r_fpath = fastq_fpath
+        if not sname:
+            sname = fn
+            info('Cannot detect file for ' + sname)
 
         if sname in sample_by_name:
             s = sample_by_name[sname]
@@ -148,9 +153,9 @@ def main():
     samples = []
     for s in sample_by_name.values():
         if not s.l_fpath:
-            err('ERROR: fpr sample ' + s.name + ', left reads not found')
+            err('ERROR: for sample ' + s.name + ', left reads not found')
         if not s.r_fpath:
-            err('ERROR: fpr sample ' + s.name + ', left reads not found')
+            err('ERROR: for sample ' + s.name + ', left reads not found')
         samples.append(s)
 
     threads = len(samples)
