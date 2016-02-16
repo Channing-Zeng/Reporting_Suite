@@ -172,10 +172,10 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
 
-        if Steps.contains(cnf.steps, 'ClinicalReport') or \
-                Steps.contains(cnf.steps, 'ClinicalReports') or \
-                Steps.contains(cnf.steps, source.clinreport_name):
-            self.steps.extend([self.clin_report])
+        # if Steps.contains(cnf.steps, 'ClinicalReport') or \
+        #         Steps.contains(cnf.steps, 'ClinicalReports') or \
+        #         Steps.contains(cnf.steps, source.clinreport_name):
+        self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
             self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
@@ -828,17 +828,17 @@ class BCBioRunner:
                         wait_for_steps=wait_for_steps,
                         threads=self.threads_per_sample)
 
-                    self._submit_job(
-                        self.clin_report_perl,
-                        sample.name,
-                        sample=sample.name, genome=sample.genome,
-                        match_cmdl=match_cmdl, mutations_cmdl=mutation_perl_cmdl,
-                        varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
-                        seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
-                        targqc_summary_cmdl=targqc_summary_cmdl,
-                        project_report_path=self.bcbio_structure.project_report_html_fpath,
-                        wait_for_steps=wait_for_steps,
-                        threads=self.threads_per_sample)
+                    # self._submit_job(
+                    #     self.clin_report_perl,
+                    #     sample.name,
+                    #     sample=sample.name, genome=sample.genome,
+                    #     match_cmdl=match_cmdl, mutations_cmdl=mutation_perl_cmdl,
+                    #     varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
+                    #     seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
+                    #     targqc_summary_cmdl=targqc_summary_cmdl,
+                    #     project_report_path=self.bcbio_structure.project_report_html_fpath,
+                    #     wait_for_steps=wait_for_steps,
+                    #     threads=self.threads_per_sample)
 
             if self.bw_converting in self.steps:
                 self._submit_job(self.bw_converting,

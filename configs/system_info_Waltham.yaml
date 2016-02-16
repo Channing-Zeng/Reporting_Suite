@@ -1,7 +1,7 @@
 resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-      path: /group/ngs/src/snpEff4.2/snpEff.jar
+    path: /group/ngs/src/snpEff4.2/snpEff.jar
     config: /group/ngs/src/snpEff4.2/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]

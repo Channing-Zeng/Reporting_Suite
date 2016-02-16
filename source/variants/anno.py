@@ -148,7 +148,7 @@ def get_db_path(cnf, dbconf, dbname):
         db_path = dbconf.get('path')
         if not db_path:
             err('Please, provide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
-            return
+            return None
     return verify_file(db_path, is_critical=True)
 
 
@@ -197,11 +197,13 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         annotations = ','.join('INFO/' + a for a in dbconf.get('annotations'))
         if dbname in ('cosmic', 'dbsnp'):
             annotations += ',ID'
-        cmdl = '{bcftools} annotate -a ' + get_db_path(cnf, dbconf, dbname) + ' -c ' + annotations + ' {vcf_fpath}'
-        res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], dbname))
-        if res:
-            vcf_fpath = res
-            vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
+        db_fpath = get_db_path(cnf, dbconf, dbname)
+        if db_fpath:
+            cmdl = '{bcftools} annotate -a ' +  + ' -c ' + annotations + ' {vcf_fpath}'
+            res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], dbname))
+            if res:
+                vcf_fpath = res
+                vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
 
     verify_vcf(vcf_fpath, is_critical=True)
 
