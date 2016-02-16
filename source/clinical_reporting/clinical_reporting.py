@@ -387,7 +387,7 @@ class BaseClinicalReporting:
             mut_info_by_gene = dict()
 
             for gene in e.key_gene_by_name.values():
-                mut_info_by_gene[gene.name] = [('p.' + m.aa_change if m.aa_change else '.') for m in gene.mutations]
+                mut_info_by_gene[gene.name] = [('p.' + m.aa_change if m.aa_change else '.') for m in gene.mutations if m.is_canonical]
                 for se in gene.seq2c_events:
                     if se and (se.is_amp() or se.is_del()):
                         mut_info_by_gene[gene.name].append(se.amp_del + ', ' + se.fragment)
@@ -482,6 +482,8 @@ class BaseClinicalReporting:
             return None
         from source.jira_utils import retrieve_jira_info
         jira_case = retrieve_jira_info(jira_url)
+        if not jira_case:
+            return None
         container_id = re.findall(r'_[A-Z0-9]+XX', jira_case.data_hub)  # '/ngs/oncology/datasets/hiseq4000/160115_K00172_0044_H3GCYBBXX'
         if container_id:
             container_id = container_id[0][1:]
