@@ -16,7 +16,7 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
 
     jbrowse_dirpath = join(jbrowse_data_path, 'tracks')
     jbrowse_project_dirpath = join(jbrowse_dirpath, bcbio_structure.project_name)
-    if verify_dir(jbrowse_project_dirpath):
+    if verify_dir(jbrowse_project_dirpath, silent=True):
         warn('Warning: directory is exists in JBrowse folder.')
 
     safe_mkdir(jbrowse_project_dirpath)
