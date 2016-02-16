@@ -546,41 +546,65 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
 
     info('Reading mutations from ' + mutations_fpath)
     alts_met_before = set()
+    sample_col = None
+    chr_col = None
+    pos_col = None
+    ref_col = None
+    alt_col = None
+    class_col = None
+    type_col = None
+    allele_freq_col = None
+    gene_col = None
+    depth_col = None
+    codon_chg_col = None
+    aa_len_col = None
+    aa_chg_col = None
+    cdna_chg_col = None
+    transcript_col = None
+    status_col = None
+    reason_col = None
+    ids_col = None
+    var_type_col = None
+
     with open(mutations_fpath) as f:
-        status_col = None
-        reason_col = None
         for i, l in enumerate(f):
             if i == 0:
                 header = l.strip().split('\t')
-                status_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
+                sample_col = header.index('Sample')
+                chr_col = header.index('Chr')
+                ids_col = header.index('ID')
+                pos_col = header.index('Start')
+                ref_col = header.index('Ref')
+                alt_col = header.index('Alt')
+                class_col = header.index('Var_Class')
+                type_col = header.index('Type')
+                var_type_col = header.index('Var_Type')
+                codon_chg_col = header.index('Codon_Change')
+                aa_chg_col = header.index('Amino_Acid_Change')
+                cdna_chg_col = header.index('cDNA_Change')
+                aa_len_col = header.index('Amino_Acid_Length')
+                allele_freq_col = header.index('AlleleFreq')
+                gene_col = header.index('Gene')
+                depth_col = header.index('Depth')
+                transcript_col = header.index('Transcript')
+                try:
+                    status_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
+                except ValueError:
+                    status_col = None
                 try:
                     reason_col = header.index('Reason')
                 except ValueError:
                     reason_col = None
                 continue
             fs = l.strip().split('\t')
-            reason = None
-            if len(fs) >= 67:
-                sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
-                    aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
-                    cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
-                    mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, vtype, status1, paired_pval, paired_oddratiom, \
-                    m_depth, m_af, m_vd, m_bias, m_pmean, m_pstd, m_qual, m_qstd, m_hiaf, m_mq, m_sn, m_adjaf, m_nm, \
-                    n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:67]  # 67 of them
-                if len(fs) >= 68:
-                    reason = fs[-1]
-            else:
-                sample_name, chrom, start, ids, ref, alt, type_, effect, func, codon_change, aa_change, cdna_change, \
-                    aa_len, gname, transcr_biotype, coding, transcript, exon, cosmic_cds_change, cosmic_aa_change, \
-                    cosmic_cnt, end, depth, af, bias, pmean, pstd, qual, qstd, sbf, gmaf, vd, clnsif, oddratio, hiaf, \
-                    mq, sn, adjaf, nm, shift3, msi, dbsnpbuildid, \
-                    n_sample, n_var, pcnt_sample, ave_af, filt, var_type, var_class, status = fs[:50]  # 50 of them
-                if len(fs) == 52:  # this is just for buggy local data
-                    reason = fs[51]
-                if len(fs) == 51:
-                    reason = fs[50]
-            status = fs[status_col] if (status_col and status_col < len(fs)) else status
-            reason = fs[reason_col] if (reason_col and reason_col < len(fs)) else reason
+            sample_name, chrom, start, ref, alt, gname, transcript = fs[sample_col], fs[chr_col], fs[pos_col], fs[ref_col], \
+                                                             fs[alt_col], fs[gene_col], fs[transcript_col]
+            codon_change, cdna_change, aa_change, aa_len = fs[codon_chg_col], fs[cdna_chg_col], fs[aa_chg_col], fs[aa_len_col]
+            ids, type_, var_type, var_class = fs[ids_col], fs[type_col], fs[var_type_col], fs[class_col]
+            depth, af = fs[depth_col], fs[allele_freq_col]
+            status = fs[status_col] if status_col else None
+            reason = fs[reason_col] if reason_col and reason_col < len(fs) else None
+
             if sample_name == sample.name:
                 if gname in key_gene_by_name:
                     if (chrom, start, ref, alt, transcript) in alts_met_before:
