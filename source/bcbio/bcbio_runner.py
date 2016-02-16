@@ -696,7 +696,7 @@ class BCBioRunner:
                     print ''
                     info()
 
-            if not self.is_wgs:
+            if not self.is_wgs and self.varfilter in self.steps:
                 info('Not WGS, this processing cohorts')
                 for c in self.bcbio_structure.variant_callers.values():
                     if c.single_vcf_by_sample:

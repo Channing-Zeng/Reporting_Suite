@@ -456,9 +456,15 @@ class BaseClinicalReporting:
             #     d['target_section']['bed_path'] = 'http://blue.usbod.astrazeneca.net/~klpf990/reference_data/genomes/Hsapiens/hg19/bed/Panel-IDT_PanCancer_AZSpike_V1.bed'
 
         d['analysis_type'] = experiment.sample.normal_match
-        sample_type = self.get_data_from_lims(experiment.cnf, experiment.project_name, experiment.sample.name)
-        if sample_type:
-            d['sample_type'] = ', '.join(sample_type)
+
+        try:
+            sample_type = self.get_data_from_lims(experiment.cnf, experiment.project_name, experiment.sample.name)
+        except:
+            pass
+        else:
+            if sample_type:
+                d['sample_type'] = ', '.join(sample_type)
+
         d['genome_build'] = self.cnf.genome.name  # TODO: get genome build from the relevant project, not from the default config for this new run
         # approach_dict['min_depth'] = Metric.format_value(min_depth, is_html=True)
         if experiment.ave_depth is not None:
