@@ -126,6 +126,7 @@ annotation:
     - CNT
     - AA
     - CDS
+    - GENE
 
   oncomine:
     all-annotations: False

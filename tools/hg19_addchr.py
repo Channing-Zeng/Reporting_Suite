@@ -13,8 +13,8 @@ if len(sys.argv) > 2:
 for l in inp:
     if l and not l.startswith('#') and not l.startswith('chr'):
         l = 'chr' + l
-        # if l.startswith('chrMT'):
-        #     l = l[:4] + l[5:]
+        if l.startswith('chrMT'):
+            l = l[:4] + l[5:]
     out.write(l)
 
 inp.close()
