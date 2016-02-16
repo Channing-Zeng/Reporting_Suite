@@ -292,7 +292,8 @@ class BCBioRunner:
             script=join('scripts', 'post', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
-            paramln=varfilter_paramline
+            paramln=varfilter_paramline,
+            run_on_chara=True
         )
 
         self.vcf2txt_single = Step(cnf, run_id,
@@ -301,7 +302,8 @@ class BCBioRunner:
             script=join('VarDict', 'vcf2txt.pl'),
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'vcf2txt-single-{caller}.log'),
-            paramln='{paramln}'
+            paramln='{paramln}',
+            run_on_chara=True
         )
         self.vcf2txt_paired = Step(cnf, run_id,
             name='vcf2txt_paired', short_name='vcf2txt_paired',
@@ -309,7 +311,8 @@ class BCBioRunner:
             script=join('VarDict', 'vcf2txt.pl'),
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'vcf2txt-paired-{caller}.log'),
-            paramln='{paramln}'
+            paramln='{paramln}',
+            run_on_chara=True
         )
 
         # if self.is_wgs:

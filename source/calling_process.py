@@ -29,7 +29,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
          stdin_fpath=None, exit_on_error=True, silent=False,
 
          overwrite=False, check_output=False, verify_output_not_empty=True, return_proc=False, print_stderr=True,
-         return_err_code=False, stderr_dump=None,
+         return_err_code=False, stderr_dump=None, max_number_of_tries=20,
 
          env_vars=None):
     """
@@ -289,10 +289,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         log_f.write('')
             return output_fpath
 
-    def do_handle_oserror(cmdl, out_fpath=None, stderr_dump=None):
+    def do_handle_oserror(cmdl, out_fpath=None, stderr_dump=None, max_number_of_tries=20):
         res_ = None
         counter = 0
-        max_number_of_tries = 200
         slept = 0
         timeout = 30
         limit = 60 * 10
@@ -322,9 +321,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
     res = None  # = proc or output_fpath
     if output_fpath and not output_is_dir:
         with file_transaction(cnf.work_dir, output_fpath) as tx_out_fpath:
-            res = do_handle_oserror(cmdline, tx_out_fpath, stderr_dump=stderr_dump)
+            res = do_handle_oserror(cmdline, tx_out_fpath, stderr_dump=stderr_dump, max_number_of_tries=max_number_of_tries)
     else:
-        res = do_handle_oserror(cmdline, stderr_dump=stderr_dump)
+        res = do_handle_oserror(cmdline, stderr_dump=stderr_dump, max_number_of_tries=max_number_of_tries)
         if res is not None:
             clean()
             return res

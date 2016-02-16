@@ -736,7 +736,7 @@ def igvtools_index(cnf, vcf_fpath):
     return vcf_fpath + '.idx'
 
 
-def bgzip_and_tabix(cnf, vcf_fpath):
+def bgzip_and_tabix(cnf, vcf_fpath, **kwargs):
     bgzip = get_system_path(cnf, 'bgzip')
     tabix = get_system_path(cnf, 'tabix')
 
@@ -755,11 +755,11 @@ def bgzip_and_tabix(cnf, vcf_fpath):
 
     info('BGzipping VCF')
     cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
-    call(cnf, cmdline, None, exit_on_error=False)
+    call(cnf, cmdline, None, **kwargs)
 
     info('Tabixing VCF')
     cmdline = '{tabix} {gzipped_fpath}'.format(**locals())
-    call(cnf, cmdline, exit_on_error=False)
+    call(cnf, cmdline, **kwargs)
 
     return gzipped_fpath
 

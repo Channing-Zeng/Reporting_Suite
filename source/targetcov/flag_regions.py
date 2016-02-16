@@ -83,8 +83,10 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
 
                 # Report cov for Hotspots
                 for db in vcf_dbs:
-                    _report_normalize_coverage_for_variant_sites(cnf, sample, ave_depth, db, selected_regions_bed_fpath, selected_regions,
+                    res = _report_normalize_coverage_for_variant_sites(cnf, sample, ave_depth, db, selected_regions_bed_fpath, selected_regions,
                                                                  depth_cutoff, region_type, coverage_type)
+                    if not res:
+                        return None
 
             report = make_flat_region_report(sample, selected_regions, depth_threshs)
             flagged_txt_fpath = add_suffix(add_suffix(sample.flagged_txt, region_type), coverage_type)
@@ -255,14 +257,16 @@ def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath, reg
     bedtools = get_system_path(cnf, 'bedtools')
     if not cnf.reuse_intermediate or not verify_file(vcf_bed_intersect, silent=True, is_critical=False):
         cmdline = '{bedtools} intersect -header -a {vcf_fpath} -b {bed_fpath} -wo'.format(**locals())
-        res = call(cnf, cmdline, output_fpath=vcf_bed_intersect)
+        res = call(cnf, cmdline, output_fpath=vcf_bed_intersect, max_number_of_tries=1, exit_on_error=False)
+        if not res:
+            return None, None, None, None
 
     regions_in_order = []
     regions_set = set()
     vars_by_region = defaultdict(dict)
     var_by_site = dict()
 
-    clipped_vcf_fpath = intermediate_fname(cnf, vcf_fpath, '_' + region_type + '_clip')
+    clipped_vcf_fpath = intermediate_fname(cnf, splitext(basename(vcf_fpath))[0], '_' + region_type + '_clip')
 
     with open(vcf_bed_intersect) as f, open(clipped_vcf_fpath, 'w') as clip_vcf:
         for l in f:
@@ -292,7 +296,7 @@ def _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath, reg
                 var_by_site[(chrom, pos, ref, alt)] = var
                 clip_vcf.write('\t'.join([chrom, pos, id_, ref, alt, qual, filt, info_fields]) + '\n')
 
-    clipped_gz_vcf_fpath = bgzip_and_tabix(cnf, clipped_vcf_fpath)
+    clipped_gz_vcf_fpath = bgzip_and_tabix(cnf, clipped_vcf_fpath, max_number_of_tries=1, exit_on_error=False)
 
     return clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site
 
@@ -409,6 +413,8 @@ def _report_normalize_coverage_for_variant_sites(cnf, sample, ave_sample_depth, 
 
     clipped_gz_vcf_fpath, regions_in_order, vars_by_region, var_by_site = \
         _read_vcf_records_per_bed_region_and_clip_vcf(cnf, vcf_fpath, bed_fpath, region_type, sample)
+    if not clipped_gz_vcf_fpath:
+        return None
 
     depth_by_var = _get_depth_for_each_variant(cnf, var_by_site, clipped_gz_vcf_fpath, bed_fpath, sample.bam)
 

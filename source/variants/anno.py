@@ -198,7 +198,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         if dbname in ('cosmic', 'dbsnp'):
             annotations += ',ID'
         cmdl = '{bcftools} annotate -a ' + get_db_path(cnf, dbconf, dbname) + ' -c ' + annotations + ' {vcf_fpath}'
-        res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], 'dbname'))
+        res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], dbname))
         if res:
             vcf_fpath = res
             vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)

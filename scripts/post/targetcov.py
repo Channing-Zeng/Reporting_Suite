@@ -186,6 +186,9 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
     try:
         info('Generating flagged regions report...')
         flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name)
+        if not flagged_report:
+            err('Flagged regions report was not generated')
+            err()
     except:
         err(format_exc())
 
