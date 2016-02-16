@@ -92,9 +92,9 @@ def main():
                     f.write('\t' + str(e) + '\n')
 
     for g in gene_by_name.values():
-        out.write(g)
+        out.write(g.__str__())
         for e in g.exons:
-            out.write(e)
+            out.write(e.__str__())
 
 
 def _approve(gene_by_name, synonyms_fpath):
@@ -370,8 +370,12 @@ def _proc_ucsc(inp, out):  #, approved_gene_by_name, approved_gnames_by_prev_gna
 
             # out.write('\t'.join([ucsc_chrom, str(min(txStart, cdsStart)), str(max(txEnd, cdsEnd)),
             #                      gene_symbol, '.', strand, 'Gene', '.']) + '\n')
-            if gene_symbol not in gene_by_name:
+            if gene_symbol not in gene_by_name and ucsc_chrom not in ['chrX', 'chrY']:
                 gene = Gene(gene_symbol, ucsc_chrom, min(txStart, cdsStart), str(max(txEnd, cdsEnd)), strand)
+                gene_by_name[gene_symbol] = gene
+            elif ucsc_chrom in ['chrX', 'chrY']:
+                gene = Gene(gene_symbol, ucsc_chrom, min(txStart, cdsStart), str(max(txEnd, cdsEnd)), strand)
+                gene_symbol = gene_symbol + ucsc_chrom
                 gene_by_name[gene_symbol] = gene
             gene = gene_by_name[gene_symbol]
 
