@@ -291,7 +291,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'varfilter.py'),
             dir_name=BCBioStructure.varfilter_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varfilter_name + '-{caller}.log'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varfilter_name + '-{caller}.log'),
             paramln=varfilter_paramline,
             run_on_chara=True
         )
@@ -954,7 +954,8 @@ class BCBioRunner:
             if not self.is_wgs:
                 combine_muts(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
 
-            finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
+            if self.varfilter in self.steps:
+                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
 
             add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
 
