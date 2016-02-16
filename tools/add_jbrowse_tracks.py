@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 from genericpath import isfile
-from os.path import join, basename, splitext
+from os.path import join, basename, splitext, isdir
 
 from source.calling_process import call
 from source.file_utils import verify_dir, safe_mkdir, verify_file, splitext_plus
@@ -16,9 +16,10 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
 
     jbrowse_dirpath = join(jbrowse_data_path, 'tracks')
     jbrowse_project_dirpath = join(jbrowse_dirpath, bcbio_structure.project_name)
-    if verify_dir(jbrowse_project_dirpath, silent=True):
-        warn('Warning: directory is exists in JBrowse folder.')
 
+    if isdir(jbrowse_project_dirpath):
+        warn('Warning: directory exists in JBrowse folder.')
+    
     safe_mkdir(jbrowse_project_dirpath)
     jbrowse_tracks_fpath = join(jbrowse_data_path, 'tracks.conf')
 

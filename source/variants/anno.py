@@ -199,7 +199,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
             annotations += ',ID'
         db_fpath = get_db_path(cnf, dbconf, dbname)
         if db_fpath:
-            cmdl = '{bcftools} annotate -a ' +  + ' -c ' + annotations + ' {vcf_fpath}'
+            cmdl = '{bcftools} annotate -a ' + db_fpath + ' -c ' + annotations + ' {vcf_fpath}'
             res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], dbname))
             if res:
                 vcf_fpath = res

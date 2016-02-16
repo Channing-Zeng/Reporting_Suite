@@ -340,6 +340,7 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
                     if l and not l.startswith('#'):
                         fs = l.split('\t')
                         chrom, start, end, symbol = fs[:4]
+                        gene_by_name[symbol].chrom = chrom
                         gene_by_name[symbol].start = int(start)
                         gene_by_name[symbol].end = int(end)
                         if len(fs) >= 8:

@@ -957,6 +957,7 @@ class BCBioRunner:
             finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
 
             add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
+
             html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
 
             html_report_url = None
