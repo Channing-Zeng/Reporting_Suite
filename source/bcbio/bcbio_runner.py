@@ -841,13 +841,13 @@ class BCBioRunner:
                     #     threads=self.threads_per_sample)
 
             if self.bw_converting in self.steps:
-                self._submit_job(self.bw_converting,
-                                 sample=sample.name, genome=sample.genome,
-                                 bam=sample.bam,
-                                 wait_for_steps=[
-                                    self.clin_report.job_name(s.name)
-                                    for s in self.bcbio_structure.samples
-                                    if self.clin_report in self.steps])
+                for sample in self.bcbio_structure.samples:
+                    self._submit_job(self.bw_converting,
+                                     sample.name,
+                                     sample=sample.name, genome=sample.genome,
+                                     bam=sample.bam,
+                                     wait_for_steps=[self.clin_report.job_name(s.name)
+                                                     for s in self.bcbio_structure.samples if self.clin_report in self.steps])
 
             # TargetSeq reports
             if self.abnormal_regions in self.steps:
