@@ -179,11 +179,11 @@ annotation:
 #    DBA_1J.snps:      /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/DBA_1J.mgp.v5.snps.dbSNP142.vcf.gz
 #    DBA_1J.indels:    /ngs/reference_data/genomes/Mmusculus/mm10/variation/sanger_strain_specific/DBA_1J.mgp.v5.indels.dbSNP142.normed.vcf.gz
 
-  tracks:
-  - cpgIslandExt
-  - dgvMerged
-  - genomicSuperDups
-  - rptmk
+#  tracks:
+#  - cpgIslandExt
+#  - dgvMerged
+#  - genomicSuperDups
+#  - rptmk
 
   tsv_fields:
   - SAMPLE                        : Sample

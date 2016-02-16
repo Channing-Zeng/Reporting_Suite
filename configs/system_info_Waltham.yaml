@@ -1,7 +1,7 @@
 resources:
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff4.2/snpEff.jar
+      path: /group/ngs/src/snpEff4.2/snpEff.jar
     config: /group/ngs/src/snpEff4.2/snpEff.config
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
@@ -119,7 +119,7 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz

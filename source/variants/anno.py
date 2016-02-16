@@ -142,65 +142,79 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     return input_fpath
 
 
+def get_db_path(cnf, dbconf, dbname):
+    db_path = cnf['genome'].get(dbname)
+    if not db_path:
+        db_path = dbconf.get('path')
+        if not db_path:
+            err('Please, provide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
+            return
+    return verify_file(db_path, is_critical=True)
+
+
 def run_annotators(cnf, vcf_fpath, bam_fpath):
-    debug('run_annotators')
-    annotated = False
     original_vcf = cnf.vcf
 
     db_section_by_name = OrderedDict((dbname, cnf.annotation[dbname])
         for dbname in ['dbsnp', 'clinvar', 'cosmic', 'oncomine']
         if dbname in cnf.annotation and not cnf.annotation[dbname].get('skip-annotation'))
 
-    if not cnf.no_check:
-        to_delete_id_ref = []
-        if 'dbsnp' in db_section_by_name.keys():
-            info('Removing IDs from dbsnp as rs*')
-            to_delete_id_ref.append('rs')
-        if 'cosmic' in db_section_by_name.keys():
-            info('Removing IDs from dbsnp as COS*')
-            to_delete_id_ref.append('COS')
+    # if not cnf.no_check:
+    #     to_delete_id_ref = []
+    #     if 'dbsnp' in db_section_by_name.keys():
+    #         info('Removing IDs from dbsnp as rs*')
+    #         to_delete_id_ref.append('rs')
+    #     if 'cosmic' in db_section_by_name.keys():
+    #         info('Removing IDs from dbsnp as COS*')
+    #         to_delete_id_ref.append('COS')
+    #
+    #     def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
+    #         if rec.ID:
+    #             if isinstance(rec.ID, basestring):
+    #                 if any(rec.ID.startswith(pref) for pref in to_delete_id_ref):
+    #                     rec.ID = None
+    #             else:
+    #                 rec.ID = [id_ for id_ in rec.ID if not any(id_.startswith(pref) for pref in to_delete_id_ref)]
+    #
+    #         if not rec.FILTER:
+    #             rec.FILTER = 'PASS'
+    #
+    #         return rec
+    #
+    #     info('Removing previous rs* and COS* IDs')
+    #     vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
 
-        def delete_ids(rec):  # deleting existing dbsnp and cosmic ID annotations
-            if rec.ID:
-                if isinstance(rec.ID, basestring):
-                    if any(rec.ID.startswith(pref) for pref in to_delete_id_ref):
-                        rec.ID = None
-                else:
-                    rec.ID = [id_ for id_ in rec.ID if not any(id_.startswith(pref) for pref in to_delete_id_ref)]
+    bcftools = get_system_path(cnf, 'bcftools')
 
-            if not rec.FILTER:
-                rec.FILTER = 'PASS'
+    cmdl = '{bcftools} annotate --remove ID {vcf_fpath}'
+    res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(vcf_fpath, 'rmid'))
+    if res:
+        vcf_fpath = res
+        vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
 
-            return rec
-
-        info('Removing previous rs* and COS* IDs')
-        vcf_fpath = iterate_vcf(cnf, vcf_fpath, delete_ids, suffix='delID')
-
-    for dbname, dbconf in db_section_by_name.items():
-        res = _snpsift_annotate(cnf, dbconf, dbname, vcf_fpath)
+    for dbname, dbconf in db_section_by_name.items() + cnf.annotation.get('custom_vcfs', dict()).items():
+        step_greetings('Annotating using ' + dbname)
+        annotations = ','.join('INFO/' + a for a in dbconf.get('annotations'))
+        if dbname in ('cosmic', 'dbsnp'):
+            annotations += ',ID'
+        cmdl = '{bcftools} annotate -a ' + get_db_path(cnf, dbconf, dbname) + ' -c ' + annotations + ' {vcf_fpath}'
+        res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], 'dbname'))
         if res:
             vcf_fpath = res
-            annotated = True
+            vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
 
-    if 'custom_vcfs' in cnf.annotation:
-        for dbname, custom_conf in cnf.annotation['custom_vcfs'].items():
-            res = _snpsift_annotate(cnf, custom_conf, dbname, vcf_fpath)
-            if res:
-                vcf_fpath = res
-                annotated = True
+    verify_vcf(vcf_fpath, is_critical=True)
 
     if 'dbnsfp' in cnf.annotation:
         res = _snpsift_db_nsfp(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
-            annotated = True
 
     if 'snpeff' in cnf.annotation:
         res, summary_fpath, genes_fpath = _snpeff(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
-            annotated = True
-
+            verify_vcf(vcf_fpath, is_critical=True)
             final_summary_fpath = join(cnf.output_dir, basename(summary_fpath))
             final_genes_fpath = join(cnf.output_dir, basename(genes_fpath))
             if isfile(final_summary_fpath): os.remove(final_summary_fpath)
@@ -221,7 +235,6 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         for track_fapth in track_fapths:
             res = _tracks(cnf, track_fapth, vcf_fpath)
             if res:
-                annotated = True
                 vcf_fpath = res
 
     step_greetings('Intersection with database VCFs...')
@@ -229,19 +242,14 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         for key, db_fpath in cnf.annotation['intersect_with'].items():
             res = intersect_vcf(cnf, input_fpath=vcf_fpath, db_fpath=db_fpath, key=key)
             if res:
-                annotated = True
                 vcf_fpath = res
 
     if 'mongo' in cnf.annotation:
         res = _mongo(cnf, vcf_fpath)
         if res:
             vcf_fpath = res
-            annotated = True
 
-    if not annotated:
-        warn('Warning: No annotations were applied to ' + original_vcf)
-
-    return annotated, vcf_fpath
+    return vcf_fpath
 
 
 def finialize_annotate_file(cnf, vcf_fpath, sample, callername):

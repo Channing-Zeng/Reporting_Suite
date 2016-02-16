@@ -759,7 +759,7 @@ def splitext_plus(fname):
 
 def add_suffix(fname, suf):
     base, ext = splitext_plus(fname)
-    return base + (('.' + suf) if suf is not None else '') + ext
+    return base + (('.' + suf) if suf else '') + ext
 
 
 def intermediate_fname(cnf, fpath, suf):
@@ -778,8 +778,9 @@ def remove_quotes(s):
 def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=True,
                  overwrite=False, reuse_intermediate=True, ctx=None):
     output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
-    # if output_fpath.endswith('.gz'):
-    #     output_fpath = output_fpath[:-3]
+    if output_fpath.endswith('.gz'):
+        info('output_fpath is .gz, but writing to uncompressed.')
+        output_fpath = splitext(output_fpath)[0]
 
     if islink(output_fpath):
         os.unlink(output_fpath)
@@ -791,7 +792,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
         info('Writing to ' + output_fpath)
 
     with file_transaction(cnf.work_dir, output_fpath) as tx_fpath:
-        with open_gzipsafe(input_fpath) as inp_f, open_gzipsafe(tx_fpath, 'w') as out_f:
+        with open_gzipsafe(input_fpath) as inp_f, open(tx_fpath, 'w') as out_f:
             if ctx:
                 convert_file_fn(inp_f, out_f, ctx)
             else:

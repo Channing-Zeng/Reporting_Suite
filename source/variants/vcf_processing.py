@@ -15,7 +15,8 @@ from ext_modules.vcf_parser.model import _Record
 from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed
 from source.config import join_parent_conf
-from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus
+from source.file_utils import iterate_file, verify_file, intermediate_fname, convert_file, adjust_path, splitext_plus, \
+    add_suffix
 from source.targetcov.bam_and_bed_utils import verify_bam
 from source.tools_from_cnf import get_java_tool_cmdline, get_system_path, get_script_cmdline
 from source.file_utils import file_transaction
@@ -309,6 +310,9 @@ def verify_vcf(vcf_fpath, silent=True, is_critical=False):
         vcf.close()
 
 
+
+
+
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None, check_result=True,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
     info('iterate_vcf: overwrite=' + str(overwrite))
@@ -358,40 +362,14 @@ def vcf_is_empty(cnf, vcf_fpath):
     return result
 
 
-def remove_rejected(cnf, input_fpath):
+def remove_rejected(cnf, input_fpath, output_fpath=None):
     step_greetings('Removing rejeted records...')
-
-    def _proc_rec(rec):
-        if rec.FILTER is None or rec.FILTER == [] or rec.FILTER == ['PASS']:
-            return rec
-        else:
-            return None
-
-    output_fpath = iterate_vcf(cnf, input_fpath, _proc_rec, 'no_rej')
-
-    if not verify_file(output_fpath):
-        exit(1)
-
-    return output_fpath
-
-    #def __iter_file(l, i):
-    #    if l.startswith('#'):
-    #        return l
-    #
-    #    try:
-    #        filt = l.split('\t')[6]
-    #    except:
-    #        if len(l.split('\t')) < 6 and len(l.split()) >= 6:
-    #            critical('Error at line number ' + str(i) + ': fields separated by spaces rather than tabs?')
-    #    else:
-    #        if filt in ['PASS', '.']:
-    #            return l
-    #        else:
-    #            return None
-
-    #output_fpath = iterate_file(cnf, input_fpath, __iter_file)
-    #info('Saved to ' + output_fpath)
-    #return output_fpath
+    bcftools = get_system_path(cnf, 'bcftools')
+    output_fpath = output_fpath or add_suffix(input_fpath, 'pass')
+    if output_fpath.endswith('.gz'):
+        output_fpath = splitext(output_fpath)[0]
+    cmdl = '{bcftools} filter -i \'FILTER="PASS" | FILTER="."\' {input_fpath}'.format(**locals())
+    return call(cnf, cmdl, output_fpath=output_fpath)
 
 
 def read_samples_info_and_split(common_cnf, options, inputs):

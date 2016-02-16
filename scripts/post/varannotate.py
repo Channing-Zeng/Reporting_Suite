@@ -81,51 +81,51 @@ def process_one(cnf):
 
     # this method will also gunzip the vcf file
     # sample.vcf = fix_chromosome_names(cnf, sample.vcf)
-    if cnf.vcf.endswith('.gz'):
-        vcf_fpath = intermediate_fname(cnf, splitext(sample.vcf)[0], None)
-        info('Ungzipping ' + sample.vcf + ', writing to ' + vcf_fpath)
-        gunzip = get_system_path(cnf, 'gunzip', is_critical=True)
-        cmdl = '{gunzip} {sample.vcf} --to-stdout'.format(**locals())
-        call(cnf, cmdl, output_fpath=vcf_fpath)
-        verify_vcf(vcf_fpath)
-        sample.vcf = vcf_fpath
+    # if cnf.vcf.endswith('.gz'):
+    #     vcf_fpath = intermediate_fname(cnf, splitext(sample.vcf)[0], None)
+    #     info('Ungzipping ' + sample.vcf + ', writing to ' + vcf_fpath)
+    #     gunzip = get_system_path(cnf, 'gunzip', is_critical=True)
+    #     cmdl = '{gunzip} {sample.vcf} --to-stdout'.format(**locals())
+    #     call(cnf, cmdl, output_fpath=vcf_fpath)
+    #     verify_vcf(vcf_fpath)
+    #     sample.vcf = vcf_fpath
 
-    if cnf.get('filter_reject'):
-        info('Filtering rejected')
-        sample.vcf = remove_rejected(cnf, sample.vcf)
-        if sample.vcf is None:
-            err('No variants left for ' + cnf.vcf + ': all rejected and removed.')
-            return None, None, None
+    ungz_pass_vcf_fpath = remove_rejected(cnf, cnf.vcf, intermediate_fname(cnf, cnf.vcf, ''))
+    info()
 
-    # In mutect, running paired analysis on a single sample could lead
-    # to a "none" sample column. Removing that column.
-    info('get_sample_column_index')
-    none_idx = get_sample_column_index(sample.vcf, 'none', suppress_warn=True)
-    if none_idx is not None:
-        info('Removing the "none" column.')
-        def fn(line, i):
-            if line and not line.startswith('##'):
-                ts = line.split('\t')
-                del ts[9 + none_idx]
-                return '\t'.join(ts) + '\n'
-            return line
-        sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='none_col')
+    # if sample.vcf is None:
+    #     err('No variants left for ' + cnf.vcf + ': all rejected and removed.')
+    #     return None, None, None
+
+    # # In mutect, running paired analysis on a single sample could lead
+    # # to a "none" sample column. Removing that column.
+    # info('get_sample_column_index')
+    # none_idx = get_sample_column_index(sample.vcf, 'none', suppress_warn=True)
+    # if none_idx is not None:
+    #     info('Removing the "none" column.')
+    #     def fn(line, i):
+    #         if line and not line.startswith('##'):
+    #             ts = line.split('\t')
+    #             del ts[9 + none_idx]
+    #             return '\t'.join(ts) + '\n'
+    #         return line
+    #     sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='none_col')
 
     # Replacing so the main sample goes first (if it is not already)
-    main_idx = get_sample_column_index(sample.vcf, sample.name)
-    if main_idx:
-        info('Moving the main sample column (' + sample.name + ') to the first place.')
-        def fn(line, i):
-            if line and not line.startswith('##'):
-                ts = line.split('\t')
-                main_sample_field = ts[9 + main_idx]
-                del ts[9 + main_idx]
-                ts = ts[:9] + [main_sample_field] + ts[9:]
-                return '\t'.join(ts) + '\n'
-            return line
-        sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='main_col')
+    # main_idx = get_sample_column_index(sample.vcf, sample.name)
+    # if main_idx:
+    #     info('Moving the main sample column (' + sample.name + ') to the first place.')
+    #     def fn(line, i):
+    #         if line and not line.startswith('##'):
+    #             ts = line.split('\t')
+    #             main_sample_field = ts[9 + main_idx]
+    #             del ts[9 + main_idx]
+    #             ts = ts[:9] + [main_sample_field] + ts[9:]
+    #             return '\t'.join(ts) + '\n'
+    #         return line
+    #     sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='main_col')
 
-    annotated, anno_vcf_fpath = run_annotators(cnf, sample.vcf, sample.bam)
+    anno_vcf_fpath = run_annotators(cnf, ungz_pass_vcf_fpath, sample.bam)
 
     return finialize_annotate_file(cnf, anno_vcf_fpath, sample, cnf.caller)
 
