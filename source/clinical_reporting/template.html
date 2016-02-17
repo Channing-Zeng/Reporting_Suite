@@ -112,24 +112,13 @@
         <div class="space_8px"></div>
         <div class="space_8px"></div>
         <div>
-            <a class="dotted-link" href="#actionable">Alterations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#variants">Mutations</a><span>&nbsp;&nbsp;&nbsp;</span>
+            <a class="dotted-link" href="#actionable">Alterations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             {.section sv}<a class="dotted-link" href="#sv">Structural variants</a><span>&nbsp;&nbsp;&nbsp;</span>{.or}{.end}
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="space_4px"></div>
-
-        <a name="actionable"></a>
-        <h1>Actionable {total_key_genes} {key_or_target} genes - variants and larger alterations of interest</h1>
-        {.section actionable_genes}
-            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
-            <div class="actionable_table">
-                {table}
-            </div>
-        {.or}
-            <p>No mutations found in {total_key_genes} actionable genes.</p>
-        {.end}
 
         <a name="variants"></a>
         <h1>Mutations in {total_key_genes} {key_or_target} genes</h1>
@@ -204,6 +193,17 @@
             </div>
         {.or}
             <p>No variants detected in {total_key_genes} {key_or_target} regions.</p>
+        {.end}
+
+        <a name="actionable"></a>
+        <h1>Actionable {total_key_genes} {key_or_target} genes - variants and larger alterations of interest</h1>
+        {.section actionable_genes}
+            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
+            <div class="actionable_table">
+                {table}
+            </div>
+        {.or}
+            <p>No mutations found in {total_key_genes} actionable genes.</p>
         {.end}
 
         {.section sv}
