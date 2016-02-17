@@ -302,7 +302,7 @@ class GeneInfo(Region):
             self.min_depth = min(self.min_depth, amplicon.min_depth) if self.min_depth else amplicon.min_depth
 
 
-def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
+def build_gene_objects_list(cnf, sample_name, exons_bed, gene_keys_list):
     # info('Making unique gene list without affecting the order')
     # fixed_gene_names_list = []
     # added_gene_names_set = set()
@@ -314,6 +314,14 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
     # gene_names_list = fixed_gene_names_list
     # info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
     gene_by_name_and_chrom = OrderedDict()
+
+    info('Building the Gene objects list based on target')
+    if gene_keys_list:
+        info()
+        info('Init the Gene object dict')
+        for gn, chrom in gene_keys_list:
+            gene_by_name_and_chrom[(gn, chrom)] = GeneInfo(sample_name=sample_name, gene_name=gn, chrom=chrom)
+        info('Processed ' + str(len(gene_keys_list)) + ' gene records -> ' + str(len(gene_by_name_and_chrom)) + ' uniq gene sybmols')
 
     info('Building the Gene objects list based on target')
     if exons_bed and gene_by_name_and_chrom:
@@ -341,10 +349,6 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
                         i += 1
         info('Processed ' + str(i) + ' genes')
         info()
-
-    if gene_names_list:
-        info('Filtering by input gene names list')
-        gene_by_name_and_chrom = {(gn, chrom): g for ((gn, chrom), g) in gene_by_name_and_chrom.items() if gn in gene_names_list}
 
     if not gene_by_name_and_chrom:
         critical('Err: no genes in the list')

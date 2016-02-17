@@ -13,7 +13,7 @@ from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import SortableByChrom
-from source.targetcov.bam_and_bed_utils import get_gene_names
+from source.targetcov.bam_and_bed_utils import get_gene_keys
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 
@@ -719,7 +719,7 @@ def get_key_or_target_bed_genes(bed_fpath, key_genes):
     use_custom_panel = False
     key_gene_names = None
     if bed_fpath:
-        key_gene_names, gene_names_list = get_gene_names(bed_fpath)
+        key_gene_names, gene_names_list = get_gene_keys(bed_fpath)
         if len(key_gene_names) < 2000:
             use_custom_panel = True
     if not use_custom_panel:

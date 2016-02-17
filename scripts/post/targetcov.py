@@ -123,7 +123,7 @@ def main(args):
         info('WGS, taking CDS as target')
 
     run_one(cnf, process_one, finalize_one, output_dir=cnf.output_dir,
-        exons_bed=exons_bed, exons_no_genes_bed=cnf.exons_no_genes, genes_fpath=genes_fpath)
+        exons_bed=exons_bed, exons_no_genes_bed=cnf.exons_no_genes)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
@@ -146,7 +146,7 @@ def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
              stdout_to_outputfile=False, exit_on_error=False)
 
 
-def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
+def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed):
     sample = TargQC_Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
     bam_fpath = cnf.bam
@@ -161,31 +161,27 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed, genes_fpath):
         info('Indexing bam ' + bam_fpath)
         index_bam(cnf, bam_fpath)
 
-    gene_names_list = None
+    gene_keys_list = None
     if cnf.prep_bed:
         info('Preparing the BED file.')
         exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
 
-        gene_names_set, gene_names_list, target_bed, exons_bed, exons_no_genes_bed = \
-            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+        gene_keys_set, gene_keys_list, target_bed, exons_bed, exons_no_genes_bed = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
     else:
         info('The BED file is ready, skipping preparing.')
-        if genes_fpath:
-            with open(genes_fpath) as f:
-                gene_names_list = [g.strip() for g in f.read().split('\n')]
-        else:
-            gene_names_set, gene_names_list, _, _, _ = \
-                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+        gene_keys_set, gene_keys_list, _, _, _ = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
 
-    avg_depth, gene_by_name, reports = make_targetseq_reports(
-        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list)
+    avg_depth, gene_by_name_and_chrom, reports = make_targetseq_reports(
+        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_keys_list)
 
     picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 
     #if cnf.extended:
     try:
         info('Generating flagged regions report...')
-        flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name)
+        flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name_and_chrom)
         if not flagged_report:
             err('Flagged regions report was not generated')
             err()

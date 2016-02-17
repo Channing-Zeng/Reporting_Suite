@@ -521,7 +521,7 @@ class BCBioRunner:
         with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
             exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed, seq2c_bed)
             _, _, target_bed, exons_bed, exons_no_genes_bed = \
-                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
 
         return target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed
 

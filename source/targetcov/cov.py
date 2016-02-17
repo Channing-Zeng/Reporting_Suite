@@ -291,9 +291,9 @@ def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
     return gender
 
 
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_names_list):
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_keys_list):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
-    gene_by_name_and_chrom = build_gene_objects_list(cnf, sample.name, exons_bed, gene_names_list)
+    gene_by_name_and_chrom = build_gene_objects_list(cnf, sample.name, exons_bed, gene_keys_list)
 
     # ref_fapth = cnf.genome.seq
     original_target_bed = cnf.original_target_bed or target_bed

@@ -24,12 +24,12 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, exons_bed
     jobs_to_wait = []
     if not cnf.only_summary:
         exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
-        gene_names_set, gene_names_list, target_bed, exons_bed, exons_no_genes_bed = \
-            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed, genes_fpath)
+        gene_keys_set, gene_keys_list, target_bed, exons_bed, exons_no_genes_bed = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
         if not genes_fpath:
             genes_fpath = join(cnf.work_dir, 'genes.txt')
             with open(genes_fpath, 'w') as f:
-                f.write('\n'.join(gene_names_list))
+                f.write('\n'.join(g + '\t' + c for g, c in gene_keys_list))
 
         info('*' * 70)
         info()

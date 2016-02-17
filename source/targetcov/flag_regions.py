@@ -32,7 +32,7 @@ def get_ave_sample_coverage(cnf, report_fpath):
     return next((r.value for r in records if r.metric.name == 'Average target coverage depth'), None)
 
 
-def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_name):
+def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_key):
     depth_threshs = cnf.coverage_reports.depth_thresholds
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_threshs))
     report.add_record('Sample', sample.name)
@@ -53,7 +53,7 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes
     key_genes, _ = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
     depth_cutoff = get_depth_cutoff(ave_depth, depth_threshs)
-    genes_sorted = sorted(gene_by_name.values())
+    genes_sorted = sorted(gene_by_key.values())
 
     for coverage_type in ['low', 'high']:
         info('Selecting and saving ' + coverage_type + ' covered genes')
