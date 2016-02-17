@@ -492,6 +492,7 @@ class BCBioRunner:
             script=join('scripts', 'post', 'bam_to_bigwig.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
             paramln=basic_params + ' --genome {genome}  -s \'{sample}\' --bam \'{bam}\''
+               ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
     def prep_bed(self):

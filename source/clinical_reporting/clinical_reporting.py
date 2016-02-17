@@ -637,7 +637,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 data['seq2c']['amp_del'] = self.__seq2c_section()
                 if len(self.experiment.seq2c_events_by_gene_name.values()) > len(self.experiment.key_gene_by_name.values()):
                     data['seq2c']['description_for_whole_genomic_profile'] = \
-                    '<br><b>Note:</b> The whole genomic profile is shown.'.format(self.experiment.genes_collection_type)
+                        '<b>Note:</b> The whole genomic profile is shown in gray.'.format(self.experiment.genes_collection_type)
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
                 else:
                     data['seq2c']['description_for_whole_genomic_profile'] = ''

@@ -239,7 +239,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
     filter_matches_counter = defaultdict(int)
 
-    with open(adjust_path(vcf2txt_res_fpath)) as f, open(adjust_path(out_fpath), 'w') as out_f:
+    with open(verify_file(vcf2txt_res_fpath)) as f, open(out_fpath, 'w') as out_f:
         if cnf.is_output_fm:
             out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
         for i, l in enumerate(f):

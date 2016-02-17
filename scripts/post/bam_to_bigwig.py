@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
+
 '''Convert BAM files to BigWig file format in a specified region.
 Usage:
     bam_to_wiggle.py <BAM file> [<YAML config>]
@@ -19,14 +21,14 @@ The script requires:
     wigToBigWig from UCSC (http://hgdownload.cse.ucsc.edu/admin/exe/)
 If a configuration file is used, then PyYAML is also required (http://pyyaml.org/)
 '''
+
 import os
 import sys
-from genericpath import isfile
+from os.path import isfile
 from os.path import splitext, join
 from contextlib import contextmanager, closing
 import pysam
 
-import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 from source.logger import critical
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources
@@ -55,6 +57,7 @@ def proc_args(argv):
 
     return cnf
 
+
 def process_bam(cnf, bam_file, chrom='all', start=0, end=None,
          outfile=None, normalize=False, use_tempfile=False):
     if outfile is None:
@@ -78,11 +81,13 @@ def process_bam(cnf, bam_file, chrom='all', start=0, end=None,
             os.remove(wig_file)
     return bigwig_fpath
 
+
 @contextmanager
 def indexed_bam(bam_fpath):
     sam_reader = pysam.Samfile(bam_fpath, 'rb')
     yield sam_reader
     sam_reader.close()
+
 
 def write_bam_track(bam_fpath, regions, out_handle, normalize):
     out_handle.write('track %s\n' % ' '.join(['type=wiggle_0',
@@ -109,6 +114,7 @@ def write_bam_track(bam_fpath, regions, out_handle, normalize):
                 is_valid = True
     return sizes, is_valid
 
+
 def convert_to_bigwig(wig_fpath, chr_sizes, cnf, bw_fpath=None):
     if not bw_fpath:
         bw_fpath = '%s.bigwig' % (os.path.splitext(wig_fpath)[0])
@@ -123,6 +129,7 @@ def convert_to_bigwig(wig_fpath, chr_sizes, cnf, bw_fpath=None):
     finally:
         os.remove(chr_sizes_fpath)
     return bw_fpath
+
 
 def main():
     cnf = proc_args(sys.argv)
