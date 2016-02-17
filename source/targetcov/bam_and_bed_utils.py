@@ -1,7 +1,7 @@
 import os
 import subprocess
 from itertools import dropwhile
-from os.path import isfile, join, abspath, basename, dirname
+from os.path import isfile, join, abspath, basename, dirname, getctime
 import sys
 from subprocess import check_output
 from collections import OrderedDict
@@ -16,7 +16,8 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 
 def index_bam(cnf, bam_fpath, sambamba=None):
     indexed_bam = bam_fpath + '.bai'
-    if not isfile(bam_fpath + '.bai'):
+
+    if cnf.reuse_intermediate and (not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath)):
         info('Indexing to ' + indexed_bam + '...')
         sambamba = sambamba or get_system_path(cnf, 'sambamba')
         if sambamba is None:

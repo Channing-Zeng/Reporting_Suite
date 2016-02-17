@@ -52,7 +52,7 @@ def main():
 
     mem_b = getsize(cnf.bam) / 3
 
-    mem_m = float(mem_b) / 1024 / 1024
+    mem_m = mem_b / 1024 / 1024 + 500
     mem_m = min(max(mem_m, 200), 90 * 1024)
     mem = str(int(mem_m)) + 'M'
 

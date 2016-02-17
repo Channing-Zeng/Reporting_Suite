@@ -293,7 +293,6 @@ class BCBioRunner:
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varfilter_name + '-{caller}.log'),
             paramln=varfilter_paramline,
-            run_on_chara=True
         )
 
         self.vcf2txt_single = Step(cnf, run_id,
@@ -303,7 +302,6 @@ class BCBioRunner:
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'vcf2txt-single-{caller}.log'),
             paramln='{paramln}',
-            run_on_chara=True
         )
         self.vcf2txt_paired = Step(cnf, run_id,
             name='vcf2txt_paired', short_name='vcf2txt_paired',
@@ -312,7 +310,6 @@ class BCBioRunner:
             dir_name=BCBioStructure.varfilter_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'vcf2txt-paired-{caller}.log'),
             paramln='{paramln}',
-            run_on_chara=True
         )
 
         # if self.is_wgs:
@@ -550,7 +547,7 @@ class BCBioRunner:
 
 
     def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
-                    log_out_fpath=None, wait_for_steps=None, threads=1, mem_b=None, **kwargs):
+                    log_out_fpath=None, wait_for_steps=None, threads=1, mem_m=None, **kwargs):
         job_name = step.job_name(sample_name, caller_suf)
 
         for job_id_to_wait in wait_for_steps or []:
@@ -601,8 +598,7 @@ class BCBioRunner:
         if step.run_on_chara and is_us():
             extra_qsub_opts += '-l h="chara|rask" '
         mem_opts = ''
-        if mem_b and not is_local():
-            mem_m = float(mem_b) / 1024 / 1024
+        if mem_m and not is_local():
             mem_m = min(max(mem_m, 200), 90 * 1024)
             mem = str(int(mem_m)) + 'M'
             if mem_m < 1:
@@ -678,7 +674,7 @@ class BCBioRunner:
                                 self.targetcov, sample.name,
                                 bam=sample.bam, sample=sample.name, genome=sample.genome,
                                 caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                                mem_b=getsize(sample.bam))
+                                mem_m=getsize(sample.bam) / 1024 / 1024 + 500)
                             # if not sample.bed:  # WGS
                             #     targqc_wait_for_steps.append(self.targetcov.job_name(sample.name))
 
@@ -714,6 +710,7 @@ class BCBioRunner:
                             self.vcf2txt_single,
                             paramln=make_vcf2txt_cmdl_params(self.cnf, c.single_vcf_by_sample, sample.min_af) +
                                 ' > ' + c.single_vcf2txt_res_fpath,
+                            caller=c.name,
                             wait_for_steps=[
                                 self.varfilter.job_name(s.name, v.name)
                                 for v in self.bcbio_structure.variant_callers.values()
@@ -724,6 +721,7 @@ class BCBioRunner:
                             self.vcf2txt_paired,
                             paramln=make_vcf2txt_cmdl_params(self.cnf, c.paired_vcf_by_sample, sample.min_af) +
                                 ' > ' + c.paired_vcf2txt_res_fpath,
+                            caller=c.name,
                             wait_for_steps=[
                                 self.varfilter.job_name(s.name, v.name)
                                 for v in self.bcbio_structure.variant_callers.values()
@@ -780,39 +778,33 @@ class BCBioRunner:
                     self.bcbio_structure.variant_callers.get('vardict') or \
                     self.bcbio_structure.variant_callers.get('vardict-java')
 
-                mutation_cmdl = ''
-                mutation_perl_cmdl = ''
-                varqc_cmdl = ''
-                if clinical_report_caller:
-                    vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
-                    vardict_txt_fpath = join(self.bcbio_structure.var_dirpath, vardict_txt_fname)
-                    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
-                    mutations_perl_fpath = add_suffix(vardict_txt_fpath, 'pl.' + source.mut_pass_suffix)
-                    mutation_cmdl = ' --mutations ' + mutations_fpath
-                    mutation_perl_cmdl = ' --mutations ' + mutations_perl_fpath
-
                 seq2c_cmdl = ''
                 if self.seq2c in self.steps or verify_file(self.bcbio_structure.seq2c_fpath, silent=True):
                     seq2c_cmdl = ' --seq2c ' + self.bcbio_structure.seq2c_fpath
 
                 for sample in self.bcbio_structure.samples:
+                    varqc_cmdl = ''
+                    mutation_cmdl = ''
+                    match_cmdl = ''
+                    targqc_cmdl = ''
+                    targqc_summary_cmdl = ''
+                    sv_cmdl = ''
+
                     wait_for_steps = []
                     wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
                     wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
 
-                    match_cmdl = ''
-                    if sample.phenotype and sample.phenotype != 'normal':
+                    if not sample.phenotype or sample.phenotype != 'normal':
+                        match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
                         if clinical_report_caller:
                             varqc_cmdl = ' --varqc ' + sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json')
                             wait_for_steps += [self.varqc.job_name(sample.name, caller=clinical_report_caller.name)] if self.varqc in self.steps else []
                             wait_for_steps += [self.varfilter.job_name(sample.name, caller=clinical_report_caller.name)] if self.varfilter in self.steps else []
-                        match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
-                    elif sample.phenotype and sample.phenotype == 'normal':
-                        mutation_cmdl = ''
-                        mutation_perl_cmdl = ''
 
-                    targqc_cmdl = ''
-                    targqc_summary_cmdl = ''
+                            mut_fpath = sample.get_vcf2txt_by_callername(clinical_report_caller.name)
+                            if self.varfilter in self.steps or verify_file(mut_fpath):
+                                mutation_cmdl = ' --mutations ' + mut_fpath
+
                     targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
                     if self.targetcov in self.steps or verify_dir(targqc_dirpath):
                         targqc_cmdl = ' --targqc-dir ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
@@ -821,7 +813,6 @@ class BCBioRunner:
                         if self.targqc_summary in self.steps or verify_file(self.bcbio_structure.targqc_summary_fpath, silent=True):
                             targqc_summary_cmdl += ' --targqc-html ' + self.bcbio_structure.targqc_summary_fpath
 
-                    sv_cmdl = ''
                     sv_fpath = sample.find_sv_fpath()
                     if sv_fpath:
                         sv_cmdl = ' --sv ' + sv_fpath

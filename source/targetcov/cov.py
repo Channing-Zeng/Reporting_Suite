@@ -306,6 +306,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if not cnf.no_dedup:
         sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
         remove_dups(cnf, bam_fpath, sample.dedup_bam)
+        index_bam(cnf, sample.dedup_bam)
 
     _run_qualimap(cnf, sample, bam_fpath, target_bed)
 
