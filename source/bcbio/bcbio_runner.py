@@ -2,7 +2,7 @@ import getpass
 import os
 import hashlib
 import base64
-from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink
+from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize
 import datetime
 from time import sleep
 from traceback import format_exc
@@ -550,7 +550,7 @@ class BCBioRunner:
 
 
     def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
-                    log_out_fpath=None, wait_for_steps=None, threads=1, **kwargs):
+                    log_out_fpath=None, wait_for_steps=None, threads=1, mem_b=None, **kwargs):
         job_name = step.job_name(sample_name, caller_suf)
 
         for job_id_to_wait in wait_for_steps or []:
@@ -594,15 +594,23 @@ class BCBioRunner:
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
         qsub = get_system_path(self.cnf, 'qsub')
-        mem = str(threads * 15)
         queue = self.cnf.queue
         runner_script = self.qsub_runner
         bash = get_system_path(self.cnf, 'bash')
         extra_qsub_opts = ''
         if step.run_on_chara and is_us():
             extra_qsub_opts += '-l h="chara|rask" '
+        mem_opts = ''
+        if mem_b and not is_local():
+            mem_m = float(mem_b) / 1024 / 1024
+            mem_m = min(max(mem_m, 200), 90 * 1024)
+            mem = str(int(mem_m)) + 'M'
+            if mem_m < 1:
+                mem_opts = ''
+            else:
+                mem_opts = '-l h_vmem="' + mem + '" '
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} {extra_qsub_opts} -S {bash} -q {queue} -p 0 '
+            '{qsub} -pe smp {threads} {mem_opts} {extra_qsub_opts} -S {bash} -q {queue} -p 0 '
             '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
             '-N {job_name} {runner_script} {done_marker_fpath} {error_marker_fpath} "{cmdline}"'.format(**locals()))
         # print qsub_cmdline
@@ -669,7 +677,8 @@ class BCBioRunner:
                             self._submit_job(
                                 self.targetcov, sample.name,
                                 bam=sample.bam, sample=sample.name, genome=sample.genome,
-                                caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps)
+                                caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
+                                mem_b=getsize(sample.bam))
                             # if not sample.bed:  # WGS
                             #     targqc_wait_for_steps.append(self.targetcov.job_name(sample.name))
 

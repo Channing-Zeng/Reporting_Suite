@@ -2,8 +2,7 @@
 # noinspection PyUnresolvedReferences
 import bcbio_postproc
 
-
-from os.path import isfile, join
+from os.path import isfile, join, getsize
 
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
@@ -50,7 +49,14 @@ def main():
         critical('Cannot find qualimap')
 
     info()
-    cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + ' -nr 5000 '
+
+    mem_b = getsize(cnf.bam) / 3
+
+    mem_m = float(mem_b) / 1024 / 1024
+    mem_m = min(max(mem_m, 200), 90 * 1024)
+    mem = str(int(mem_m)) + 'M'
+
+    cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + ' --java-mem-size=' + mem + ' -nr 5000 '
         '-bam {cnf.bam} -outdir {cnf.output_dir} {bed} -c -gd HUMAN').format(**locals())
     report_fpath = join(cnf.output_dir, 'qualimapReport.html')
 

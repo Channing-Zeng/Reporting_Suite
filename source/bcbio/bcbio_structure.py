@@ -397,7 +397,7 @@ class BCBioSample(BaseSample):
         fpath = self.get_sv_fpath()
         if not isfile(fpath):
             fpath = self.get_rawest_sv_fpath()
-        return verify_file(fpath)
+        return verify_file(fpath, silent=True)
 
     @staticmethod
     def load(data, bcbio_structure=None):
