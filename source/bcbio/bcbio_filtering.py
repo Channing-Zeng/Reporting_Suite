@@ -22,7 +22,9 @@ def combine_muts(cnf, bcbio_structure, callers):
                         for s in samples:
                             verify_file(s.get_mut_by_callername(c.name), is_critical=True, description=c.name + ' mutations file')
                             with open(s.get_mut_by_callername(c.name)) as f:
-                                out.write(f.read())
+                                for i, l in enumerate(f):
+                                    if i > 0:
+                                        out.write(l)
                 verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
                 info('Saved ' + c.name + ' mutations to ' + mut_fpath)
 
