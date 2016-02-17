@@ -77,7 +77,7 @@ def main(args):
             critical('vcf2txt run returned non-0')
         info('Saved vcf2txt output to ' + vcf2txt_res_fpath)
     else:
-        verify_file(cnf.vcf2txt)
+        cnf.vcf2txt = verify_file(cnf.vcf2txt, is_critical=True)
         info('Input is vcf2txt output, grepping by sample name ' + cnf.sample)
         vcf2txt_res_fpath = cnf.output_file
         with file_transaction(cnf.work_dir, vcf2txt_res_fpath) as tx:

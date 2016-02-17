@@ -555,8 +555,7 @@ class BCBioRunner:
             if not job_to_wait or job_to_wait.has_errored:
                 if job_to_wait:
                     warn('Job ' + job_to_wait.job_id + ' has failed, and it required to run this job ' + job_name)
-                info()
-                return None
+                    warn()
 
         if sum(j.threads for j in self.jobs_running if not j.is_done) >= self.max_threads:
             self.wait_for_jobs(self.max_threads / 2)  # maximum nubmer of jobs were submitted; waiting for half them to finish
@@ -704,28 +703,32 @@ class BCBioRunner:
                     info()
 
             if self.varfilter in self.steps:
-                if not self.is_wgs:
-                    info('Not WGS, this processing cohorts')
-                    for c in self.bcbio_structure.variant_callers.values():
-                        if c.single_anno_vcf_by_sample:
-                            if not self.varannotate in self.steps:
-                                is_err = False
-                                for anno_vcf_fpath in c.single_anno_vcf_by_sample.values() + c.paired_anno_vcf_by_sample.values():
-                                    if not verify_vcf(anno_vcf_fpath):
-                                        is_err = True
-                                if is_err:
-                                    critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exists.')
+                varfilter_wait_for_steps = []
 
+                if not self.is_wgs:
+                    info('Not WGS, thus processing cohorts')
+                    for c in self.bcbio_structure.variant_callers.values():
+                        if self.varannotate not in self.steps:
+                            is_err = False
+                            for anno_vcf_fpath in c.single_anno_vcf_by_sample.values() + c.paired_anno_vcf_by_sample.values():
+                                if not verify_vcf(anno_vcf_fpath):
+                                    is_err = True
+                            if is_err:
+                                critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exists.')
+
+                        if c.single_anno_vcf_by_sample:
                             self._submit_job(
                                 self.vcf2txt_single,
                                 paramln=make_vcf2txt_cmdl_params(self.cnf, c.single_anno_vcf_by_sample, sample.min_af) +
                                     ' > ' + c.single_vcf2txt_res_fpath,
                                 caller=c.name,
                                 wait_for_steps=[
-                                    self.varfilter.job_name(s.name, v.name)
+                                    self.varannotate.job_name(s.name, v.name)
                                     for v in self.bcbio_structure.variant_callers.values()
                                     for s in v.samples
-                                    if self.varfilter in self.steps])
+                                    if self.varannotate in self.steps])
+                            varfilter_wait_for_steps.append(self.vcf2txt_single.job_name(caller=caller.name))
+
                         if c.paired_anno_vcf_by_sample:
                             self._submit_job(
                                 self.vcf2txt_paired,
@@ -733,11 +736,13 @@ class BCBioRunner:
                                     ' > ' + c.paired_vcf2txt_res_fpath,
                                 caller=c.name,
                                 wait_for_steps=[
-                                    self.varfilter.job_name(s.name, v.name)
+                                    self.varannotate.job_name(s.name, v.name)
                                     for v in self.bcbio_structure.variant_callers.values()
                                     for s in v.samples
-                                    if self.varfilter in self.steps])
+                                    if self.varannotate in self.steps])
+                            varfilter_wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
 
+                info('Per-sample variant filtering')
                 for sample in self.bcbio_structure.samples:
                     for caller in self.bcbio_structure.variant_callers.values():
                         if sample.vcf_by_callername.get(caller.name):
@@ -758,7 +763,7 @@ class BCBioRunner:
                                 self.varfilter, sample.name, caller_suf=caller.name,
                                 vcf=anno_vcf_fpath, vcf2txt_cmdl=vcf2txt_cmdl, output_file=sample.get_vcf2txt_by_callername(caller.name),
                                 threads=1, sample=sample.name, caller=caller.name, genome=sample.genome,
-                                wait_for_steps=[self.varannotate.job_name(sample.name, caller.name)] if self.varannotate in self.steps else [])
+                                wait_for_steps=varfilter_wait_for_steps)
 
             if not self.cnf.verbose:
                 info('', ending='')
@@ -902,9 +907,7 @@ class BCBioRunner:
             if self.varqc_after in self.steps:
                 info('VarQC_postVarFilter:')
                 for caller in self.bcbio_structure.variant_callers.values():
-                    info('caller: ' + caller.name)
                     for sample in caller.samples:
-                        info('sample: ' + sample.name)
                         raw_vcf_fpath = sample.find_raw_vcf_by_callername(caller.name)
                         if not raw_vcf_fpath:
                             if sample.phenotype != 'normal':
