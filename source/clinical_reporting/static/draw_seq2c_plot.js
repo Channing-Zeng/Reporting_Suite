@@ -49,10 +49,10 @@ function drawSeq2cPlot(key, data, placeholder_el) {
             if (!data.events[k].isKeyGene) {
                 color = '#ccc';
                 if (data.events[k].ampDel == 'Amp') {
-                    color = '#003385';
+                    color = '#19A600';
                 }
                 if (data.events[k].ampDel == 'Del') {
-                    color = '#641F15';
+                    color = '#950000';
                 }
             }
             else {
@@ -60,7 +60,7 @@ function drawSeq2cPlot(key, data, placeholder_el) {
                     radius = 2;
                 }
                 if (data.events[k].ampDel == 'Amp') {
-                    color = 'green';
+                    color = '#00CC00';
                     radius = 2;
                 }
                 if (data.events[k].ampDel == 'Del') {

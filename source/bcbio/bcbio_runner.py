@@ -8,8 +8,7 @@ from time import sleep
 from traceback import format_exc
 
 import source
-from source.bcbio.bcbio_filtering import filter_bcbio_structure, vcf2txt_bcbio_structure, finish_filtering_for_bcbio, \
-    combine_muts
+from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio, combine_muts
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
@@ -22,6 +21,7 @@ from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed
 from source.utils import is_us, md5
 from source.variants.filtering import make_vcf2txt_cmdl_params
+from source.variants.vcf_processing import verify_vcf
 from source.webserver.exposing import sync_with_ngs_server, convert_path_to_url
 from source.config import defaults, with_cnf
 from tools.add_jbrowse_tracks import add_project_files_to_jbrowse
@@ -275,7 +275,7 @@ class BCBioRunner:
 
         ##### FILTERING #####
         varfilter_paramline = params_for_one_sample + (' ' +
-            '-o {output_dir} --output-file {vcf2txt_fpath} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} ' +
+            '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
         if cnf.min_freq is not None:
             self.min_af = cnf.min_freq
@@ -641,6 +641,7 @@ class BCBioRunner:
 
     def post_jobs(self):
         self._symlink_cnv()
+        info()
 
         try:
             targqc_wait_for_steps = []
@@ -702,31 +703,62 @@ class BCBioRunner:
                     print ''
                     info()
 
-            if not self.is_wgs and self.varfilter in self.steps:
-                info('Not WGS, this processing cohorts')
-                for c in self.bcbio_structure.variant_callers.values():
-                    if c.single_vcf_by_sample:
-                        self._submit_job(
-                            self.vcf2txt_single,
-                            paramln=make_vcf2txt_cmdl_params(self.cnf, c.single_vcf_by_sample, sample.min_af) +
-                                ' > ' + c.single_vcf2txt_res_fpath,
-                            caller=c.name,
-                            wait_for_steps=[
-                                self.varfilter.job_name(s.name, v.name)
-                                for v in self.bcbio_structure.variant_callers.values()
-                                for s in v.samples
-                                if self.varfilter in self.steps])
-                    if c.paired_vcf_by_sample:
-                        self._submit_job(
-                            self.vcf2txt_paired,
-                            paramln=make_vcf2txt_cmdl_params(self.cnf, c.paired_vcf_by_sample, sample.min_af) +
-                                ' > ' + c.paired_vcf2txt_res_fpath,
-                            caller=c.name,
-                            wait_for_steps=[
-                                self.varfilter.job_name(s.name, v.name)
-                                for v in self.bcbio_structure.variant_callers.values()
-                                for s in v.samples
-                                if self.varfilter in self.steps])
+            if self.varfilter in self.steps:
+                if not self.is_wgs:
+                    info('Not WGS, this processing cohorts')
+                    for c in self.bcbio_structure.variant_callers.values():
+                        if c.single_anno_vcf_by_sample:
+                            if not self.varannotate in self.steps:
+                                is_err = False
+                                for anno_vcf_fpath in c.single_anno_vcf_by_sample.values() + c.paired_anno_vcf_by_sample.values():
+                                    if not verify_vcf(anno_vcf_fpath):
+                                        is_err = True
+                                if is_err:
+                                    critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exists.')
+
+                            self._submit_job(
+                                self.vcf2txt_single,
+                                paramln=make_vcf2txt_cmdl_params(self.cnf, c.single_anno_vcf_by_sample, sample.min_af) +
+                                    ' > ' + c.single_vcf2txt_res_fpath,
+                                caller=c.name,
+                                wait_for_steps=[
+                                    self.varfilter.job_name(s.name, v.name)
+                                    for v in self.bcbio_structure.variant_callers.values()
+                                    for s in v.samples
+                                    if self.varfilter in self.steps])
+                        if c.paired_anno_vcf_by_sample:
+                            self._submit_job(
+                                self.vcf2txt_paired,
+                                paramln=make_vcf2txt_cmdl_params(self.cnf, c.paired_anno_vcf_by_sample, sample.min_af) +
+                                    ' > ' + c.paired_vcf2txt_res_fpath,
+                                caller=c.name,
+                                wait_for_steps=[
+                                    self.varfilter.job_name(s.name, v.name)
+                                    for v in self.bcbio_structure.variant_callers.values()
+                                    for s in v.samples
+                                    if self.varfilter in self.steps])
+
+                for sample in self.bcbio_structure.samples:
+                    for caller in self.bcbio_structure.variant_callers.values():
+                        if sample.vcf_by_callername.get(caller.name):
+                            anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
+                            vcf2txt_cmdl = ''
+                            if not self.is_wgs:
+                                if sample.normal_match:
+                                    vcf2txt_fpath = caller.paired_vcf2txt_res_fpath
+                                else:
+                                    vcf2txt_fpath = caller.single_vcf2txt_res_fpath
+                                vcf2txt_cmdl = ' --vcf2txt ' + vcf2txt_fpath  #sample.get_vcf2txt_by_callername(caller_name)
+                            else:
+                                if self.varannotate not in self.steps:
+                                    if not verify_vcf(anno_vcf_fpath):
+                                        critical('Error: VarAnnotate is not in steps, and annotated VCF does not exist: ' + anno_vcf_fpath)
+
+                            self._submit_job(
+                                self.varfilter, sample.name, caller_suf=caller.name,
+                                vcf=anno_vcf_fpath, vcf2txt_cmdl=vcf2txt_cmdl, output_file=sample.get_vcf2txt_by_callername(caller.name),
+                                threads=1, sample=sample.name, caller=caller.name, genome=sample.genome,
+                                wait_for_steps=[self.varannotate.job_name(sample.name, caller.name)] if self.varannotate in self.steps else [])
 
             if not self.cnf.verbose:
                 info('', ending='')
@@ -958,7 +990,8 @@ class BCBioRunner:
             if self.varfilter in self.steps:
                 finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
 
-            add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
+            if is_us():
+                add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
 
             html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
 
@@ -1064,22 +1097,6 @@ class BCBioRunner:
 
         # anno_dirpath, _ = self.step_output_dir_and_log_paths(self.varannotate, sample_name, caller=caller_name)
         # annotated_vcf_fpath = join(anno_dirpath, basename(add_suffix(vcf_fpath, 'anno')))
-
-        if self.varfilter in self.steps:
-            vcf2txt_cmdl = ''
-            if not self.is_wgs:
-                if sample.normal_match:
-                    vcf2txt_fpath = caller.paired_vcf2txt_res_fpath
-                else:
-                    vcf2txt_fpath = caller.single_vcf2txt_res_fpath
-                vcf2txt_cmdl = ' --vcf2txt ' + vcf2txt_fpath  #sample.get_vcf2txt_by_callername(caller_name)
-
-            self._submit_job(
-                self.varfilter, sample.name, caller_suf=caller.name,
-                vcf=sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True), vcf2txt_cmdl=vcf2txt_cmdl,
-                vcf2txt_fpath=sample.get_vcf2txt_by_callername(caller.name),
-                threads=1, sample=sample.name, caller=caller.name, genome=sample.genome,
-                wait_for_steps=[self.varannotate.job_name(sample.name, caller.name)] if self.varannotate in self.steps else [])
 
             # wait_for_callers_steps = []
             # for caller in self.bcbio_structure.variant_callers.values():

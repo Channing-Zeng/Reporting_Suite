@@ -79,6 +79,7 @@ key_genes:                    ~/Dropbox/az/reference_data/common/az_key_genes.tx
 suppressors:                  ~/Dropbox/az/reference_data/common/suppressors.txt
 oncogenes:                    ~/Dropbox/az/reference_data/common/oncogenes.txt
 specific_mutations:           ~/Dropbox/az/reference_data/common/specific_mutations.csv
+canonical_transcripts:        ~/Dropbox/az/reference_data/common/cosmic_transcripts.txt
 
 queue: ngs.q
 

@@ -19,7 +19,7 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
 
     if isdir(jbrowse_project_dirpath):
         warn('Warning: directory exists in JBrowse folder.')
-    
+
     safe_mkdir(jbrowse_project_dirpath)
     jbrowse_tracks_fpath = join(jbrowse_data_path, 'tracks.conf')
 
@@ -105,11 +105,11 @@ def set_folders(genome):
     jbrowse_data_path = join(jbrowse_basepath, data_dirname)
     return jbrowse_data_path, data_dirname, jbrowse_browser_path
 
-def get_jbrowser_link(genome, sample, bed_fpath=None):
+def get_jbrowser_link(genome, sample, bed_fname=None):
     jbrowse_data_path, data_dirname, jbrowse_browser_path = set_folders(genome)
     bed = ''
-    if bed_fpath:
-        bed = ',' + bed_fpath
+    if bed_fname:
+        bed = ',' + bed_fname
     return '{jbrowse_browser_path}/?data={data_dirname}&tracks=DNA,' \
            '{sample}_bigwig,{sample}_vcf{bed},{sample}&highlight='.format(**locals())
 

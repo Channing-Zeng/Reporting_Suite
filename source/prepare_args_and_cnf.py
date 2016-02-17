@@ -57,6 +57,24 @@ def check_genome_resources(cnf):
                     if verify_file(gz_fpath, silent=True):
                         cnf.genome[key] = gz_fpath
 
+    custom_transcripts_fpath = None
+    if cnf.canonical_transcripts:
+        custom_transcripts_fpath = cnf.canonical_transcripts
+    if cnf.genome.canonical_transcripts:
+        custom_transcripts_fpath = cnf.genome.canonical_transcripts
+
+    canonical_transcripts_fpath = None
+    if cnf.snpeff_transcripts:
+        canonical_transcripts_fpath = cnf.snpeff_transcripts
+    if cnf.genome.snpeff and cnf.genome.snpeff.transcripts:
+        canonical_transcripts_fpath = cnf.genome.snpeff.transcripts
+
+    if custom_transcripts_fpath:
+        canonical_transcripts_fpath = custom_transcripts_fpath
+    cnf.canonical_transcripts = verify_file(canonical_transcripts_fpath, description='Canonical transcripts')
+    if not cnf.canonical_transcripts:
+        critical('Please, specify canonical_transcripts or in snpeff transcripts in ' + cnf.sys_cnf)
+
     if not cnf.genome.exons or not cnf.genome.refseq:
         critical('"exons" or "refseq" fields are required in the system config.')
 

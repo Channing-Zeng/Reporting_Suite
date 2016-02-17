@@ -368,7 +368,7 @@ def remove_rejected(cnf, input_fpath, output_fpath=None):
     output_fpath = output_fpath or add_suffix(input_fpath, 'pass')
     if output_fpath.endswith('.gz'):
         output_fpath = splitext(output_fpath)[0]
-    cmdl = '{bcftools} filter -i \'FILTER="PASS" | FILTER="."\' {input_fpath}'.format(**locals())
+    cmdl = '{bcftools} filter -i \'FILTER="PASS"|FILTER="."\' {input_fpath}'.format(**locals())
     return call(cnf, cmdl, output_fpath=output_fpath)
 
 

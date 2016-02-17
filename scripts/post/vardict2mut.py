@@ -571,7 +571,7 @@ def check_by_var_class(var_class, status, reasons, line, header):
         status, reasons = update_status(status, reasons, 'unknown', 'clin_SNP_unknown')
     elif var_class == 'COSMIC':
         if 'COSMIC_Cnt' in header:
-            if sum([int(l) for l in line[header.index('COSMIC_Cnt')].split(',')]) >= 5:
+            if sum([int(l) for l in line[header.index('COSMIC_Cnt')].split(',') if l]) >= 5:
                 status, reasons = update_status(status, reasons, 'likely', 'COSMIC_5+')
         else:
             status, reasons = update_status(status, reasons, 'likely', 'COSMIC')

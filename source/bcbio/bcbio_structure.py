@@ -417,8 +417,8 @@ class VariantCaller:
         self.summary_qc_report = None
         self.summary_qc_rep_fpaths = []
 
-        self.single_vcf_by_sample = dict()
-        self.paired_vcf_by_sample = dict()
+        self.single_anno_vcf_by_sample = dict()
+        self.paired_anno_vcf_by_sample = dict()
         self.single_vcf2txt_res_fpath = None
         self.paired_vcf2txt_res_fpath = None
         self.single_mut_res_fpath = None
@@ -706,24 +706,24 @@ class BCBioStructure(BaseProjectStructure):
                 b.paired = True
                 info('Batch ' + b.name + ' is paired')
                 for c in self.variant_callers.values():
-                    c.paired_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    c.paired_anno_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
             else:
                 b.paired = False
                 info('Batch ' + b.name + ' is single')
                 for c in self.variant_callers.values():
-                    c.single_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    c.single_anno_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
 
         for c in self.variant_callers.values():
-            if c.single_vcf_by_sample:
+            if c.single_anno_vcf_by_sample:
                 vcf2txt_fname = source.mut_fname_template.format(caller_name=c.name)
-                if c.paired_vcf_by_sample:
+                if c.paired_anno_vcf_by_sample:
                     vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
                 c.single_vcf2txt_res_fpath = join(self.var_dirpath, vcf2txt_fname)
                 c.single_mut_res_fpath = add_suffix(c.single_vcf2txt_res_fpath, source.mut_pass_suffix)
 
-            if c.paired_vcf_by_sample:
+            if c.paired_anno_vcf_by_sample:
                 vcf2txt_fname = source.mut_fname_template.format(caller_name=c.name)
-                if c.single_vcf_by_sample:
+                if c.single_anno_vcf_by_sample:
                     vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
                 c.paired_vcf2txt_res_fpath = join(self.var_dirpath, vcf2txt_fname)
                 c.paired_mut_res_fpath = add_suffix(c.paired_vcf2txt_res_fpath, source.mut_pass_suffix)

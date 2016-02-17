@@ -535,23 +535,8 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
             err('Cannot find PASSed mutations fpath')
             return []
 
-    custom_transcripts_fpath = None
-    if cnf.canonical_transcripts:
-        custom_transcripts_fpath = cnf.canonical_transcripts
-    if cnf.genome.canonical_transcripts:
-        custom_transcripts_fpath = cnf.genome.canonical_transcripts
-
-    canonical_transcripts_fpath = None
-    if cnf.snpeff_transcripts:
-        canonical_transcripts_fpath = cnf.snpeff_transcripts
-    if cnf.genome.snpeff and cnf.genome.snpeff.transcripts:
-        canonical_transcripts_fpath = cnf.genome.snpeff.transcripts
-
-    if custom_transcripts_fpath:
-        canonical_transcripts_fpath = custom_transcripts_fpath
-    canonical_transcripts_fpath = verify_file(canonical_transcripts_fpath, description='Canonical transcripts')
-
-    canonical_transcripts = [tr.strip() for tr in open(canonical_transcripts_fpath)]
+    with open(cnf.canonical_transcripts) as f:
+        canonical_transcripts = [tr.strip() for tr in f]
 
     info('Reading mutations from ' + mutations_fpath)
     alts_met_before = set()

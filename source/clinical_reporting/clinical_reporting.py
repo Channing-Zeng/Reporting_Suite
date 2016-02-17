@@ -92,8 +92,8 @@ class BaseClinicalReporting:
 
         mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
         mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
-        bed_name = basename(self.cnf.bed_fpath).split('.')[0] + '.bed' if self.cnf.bed_fpath else None
-        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_name)
+        bed_fname = basename(self.cnf.bed_fpath).split('.')[0] + '.bed' if self.cnf.bed_fpath else None
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_fname)
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)

@@ -121,6 +121,10 @@ def main(args):
         if not cnf['keep_intermediate']:
             shutil.rmtree(cnf['work_dir'])
 
+        info()
+        info('*' * 70)
+        info('Done filtering ' + var_s.name)
+
 
 if __name__ == '__main__':
     main(sys.argv[1:])

@@ -313,17 +313,10 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
     #         added_gene_names_set.add(gene_name)
     # gene_names_list = fixed_gene_names_list
     # info('Uniq gene list contains ' + str(len(gene_names_list)) + ' genes')
-    gene_by_name = OrderedDict()
+    gene_by_name_and_chrom = OrderedDict()
 
     info('Building the Gene objects list based on target')
-    if gene_names_list:
-        info()
-        info('Init the Gene object dict')
-        for gn in gene_names_list:
-            gene_by_name[gn] = GeneInfo(sample_name=sample_name, gene_name=gn)
-        info('Processed ' + str(len(gene_names_list)) + ' gene records -> ' + str(len(gene_by_name)) + ' uniq gene sybmols')
-
-    if exons_bed and gene_by_name:
+    if exons_bed and gene_by_name_and_chrom:
         info()
         # info('Filtering exon bed file to have only gene records...')
         # exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
@@ -340,16 +333,23 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_names_list):
                     if l and not l.startswith('#'):
                         fs = l.split('\t')
                         chrom, start, end, symbol = fs[:4]
-                        gene_by_name[symbol].chrom = chrom
-                        gene_by_name[symbol].start = int(start)
-                        gene_by_name[symbol].end = int(end)
+                        gene_by_name_and_chrom[(symbol, chrom)].chrom = chrom
+                        gene_by_name_and_chrom[(symbol, chrom)].start = int(start)
+                        gene_by_name_and_chrom[(symbol, chrom)].end = int(end)
                         if len(fs) >= 8:
-                            gene_by_name[symbol].biotype = fs[7]
+                            gene_by_name_and_chrom[(symbol, chrom)].biotype = fs[7]
                         i += 1
         info('Processed ' + str(i) + ' genes')
         info()
 
-    return gene_by_name
+    if gene_names_list:
+        info('Filtering by input gene names list')
+        gene_by_name_and_chrom = {(gn, chrom): g for ((gn, chrom), g) in gene_by_name_and_chrom.items() if gn in gene_names_list}
+
+    if not gene_by_name_and_chrom:
+        critical('Err: no genes in the list')
+
+    return gene_by_name_and_chrom
 
 
 def proc_regions(regions, fn, *args, **kwargs):

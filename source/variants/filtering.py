@@ -433,7 +433,6 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=Non
     cmdline = vcf2txt + ' ' + \
         make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=sample_min_freq)
 
-    cmdline += ' ' + ' '.join('<(gunzip -c ' + vcf_fpath + ')' for vcf_fpath in vcf_fpath_by_sample.values())
     res = __run_vcf2txt(cnf, cmdline, vcf2txt_out_fpath)
     return res
 

@@ -76,57 +76,57 @@ def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
                 err('  For ' + str(sample_name) + ' VCF ' + str(fpath) + ' cannot be read')
 
 
-def vcf2txt_bcbio_structure(cnf, bcbio_structure):
-    info('Starting vcf2txt.')
-    info('-' * 70)
-
-    callers = bcbio_structure.variant_callers.values()
-    if cnf.caller:
-        try:
-            callers = [next(c for c in callers if c.name == cnf.caller)]
-        except StopIteration:
-            critical('No variant caller ' + str(cnf.caller) + ' found')
-        info('Running only for ' + callers[0].name)
-
-    for c in callers:
-        filter_for_variant_caller(cnf, c, bcbio_structure)
-
-    info('Done vcf2txt for all variant callers.')
-
-
-def filter_bcbio_structure(cnf, bcbio_structure):
-    info('Starting variant filtering.')
-    info('-' * 70)
-
-    callers = bcbio_structure.variant_callers.values()
-    if cnf.caller:
-        try:
-            callers = [next(c for c in callers if c.name == cnf.caller)]
-        except StopIteration:
-            critical('No variant caller ' + str(cnf.caller) + ' found')
-        info('Running only for ' + callers[0].name)
-
-    for c in callers:
-        filter_for_variant_caller(cnf, c, bcbio_structure)
-    info('Done filtering for all variant callers.')
-
-    global glob_cnf
-    glob_cnf = cnf
-
-    threads_num = min(len(bcbio_structure.samples) * len(callers), cnf.threads)
-    # write_vcfs(cnf, bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
-
-    info('Indexing final VCFs')
-    Parallel(n_jobs=threads_num) \
-        (delayed(index_vcf)(
-                None,
-                sample.name,
-                sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False),
-                sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False),
-                caller.name)
-            for caller in callers for sample in caller.samples)
-
-    finish_filtering_for_bcbio(cnf, bcbio_structure, callers)
+# def vcf2txt_bcbio_structure(cnf, bcbio_structure):
+#     info('Starting vcf2txt.')
+#     info('-' * 70)
+#
+#     callers = bcbio_structure.variant_callers.values()
+#     if cnf.caller:
+#         try:
+#             callers = [next(c for c in callers if c.name == cnf.caller)]
+#         except StopIteration:
+#             critical('No variant caller ' + str(cnf.caller) + ' found')
+#         info('Running only for ' + callers[0].name)
+#
+#     for c in callers:
+#         filter_for_variant_caller(cnf, c, bcbio_structure)
+#
+#     info('Done vcf2txt for all variant callers.')
+#
+#
+# def filter_bcbio_structure(cnf, bcbio_structure):
+#     info('Starting variant filtering.')
+#     info('-' * 70)
+#
+#     callers = bcbio_structure.variant_callers.values()
+#     if cnf.caller:
+#         try:
+#             callers = [next(c for c in callers if c.name == cnf.caller)]
+#         except StopIteration:
+#             critical('No variant caller ' + str(cnf.caller) + ' found')
+#         info('Running only for ' + callers[0].name)
+#
+#     for c in callers:
+#         filter_for_variant_caller(cnf, c, bcbio_structure)
+#     info('Done filtering for all variant callers.')
+#
+#     global glob_cnf
+#     glob_cnf = cnf
+#
+#     threads_num = min(len(bcbio_structure.samples) * len(callers), cnf.threads)
+#     # write_vcfs(cnf, bcbio_structure.samples, vcf_fpaths, caller_name, vcf2txt_out_fpath, res, threads_num)
+#
+#     info('Indexing final VCFs')
+#     Parallel(n_jobs=threads_num) \
+#         (delayed(index_vcf)(
+#                 None,
+#                 sample.name,
+#                 sample.get_pass_filt_vcf_fpath_by_callername(caller.name, gz=False),
+#                 sample.get_filt_vcf_fpath_by_callername(caller.name, gz=False),
+#                 caller.name)
+#             for caller in callers for sample in caller.samples)
+#
+#     finish_filtering_for_bcbio(cnf, bcbio_structure, callers)
 
 
 def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
@@ -211,149 +211,149 @@ def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
 
 
 
-def vcf2txt_for_variant_caller(cnf, caller, bcbio_structure):
-    info('Running for ' + caller.name)
+# def vcf2txt_for_variant_caller(cnf, caller, bcbio_structure):
+#     info('Running for ' + caller.name)
+#
+#     all_vcf_by_sample = caller.find_anno_vcf_by_sample()
+#     if len(all_vcf_by_sample) == 0:
+#         err('No vcfs for ' + caller.name + '. Skipping.')
+#         return caller
+#
+#     def fill_in(batches):
+#         vcf_by_sample = OrderedDict()
+#         for b in batches:
+#             info('Batch ' + b.name)
+#             if b.normal:
+#                 info('  normal sample: ' + b.normal.name)
+#                 vcf_fpath = all_vcf_by_sample.get(b.normal.name)
+#                 if vcf_fpath:
+#                     vcf_by_sample[b.normal.name] = vcf_fpath
+#                     info('  normal VCF: ' + vcf_fpath)
+#             if len(b.tumor) > 1:
+#                 err('  ERROR: ' + caller.name + ': ' + str(len(b.tumor)) + ' tumor samples (' + ', '.join(t.name for t in b.tumor) + ') for batch ' + b.name)
+#             if len(b.tumor) > 0:
+#                 info('  tumor sample: ' + b.tumor[0].name)
+#                 vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
+#                 if vcf_fpath:
+#                     vcf_by_sample[b.tumor[0].name] = vcf_fpath
+#                     info('  tumor VCF: ' + vcf_fpath)
+#         return vcf_by_sample
+#
+#     paired_batches = [b for b in bcbio_structure.batches.values() if b.paired]
+#     info('Paired batches: ' + ', '.join(b.name for b in paired_batches))
+#     paired_vcf_by_sample = fill_in(paired_batches)
+#
+#     single_batches = [b for b in bcbio_structure.batches.values() if not b.paired]
+#     info('Single batches: ' + ', '.join(b.name for b in single_batches))
+#     single_vcf_by_sample = fill_in(single_batches)
+#
+#     if single_vcf_by_sample:
+#         info('*' * 70)
+#         info('Single samples - total ' + str(len(single_vcf_by_sample)))
+#
+#         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
+#         if paired_vcf_by_sample:
+#             vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
+#
+#         vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, single_vcf_by_sample, vcf2txt_fname)
+#
+#         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
+#         caller.single_mut_res_fpath = mut_fpath
+#         if mut_fpath:
+#             info('Done filtering with vcf2txt/vardict2mut for single samples, result is ' + str(mut_fpath))
+#
+#     if paired_vcf_by_sample:
+#         info('*' * 70)
+#         info('Paired samples - total ' + str(len(paired_vcf_by_sample)))
+#
+#         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
+#         if single_vcf_by_sample:
+#             vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
+#
+#         vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, paired_vcf_by_sample, vcf2txt_fname)
+#
+#         caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
+#         caller.paired_mut_res_fpath = mut_fpath
+#         if mut_fpath:
+#             info('Done filtering with vcf2txt/vardict2mut for paired samples, result is ' + str(mut_fpath))
+#
+#     info('-' * 70)
+#     info()
+#
+#     return caller
 
-    all_vcf_by_sample = caller.find_anno_vcf_by_sample()
-    if len(all_vcf_by_sample) == 0:
-        err('No vcfs for ' + caller.name + '. Skipping.')
-        return caller
 
-    def fill_in(batches):
-        vcf_by_sample = OrderedDict()
-        for b in batches:
-            info('Batch ' + b.name)
-            if b.normal:
-                info('  normal sample: ' + b.normal.name)
-                vcf_fpath = all_vcf_by_sample.get(b.normal.name)
-                if vcf_fpath:
-                    vcf_by_sample[b.normal.name] = vcf_fpath
-                    info('  normal VCF: ' + vcf_fpath)
-            if len(b.tumor) > 1:
-                err('  ERROR: ' + caller.name + ': ' + str(len(b.tumor)) + ' tumor samples (' + ', '.join(t.name for t in b.tumor) + ') for batch ' + b.name)
-            if len(b.tumor) > 0:
-                info('  tumor sample: ' + b.tumor[0].name)
-                vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
-                if vcf_fpath:
-                    vcf_by_sample[b.tumor[0].name] = vcf_fpath
-                    info('  tumor VCF: ' + vcf_fpath)
-        return vcf_by_sample
-
-    paired_batches = [b for b in bcbio_structure.batches.values() if b.paired]
-    info('Paired batches: ' + ', '.join(b.name for b in paired_batches))
-    paired_vcf_by_sample = fill_in(paired_batches)
-
-    single_batches = [b for b in bcbio_structure.batches.values() if not b.paired]
-    info('Single batches: ' + ', '.join(b.name for b in single_batches))
-    single_vcf_by_sample = fill_in(single_batches)
-
-    if single_vcf_by_sample:
-        info('*' * 70)
-        info('Single samples - total ' + str(len(single_vcf_by_sample)))
-
-        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
-        if paired_vcf_by_sample:
-            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
-
-        vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, single_vcf_by_sample, vcf2txt_fname)
-
-        caller.single_vcf2txt_res_fpath = vcf2txt_fpath
-        caller.single_mut_res_fpath = mut_fpath
-        if mut_fpath:
-            info('Done filtering with vcf2txt/vardict2mut for single samples, result is ' + str(mut_fpath))
-
-    if paired_vcf_by_sample:
-        info('*' * 70)
-        info('Paired samples - total ' + str(len(paired_vcf_by_sample)))
-
-        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
-        if single_vcf_by_sample:
-            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
-
-        vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, paired_vcf_by_sample, vcf2txt_fname)
-
-        caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
-        caller.paired_mut_res_fpath = mut_fpath
-        if mut_fpath:
-            info('Done filtering with vcf2txt/vardict2mut for paired samples, result is ' + str(mut_fpath))
-
-    info('-' * 70)
-    info()
-
-    return caller
-
-
-def filter_for_variant_caller(cnf, caller, bcbio_structure):
-    info('Running for ' + caller.name)
-
-    all_vcf_by_sample = caller.find_anno_vcf_by_sample()
-    if len(all_vcf_by_sample) == 0:
-        err('No vcfs for ' + caller.name + '. Skipping.')
-        return caller
-
-    def fill_in(batches):
-        vcf_by_sample = OrderedDict()
-        for b in batches:
-            info('Batch ' + b.name)
-            if b.normal:
-                info('  normal sample: ' + b.normal.name)
-                vcf_fpath = all_vcf_by_sample.get(b.normal.name)
-                if vcf_fpath:
-                    vcf_by_sample[b.normal.name] = vcf_fpath
-                    info('  normal VCF: ' + vcf_fpath)
-            if len(b.tumor) > 1:
-                err('  ERROR: ' + caller.name + ': ' + str(len(b.tumor)) +
-                    ' tumor samples (' + ', '.join(t.name for t in b.tumor) + ') for batch ' + b.name)
-            if len(b.tumor) > 0:
-                info('  tumor sample: ' + b.tumor[0].name)
-                vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
-                if vcf_fpath:
-                    vcf_by_sample[b.tumor[0].name] = vcf_fpath
-                    info('  tumor VCF: ' + vcf_fpath)
-        return vcf_by_sample
-
-    paired_batches = [b for b in bcbio_structure.batches.values() if b.paired]
-    info('Paired batches: ' + ', '.join(b.name for b in paired_batches))
-    paired_vcf_by_sample = fill_in(paired_batches)
-
-    single_batches = [b for b in bcbio_structure.batches.values() if not b.paired]
-    info('Single batches: ' + ', '.join(b.name for b in single_batches))
-    single_vcf_by_sample = fill_in(single_batches)
-
-    if single_vcf_by_sample:
-        info('*' * 70)
-        info('Single samples (total ' + str(len(single_vcf_by_sample)) + '):')
-
-        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
-        if paired_vcf_by_sample:
-            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
-
-        vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, single_vcf_by_sample, vcf2txt_fname)
-
-        caller.single_vcf2txt_res_fpath = vcf2txt_fpath
-        caller.single_mut_res_fpath = mut_fpath
-        if mut_fpath:
-            info('Done filtering with vcf2txt/vardict2mut for single samples, result is ' + str(mut_fpath))
-
-    if paired_vcf_by_sample:
-        info('*' * 70)
-        info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
-
-        vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
-        if single_vcf_by_sample:
-            vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
-
-        vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, paired_vcf_by_sample, vcf2txt_fname)
-
-        caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
-        caller.paired_mut_res_fpath = mut_fpath
-        if mut_fpath:
-            info('Done filtering with vcf2txt/vardict2mut for paired samples, result is ' + str(mut_fpath))
-
-    info('-' * 70)
-    info()
-
-    return caller
+# def filter_for_variant_caller(cnf, caller, bcbio_structure):
+#     info('Running for ' + caller.name)
+#
+#     all_vcf_by_sample = caller.find_anno_vcf_by_sample()
+#     if len(all_vcf_by_sample) == 0:
+#         err('No vcfs for ' + caller.name + '. Skipping.')
+#         return caller
+#
+#     def fill_in(batches):
+#         vcf_by_sample = OrderedDict()
+#         for b in batches:
+#             info('Batch ' + b.name)
+#             if b.normal:
+#                 info('  normal sample: ' + b.normal.name)
+#                 vcf_fpath = all_vcf_by_sample.get(b.normal.name)
+#                 if vcf_fpath:
+#                     vcf_by_sample[b.normal.name] = vcf_fpath
+#                     info('  normal VCF: ' + vcf_fpath)
+#             if len(b.tumor) > 1:
+#                 err('  ERROR: ' + caller.name + ': ' + str(len(b.tumor)) +
+#                     ' tumor samples (' + ', '.join(t.name for t in b.tumor) + ') for batch ' + b.name)
+#             if len(b.tumor) > 0:
+#                 info('  tumor sample: ' + b.tumor[0].name)
+#                 vcf_fpath = all_vcf_by_sample.get(b.tumor[0].name)
+#                 if vcf_fpath:
+#                     vcf_by_sample[b.tumor[0].name] = vcf_fpath
+#                     info('  tumor VCF: ' + vcf_fpath)
+#         return vcf_by_sample
+#
+#     paired_batches = [b for b in bcbio_structure.batches.values() if b.paired]
+#     info('Paired batches: ' + ', '.join(b.name for b in paired_batches))
+#     paired_vcf_by_sample = fill_in(paired_batches)
+#
+#     single_batches = [b for b in bcbio_structure.batches.values() if not b.paired]
+#     info('Single batches: ' + ', '.join(b.name for b in single_batches))
+#     single_vcf_by_sample = fill_in(single_batches)
+#
+#     if single_vcf_by_sample:
+#         info('*' * 70)
+#         info('Single samples (total ' + str(len(single_vcf_by_sample)) + '):')
+#
+#         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
+#         if paired_vcf_by_sample:
+#             vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
+#
+#         vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, single_vcf_by_sample, vcf2txt_fname)
+#
+#         caller.single_vcf2txt_res_fpath = vcf2txt_fpath
+#         caller.single_mut_res_fpath = mut_fpath
+#         if mut_fpath:
+#             info('Done filtering with vcf2txt/vardict2mut for single samples, result is ' + str(mut_fpath))
+#
+#     if paired_vcf_by_sample:
+#         info('*' * 70)
+#         info('Paired samples (total ' + str(len(paired_vcf_by_sample)) + '):')
+#
+#         vcf2txt_fname = source.mut_fname_template.format(caller_name=caller.name)
+#         if single_vcf_by_sample:
+#             vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
+#
+#         vcf2txt_fpath, mut_fpath = __proc_caller_samples(cnf, bcbio_structure, caller, paired_vcf_by_sample, vcf2txt_fname)
+#
+#         caller.paired_vcf2txt_res_fpath = vcf2txt_fpath
+#         caller.paired_mut_res_fpath = mut_fpath
+#         if mut_fpath:
+#             info('Done filtering with vcf2txt/vardict2mut for paired samples, result is ' + str(mut_fpath))
+#
+#     info('-' * 70)
+#     info()
+#
+#     return caller
 
 
 def __proc_caller_samples(cnf, bcbio_structure, caller, vcf_by_sample, vcf2txt_fname):
