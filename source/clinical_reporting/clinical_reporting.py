@@ -92,7 +92,7 @@ class BaseClinicalReporting:
 
         mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
         mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
-        bed_name = basename(self.cnf.bed_fpath).split('.')[0] + '.bed'
+        bed_name = basename(self.cnf.bed_fpath).split('.')[0] + '.bed' if self.cnf.bed_fpath else None
         jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_name)
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
@@ -636,11 +636,8 @@ class ClinicalReporting(BaseClinicalReporting):
             if self.seq2c_report:
                 data['seq2c']['amp_del'] = self.__seq2c_section()
                 if len(self.experiment.seq2c_events_by_gene_name.values()) > len(self.experiment.key_gene_by_name.values()):
-                    data['seq2c']['description_for_whole_genomic_profile'] = \
-                        '<b>Note:</b> The whole genomic profile is shown in gray.'.format(self.experiment.genes_collection_type)
+                    data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
-                else:
-                    data['seq2c']['description_for_whole_genomic_profile'] = ''
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),

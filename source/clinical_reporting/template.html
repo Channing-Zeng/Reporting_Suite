@@ -229,7 +229,13 @@
             <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
                 <span style="color: green;">Green</span> means amplification,
                 <span style="color: red;">red</span> means deletion,
-                <b>black</b> means no event.{description_for_whole_genomic_profile}</p>
+                <b>black</b> means no event.
+                {.section description_for_whole_genomic_profile}
+                <b>Note:</b> The whole genomic profile is shown. For non-{key_or_target} genes
+                <span style="color: #003385;">blue</span> means amplification,
+                <span style="color: #641F15;">brown</span> means deletion,
+                <span style="color: gray;">gray</span> means no event.
+                {.end}</p>
             <!--<div class="seq2c_plot" style="margin-left: -20px;">-->
                 <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
             <!--</div>-->

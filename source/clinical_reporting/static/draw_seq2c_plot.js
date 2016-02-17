@@ -49,10 +49,10 @@ function drawSeq2cPlot(key, data, placeholder_el) {
             if (!data.events[k].isKeyGene) {
                 color = '#ccc';
                 if (data.events[k].ampDel == 'Amp') {
-                    color = '#19A600';
+                    color = '#003385';
                 }
                 if (data.events[k].ampDel == 'Del') {
-                    color = '#950000';
+                    color = '#641F15';
                 }
             }
             else {
