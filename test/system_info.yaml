@@ -9,16 +9,12 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx6g"]
     path: ext_tools/snpEff/SnpSift.jar
+  vcf2txt:
+    path: ext_tools/vcf2txt_in_2_rounds.pl
   qsub:
     path: tools/qsub.sh
   qdel:
     path: tools/qdel.sh
-  vardict_pl:
-    path: ~/vagrant/VarDict/vardict.pl
-  testsomatic_r:
-    path: ~/vagrant/VarDict/testsomatic.R
-  var2vcf_somatic_pl:
-    path: ~/vagrant/VarDict/var2vcf_somatic.pl
   vcf_merge:
     path: /usr/local/bin/vcf-merge
   picard:
