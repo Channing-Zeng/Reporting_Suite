@@ -300,14 +300,14 @@ def clinical_sample_info_from_cnf(cnf):
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes=cnf.key_genes,
         target_type=cnf.target_type,
-        bed_fpath=verify_file(cnf.bed_fpath, is_critical=True) if cnf.bed_fpath else None,
-        mutations_fpath=verify_file(cnf.mutations_fpath, is_critical=True) if cnf.mutations_fpath else None,
-        sv_fpath=verify_file(cnf.sv_fpath, is_critical=True) if cnf.sv_fpath else None,
-        varqc_json_fpath=verify_file(cnf.varqc_json_fpath, is_critical=True) if cnf.varqc_json_fpath else None,
-        seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, is_critical=True) if cnf.seq2c_tsv_fpath else None,
+        bed_fpath=verify_file(cnf.bed_fpath, is_critical=False) if cnf.bed_fpath else None,
+        mutations_fpath=verify_file(cnf.mutations_fpath, is_critical=False) if cnf.mutations_fpath else None,
+        sv_fpath=verify_file(cnf.sv_fpath, is_critical=False) if cnf.sv_fpath else None,
+        varqc_json_fpath=verify_file(cnf.varqc_json_fpath, is_critical=False) if cnf.varqc_json_fpath else None,
+        seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, is_critical=False) if cnf.seq2c_tsv_fpath else None,
         project_name=cnf.project_name,
         project_report_path=cnf.project_report_path,
-        targqc_report_path=verify_file(cnf.targqc_report_path, silent=True) if cnf.targqc_report_path else None)
+        targqc_report_path=verify_file(cnf.targqc_report_path, silent=False) if cnf.targqc_report_path else None)
 
 
 class ClinicalExperimentInfo:

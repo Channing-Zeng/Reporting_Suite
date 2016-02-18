@@ -826,7 +826,7 @@ class BCBioRunner:
                             wait_for_steps += [self.varqc.job_name(sample.name, caller=clinical_report_caller.name)] if self.varqc in self.steps else []
                             wait_for_steps += [self.varfilter.job_name(sample.name, caller=clinical_report_caller.name)] if self.varfilter in self.steps else []
 
-                            mut_fpath = sample.get_vcf2txt_by_callername(clinical_report_caller.name)
+                            mut_fpath = add_suffix(sample.get_vcf2txt_by_callername(clinical_report_caller.name), source.mut_pass_suffix)
                             if self.varfilter in self.steps or verify_file(mut_fpath):
                                 mutation_cmdl = ' --mutations ' + mut_fpath
 
