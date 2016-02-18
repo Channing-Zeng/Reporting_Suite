@@ -430,7 +430,7 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=Non
     info()
     info('Running VarDict vcf2txt...')
 
-    vcf2txt = get_script_cmdline(cnf, 'perl', join('VarDict', 'vcf2txt.pl'), is_critical=True)
+    vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
 
     cmdline = vcf2txt + ' ' + \
         make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=sample_min_freq)
