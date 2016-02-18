@@ -591,8 +591,8 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                     reason_col = None
                 continue
             fs = l.strip().split('\t')
-            sample_name, chrom, start, ref, alt, gname, transcript = fs[sample_col], fs[chr_col], fs[pos_col], \
-                                                                     fs[ref_col], fs[alt_col], fs[gene_col], fs[transcript_col]
+            sample_name, chrom, start, ref, alt, gname, transcript = \
+                fs[sample_col], fs[chr_col], fs[pos_col], fs[ref_col], fs[alt_col], fs[gene_col], fs[transcript_col]
             codon_change, cdna_change, aa_change, aa_len = fs[codon_chg_col], fs[cdna_chg_col], fs[aa_chg_col], fs[aa_len_col]
             ids, type_, var_type, var_class = fs[ids_col], fs[type_col], fs[var_type_col], fs[class_col]
             depth, af = fs[depth_col], fs[allele_freq_col]
