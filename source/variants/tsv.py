@@ -22,23 +22,15 @@ def make_tsv(cnf, vcf_fpath, samplename, main_sample_index=None):
     if main_sample_index is None:
         main_sample_index = get_sample_column_index(vcf_fpath, samplename) or 0
 
-    tsv_fpath = _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index)
+    tsv_fpath = _extract_fields(cnf, vcf_fpath, samplename, main_sample_index)
     if not tsv_fpath:
         return tsv_fpath
 
-    # manual_tsv_fields = cnf.annotation.get('tsv_fields')
-    # if manual_tsv_fields:
-    #     field_map = dict((rec.keys()[0], rec.values()[0]) for rec in manual_tsv_fields)
-    #     if cnf.get('keep_intermediate'):
-    #         info('Saved TSV file to ' + tsv_fpath)
-    #     tsv_fpath = _rename_fields(cnf, tsv_fpath, field_map)
-    #     if cnf.get('keep_intermediate'):
-    #         info('Saved TSV file with nice names to ' + tsv_fpath)
 
     return tsv_fpath
 
 
-def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
+def _extract_fields(cnf, vcf_fpath, samplename, main_sample_index=0):
     fname, _ = splitext_plus(basename(vcf_fpath))
     tsv_fpath = join(cnf.work_dir, fname + '.tsv')
 
@@ -75,7 +67,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
                         if len(reader.samples) > 1:
                             all_fields.append(f.replace('GEN[*].', normal_gt))
                 else:
-                    warn('Warning: ' + f + ' is not in VCF header FORMAT records')
+                    warn('TSV Saver: Warning: ' + f + ' is not in VCF header FORMAT records')
 
             elif f in ['CHROM', 'POS', 'REF', 'ALT', 'ID', 'FILTER', 'QUAL']:
                 all_fields.append(f)
@@ -92,7 +84,7 @@ def _extract_fields_new(cnf, vcf_fpath, samplename, main_sample_index=0):
                 elif f == 'SAMPLE':
                     all_fields.append(f)
                 else:
-                    warn('Warning: ' + f + ' is not in VCF header INFO records')
+                    warn('TSV Saver: Warning: ' + f + ' is not in VCF header INFO records')
 
         info('TSV saver: Iterating over records...')
         d = OrderedDict()

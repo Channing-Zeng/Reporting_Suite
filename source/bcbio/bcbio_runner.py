@@ -270,7 +270,7 @@ class BCBioRunner:
                     '--proc-name ' + BCBioStructure.varqc_after_name
         )
 
-        self.is_wgs = self.bcbio_structure.is_wgs
+        self.is_wgs = self.cnf.is_wgs or self.bcbio_structure.is_wgs
         target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
 
         ##### FILTERING #####

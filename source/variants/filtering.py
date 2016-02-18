@@ -271,20 +271,21 @@ def postprocess_vcf(cnf,
         info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': saved filtered VCFs to ' +
              ungz + ' and ' + var_sample.pass_filt_vcf_fpath)
 
-        info()
-        info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': writing filtered TSVs')
-        # Converting to TSV - saving .anno.filt.tsv
-        if 'tsv_fields' in cnf.annotation and cnf.tsv:
-            tmp_tsv_fpath = make_tsv(cnf, ungz, var_sample.name)
-            if not tmp_tsv_fpath:
-                err('TSV convertion didn\'t work')
-            else:
-                if isfile(var_sample.filt_tsv_fpath):
-                    os.remove(var_sample.filt_tsv_fpath)
-                shutil.copy(tmp_tsv_fpath, var_sample.filt_tsv_fpath)
+        if False:
+            info()
+            info(var_sample.name + ((', ' + caller_name) if caller_name else '') + ': writing filtered TSVs')
+            # Converting to TSV - saving .anno.filt.tsv
+            if 'tsv_fields' in cnf.annotation and cnf.tsv:
+                tmp_tsv_fpath = make_tsv(cnf, ungz, var_sample.name)
+                if not tmp_tsv_fpath:
+                    err('TSV convertion didn\'t work')
+                else:
+                    if isfile(var_sample.filt_tsv_fpath):
+                        os.remove(var_sample.filt_tsv_fpath)
+                    shutil.copy(tmp_tsv_fpath, var_sample.filt_tsv_fpath)
 
-            info(var_sample.name + ((', ' + caller_name) if caller_name else '') +
-                 ': saved filtered TSV to ' + var_sample.filt_tsv_fpath)
+                info(var_sample.name + ((', ' + caller_name) if caller_name else '') +
+                     ': saved filtered TSV to ' + var_sample.filt_tsv_fpath)
 
     info('Done postprocessing filtered VCF.')
     return ungz

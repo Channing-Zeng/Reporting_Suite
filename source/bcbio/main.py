@@ -32,7 +32,7 @@ def main():
     parser.add_option('--seq2c-opts', dest='seq2c_opts', help='Options for the final lr2gene.pl script.')
     parser.add_option('--seq2c-controls', dest='seq2c_controls', help='Additional controls for Seq2C.')
     parser.add_option('--deep-seq', dest='deep_seq', action='store_true', default=False, help='Use run_info_DeepSeq.yaml')
-    parser.add_option('--wgs', dest='wgs', action='store_true', default=False, help='Ignore sv_regions and run as WGS')
+    parser.add_option('--wgs', dest='is_wgs', action='store_true', default=False, help='Ignore sv_regions and run as WGS')
     parser.add_option('--only-summary', dest='only_summary', action='store_true', default=False, help='Only generate project-level report')
     parser.add_option('--jira', dest='jira', help='JIRA case path')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
