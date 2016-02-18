@@ -296,10 +296,10 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         else:
             info(final_vcf_fpath + ' is a good gzipped file.')
             return [final_vcf_fpath]
-    else:
-        info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
-        final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
-        info('Saved VCF again to ' + final_vcf_fpath)
+    # else:
+    #     info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
+    #     final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
+    #     info('Saved VCF again to ' + final_vcf_fpath)
 
     return [final_vcf_fpath]
 

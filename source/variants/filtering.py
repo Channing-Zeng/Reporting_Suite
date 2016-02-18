@@ -421,7 +421,8 @@ def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=None):
     if c.amplicon_based:
         cmdline += ' -a '
 
-    cmdline += ' ' + ' '.join('<(gunzip -c ' + vcf_fpath + ')' for vcf_fpath in vcf_fpath_by_sample.values())
+    cmdline += ' ' + ' '.join(('<(gunzip -c ' + vcf_fpath + ')') if vcf_fpath.endswith('.gz') else vcf_fpath
+                              for vcf_fpath in vcf_fpath_by_sample.values())
     return cmdline
 
 

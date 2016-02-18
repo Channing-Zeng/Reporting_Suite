@@ -706,12 +706,20 @@ class BCBioStructure(BaseProjectStructure):
                 b.paired = True
                 info('Batch ' + b.name + ' is paired')
                 for c in self.variant_callers.values():
-                    c.paired_anno_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    gz_fpath = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    ungz_fpath = splitext(gz_fpath)[0]
+                    if not isfile(ungz_fpath) and isfile(gz_fpath) and verify_file(gz_fpath):
+                        call(cnf, 'gunzip ' + gz_fpath + ' -c', output_fpath=ungz_fpath)
+                    c.paired_anno_vcf_by_sample[b.tumor[0].name] = ungz_fpath
             else:
                 b.paired = False
                 info('Batch ' + b.name + ' is single')
                 for c in self.variant_callers.values():
-                    c.single_anno_vcf_by_sample[b.tumor[0].name] = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    gz_fpath = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    ungz_fpath = splitext(gz_fpath)[0]
+                    if not isfile(ungz_fpath) and isfile(gz_fpath) and verify_file(gz_fpath):
+                        call(cnf, 'gunzip ' + gz_fpath + ' -c', output_fpath=ungz_fpath)
+                    c.single_anno_vcf_by_sample[b.tumor[0].name] = ungz_fpath
 
         for c in self.variant_callers.values():
             if c.single_anno_vcf_by_sample:
