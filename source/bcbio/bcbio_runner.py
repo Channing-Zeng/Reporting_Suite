@@ -18,7 +18,8 @@ from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import safe_mkdir
 from source.logger import info, err, critical, send_email, warn, is_local
-from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed, \
+    check_md5
 from source.utils import is_us, md5
 from source.variants.filtering import make_vcf2txt_cmdl_params
 from source.variants.vcf_processing import verify_vcf
@@ -499,24 +500,7 @@ class BCBioRunner:
 
         reuse = False
         if target_bed or exons_bed:
-            bed_md5_fpath = join(self.cnf.work_dir, 'bed_md5.txt')
-            new_md5 = md5(target_bed or exons_bed)
-            prev_md5 = None
-            if isfile(bed_md5_fpath):
-                with open(bed_md5_fpath) as f:
-                    prev_md5 = f.read()
-
-            if prev_md5 == new_md5:
-                info('Reusing previous BED files.')
-                reuse = True
-            else:
-                info('Pre-processing input BED file')
-                if prev_md5:
-                    info('Prev BED md5: ' + str(prev_md5))
-                    info('New BED md5: ' + str(new_md5))
-
-                with open(bed_md5_fpath, 'w') as f:
-                    f.write(str(new_md5))
+            reuse = check_md5(self.cnf.work_dir, target_bed or exons_bed, 'bed')
 
         with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
             exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed, seq2c_bed)

@@ -12,6 +12,7 @@ from source.file_utils import intermediate_fname, iterate_file, splitext_plus, v
 from source.logger import info, critical, warn, err
 from source.qsub_utils import submit_job
 from source.tools_from_cnf import get_system_path, get_script_cmdline
+from source.utils import md5
 
 
 def index_bam(cnf, bam_fpath, sambamba=None):
@@ -796,6 +797,31 @@ def verify_bed(fpath, description='', is_critical=False, silent=False):
         return None
 
     return fpath
+
+
+def check_md5(work_dir, fpath, file_ext, silent=False):
+    md5_fpath = join(work_dir, file_ext + '_md5.txt')
+    new_md5 = md5(fpath)
+    prev_md5 = None
+    if isfile(md5_fpath):
+        with open(md5_fpath) as f:
+            prev_md5 = f.read()
+
+    if prev_md5 == new_md5:
+        if not silent:
+            info('Reusing previous ' + file_ext.upper() + ' files.')
+        return True
+    else:
+        if not silent:
+            info('Pre-processing input ' + file_ext.upper() + ' file')
+        if prev_md5:
+            if not silent:
+                info('Prev ' + file_ext.upper() + ' md5: ' + str(prev_md5))
+                info('New ' + file_ext.upper() + ' md5: ' + str(new_md5))
+
+        with open(md5_fpath, 'w') as f:
+            f.write(str(new_md5))
+        return False
 
 
 class BedFile:

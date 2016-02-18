@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
+from source.file_utils import file_transaction
+from source.targetcov.bam_and_bed_utils import check_md5
 
 '''Convert BAM files to BigWig file format in a specified region.
 Usage:
@@ -29,7 +31,7 @@ from os.path import splitext, join
 from contextlib import contextmanager, closing
 import pysam
 
-from source.logger import critical
+from source.logger import critical, info
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources
 from source.tools_from_cnf import get_system_path
@@ -68,17 +70,19 @@ def process_bam(cnf, bam_file, chrom='all', start=0, end=None,
         end = int(end)
     regions = [(chrom, start, end)]
     bigwig_fpath = outfile
-    if not (os.path.exists(outfile) and os.path.getsize(outfile) > 0):
+    if not (check_md5(cnf.work_dir, bam_file, 'bam', silent=True) and os.path.exists(outfile)):
         wig_file = '%s.wig' % splitext(outfile)[0]
-        out_handle = open(wig_file, 'w')
-        with closing(out_handle):
-            chr_sizes, wig_valid = write_bam_track(bam_file, regions, out_handle,
-                                                   normalize)
+        with file_transaction(cnf.work_dir, wig_file) as tx:
+            with open(tx, 'w') as out:
+                chr_sizes, wig_valid = write_bam_track(bam_file, regions, out,
+                                                       normalize)
         try:
             if wig_valid:
                 bigwig_fpath = convert_to_bigwig(wig_file, chr_sizes, cnf, outfile)
         finally:
             os.remove(wig_file)
+    else:
+        info(outfile + ' exists, reusing')
     return bigwig_fpath
 
 
@@ -123,9 +127,10 @@ def convert_to_bigwig(wig_fpath, chr_sizes, cnf, bw_fpath=None):
         for chrom, size in chr_sizes:
             out_handle.write('%s\t%s\n' % (chrom, size))
     try:
-        cmdl = get_system_path(cnf, join('tools', 'wigToBigWig'), is_critical=True)
-        cmdl += ' ' + wig_fpath + ' ' + chr_sizes_fpath + ' ' + bw_fpath
-        call(cnf, cmdl, exit_on_error=False)
+        with file_transaction(cnf.work_dir, bw_fpath) as tx_fpath:
+            cmdl = get_system_path(cnf, join('tools', 'wigToBigWig'), is_critical=True)
+            cmdl += ' ' + wig_fpath + ' ' + chr_sizes_fpath + ' ' + tx_fpath
+            call(cnf, cmdl, exit_on_error=False)
     finally:
         os.remove(chr_sizes_fpath)
     return bw_fpath
