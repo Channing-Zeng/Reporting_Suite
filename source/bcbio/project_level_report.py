@@ -234,15 +234,18 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
         normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
         for s in bcbio_structure.samples:
             targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
-            varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-            varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
 
             sample_reports_records[s.name].extend([
                 _make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
                 _make_url_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
-                _make_url_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
-                _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
             ])
+            if not s.phenotype or s.phenotype != 'normal':
+                varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
+                varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
+                sample_reports_records[s.name].extend([
+                    _make_url_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
+                    _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
+                ])
 
             if not verify_file(s.clinical_html, is_critical=False):
                 clinical_html = join(dirname(dirname(s.clinical_html)), 'clinicalReport', basename(s.clinical_html))

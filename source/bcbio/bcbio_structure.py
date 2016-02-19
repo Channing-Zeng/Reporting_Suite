@@ -515,8 +515,8 @@ class BaseProjectStructure:
     targqc_repr      = 'TargQC'
 
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
-    varqc_dir        = varqc_summary_dir       = join('qc', varqc_name)
-    varqc_after_dir  = varqc_after_summary_dir = join('qc', varqc_after_name)
+    varqc_dir        = varqc_summary_dir       = join(varannotate_dir, 'qc',)
+    varqc_after_dir  = varqc_after_summary_dir = join(varfilter_dir, 'qc')
     targqc_dir       = targqc_summary_dir      = join('qc', targqc_name)
     ngscat_dir                                 = join(targqc_dir, ngscat_name)
 
@@ -899,7 +899,8 @@ class BCBioStructure(BaseProjectStructure):
             info('TargQC BED file for ' + sample.name + ': ' + str(sample.bed))
         else:
             sample.bed = sample.sv_bed
-            info('Setting TargQC BED file for ' + sample.name + ' same as sv_regions: ' + str(sample.bed))
+            if sample.bed:
+                info('Setting TargQC BED file for ' + sample.name + ' same as sv_regions: ' + str(sample.bed))
 
     def _set_bam_file(self, sample):
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))

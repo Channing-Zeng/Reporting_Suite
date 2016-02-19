@@ -429,7 +429,7 @@ def _symlink_vcfs(callers, datestamp_var_dirpath):
                 for fpath in [base_filt_fpath + '.gz',
                               base_filt_fpath + '.idx',
                               base_filt_fpath + '.gz.tbi']:
-                    if verify_file(fpath):
+                    if verify_file(fpath, silent=True):
                         _symlink_to_dir(fpath, sample.dirpath)
                         # _symlink_to_dir(fpath, datestamp_var_dirpath)
 

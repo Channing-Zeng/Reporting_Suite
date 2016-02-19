@@ -22,9 +22,10 @@ ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
 
 
 class KeyGene:
-    def __init__(self, name, ave_depth=None):
+    def __init__(self, name, chrom=None, ave_depth=None):
         self.name = name
-        self.chrom = None
+        self.chrom = chrom
+        self.key = self.name, self.chrom
         self.start = None
         self.end = None
         self.cdss = []
@@ -319,7 +320,7 @@ class ClinicalExperimentInfo:
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
-        self.key_gene_by_name = dict()
+        self.key_gene_by_name_chrom = dict()
         self.genes_collection_type = ''
         self.genes_description = ''
         self.key = ''
@@ -331,7 +332,7 @@ class ClinicalExperimentInfo:
         self.total_variants = None
         self.mutations = None
         self.sv_events = None
-        self.seq2c_events_by_gene_name = None
+        self.seq2c_events_by_gene = None
         self.sv_fpath = sv_fpath
 
         info('Sample: ' + str(sample.name))
@@ -339,22 +340,22 @@ class ClinicalExperimentInfo:
         info()
 
         if not is_target2wgs_comparison:  # use all genes from bed instead of key genes if bed exists and number of genes < 2000
-            key_gene_names, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes)
+            key_gene_names_chroms, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes)
         else:
             use_custom_panel = False
-            key_gene_names = get_key_genes(key_genes)
+            key_gene_names_chroms = get_key_genes(key_genes)
 
         if use_custom_panel:
             self.genes_collection_type = 'target'
             self.genes_description = 'target genes'
-            info('Preparing data for a clinical report for ' + str(len(key_gene_names)) + ' target genes from ' + str(bed_fpath) + ', sample ' + self.sample.name)
+            info('Preparing data for a clinical report for ' + str(len(key_gene_names_chroms)) + ' target genes from ' + str(bed_fpath) + ', sample ' + self.sample.name)
         else:
             self.genes_collection_type = 'key'
             self.genes_description = 'genes that have been previously implicated in various cancers'
             info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
 
-        for gene_name in key_gene_names:
-            self.key_gene_by_name[gene_name] = KeyGene(gene_name)
+        for gene_name, chrom in key_gene_names_chroms:
+            self.key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)
 
         if self.sample.targqc_dirpath and self.sample.targetcov_json_fpath:
             info('Parsing target and patient info from ' + str(self.sample.targetcov_json_fpath))
@@ -374,9 +375,9 @@ class ClinicalExperimentInfo:
             info('Parsing mutations from ' + str(mutations_fpath))
             if varqc_json_fpath:
                 self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
-            self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name, mutations_fpath, self.genes_collection_type)
+            self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
-                self.key_gene_by_name[mut.gene.name].mutations.append(mut)
+                self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
             info('Retrieving SolveBio...')
             self.get_mut_info_from_solvebio()
         else:
@@ -384,11 +385,11 @@ class ClinicalExperimentInfo:
 
         if sv_fpath:
             info('Parsing prioritized SV from ' + str(sv_fpath))
-            self.sv_events = self.parse_sv(sv_fpath, self.key_gene_by_name)
+            self.sv_events = self.parse_sv(sv_fpath, self.key_gene_by_name_chrom)
 
         if seq2c_tsv_fpath:
             info('Parsing Seq2C from ' + str(seq2c_tsv_fpath))
-            self.seq2c_events_by_gene_name = self.parse_seq2c_report(seq2c_tsv_fpath)
+            self.seq2c_events_by_gene = self.parse_seq2c_report(seq2c_tsv_fpath, self.key_gene_by_name_chrom, self.genes_collection_type)
         else:
             warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
 
@@ -401,7 +402,7 @@ class ClinicalExperimentInfo:
     def get_mut_info_from_solvebio(self):
         query_mutations(self.cnf, self.mutations)
 
-    def parse_sv(self, sv_fpath, key_gene_by_name):
+    def parse_sv(self, sv_fpath, key_gene_by_name_chrom):
         info('Parsing prioritized SV events from ' + sv_fpath)
         sv_events = set()
         sv_events_by_gene_name = OrderedDict()
@@ -424,16 +425,16 @@ class ClinicalExperimentInfo:
 
                             genes_to_check = annotation.genes + event.end_genes
                             for g in genes_to_check:
-                                if g in key_gene_by_name:
-                                    sv_events_by_gene_name[g] = event
+                                if (g, event.chrom) in key_gene_by_name_chrom:
+                                    sv_events_by_gene_name[(g, event.chrom)] = event
                                     sv_events.add(event)
-                                    key_gene_by_name[g].sv_events.add(event)
+                                    key_gene_by_name_chrom[(g, event.chrom)].sv_events.add(event)
                                     event.key_annotations.add(annotation)
                                     annotation.event = event
         return sv_events
 
-    def parse_seq2c_report(self, seq2c_tsv_fpath):
-        seq2c_events_by_gene_name = dict()
+    def parse_seq2c_report(self, seq2c_tsv_fpath, key_gene_by_name_chrom, genes_collection_type):
+        seq2c_events_by_gene = dict()
         if not verify_file(seq2c_tsv_fpath, silent=True):
             return None
 
@@ -448,7 +449,7 @@ class ClinicalExperimentInfo:
 
                 sname, gname, chrom, start, end, length, log2r, sig, fragment, amp_del, ab_seg, total_seg, \
                     ab_log2r, log2r_diff, ab_seg_loc, ab_samples, ab_samples_pcnt = fs[:17]
-                gene = KeyGene(gname)
+                gene = KeyGene(gname, chrom=chrom)
                 gene.chrom, gene.start, gene.end = chrom, int(start), int(end)
                 event = Seq2CEvent(
                     gene=gene,
@@ -456,18 +457,19 @@ class ClinicalExperimentInfo:
                     ab_log2r=float(ab_log2r) if ab_log2r else None,
                     log2r=float(log2r) if log2r else None,
                     amp_del=amp_del or None)
-                seq2c_events_by_gene_name[gene] = event
+                seq2c_events_by_gene[gene] = event
 
-        for gn, event in seq2c_events_by_gene_name.items():
-            if gn.name in self.key_gene_by_name:
-                self.key_gene_by_name[gn.name].seq2c_events.append(event)
-        key_gene_events = sum(1 for gn in self.key_gene_by_name for e in self.key_gene_by_name[gn].seq2c_events)
+        for gn, event in seq2c_events_by_gene.items():
+            if gn.key in self.key_gene_by_name_chrom:
+                self.key_gene_by_name_chrom[gn.key].seq2c_events.append(event)
+        key_gene_events = sum(1 for gk in self.key_gene_by_name_chrom for e in self.key_gene_by_name_chrom[gk].seq2c_events)
 
-        info('Found ' + str(len(seq2c_events_by_gene_name.values())) + ' Seq2C events (' + str(key_gene_events) + ' in key genes), ' +
-             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_amp())) + ' amplifications and ' +
-             str(sum(1 for e in seq2c_events_by_gene_name.values() if e.is_del())) + ' deletions.')
+        info('Found ' + str(len(seq2c_events_by_gene.values())) + ' Seq2C events (' + str(key_gene_events) +
+             ' in ' + str(len(key_gene_by_name_chrom)) + ' ' + genes_collection_type + ' genes), ' +
+             str(sum(1 for e in seq2c_events_by_gene.values() if e.is_amp())) + ' amplifications and ' +
+             str(sum(1 for e in seq2c_events_by_gene.values() if e.is_del())) + ' deletions.')
 
-        return seq2c_events_by_gene_name
+        return seq2c_events_by_gene
 
     def parse_targetseq_detailed_report(self):
         info('Preparing coverage stats for ' + self.genes_collection_type + ' gene')
@@ -480,7 +482,7 @@ class ClinicalExperimentInfo:
                 chrom, start, end, size, symbol, strand, feature, biotype, min_depth, ave_depth, std_dev, wn20pcnt = fs[:12]
                 pcnt_val_by_thresh = fs[12:]
                 symbol = get_val(symbol)
-                if symbol not in self.key_gene_by_name:
+                if (symbol, chrom) not in self.key_gene_by_name_chrom:
                     continue
 
                 chrom = get_val(chrom)
@@ -493,7 +495,7 @@ class ClinicalExperimentInfo:
                 cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(self.cnf.coverage_reports.depth_thresholds, pcnt_val_by_thresh))
 
                 if feature in ['Whole-Gene', 'Gene-Exon']:
-                    gene = self.key_gene_by_name.get(symbol)
+                    gene = self.key_gene_by_name_chrom.get((symbol, chrom))
                     gene.chrom = chrom
                     gene.start = start
                     gene.end = end
@@ -506,17 +508,17 @@ class ClinicalExperimentInfo:
                     cds.end = end
                     cds.ave_depth = ave_depth
                     cds.cov_by_threshs = cov_by_threshs
-                    gene = self.key_gene_by_name.get(symbol)
+                    gene = self.key_gene_by_name_chrom.get((symbol, chrom))
                     gene.cdss.append(cds)
 
         # Cleaning up records that are not found in the target gene panel,
         # so we don't know about them and don't even want to report them
-        for gene in self.key_gene_by_name.values():
-            if not gene.chrom and gene.name in self.key_gene_by_name:
-                del self.key_gene_by_name[gene.name]
+        for gene in self.key_gene_by_name_chrom.values():
+            if not gene.chrom and (gene.name, gene.chrom) in self.key_gene_by_name_chrom:
+                del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
 
 
-def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collection_type, for_flagged_report=False):
+def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type, for_flagged_report=False):
     mutations = []
     if for_flagged_report:
         info('Preparing mutations stats for flagged regions report')
@@ -556,6 +558,7 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
     cdna_chg_col = None
     transcript_col = None
     status_col = None
+    signif_col = None
     reason_col = None
     ids_col = None
     var_type_col = None
@@ -581,32 +584,31 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                 gene_col = header.index('Gene')
                 depth_col = header.index('Depth')
                 transcript_col = header.index('Transcript')
-                try:
-                    status_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
-                except ValueError:
-                    status_col = None
-                try:
-                    reason_col = header.index('Reason')
-                except ValueError:
-                    reason_col = None
+                status_col = header.index('Status')
+                if 'Significance' in header:
+                    signif_col = header.index('Significance')
+                else:
+                    signif_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
+                reason_col = header.index('Reason')
                 continue
-            fs = l.strip().split('\t')
+            fs = l.replace('\n', '').split('\t')
             sample_name, chrom, start, ref, alt, gname, transcript = \
                 fs[sample_col], fs[chr_col], fs[pos_col], fs[ref_col], fs[alt_col], fs[gene_col], fs[transcript_col]
             codon_change, cdna_change, aa_change, aa_len = fs[codon_chg_col], fs[cdna_chg_col], fs[aa_chg_col], fs[aa_len_col]
             ids, type_, var_type, var_class = fs[ids_col], fs[type_col], fs[var_type_col], fs[class_col]
             depth, af = fs[depth_col], fs[allele_freq_col]
-            status = fs[status_col] if status_col else None
-            reason = fs[reason_col] if reason_col and reason_col < len(fs) else None
+            status = fs[status_col]
+            signif = fs[signif_col]
+            reason = fs[reason_col]
 
             if sample_name == sample.name:
-                if gname in key_gene_by_name:
+                if (gname, chrom) in key_gene_by_name_chrom:
                     if (chrom, start, ref, alt, transcript) in alts_met_before:
                         continue
                     alts_met_before.add((chrom, start, ref, alt, transcript))
 
                     mut = Mutation(chrom=chrom, genome=cnf.genome.name)
-                    mut.gene = KeyGene(gname)
+                    mut.gene = KeyGene(gname, chrom=chrom)
                     mut.transcript = transcript
                     mut.is_canonical = transcript in canonical_transcripts if canonical_transcripts else True
                     mut.codon_change = codon_change
@@ -630,6 +632,7 @@ def parse_mutations(cnf, sample, key_gene_by_name, mutations_fpath, key_collecti
                     mut.var_type = var_type
                     mut.var_class = var_class
                     mut.status = status
+                    mut.signif = signif
                     if reason:
                         reason = reason.replace('_', ' ')
                         if reason == 'actionable somatic':
@@ -717,11 +720,12 @@ def get_total_variants_number(sample, varqc_json_fpath):
 
 def get_key_or_target_bed_genes(bed_fpath, key_genes):
     use_custom_panel = False
-    key_gene_names = None
+    key_gene_names_chroms = None
     if bed_fpath:
-        key_gene_names, gene_names_list = get_gene_keys(bed_fpath)
-        if len(key_gene_names) < 2000:
+        key_gene_names_chroms, gene_names_list = get_gene_keys(bed_fpath)
+        if len(key_gene_names_chroms) < 2000:
             use_custom_panel = True
     if not use_custom_panel:
-        key_gene_names = get_key_genes(key_genes)
-    return key_gene_names, use_custom_panel
+        key_gene_names_chroms = get_key_genes(key_genes)
+    key_gene_names_chroms = [(gn, c) for gn, c in key_gene_names_chroms if gn and gn != '.' and c and c != '.']
+    return key_gene_names_chroms, use_custom_panel

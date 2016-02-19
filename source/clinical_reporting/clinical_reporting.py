@@ -53,6 +53,7 @@ class BaseClinicalReporting:
             Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
             Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
             # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
+            Metric('Status', short_name='Status'),     # Somatic
             Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Pathogenicity', class_='long_line'),     # Likely
             # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
@@ -131,8 +132,9 @@ class BaseClinicalReporting:
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
+            row.add_record('Status', mut.status)
             row.add_record('Effect', mut.eff_type)
-            row.add_record('VarDict status', **self._status_field(mut))
+            row.add_record('VarDict status', **self._signif_field(mut))
             # row.add_record('VarDict reason', mut.reason)
             row.add_record('Databases', **self._db_recargs(mut))
             # if is_local():
@@ -311,15 +313,14 @@ class BaseClinicalReporting:
                 linesX=chr_cum_lens
             )
 
-            for gene in e.seq2c_events_by_gene_name:
-                se = e.seq2c_events_by_gene_name[gene]
+            for gene, se in e.seq2c_events_by_gene.items():
                 d['events'].append(dict(
                     x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
                     geneName=gene.name,
                     logRatio=se.ab_log2r if se.ab_log2r is not None else se.log2r,
                     ampDel=se.amp_del,
                     fragment=se.fragment,
-                    isKeyGene=gene.name in e.key_gene_by_name))
+                    isKeyGene=gene.key in e.key_gene_by_name_chrom))
 
                     # if not gene.seq2c_event.ab_log2r or gene.seq2c_event.fragment == 'BP':  # breakpoint, meaning part of exon is not amplified
 
@@ -350,7 +351,7 @@ class BaseClinicalReporting:
             report = PerRegionSampleReport(sample=seq2c_by_experiment.keys()[0].sample,
                                            metric_storage=metric_storage, expandable=True)
             seq2c_events = seq2c.values()
-            is_whole_genomic_profile = len(e.seq2c_events_by_gene_name.values()) > len(e.key_gene_by_name.values())
+            is_whole_genomic_profile = len(e.seq2c_events_by_gene.values()) > len(e.key_gene_by_name_chrom.values())
             for event in sorted(seq2c_events, key=lambda e: e.gene.name):
                 if event.is_amp() or event.is_del():
                     row = report.add_row()
@@ -359,7 +360,7 @@ class BaseClinicalReporting:
                     row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
                     row.add_record('Amp/Del', event.amp_del)
                     row.add_record('BP/Whole', event.fragment)
-                    if is_whole_genomic_profile and event.gene.name not in e.key_gene_by_name:
+                    if is_whole_genomic_profile and event.gene.key not in e.key_gene_by_name_chrom:
                         row.hidden = True
             reports.append(report)
 
@@ -386,13 +387,13 @@ class BaseClinicalReporting:
             cds_cov_by_gene = defaultdict(list)
             mut_info_by_gene = dict()
 
-            for gene in e.key_gene_by_name.values():
+            for gene in e.key_gene_by_name_chrom.values():
                 mut_info_by_gene[gene.name] = [('p.' + m.aa_change if m.aa_change else '.') for m in gene.mutations if m.is_canonical]
                 for se in gene.seq2c_events:
                     if se and (se.is_amp() or se.is_del()):
                         mut_info_by_gene[gene.name].append(se.amp_del + ', ' + se.fragment)
 
-            for gene in e.key_gene_by_name.values():
+            for gene in e.key_gene_by_name_chrom.values():
                 gene_names.append(gene.name)
                 gene_ave_depths.append(gene.ave_depth)
                 covs_in_thresh.append(gene.cov_by_threshs.get(e.depth_cutoff))
@@ -557,11 +558,11 @@ class BaseClinicalReporting:
         return dict(value=chg)
 
     @staticmethod
-    def _status_field(mut):
-        status = mut.status
+    def _signif_field(mut):
+        signif = mut.signif
         if mut.reason:
-            status += gray(' (' + mut.reason + ')')
-        return dict(value=status)
+            signif += gray(' (' + mut.reason + ')')
+        return dict(value=signif)
 
     @staticmethod
     def _clinvar_recargs(mut):
@@ -572,12 +573,12 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
-        if not mut.status or mut.status.lower() in ['unknown', 'unlikely', 'germline']:
+        if not mut.signif or mut.signif.lower() in ['unknown', 'unlikely']:
             if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
                 warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
             row.hidden = True
         else:
-            if mut.status and mut.status.lower() == 'known':
+            if mut.signif and mut.signif.lower() == 'known':
                 row.highlighted = True
         return row
 
@@ -604,14 +605,14 @@ class ClinicalReporting(BaseClinicalReporting):
             self.substitutions_plot_data = self.make_substitutions_json({self.experiment: self.experiment.mutations})
         if self.experiment.sv_events:
             self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
-        if self.experiment.seq2c_events_by_gene_name:
+        if self.experiment.seq2c_events_by_gene:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
-            self.seq2c_report = self.make_seq2c_report({self.experiment: self.experiment.seq2c_events_by_gene_name})
+            self.seq2c_report = self.make_seq2c_report({self.experiment: self.experiment.seq2c_events_by_gene})
         if self.experiment.actionable_genes_dict and \
-                (self.experiment.mutations or self.experiment.seq2c_events_by_gene_name or self.experiment.sv_events):
+                (self.experiment.mutations or self.experiment.seq2c_events_by_gene or self.experiment.sv_events):
             self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
         if self.experiment.ave_depth:
-            self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name, self.experiment.ave_depth)
+            self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name_chrom, self.experiment.ave_depth)
             self.cov_plot_data = self.make_key_genes_cov_json({self.experiment.key: self.experiment})
 
     def write_report(self, output_fpath):
@@ -624,7 +625,7 @@ class ClinicalReporting(BaseClinicalReporting):
             'variants': self.__mutations_section(),
             'coverage': self.__coverage_section(),
             'actionable_genes': self.__actionable_genes_section(),
-            'total_key_genes': Metric.format_value(len(self.experiment.key_gene_by_name), is_html=True)
+            'total_key_genes': Metric.format_value(len(self.experiment.key_gene_by_name_chrom), is_html=True)
         }
         if self.sv_report:
             data['sv'] = {}
@@ -635,7 +636,7 @@ class ClinicalReporting(BaseClinicalReporting):
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
             if self.seq2c_report:
                 data['seq2c']['amp_del'] = self.__seq2c_section()
-                if len(self.experiment.seq2c_events_by_gene_name.values()) > len(self.experiment.key_gene_by_name.values()):
+                if len(self.experiment.seq2c_events_by_gene.values()) > len(self.experiment.key_gene_by_name_chrom.values()):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
         write_static_html_report(self.cnf, data, output_fpath,
@@ -726,7 +727,7 @@ class ClinicalReporting(BaseClinicalReporting):
             actionable_genes_dict['table'] = build_report_html(self.actionable_genes_report, sortable=False)
         return actionable_genes_dict
 
-    def make_key_genes_cov_report(self, key_gene_by_name, ave_depth):
+    def make_key_genes_cov_report(self, key_gene_by_name_chrom, ave_depth):
         if self.experiment.depth_cutoff is None:
             return None
 
@@ -742,7 +743,7 @@ class ClinicalReporting(BaseClinicalReporting):
 
         key_genes_report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_cov_metric_storage)
 
-        for gene in sorted(key_gene_by_name.values(), key=lambda g: g.name):
+        for gene in sorted(key_gene_by_name_chrom.values(), key=lambda g: g.name):
             reg = key_genes_report.add_row()
             reg.add_record('Gene', gene.name)
             reg.add_record('Chr', gene.chrom.replace('chr', ''))
@@ -775,7 +776,7 @@ class ClinicalReporting(BaseClinicalReporting):
         sv_mutation_types = {'Rearrangement', 'Fusion', 'Amplification', 'Deletion'}
         cnv_mutation_types = {'Amplification', 'Deletion'}
 
-        for gene in self.experiment.key_gene_by_name.values():
+        for gene in self.experiment.key_gene_by_name_chrom.values():
             if gene.name not in actionable_gene_names:
                 continue
             possible_mutation_types = set(actionable_genes_dict[gene.name][1].split('; '))
@@ -791,7 +792,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            if mut.status != 'unknown' and mut.status not in ['unlikely', 'unknown', 'germline'] and mut.is_canonical:
+                            if mut.signif not in ['unlikely', 'unknown'] and mut.is_canonical:
                                 variants.append(mut.aa_change if mut.aa_change else '.')
                                 types.append(mut.var_type)
                                 frequencies.append(Metric.format_value(mut.freq, unit='%'))

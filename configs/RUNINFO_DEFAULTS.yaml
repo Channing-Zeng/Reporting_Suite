@@ -128,15 +128,15 @@ annotation:
     - CDS
     - GENE
 
-  oncomine:
-    all-annotations: False
-    skip-annotation: False
-    annotations:
-#    - om
-    - om_Cancer
-    - om_PATIENT
-    - om_MutClass
-    - om_MutClassPC
+#  oncomine:
+#    all-annotations: False
+#    skip-annotation: False
+#    annotations:
+##    - om
+#    - om_Cancer
+#    - om_PATIENT
+#    - om_MutClass
+#    - om_MutClassPC
 
   clinvar:
     skip-annotation: False
@@ -222,10 +222,10 @@ annotation:
   - CNT                           : CountInCosmic
   - AA                            : AminoAcidInCosmic
   - CDS                           : CDSInCosmic
-  - om_Cancer                     : OncomineCancer
-  - om_PATIENT                    : OncominePatient
-  - om_MutClass                   : OncomineMutClass
-  - om_MutClassPC                 : OncomineMutClassPC
+#  - om_Cancer                     : OncomineCancer
+#  - om_PATIENT                    : OncominePatient
+#  - om_MutClass                   : OncomineMutClass
+#  - om_MutClassPC                 : OncomineMutClassPC
   - "ANN[*].RANK"                 : Rank
   - BaseQRankSum                  : BaseQailityRankSum
   - FS                            : FischerScore

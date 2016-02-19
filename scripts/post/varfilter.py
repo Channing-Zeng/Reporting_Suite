@@ -112,11 +112,15 @@ def main(args):
         filt_vcf = write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
         index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, filt_vcf, cnf.caller)
 
-        if cnf.qc:
-            report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)
-            qc_dirpath = join(cnf.output_dir, 'qc')
-            safe_mkdir(qc_dirpath)
-            qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_after_name)
+        # QC #
+        report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)
+        qc_dirpath = join(cnf.output_dir, 'qc')
+        safe_mkdir(qc_dirpath)
+        qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_after_name)
+        info('Saved QC to ' + qc_dirpath + ' (' + report.html_fpath + ')')
+        info('-' * 70)
+        info()
+        # QC #
 
         if not cnf['keep_intermediate']:
             shutil.rmtree(cnf['work_dir'])

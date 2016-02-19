@@ -48,9 +48,12 @@ my %sample;
 my %var;
 my %CONTROL;
 
-print STDERR "First round\n";
+my $files_num = @ARGV;
+print STDERR "First round, reading $files_num files, collecting statistics...\n";
+my $i = 0;
 foreach my $vcf (@ARGV) {
-    print STDERR "$vcf\n";
+    $i += 1;
+    print STDERR "$i/$files_num $vcf\n";
     open( VCF, $vcf );
 
     while( <VCF> ) {
@@ -197,9 +200,11 @@ my $sam_n = @samples + 0;
 
 
 print STDERR "\n";
-print STDERR "Second round\n";
+print STDERR "Second round, reading $files_num files, filtering variants...\n";
+$i = 0;
 foreach my $vcf (@ARGV) {
-    print STDERR "$vcf\n";
+    $i += 1;
+    print STDERR "$i/$files_num $vcf\n";
     open( VCF, $vcf );
 
     while( <VCF> ) {

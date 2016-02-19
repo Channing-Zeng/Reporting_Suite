@@ -257,10 +257,10 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
 def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
     # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
-    if not cnf.no_check:
-        vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
+    # if not cnf.no_check:
+    #     vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
-    if not cnf.no_check:
+    if not cnf.no_check and 'vardict' not in callername:
         info()
         info('Adding SAMPLE=' + sample.name + ' annotation...')
         vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')
@@ -278,14 +278,15 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         os.remove(final_vcf_fpath)
     shutil.copy(vcf_fpath, final_vcf_fpath)
 
-    if cnf.qc:
-        report = qc.make_report(cnf, final_vcf_fpath, sample)
-        qc_dirpath = join(cnf.output_dir, 'qc')
-        safe_mkdir(qc_dirpath)
-        report = qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
-        info('Saved QC to ' + qc_dirpath + ' (' + report.html_fpath + ')')
-        info('-' * 70)
-        info()
+    # QC #
+    report = qc.make_report(cnf, final_vcf_fpath, sample)
+    qc_dirpath = join(cnf.output_dir, 'qc')
+    safe_mkdir(qc_dirpath)
+    report = qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
+    info('Saved QC to ' + qc_dirpath + ' (' + report.html_fpath + ')')
+    info('-' * 70)
+    info()
+    # QC #
 
     if final_vcf_fpath.endswith('.gz'):
         if not is_gz(final_vcf_fpath):

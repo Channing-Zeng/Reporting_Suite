@@ -279,7 +279,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 except ValueError:
                     lof_col = None
                 if not cnf.is_output_fm and not status_col and not reason_col:
-                    l += '\tStatus\tReason'
+                    l += '\tSignificance\tReason'
                 out_f.write(l + '\n')
                 continue
             fields = l.split('\t')
@@ -296,9 +296,6 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             sample, chr, pos, ref, alt, aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
                 fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
-
-            if gene == 'EGFR':
-                pass
 
             gene_aachg = '-'.join([gene, aa_chg])
             if 'chr' not in chr:
@@ -439,7 +436,6 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                         filter_matches_counter['not known and Pcnt_sample > variant_filtering (' + str(cnf.variant_filtering.max_ratio) + ')'] += 1
                         continue
 
-            fields = fields[:lof_col] + fields[(lof_col + 1):] if lof_col else fields
             if not SIMULATE_OLD_VARDICT2MUT:
                 if gene in genes_with_dependent_mutations and (prev_gene == gene or not cur_gene_mutations):
                     if gene_aachg in sensitization_aa_changes:
