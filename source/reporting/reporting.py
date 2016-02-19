@@ -11,7 +11,7 @@ import datetime
 from ext_modules.jsontemplate import jsontemplate
 
 from source.bcbio.bcbio_structure import BCBioSample
-from source.file_utils import file_transaction, verify_file
+from source.file_utils import file_transaction, verify_file, safe_mkdir
 from source.logger import critical, info, err, warn
 from source.utils import mean
 
@@ -306,16 +306,19 @@ class BaseReport:
         return NotImplementedError()
 
     def save_txt(self, output_fpath, sections=None):
+        safe_mkdir(dirname(output_fpath))
         fpath = write_txt_rows(self.flatten(sections, human_readable=True), output_fpath)
         self.txt_fpath = fpath
         return fpath
 
     def save_json(self, output_fpath, sections=None):
+        safe_mkdir(dirname(output_fpath))
         self.dump(output_fpath)
         self.json_fpath = output_fpath
         return output_fpath
 
     def save_tsv(self, output_fpath, sections=None, human_readable=False):
+        safe_mkdir(dirname(output_fpath))
         fpath = write_tsv_rows(self.flatten(sections, human_readable=human_readable), output_fpath)
         self.tsv_fpath = fpath
         return fpath
@@ -333,12 +336,14 @@ class BaseReport:
         #     report=self,
         #     type_=type_,
         # ), separators=(',', ':'), cls=Encoder)
+        safe_mkdir(dirname(output_fpath))
         fpath = write_html_report(cnf, self, output_fpath, caption=caption,
               extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
         self.html_fpath = fpath
         return fpath
 
     def dump(self, fpath):
+        safe_mkdir(dirname(fpath))
         with open(fpath, 'w') as f:
             dump(self, f, default=lambda o: o.__dict__, indent=4)
 
@@ -710,6 +715,7 @@ class FullReport(BaseReport):
         return fr
 
     def save_into_files(self, cnf, base_path, caption, sections=None):
+        safe_mkdir(dirname(base_path))
         return \
             self.save_txt(base_path + '.txt', sections), \
             self.save_tsv(base_path + '.tsv', sections), \
@@ -717,6 +723,7 @@ class FullReport(BaseReport):
 
     def save_html(self, cnf, output_fpath, caption='',  #type_=None,
                   display_name=None, extra_js_fpaths=None, extra_css_fpaths=None):
+        safe_mkdir(dirname(output_fpath))
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None

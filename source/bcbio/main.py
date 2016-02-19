@@ -8,7 +8,7 @@ from optparse import OptionParser, SUPPRESS_HELP
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.bcbio.bcbio_runner import BCBioRunner
 from source.config import defaults
-from source.logger import info
+from source.logger import info, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
 from source.file_utils import safe_mkdir, adjust_path
 from source.targetcov import summarize_targetcov
@@ -117,9 +117,12 @@ def combine_varqc(cnf, bcbio_structures, tag_by_sample, varqc_dirname, varqc_nam
     output_dir = join(cnf.output_dir, varqc_dirname)
     safe_mkdir(output_dir)
 
-    summarize_qc.make_summary_reports(cnf, 1, output_dir, callers, samples,
-         jsons_by_sample_by_caller, htmls_by_sample_by_caller, tag_by_sample,
-         varqc_name=varqc_name, caption=caption)
+    if jsons_by_sample_by_caller and htmls_by_sample_by_caller:
+        summarize_qc.make_summary_reports(cnf, 1, output_dir, callers, samples,
+             jsons_by_sample_by_caller, htmls_by_sample_by_caller, tag_by_sample,
+             varqc_name=varqc_name, caption=caption)
+    else:
+        err('Not JSON and HTML found, cannot generate summary reports.')
 
 
 def combine_targqc(cnf, bcbio_structures, tag_by_sample):
