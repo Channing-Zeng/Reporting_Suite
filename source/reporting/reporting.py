@@ -34,6 +34,7 @@ class Record:
             url=None,
             parse=True,
             sort_as=None,
+            id=None,
 
             num=None,
             cell_contents=None,
@@ -51,6 +52,7 @@ class Record:
         self.meta = meta or dict()
         self.html_fpath = html_fpath
         self.url = url
+        self.id = id
 
         self.num = num
         # if sort_as is not None:
@@ -662,7 +664,8 @@ class FullReport(BaseReport):
         for i, sr in enumerate(self.sample_reports):
             recs = []
             recs.append(Record(metric=self.sample_metric, value=sr.display_name,
-                url=sr.url, html_fpath=sr.html_fpath, num=len(self.sample_reports) - i))
+                url=sr.url, html_fpath=sr.html_fpath, num=len(self.sample_reports) - i),
+                        id='"' + sr.sample.name + '"')
 
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden and not metric.name == 'Sample':
@@ -1133,6 +1136,8 @@ def make_cell_td(rec, class_=''):
         style += 'text-align: ' + rec.metric.align + '; '
 
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
+    if rec.id:
+        html += ' id=' + rec.id
     html += ' quality="' + str(rec.metric.quality) + '"'
     html += ' class="td ' + class_ + ' ' + rec.metric.td_class + ' ' + rec.metric.class_ + ' '
 

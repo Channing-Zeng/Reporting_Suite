@@ -11,6 +11,7 @@ import source
 from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
+from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
 from source.bcbio.project_level_report import make_project_level_report, get_run_info
 from source.qsub_utils import del_jobs
@@ -167,22 +168,23 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'AbnormalCovReport'):
            self.steps.append(self.abnormal_regions)
 
-        if Steps.contains(cnf.steps, 'FastQC'):
-            self.steps.extend([self.fastqc_summary])
-
         # if Steps.contains(cnf.steps, 'ClinicalReport') or \
         #         Steps.contains(cnf.steps, 'ClinicalReports') or \
         #         Steps.contains(cnf.steps, source.clinreport_name):
         self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
-            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary])
+            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary])
 
         # fastqc summary and clinical report -- special case (turn on if user uses default steps)
         if set(defaults['steps']) == set(cnf.steps):
-            self.steps.extend([self.fastqc_summary, self.clin_report])
+            self.steps.extend([self.clin_report])
 
-        self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary, self.fastqc_summary, self.bw_converting])
+        from sys import platform as _platform
+        if 'linux' in _platform:
+            self.steps.append(self.bw_converting)
+        else:
+            warn('bam2bigwig is not supported for platform ' + _platform)
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -472,14 +474,14 @@ class BCBioRunner:
             dir_name=BCBioStructure.targqc_summary_dir,
             paramln=targqc_summary_cmdline
         )
-        self.fastqc_summary = Step(cnf, run_id,
-            name=BCBioStructure.fastqc_name, short_name='fastqc',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'fastqc_summary.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.fastqc_name + '_summary.log'),
-            dir_name=BCBioStructure.fastqc_summary_dir,
-            paramln=summaries_cmdline_params + ' ' + self.final_dir
-        )
+        # self.fastqc_summary = Step(cnf, run_id,
+        #     name=BCBioStructure.fastqc_name, short_name='fastqc',
+        #     interpreter='python',
+        #     script=join('scripts', 'post_bcbio', 'fastqc_summary.py'),
+        #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.fastqc_name + '_summary.log'),
+        #     dir_name=BCBioStructure.fastqc_summary_dir,
+        #     paramln=summaries_cmdline_params + ' ' + self.final_dir
+        # )
 
         self.bw_converting = Step(cnf, run_id,
             name='bam_to_bigwig', short_name='bamtobw',
@@ -754,9 +756,6 @@ class BCBioRunner:
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps)
 
-            if self.fastqc_summary in self.steps:
-                self._submit_job(self.fastqc_summary)
-
             if self.varqc_summary in self.steps:
                 self._submit_job(
                     self.varqc_summary,
@@ -903,6 +902,10 @@ class BCBioRunner:
 
             if is_us():
                 add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
+
+            if any(s.fastqc_html_fpath and isfile(s.fastqc_html_fpath) for s in self.bcbio_structure.samples):
+                final_summary_report_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.fastqc_summary_dir, source.fastqc_name + '.html')
+                write_fastqc_combo_report(final_summary_report_fpath, self.bcbio_structure.samples)
 
             html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)
 

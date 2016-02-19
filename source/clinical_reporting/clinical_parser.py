@@ -549,12 +549,12 @@ class ClinicalExperimentInfo:
                 if feature in ['Whole-Gene', 'Gene-Exon']:
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))
                     if gene:
-                        gene.chrom = None
+                        gene.chrom = chrom
                         gene.start = start
                         gene.end = end
                         gene.ave_depth = ave_depth
                         gene.cov_by_threshs = cov_by_threshs
-                        self.key_gene_by_name_chrom[(symbol, None)] = gene
+                        self.key_gene_by_name_chrom[(symbol, chrom)] = gene
 
                 elif feature in ['CDS', 'Exon']:
                     cds = CDS()

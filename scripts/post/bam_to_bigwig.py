@@ -40,6 +40,10 @@ from tools.add_jbrowse_tracks import create_jbrowse_symlink
 
 
 def proc_args(argv):
+    from sys import platform as _platform
+    if 'linux' not in _platform:
+        critical('bam_to_bigwig is supported only for Linux')
+
     cnf = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], dict(
@@ -74,8 +78,7 @@ def process_bam(cnf, bam_file, chrom='all', start=0, end=None,
         wig_file = '%s.wig' % splitext(outfile)[0]
         with file_transaction(cnf.work_dir, wig_file) as tx:
             with open(tx, 'w') as out:
-                chr_sizes, wig_valid = write_bam_track(bam_file, regions, out,
-                                                       normalize)
+                chr_sizes, wig_valid = write_bam_track(bam_file, regions, out, normalize)
         try:
             if wig_valid:
                 bigwig_fpath = convert_to_bigwig(wig_file, chr_sizes, cnf, outfile)

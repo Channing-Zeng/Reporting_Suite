@@ -161,7 +161,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
 
 
 def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, tag_by_sample=None):
-    step_greetings('TargQC coverage statistics for all samples based')
+    step_greetings('TargQC coverage statistics for all samples')
 
     correct_samples = []
 

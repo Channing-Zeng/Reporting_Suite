@@ -54,7 +54,7 @@ my $i = 0;
 foreach my $vcf (@ARGV) {
     $i += 1;
     print STDERR "$i/$files_num $vcf\n";
-    $vcf =~ /gz$/ ? open (VCF, "-|", "gunzip -c " . $vcf ) : open( VCF, $vcf );
+    open( VCF, $vcf );
 
     while( <VCF> ) {
         next if ( /^#/ );
@@ -66,39 +66,118 @@ foreach my $vcf (@ARGV) {
         while( $a[7] =~ /([^=;]+)=([^=]+?);/g ) {
             $d{ $1 } = $2;
         }
+        $d{ GENE } && $d{ GENE } =~ s/_EN.*//;
         @ampcols = qw(GDAMP TLAMP NCAMP AMPFLAG) if ( $d{GDAMP} && $d{TLAMP} );
-        my $d_ref = formatData($a[8], $a[9], $a[10], \%d);
+        my @formats = split(/:/, $a[8]);
+        my @fdata = split(/:/, $a[9]);
+        my @mfdata = $a[10] ? split(/:/, $a[10]) : ();
+        for(my $i = 0; $i < @formats; $i++) {
+            $d{ $formats[$i] } = $fdata[$i];
+            $d{ "M_$formats[$i]" } = $mfdata[$i] if ( $a[10] );
+        }
+        if ( $d{ RD } ) {
+            $d{ RD } =~ /(\d+),(\d+)/ && ($d{ RD } = $1 + $2);
+            $d{ M_RD } && $d{ M_RD } =~ /(\d+),(\d+)/ && ($d{ M_RD } = $1 + $2);
+        }
 
-		@paircols = qw(TYPE STATUS SSF SOR M_DP M_AF M_VD M_RD M_BIAS M_PMEAN M_PSTD M_QUAL M_QSTD M_HIAF M_MQ M_SN M_ADJAF M_NM M_GT M_DUPRATE M_SPLITREAD M_SPANPAIR) if ( $a[10] );
+        # Adapt for Mutect or FreeBayes
+        unless( $d{ PMEAN } ) {  # Meaning not VarDict
+            delete $d{ AF };
+            if ( $d{ AD } ) { # in case it's not defined in FreeBayes
+                my @ads = split(/,/, $d{ AD });
+                my $ads_sum = 0;
+                $ads_sum += $_ foreach( @ads );
+                if ($ads_sum > 0) {
+                    $d{ AF } = sprintf("%.3f", $ads[1]/$ads_sum);
+                } else {
+                    $d{ AF } = '0';
+                }
+                $d{ VD } = $ads[1];
+            }
+            # Use AO and RO for allele freq calculation for FreeBayes and overwrite AD even if it exists
+            if ( $d{ AO } ) {
+                my $ao_sum = 0;
+                my @aos = split(/,/, $d{ AO });
+                @aos = sort { $b <=> $a } @aos; # Just make sure the first is the most frequency
+                $ao_sum += $_ foreach( @aos );
+                $d{ AF } = sprintf("%.3f", $aos[0]/($ao_sum+$d{RO}));
+                $d{ VD } = $aos[0];
+            }
+            if ( $a[10] ) { # for somatic paired analysis
+                if ( $d{ M_AD } ) {
+                    my @m_ads = split(/,/, $d{ M_AD });
+                    my $m_ads_sum = 0;
+                    foreach( @m_ads ) {
+                        $m_ads_sum += $_ if ( /\d/ );
+                    }
+                    $d{ M_AF } = $m_ads_sum ? sprintf("%.3f", $m_ads[1]/$m_ads_sum) : 0;
+                    $d{ M_VD } = $m_ads[1] && $m_ads[1] =~ /\d/ ? $m_ads[1] : 0;
+                }
+                # Use AO and RO for allele freq calculation for FreeBayes and overwrite AD even if it exists
+                if ( $d{ M_AO } ) {
+                    my $m_ao_sum = 0;
+                    my @m_aos = split(/,/, $d{ M_AO });
+                    @m_aos = sort { $b <=> $a } @m_aos if ( $m_aos[0] =~ /\d/ ); # Just make sure the first is the most frequency
+                    foreach( @m_aos ) {
+                        $m_ao_sum += $_ if ( /\d/ );
+                    }
+                    my $m_ro = $d{M_RO} && $d{M_RO} =~ /\d/ ? $d{M_RO} : 0;
+                    $d{ M_AF } = $m_ao_sum + $m_ro > 0 ? sprintf("%.3f", $m_aos[0]/($m_ao_sum+$m_ro)) : 0;
+                    $d{ M_VD } = $m_aos[0] && $m_aos[0] =~ /\d/ ? $m_aos[0] : 0;
+                }
+            }
+        }
 
+        @paircols = qw(TYPE STATUS SSF SOR M_DP M_AF M_VD M_RD M_BIAS M_PMEAN M_PSTD M_QUAL M_QSTD M_HIAF M_MQ M_SN M_ADJAF M_NM M_GT M_DUPRATE M_SPLITREAD M_SPANPAIR) if ( $a[10] );
+
+        $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
+        $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
+        my @effs = ();
+        if ( $d{ EFF } ) {
+            @effs = split(/,/, $d{ EFF });
+        } elsif ( $d{ ANN } ) {
+            my @anns = split(/,/, $d{ ANN });
+            foreach my $ann (@anns) {
+                my ($allele, $ann, $impact, $gname, $gid, $ftype, $fid, $biotype, $rank, $hgvsc, $hgvsp, $cdnap, $cdsp, $protp, $dist) = split(/\|/, $ann);
+                my @ta = split(/&/, $ann);
+                $ann = $ta[0];
+                $protp = $1 if ( $protp =~ /\d+\/(\d+)/ );
+                #my @alts = split(/,/, $a[4]);
+                push(@effs, "$ann($impact|$ann|$hgvsc|$hgvsp/$hgvsc|$protp|$gname|$biotype|$ftype|$fid|$rank|1)");
+            }
+        } else {
+            @effs = (" (||||||||||1)");
+        }
         my $vark = join(":", @a[0,1,3,4]); # Chr Pos Ref Alt
-        next if !passFilter ( $FILDEPTH, $FILPMEAN, $FILQMEAN, $d_ref->{ DEPTH }, $d_ref->{ PMEAN }, $d_ref->{ QUAL } );
+        next if ( $FILDEPTH && $d{ DP } < $FILDEPTH );
+        next if ( $FILPMEAN && $d{ PMEAN } && $d{ PMEAN } < $FILPMEAN );
+        next if ( $FILQMEAN && $d{ QUAL } && $d{ QUAL } < $FILQMEAN );
 
-        my ($pmean, $qmean) = ($d_ref->{ PMEAN }, $d_ref->{ QUAL });
-        my ($m_pmean, $m_qmean) = ($d_ref->{ M_PMEAN }, $d_ref->{ M_QUAL });
+        my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
+        my ($m_pmean, $m_qmean) = ($d{ M_PMEAN }, $d{ M_QUAL });
         my $pass = "TRUE";
         my $mpass = "TRUE";
-        #$pass = "FALSE" unless ( $d_ref->{PSTD} > 0 );
+        #$pass = "FALSE" unless ( $d{PSTD} > 0 );
         $pass = "FALSE" if ( $qmean && $qmean < $MINQMEAN );
         $mpass = "FALSE" if ( $m_qmean && $m_qmean < $MINQMEAN );
         $pass = "FALSE" if ( $pmean && $pmean < $MINPMEAN );
         $mpass = "FALSE" if ( $m_pmean && $m_pmean < $MINPMEAN );
-        $pass = "FALSE" if ( !$d_ref->{AF} || $d_ref->{AF} < $MINFREQ );
-        $mpass = "FALSE" if ( !$d_ref->{M_AF} || $d_ref->{M_AF} < $MINFREQ );
-        $pass = "FALSE" if ( $d_ref->{MQ} && $d_ref->{MQ} < $MINMQ && $d_ref->{AF} < 0.5 );  # Keep low mapping quality but high allele frequency variants
-        $mpass = "FALSE" if ( $d_ref->{M_MQ} && $d_ref->{M_MQ} < $MINMQ && $d_ref->{M_AF} < 0.5 );  # Keep low mapping quality but high allele frequency variants
-        $pass = "FALSE" if ( $d_ref->{SN} && $d_ref->{SN} < $SN );
-        $mpass = "FALSE" if ( $d_ref->{M_SN} && $d_ref->{M_SN} < $SN );
-        $pass = "FALSE" if ( !$d_ref->{VD} || $d_ref->{VD} < $MINVD );
-        $mpass = "FALSE" if ( !$d_ref->{M_VD} || $d_ref->{M_VD} < $MINVD );
-        if ( $d_ref->{ SAMPLE } && $controls{ $d_ref->{ SAMPLE } } ) {
-            my $clncheck = checkCLNSIG($d_ref->{CLNSIG});
+        $pass = "FALSE" if ( !$d{AF} || $d{AF} < $MINFREQ );
+        $mpass = "FALSE" if ( !$d{M_AF} || $d{M_AF} < $MINFREQ );
+        $pass = "FALSE" if ( $d{MQ} && $d{MQ} < $MINMQ && $d{AF} < 0.5 );  # Keep low mapping quality but high allele frequency variants
+        $mpass = "FALSE" if ( $d{M_MQ} && $d{M_MQ} < $MINMQ && $d{M_AF} < 0.5 );  # Keep low mapping quality but high allele frequency variants
+        $pass = "FALSE" if ( $d{SN} && $d{SN} < $SN );
+        $mpass = "FALSE" if ( $d{M_SN} && $d{M_SN} < $SN );
+        $pass = "FALSE" if ( !$d{VD} || $d{VD} < $MINVD );
+        $mpass = "FALSE" if ( !$d{M_VD} || $d{M_VD} < $MINVD );
+        if ( $d{ SAMPLE } && $controls{ $d{ SAMPLE } } ) {
+            my $clncheck = checkCLNSIG($d{CLNSIG});
             my $class = $a[2] =~ /COSM/ ? "COSMIC" : ($a[2] =~ /^rs/ ? ($clncheck ? $clncheck : "dbSNP") : "Novel");
             $CONTROL{ $vark } = 1 if ( $pass eq "TRUE" && $class eq "Novel");  # so that any novel variants showed up in control won't be filtered
         }
-        unless( $opt_u && $d_ref->{ SAMPLE } =~ /Undetermined/i ) { # Undetermined won't count toward samples
-            $sample{ $d_ref->{ SAMPLE } } = 1;
-            push( @{ $var{ $vark } }, $d_ref->{ AF } ) if ( $pass eq "TRUE" || $mpass eq "TRUE" );
+        unless( $opt_u && $d{ SAMPLE } =~ /Undetermined/i ) { # Undetermined won't count toward samples
+            $sample{ $d{ SAMPLE } } = 1;
+            push( @{ $var{ $vark } }, $d{ AF } ) if ( $pass eq "TRUE" || $mpass eq "TRUE" );
         }
     }
     close( VCF );
@@ -126,7 +205,7 @@ $i = 0;
 foreach my $vcf (@ARGV) {
     $i += 1;
     print STDERR "$i/$files_num $vcf\n";
-    $vcf =~ /gz$/ ? open (VCF, "-|", "gunzip -c " . $vcf ) : open( VCF, $vcf );
+    open( VCF, $vcf );
 
     while( <VCF> ) {
         next if ( /^#/ );
@@ -140,17 +219,75 @@ foreach my $vcf (@ARGV) {
         }
         $d{ GENE } && $d{ GENE } =~ s/_EN.*//;
         @ampcols = qw(GDAMP TLAMP NCAMP AMPFLAG) if ( $d{GDAMP} && $d{TLAMP} );
-        my $d_ref = formatData($a[8], $a[9], $a[10], \%d);
+        my @formats = split(/:/, $a[8]);
+        my @fdata = split(/:/, $a[9]);
+        my @mfdata = $a[10] ? split(/:/, $a[10]) : ();
+        for(my $i = 0; $i < @formats; $i++) {
+            $d{ $formats[$i] } = $fdata[$i];
+            $d{ "M_$formats[$i]" } = $mfdata[$i] if ( $a[10] );
+        }
+        if ( $d{ RD } ) {
+            $d{ RD } =~ /(\d+),(\d+)/ && ($d{ RD } = $1 + $2);
+            $d{ M_RD } && $d{ M_RD } =~ /(\d+),(\d+)/ && ($d{ M_RD } = $1 + $2);
+        }
+
+        # Adapt for Mutect or FreeBayes
+        unless( $d{ PMEAN } ) {  # Meaning not VarDict
+            delete $d{ AF };
+            if ( $d{ AD } ) { # in case it's not defined in FreeBayes
+                my @ads = split(/,/, $d{ AD });
+                my $ads_sum = 0;
+                $ads_sum += $_ foreach( @ads );
+                if ($ads_sum > 0) {
+                    $d{ AF } = sprintf("%.3f", $ads[1]/$ads_sum);
+                } else {
+                    $d{ AF } = '0';
+                }
+                $d{ VD } = $ads[1];
+            }
+            # Use AO and RO for allele freq calculation for FreeBayes and overwrite AD even if it exists
+            if ( $d{ AO } ) {
+                my $ao_sum = 0;
+                my @aos = split(/,/, $d{ AO });
+                @aos = sort { $b <=> $a } @aos; # Just make sure the first is the most frequency
+                $ao_sum += $_ foreach( @aos );
+                $d{ AF } = sprintf("%.3f", $aos[0]/($ao_sum+$d{RO}));
+                $d{ VD } = $aos[0];
+            }
+            if ( $a[10] ) { # for somatic paired analysis
+                if ( $d{ M_AD } ) {
+                    my @m_ads = split(/,/, $d{ M_AD });
+                    my $m_ads_sum = 0;
+                    foreach( @m_ads ) {
+                        $m_ads_sum += $_ if ( /\d/ );
+                    }
+                    $d{ M_AF } = $m_ads_sum ? sprintf("%.3f", $m_ads[1]/$m_ads_sum) : 0;
+                    $d{ M_VD } = $m_ads[1] && $m_ads[1] =~ /\d/ ? $m_ads[1] : 0;
+                }
+                # Use AO and RO for allele freq calculation for FreeBayes and overwrite AD even if it exists
+                if ( $d{ M_AO } ) {
+                    my $m_ao_sum = 0;
+                    my @m_aos = split(/,/, $d{ M_AO });
+                    @m_aos = sort { $b <=> $a } @m_aos if ( $m_aos[0] =~ /\d/ ); # Just make sure the first is the most frequency
+                    foreach( @m_aos ) {
+                        $m_ao_sum += $_ if ( /\d/ );
+                    }
+                    my $m_ro = $d{M_RO} && $d{M_RO} =~ /\d/ ? $d{M_RO} : 0;
+                    $d{ M_AF } = $m_ao_sum + $m_ro > 0 ? sprintf("%.3f", $m_aos[0]/($m_ao_sum+$m_ro)) : 0;
+                    $d{ M_VD } = $m_aos[0] && $m_aos[0] =~ /\d/ ? $m_aos[0] : 0;
+                }
+            }
+        }
 
         @paircols = qw(TYPE STATUS SSF SOR M_DP M_AF M_VD M_RD M_BIAS M_PMEAN M_PSTD M_QUAL M_QSTD M_HIAF M_MQ M_SN M_ADJAF M_NM M_GT M_DUPRATE M_SPLITREAD M_SPANPAIR) if ( $a[10] );
 
-        $d_ref->{ SBF } = $d_ref->{ SBF } < 0.0001 ? sprintf("%.1e", $d_ref->{ SBF }) : sprintf("%.4f", $d_ref->{ SBF }) if ( $d_ref->{ SBF } );
-        $d_ref->{ ODDRATIO } = sprintf("%.3f", $d_ref->{ ODDRATIO }) if ( $d_ref->{ ODDRATIO } );
+        $d{ SBF } = $d{ SBF } < 0.0001 ? sprintf("%.1e", $d{ SBF }) : sprintf("%.4f", $d{ SBF }) if ( $d{ SBF } );
+        $d{ ODDRATIO } = sprintf("%.3f", $d{ ODDRATIO }) if ( $d{ ODDRATIO } );
         my @effs = ();
-        if ( $d_ref->{ EFF } ) {
-            @effs = split(/,/, $d_ref->{ EFF });
-        } elsif ( $d_ref->{ ANN } ) {
-            my @anns = split(/,/, $d_ref->{ ANN });
+        if ( $d{ EFF } ) {
+            @effs = split(/,/, $d{ EFF });
+        } elsif ( $d{ ANN } ) {
+            my @anns = split(/,/, $d{ ANN });
             foreach my $ann (@anns) {
                 my ($allele, $ann, $impact, $gname, $gid, $ftype, $fid, $biotype, $rank, $hgvsc, $hgvsp, $cdnap, $cdsp, $protp, $dist) = split(/\|/, $ann);
                 my @ta = split(/&/, $ann);
@@ -163,9 +300,26 @@ foreach my $vcf (@ARGV) {
             @effs = (" (||||||||||1)");
         }
         my $vark = join(":", @a[0, 1, 3, 4]); # Chr Pos Ref Alt
-        next if !passFilter ( $FILDEPTH, $FILPMEAN, $FILQMEAN, $d_ref->{ DEPTH }, $d_ref->{ PMEAN }, $d_ref->{ QUAL } );
-        my ($pmean, $qmean) = ($d_ref->{ PMEAN }, $d_ref->{ QUAL });
-        my ($m_pmean, $m_qmean) = ($d_ref->{ M_PMEAN }, $d_ref->{ M_QUAL });
+        next if ( $FILDEPTH && $d{ DP } < $FILDEPTH );
+        next if ( $FILPMEAN && $d{ PMEAN } && $d{ PMEAN } < $FILPMEAN );
+        next if ( $FILQMEAN && $d{ QUAL } && $d{ QUAL } < $FILQMEAN );
+        my ($pmean, $qmean) = ($d{ PMEAN }, $d{ QUAL });
+        my ($m_pmean, $m_qmean) = ($d{ M_PMEAN }, $d{ M_QUAL });
+        my $pass = "TRUE";
+        my $mpass = "TRUE";
+        #$pass = "FALSE" unless ( $d{PSTD} > 0 );
+        $pass = "FALSE" if ( $qmean && $qmean < $MINQMEAN );
+        $mpass = "FALSE" if ( $m_qmean && $m_qmean < $MINQMEAN );
+        $pass = "FALSE" if ( $pmean && $pmean < $MINPMEAN );
+        $mpass = "FALSE" if ( $m_pmean && $m_pmean < $MINPMEAN );
+        $pass = "FALSE" if ( !$d{AF} || $d{AF} < $MINFREQ );
+        $mpass = "FALSE" if ( !$d{M_AF} || $d{M_AF} < $MINFREQ );
+        $pass = "FALSE" if ( $d{MQ} && $d{MQ} < $MINMQ && $d{AF} < 0.5 );  # Keep low mapping quality but high allele frequency variants
+        $mpass = "FALSE" if ( $d{M_MQ} && $d{M_MQ} < $MINMQ && $d{M_AF} < 0.5 );  # Keep low mapping quality but high allele frequency variants
+        $pass = "FALSE" if ( $d{SN} && $d{SN} < $SN );
+        $mpass = "FALSE" if ( $d{M_SN} && $d{M_SN} < $SN );
+        $pass = "FALSE" if ( !$d{VD} || $d{VD} < $MINVD );
+        $mpass = "FALSE" if ( !$d{M_VD} || $d{M_VD} < $MINVD );
 
         my @alts = split(/,/, $a[4]);
         my @d1 = ();
@@ -176,7 +330,7 @@ foreach my $vcf (@ARGV) {
             my @e = split(/\|/, $eff, -1);
 
             my ($type, $effect) = split(/\(/, $e[0]);
-            my @tmp = map { defined($d_ref->{ $_ }) ? $d_ref->{ $_ } : ""; } (@columns, @ampcols, @paircols);
+            my @tmp = map { defined($d{ $_ }) ? $d{ $_ } : ""; } (@columns, @ampcols, @paircols);
             my ($aachg, $cdnachg) = $e[3] ? split("/", $e[3]) : ("", "");
             ($aachg, $cdnachg) = ("", $e[3]) if ( $e[3] =~ /^[cn]/ );
             if ( $aachg && $aachg =~ /^p\./ && (! $opt_s )) {
@@ -262,10 +416,10 @@ foreach my $vcf (@ARGV) {
                 $alt = $alts[$alt-1];
             }
 
-            if ( $d_ref->{ GENE } && $e[5] && $d_ref->{ GENE } ne $e[5] ) { # Ignore if there's COSMIC and COSMIC gene is different from the gene
-                push(@d2, [$d_ref->{ SAMPLE }, @a[0..3], $alt, $type, $effect, @tmp2, @tmp, $d_ref->{ LOF }]);
+            if ( $d{ GENE } && $e[5] && $d{ GENE } ne $e[5] ) { # Ignore if there's COSMIC and COSMIC gene is different from the gene
+                push(@d2, [$d{ SAMPLE }, @a[0..3], $alt, $type, $effect, @tmp2, @tmp, $d{ LOF }]);
             } else {
-                push(@d1, [$d_ref->{ SAMPLE }, @a[0..3], $alt, $type, $effect, @tmp2, @tmp, $d_ref->{ LOF }]);
+                push(@d1, [$d{ SAMPLE }, @a[0..3], $alt, $type, $effect, @tmp2, @tmp, $d{ LOF }]);
             }
         }
 
@@ -286,8 +440,8 @@ foreach my $vcf (@ARGV) {
             my ($m_af, $m_mq, $m_sn) = @$d[$HDRN{ Matched_AlleleFreq }, $HDRN{ Matched_MQ }, $HDRN{ Matched_SN }] if ( @pairhdrs > 0);
             my $varn = @{ $var{ $vark } } + 0;
             my $ave_af = mean( $var{ $vark } );
-            my $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
-            my $mpass = $pass;
+            $pass = ($varn/$sam_n > $FRACTION && $varn >= $CNT && $ave_af < $AVEFREQ && $d->[3] eq ".") ? "MULTI" : "TRUE"; # novel and present in $MAXRATIO samples
+            $mpass = $pass;
             my $clncheck = checkCLNSIG($d->[$HDRN{ CLNSIG }]);
             my $class = $d->[3] =~ /COSM/ ? "COSMIC" : ($d->[3] =~ /^rs/ ? ($clncheck ? $clncheck : "dbSNP") : "Novel");
             #$pass = "FALSE" unless ( $d->[24] > 0 ); # all variants from one position in reads
@@ -420,85 +574,6 @@ sub setupMultiMaf {
     close( MMAF );
 }
 
-sub passFilter {
-    my ( $FILDEPTH, $FILPMEAN, $FILQMEAN, $depth, $pmean, $qual ) = @_;
-    if ( $FILDEPTH && $depth < $FILDEPTH ) {
-        return 0;
-    }
-    if ( $FILPMEAN && $pmean && $pmean < $FILPMEAN ){
-        return 0;
-    }
-    if ( $FILQMEAN && $qual && $qual < $FILQMEAN ){
-        return 0;
-    }
-    return 1;
-}
-
-sub formatData {
-    my ($format, $format_data, $p, $d_ref) = @_;
-    my @formats = split(/:/, $format);
-    my @fdata = split(/:/, $format_data);
-    my @mfdata = $p ? split(/:/, $p) : ();
-    for (my $i = 0; $i < @formats; $i++) {
-        $d_ref->{ $formats[$i] } = $fdata[$i];
-        $d_ref->{ "M_$formats[$i]" } = $mfdata[$i] if ( $p );
-    }
-    if ( $d_ref->{ RD } ) {
-        $d_ref->{ RD } =~ /(\d+),(\d+)/ && ($d_ref->{ RD } = $1 + $2);
-        $d_ref->{ M_RD } && $d_ref->{ M_RD } =~ /(\d+),(\d+)/ && ($d_ref->{ M_RD } = $1 + $2);
-    }
-
-    # Adapt for Mutect or FreeBayes
-    unless ( $d_ref->{ PMEAN } ) {  # Meaning not VarDict
-        delete $d_ref->{ AF };
-        if ( $d_ref->{ AD } ) { # in case it's not defined in FreeBayes
-            my @ads = split(/,/, $d_ref->{ AD });
-            my $ads_sum = 0;
-            $ads_sum += $_ foreach( @ads );
-            if ($ads_sum > 0) {
-                $d_ref->{ AF } = sprintf("%.3f", $ads[1]/$ads_sum);
-            } else {
-                $d_ref->{ AF } = '0';
-            }
-            $d_ref->{ VD } = $ads[1];
-        }
-        # Use AO and RO for allele freq calculation for FreeBayes and overwrite AD even if it exists
-        if ( $d_ref->{ AO } ) {
-            my $ao_sum = 0;
-            my @aos = split(/,/, $d_ref->{ AO });
-            @aos = sort { $b <=> $a } @aos; # Just make sure the first is the most frequency
-            $ao_sum += $_ foreach( @aos );
-            $d_ref->{ AF } = sprintf("%.3f", $aos[0]/($ao_sum+$d_ref->{RO}));
-            $d_ref->{ VD } = $aos[0];
-        }
-        if ( $p ) { # for somatic paired analysis
-            if ( $d_ref->{ M_AD } ) {
-                my @m_ads = split(/,/, $d_ref->{ M_AD });
-                my $m_ads_sum = 0;
-                foreach( @m_ads ) {
-                    $m_ads_sum += $_ if ( /\d/ );
-                }
-                $d_ref->{ M_AF } = $m_ads_sum ? sprintf("%.3f", $m_ads[1]/$m_ads_sum) : 0;
-                $d_ref->{ M_VD } = $m_ads[1] && $m_ads[1] =~ /\d/ ? $m_ads[1] : 0;
-            }
-            # Use AO and RO for allele freq calculation for FreeBayes and overwrite AD even if it exists
-            if ( $d_ref->{ M_AO } ) {
-                my $m_ao_sum = 0;
-                my @m_aos = split(/,/, $d_ref->{ M_AO });
-                @m_aos = sort { $b <=> $a } @m_aos if ( $m_aos[0] =~ /\d/ ); # Just make sure the first is the most frequency
-                foreach( @m_aos ) {
-                    $m_ao_sum += $_ if ( /\d/ );
-                }
-                my $m_ro = $d_ref->{M_RO} && $d_ref->{M_RO} =~ /\d/ ? $d_ref->{M_RO} : 0;
-                $d_ref->{ M_AF } = $m_ao_sum + $m_ro > 0 ? sprintf("%.3f", $m_aos[0]/($m_ao_sum+$m_ro)) : 0;
-                $d_ref->{ M_VD } = $m_aos[0] && $m_aos[0] =~ /\d/ ? $m_aos[0] : 0;
-            }
-        }
-    }
-
-    return $d_ref;
-}
-
 sub USAGE {
 print <<USAGE;
     The program will convert an annotated vcf files by snfEFF using dbSNP and COSMIC back to txt format.  It also checks for quality
@@ -545,7 +620,7 @@ print <<USAGE;
 
     -P INT
         The filtering mean position in reads for variants.  The raw variant will be filtered on first place if the mean
-        position is less then INT.  Default: 0bp
+        posisiton is less then INT.  Default: 0bp
 
     -Q DOUBLE
         The filtering mean base quality phred score for variants.  The raw variant will be filtered on first place

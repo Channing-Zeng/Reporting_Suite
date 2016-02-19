@@ -110,7 +110,7 @@
                 <tbody>
                     {.repeated section sample_reports}
                         <tr>
-                            <td class="left_column_td"><a name="{sample_name}"></a>{sample_name}</td>
+                            <td class="left_column_td" id="{sample_name}"><a name="{sample_name}"></a>{sample_name}</td>
                             {.repeated section records}
                                 <td class="td">{contents}</td>
                             {.end}
@@ -122,6 +122,9 @@
         </div>
     </div>
 </div>
+
+{.section sample_match_on_hover_js}{sample_match_on_hover_js}{.or}{.end}
+
 </body>
 </html>
 

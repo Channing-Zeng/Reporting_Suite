@@ -97,7 +97,20 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
         project_report_html_fpath = bcbio_structure.project_report_html_fpath
         project_name = bcbio_structure.project_name
 
-    _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure)
+    sample_match_on_hover_js = None
+    normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
+    if normal_samples:
+        sample_match_on_hover_js = '<script type="text/javascript">\n'
+        for s in bcbio_structure.samples:
+            if s.phenotype != 'normal':
+                sample_match_on_hover_js += ('' +
+                    '\tdocument.getElementById("' + s.name + '_match").onmouseover = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "#EEE"; };\n' +
+                    '\tdocument.getElementById("' + s.name + '_match").onmouseleave = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "white"; };\n'
+                 )
+        sample_match_on_hover_js += '</script>\n'
+
+    _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure,
+                      additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js))
 
     info()
     info('*' * 70)
@@ -183,7 +196,8 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
         varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
 
-        recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
+        if isfile(bcbio_structure.fastqc_summary_fpath):
+            recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
         recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
         recs.append(_make_url_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
         recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
@@ -208,14 +222,12 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
 
     if dataset_project:
         for s in dataset_project.sample_by_name.values():
-            sample_reports_records[s.name].extend([
-                _make_url_record(
+            sample_reports_records[s.name].append(_make_url_record(
                     OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
-                    individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath),
-                _make_url_record(
+                    individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
+            sample_reports_records[s.name].append(_make_url_record(
                     OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
-                    individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath)
-            ])
+                    individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath))
 
     if bcbio_structure:
         gender_record_by_sample = dict()
@@ -235,10 +247,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
         for s in bcbio_structure.samples:
             targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
 
-            sample_reports_records[s.name].extend([
-                _make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME),      base_dirpath),
-                _make_url_record(targqc_d,            individual_reports_section.find_metric(SEQQC_NAME),       base_dirpath),
-            ])
+            if s.fastqc_html_fpath and isfile(s.fastqc_html_fpath):
+                sample_reports_records[s.name].append(_make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME), base_dirpath))
+            sample_reports_records[s.name].append(_make_url_record(targqc_d, individual_reports_section.find_metric(SEQQC_NAME), base_dirpath))
+
             if not s.phenotype or s.phenotype != 'normal':
                 varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
                 varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
@@ -262,10 +274,10 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                 rec = Record(individual_reports_section.find_metric(PHENOTYPE), s.phenotype)
                 sample_reports_records[s.name].append(rec)
                 if s.phenotype != 'normal' and s.normal_match:
-                    if len(bcbio_structure.samples) > 30:
-                        rec = _make_relative_link_record(s.normal_match.name, individual_reports_section.find_metric(NORM_MATCH))
-                    else:
-                        rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
+                    # if len(bcbio_structure.samples) > 1:
+                    rec = _make_relative_link_record(s.name, s.normal_match.name, individual_reports_section.find_metric(NORM_MATCH))
+                    # else:
+                    #     rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
                     sample_reports_records[s.name].append(rec)
 
     # for (repr_name, links_by_sample) in to_add:
@@ -369,7 +381,7 @@ def _relpath_all(value, base_dirpath):
         return value
 
 
-def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure):
+def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure, additional_data=None):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -444,7 +456,12 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
             sample_report_dict["sample_name"] = sample_report.display_name
             main_dict["sample_reports"].append(sample_report_dict)
 
-    return write_static_html_report(cnf, {"common": common_dict, "main": main_dict}, html_fpath)
+    data = {"common": common_dict, "main": main_dict}
+    if additional_data:
+        for k, v in additional_data.items():
+            data[k] = v
+
+    return write_static_html_report(cnf, data, html_fpath)
 
 def get_run_info(cnf, bcbio_structure):
     info('Getting run and codebase information...')
@@ -497,6 +514,6 @@ def get_run_info(cnf, bcbio_structure):
         run_info_dict["filtering_params"] = 'default'
     return run_info_dict
 
-def _make_relative_link_record(name, metric):
-    url = '#{}'.format(name)
-    return Record(metric=metric, value=name, url=url)
+def _make_relative_link_record(name, match_name, metric):
+    value = '<a class="dotted-link" href="#{match_name}" id="{name}_match">{match_name}</a>'.format(name=name, match_name=match_name)
+    return Record(metric=metric, value=value)
