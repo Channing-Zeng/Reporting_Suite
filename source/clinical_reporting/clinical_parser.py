@@ -398,7 +398,8 @@ class ClinicalExperimentInfo:
         for gene_name, chrom in key_gene_names_chroms:
             self.key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)
 
-        if self.sample.targqc_dirpath and self.sample.targetcov_json_fpath:
+        if self.sample.targqc_dirpath and verify_dir(self.sample.targqc_dirpath) \
+                and self.sample.targetcov_json_fpath and verify_file(self.sample.targetcov_json_fpath):
             info('Parsing target and patient info from ' + str(self.sample.targetcov_json_fpath))
             self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
             self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
@@ -412,7 +413,7 @@ class ClinicalExperimentInfo:
         info('Parsing actionable genes...')
         self.actionable_genes_dict = parse_broad_actionable()
 
-        if mutations_fpath:
+        if mutations_fpath and verify_file(mutations_fpath):
             info('Parsing mutations from ' + str(mutations_fpath))
             if varqc_json_fpath:
                 self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
@@ -424,11 +425,11 @@ class ClinicalExperimentInfo:
         else:
             warn('No mutations_fpath provided, skipping mutation stats.')
 
-        if sv_fpath:
+        if sv_fpath and verify_file(sv_fpath):
             info('Parsing prioritized SV from ' + str(sv_fpath))
             self.sv_events = self.parse_sv(sv_fpath, self.key_gene_by_name_chrom)
 
-        if seq2c_tsv_fpath:
+        if seq2c_tsv_fpath and verify_file(seq2c_tsv_fpath):
             info('Parsing Seq2C from ' + str(seq2c_tsv_fpath))
             self.seq2c_events_by_gene = self.parse_seq2c_report(seq2c_tsv_fpath, self.key_gene_by_name_chrom, self.genes_collection_type)
         else:
@@ -514,6 +515,9 @@ class ClinicalExperimentInfo:
 
     def parse_targetseq_detailed_report(self):
         info('Preparing coverage stats for the ' + self.genes_collection_type + ' genes')
+        if not verify_file(self.sample.targetcov_detailed_tsv):
+            return None
+
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):

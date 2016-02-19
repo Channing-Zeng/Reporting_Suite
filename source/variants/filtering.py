@@ -422,7 +422,7 @@ def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=None):
         cmdline += ' -a '
 
     corr_vcf_fpath_by_sample = dict()
-    for sn, vcf_fpath in vcf_fpath_by_sample:
+    for sn, vcf_fpath in vcf_fpath_by_sample.items():
         ungz = vcf_fpath
         if vcf_fpath.endswith('.gz'):
             ungz = splitext(vcf_fpath)[0]
