@@ -643,7 +643,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=getsize(sample.bam) / 1024 / 1024 + 500)
+                            mem_m=getsize(sample.bam) * 4 / 1024 / 1024 + 500)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
@@ -869,7 +869,7 @@ class BCBioRunner:
                     self._submit_job(self.bw_converting,sample.name,
                         sample=sample.name, genome=sample.genome, bam=sample.bam,
                         wait_for_steps=[self.clin_report.job_name(sample.name) if self.clin_report in self.steps else None],
-                        mem_m=getsize(sample.bam) / 1024 / 1024)
+                        mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
             if not self.cnf.verbose:
                 print ''
             if self.cnf.verbose:

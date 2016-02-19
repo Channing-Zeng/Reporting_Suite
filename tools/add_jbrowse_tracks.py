@@ -43,9 +43,7 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
                 create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath + '.tbi')
 
         bam_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam)
-        if not isfile(sample.bam + '.bai'):
-            info('Indexing bam ' + sample.bam)
-            index_bam(cnf, sample.bam)
+        index_bam(cnf, sample.bam)
         create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam + '.bai')
         bigwig_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, splitext(sample.bam)[0] + '.bigwig')
         print_sample_tracks_info(sample.name, bcbio_structure.project_name, trunc_symlink(bam_link), trunc_symlink(bigwig_link),

@@ -131,9 +131,7 @@ def process_one(cnf):
         bams.append(cnf['extra_bam'])
 
     for bam in bams:
-        if not isfile(bam + '.bai'):
-            info('Indexing bam ' + bam)
-            index_bam(cnf, bam)
+        index_bam(cnf, bam)
 
     filtered_bams = [process_pysam_bug(cnf, filter_unmapped_reads(cnf, bam)) for bam in bams]
 

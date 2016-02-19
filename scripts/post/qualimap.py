@@ -34,9 +34,7 @@ def main():
         key_for_sample_name='bam',
         proc_name=BCBioStructure.qualimap_name)
 
-    if not isfile(cnf.bam + '.bai'):
-        info('Indexing bam ' + cnf.bam)
-        index_bam(cnf, cnf.bam)
+    index_bam(cnf, cnf.bam)
     info('Using alignment ' + cnf.bam)
 
     bed = ''

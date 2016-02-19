@@ -157,9 +157,7 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed):
     bam_fpath = bam_fpath
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
-    if not isfile(bam_fpath + '.bai'):
-        info('Indexing bam ' + bam_fpath)
-        index_bam(cnf, bam_fpath)
+    index_bam(cnf, bam_fpath)
 
     gene_keys_list = None
     if cnf.prep_bed:

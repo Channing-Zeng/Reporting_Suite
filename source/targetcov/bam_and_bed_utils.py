@@ -18,8 +18,8 @@ from source.utils import md5
 def index_bam(cnf, bam_fpath, sambamba=None):
     indexed_bam = bam_fpath + '.bai'
 
-    if cnf.reuse_intermediate and (not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath)):
-        info('Indexing to ' + indexed_bam + '...')
+    if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
+        info('Indexing BAM, writing ' + indexed_bam + '...')
         sambamba = sambamba or get_system_path(cnf, 'sambamba')
         if sambamba is None:
             sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
@@ -691,8 +691,7 @@ def number_of_dup_mapped_reads(cnf, bam):
 
 def number_mapped_reads_on_target(cnf, bed, bam):
     sambamba = get_system_path(cnf, 'sambamba')
-    if not verify_file(bam + '.bai'):
-        index_bam(cnf, bam)
+    index_bam(cnf, bam)
     output_fpath = join(cnf.work_dir, basename(bam) + '_' + basename(bed) + '_num_mapped_reads_target')
     cmdline = '{sambamba} view -t {cnf.threads} -c -F "not unmapped" -L {bed} {bam}'.format(**locals())
     call(cnf, cmdline, output_fpath)

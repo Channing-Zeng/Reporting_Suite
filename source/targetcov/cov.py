@@ -278,9 +278,7 @@ def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
          'regions is ' + str(MALE_READS_THRES))
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
-    if not isfile(bam_fpath + '.bai'):
-        info('Indexing bam ' + bam_fpath)
-        index_bam(cnf, bam_fpath)
+    index_bam(cnf, bam_fpath)
 
     reads_mapped_on_male_genes = number_mapped_reads_on_target(cnf, MALE_GENES_BED_FPATH, bam_fpath)
     info('Number of reads mapped on chrY key genes is ' + str(reads_mapped_on_male_genes))
