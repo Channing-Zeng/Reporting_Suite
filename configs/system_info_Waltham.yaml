@@ -9,7 +9,7 @@ resources:
   gatk:
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
   vcf2txt:
-    path: ext_tools/vcf2txt.fast.pl
+    path: VarDict/vcf2txt.pl
   vcfannotate:
     path: /group/ngs/src/bcbio-nextgen/0.9.4/rhel6-x64/bin/vcfannotate
   qualimap:
