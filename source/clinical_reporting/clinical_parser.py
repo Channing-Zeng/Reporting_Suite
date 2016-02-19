@@ -628,12 +628,14 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                 gene_col = header.index('Gene')
                 depth_col = header.index('Depth')
                 transcript_col = header.index('Transcript')
-                status_col = header.index('Status')
+                if 'Status' in header:
+                    status_col = header.index('Status')
                 if 'Significance' in header:
                     signif_col = header.index('Significance')
                 else:
                     signif_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
-                reason_col = header.index('Reason')
+                if 'Reason' in header:
+                    reason_col = header.index('Reason')
                 continue
             fs = l.replace('\n', '').split('\t')
             sample_name, chrom, start, ref, alt, gname, transcript = \
@@ -641,9 +643,9 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             codon_change, cdna_change, aa_change, aa_len = fs[codon_chg_col], fs[cdna_chg_col], fs[aa_chg_col], fs[aa_len_col]
             ids, type_, var_type, var_class = fs[ids_col], fs[type_col], fs[var_type_col], fs[class_col]
             depth, af = fs[depth_col], fs[allele_freq_col]
-            status = fs[status_col]
-            signif = fs[signif_col]
-            reason = fs[reason_col]
+            status = fs[status_col] if status_col is not None else None
+            signif = fs[signif_col] if signif_col is not None else None
+            reason = fs[reason_col] if reason_col is not None else None
 
             if sample_name == sample.name:
                 if (gname, chrom) in key_gene_by_name_chrom:

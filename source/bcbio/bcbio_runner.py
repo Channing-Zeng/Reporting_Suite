@@ -12,7 +12,7 @@ from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio, combine_mut
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
-from source.bcbio.project_level_report import make_project_level_report
+from source.bcbio.project_level_report import make_project_level_report, get_run_info
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
@@ -113,6 +113,9 @@ class JobRunning:
 class BCBioRunner:
     def __init__(self, cnf, bcbio_structure, bcbio_cnf):
         self.bcbio_structure = bcbio_structure
+
+        get_run_info(cnf, bcbio_structure)
+
         self.final_dir = bcbio_structure.final_dirpath
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
@@ -700,7 +703,7 @@ class BCBioRunner:
                 for sample in self.bcbio_structure.samples:
                     for caller in self.bcbio_structure.variant_callers.values():
                         if sample.vcf_by_callername.get(caller.name):
-                            anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
+                            anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=False)
                             vcf2txt_cmdl = ''
                             if not self.is_wgs:
                                 if sample.normal_match:

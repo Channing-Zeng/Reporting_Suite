@@ -2,7 +2,7 @@ import json
 import os
 import time
 from inspect import getsourcefile
-from os.path import join, relpath, dirname, basename, abspath
+from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile
 from collections import OrderedDict
 from collections import defaultdict
 
@@ -10,7 +10,7 @@ import source
 from scripts.post.vardict2mut import set_filtering_params
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.config import defaults
-from source.logger import info, step_greetings
+from source.logger import info, step_greetings, warn
 from source.file_utils import verify_file, add_suffix, verify_dir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
@@ -447,13 +447,43 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
     return write_static_html_report(cnf, {"common": common_dict, "main": main_dict}, html_fpath)
 
 def get_run_info(cnf, bcbio_structure):
+    info('Getting run and codebase information...')
     run_info_dict = dict()
-    cur_fpath = abspath(getsourcefile(lambda:0))
-    reporting_suite_dirpath = os.path.dirname(os.path.dirname(os.path.dirname(cur_fpath)))
+    cur_fpath = abspath(getsourcefile(lambda: 0))
+    reporting_suite_dirpath = dirname(dirname(dirname(cur_fpath)))
+
     run_date = cnf.run_date if cnf.run_date else time.localtime()
-    last_modification_time = max(os.path.getmtime(root) for root,_,_ in os.walk(reporting_suite_dirpath))
     run_info_dict["run_date"] = time.strftime('%d %b %Y, %H:%M (GMT%z)', run_date)
-    run_info_dict["last_commit_date"] = time.strftime('%d %b %Y, %H:%M (GMT%z)', time.localtime(last_modification_time))
+
+    version = ''
+    if verify_file(join(reporting_suite_dirpath, 'VERSION.txt')):
+        with open(join(reporting_suite_dirpath, 'VERSION.txt')) as f:
+            version = f.read().strip()
+
+    last_modified_datestamp = ''
+    try:
+        py_fpaths = set()
+        for rootpath, dirnames, fnames in os.walk(reporting_suite_dirpath):
+            for fn in fnames:
+                if fn.endswith('.py'):
+                    fpath = abspath(join(rootpath, fn))
+                    if isfile(fpath):
+                        py_fpaths.add(fpath)
+        last_modification_time = max(getmtime(fpath) for fpath in py_fpaths)
+    except:
+        warn('Cannot get codebase files datestamps')
+    else:
+        last_modified_datestamp = time.strftime('%d %b %Y, %H:%M (GMT%z)', time.localtime(last_modification_time))
+
+    if last_modified_datestamp or version:
+        version_text = 'Reporting Suite '
+        if version:
+            version_text += 'v.' + version
+        if version and last_modified_datestamp:
+            version_text += ', '
+        if last_modified_datestamp:
+            version_text += 'last modified on ' + last_modified_datestamp
+        run_info_dict['suite_version'] = version_text
 
     var_filtering_params = []
     set_filtering_params(cnf, bcbio_structure=bcbio_structure)  # get variant filtering parameters from run_info yaml

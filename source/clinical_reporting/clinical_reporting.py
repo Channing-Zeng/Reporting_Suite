@@ -132,7 +132,8 @@ class BaseClinicalReporting:
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
             row.add_record('AA len', mut.aa_len)
-            row.add_record('Status', mut.status)
+            if mut.status:
+                row.add_record('Status', mut.status)
             row.add_record('Effect', mut.eff_type)
             row.add_record('VarDict status', **self._signif_field(mut))
             # row.add_record('VarDict reason', mut.reason)

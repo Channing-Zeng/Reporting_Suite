@@ -124,8 +124,8 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
     #         metric_storage=targqc_metric_storage)
         if tag_by_sample:
             sample_report.set_project_tag(tag_by_sample[sample_report.sample.name])
-        if verify_file(sample_report.sample.ngscat_html_fpath):
-            sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
+        # if verify_file(sample_report.sample.ngscat_html_fpath):
+        #     sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
         if verify_file(sample_report.sample.qualimap_html_fpath):
             url = relpath(sample_report.sample.qualimap_html_fpath, output_dir)
             r = sample_report.find_record(sample_report.records, 'Qualimap')
@@ -161,7 +161,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
 
 
 def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, tag_by_sample=None):
-    step_greetings('Coverage statistics for all samples based on TargetSeq, ngsCAT, and Qualimap reports')
+    step_greetings('TargQC coverage statistics for all samples based')
 
     correct_samples = []
 
