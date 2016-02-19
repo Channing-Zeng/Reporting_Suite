@@ -315,14 +315,15 @@ class GeneDict(dict):  # supports genes without specified chromosome
     def __init__(self, *args, **kwargs):
         super(GeneDict, self).__init__(**kwargs)
         self.gene_by_name = dict()
-        for (gn, ch), g in self.items():
+        for (gn, ch) in super(GeneDict, self).keys():
             if ch is None:
-                self.gene_by_name[gn] = g
+                self.gene_by_name[gn] = super(GeneDict, self)[(gn, ch)]
+                del super(GeneDict, self)[(gn, ch)]
 
     def __delitem__(self, (gname, chrom)):
         if (gname, chrom) in super(GeneDict, self).keys():
             del super(GeneDict, self)[(gname, chrom)]
-        else:
+        if gname in self.gene_by_name:
             del self.gene_by_name[gname]
 
     def __setitem__(self, (gname, chrom), gene):
@@ -351,6 +352,9 @@ class GeneDict(dict):  # supports genes without specified chromosome
     def items(self):
         return super(GeneDict, self).items() + self.gene_by_name.items()
 
+    def __len__(self):
+        return len(super(GeneDict, self).items()) + len(self.gene_by_name)
+
 
 class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
@@ -361,6 +365,7 @@ class ClinicalExperimentInfo:
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
+        self.key_gene_by_name = GeneDict()
         self.key_gene_by_name_chrom = GeneDict()
         self.genes_collection_type = ''
         self.genes_description = ''
@@ -406,7 +411,9 @@ class ClinicalExperimentInfo:
             info('Parsing TargetCov ' + self.genes_collection_type + ' genes stats...')
             self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
             self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
-            self.parse_targetseq_detailed_report()
+            self.sample.targetcov_detailed_tsv = verify_file(self.sample.targetcov_detailed_tsv)
+            if self.sample.targetcov_detailed_tsv:
+                self.parse_targetseq_detailed_report()
         else:
             warn('No targetcov_json_fpath provided, skipping key genes coverage stats.')
 
@@ -542,12 +549,12 @@ class ClinicalExperimentInfo:
                 if feature in ['Whole-Gene', 'Gene-Exon']:
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))
                     if gene:
-                        gene.chrom = chrom
+                        gene.chrom = None
                         gene.start = start
                         gene.end = end
                         gene.ave_depth = ave_depth
                         gene.cov_by_threshs = cov_by_threshs
-                        self.key_gene_by_name_chrom[(symbol, chrom)] = gene
+                        self.key_gene_by_name_chrom[(symbol, None)] = gene
 
                 elif feature in ['CDS', 'Exon']:
                     cds = CDS()

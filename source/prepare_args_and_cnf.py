@@ -75,7 +75,7 @@ def check_genome_resources(cnf):
     if not cnf.canonical_transcripts:
         critical('Please, specify canonical_transcripts or in snpeff transcripts in ' + cnf.sys_cnf)
 
-    if not cnf.genome.exons or not cnf.genome.refseq:
+    if not cnf.genome.exons and not cnf.genome.refseq:
         critical('"exons" or "refseq" fields are required in the system config.')
 
 

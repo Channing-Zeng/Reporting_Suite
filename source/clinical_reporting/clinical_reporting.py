@@ -612,7 +612,7 @@ class ClinicalReporting(BaseClinicalReporting):
         if self.experiment.actionable_genes_dict and \
                 (self.experiment.mutations or self.experiment.seq2c_events_by_gene or self.experiment.sv_events):
             self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
-        if self.experiment.ave_depth:
+        if self.experiment.ave_depth and self.experiment.depth_cutoff and self.experiment.sample.targetcov_detailed_tsv:
             self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name_chrom, self.experiment.ave_depth)
             self.cov_plot_data = self.make_key_genes_cov_json({self.experiment.key: self.experiment})
 
@@ -747,7 +747,7 @@ class ClinicalReporting(BaseClinicalReporting):
         for gene in sorted(key_gene_by_name_chrom.values(), key=lambda g: g.name):
             reg = key_genes_report.add_row()
             reg.add_record('Gene', gene.name)
-            reg.add_record('Chr', gene.chrom.replace('chr', ''))
+            reg.add_record('Chr', gene.chrom.replace('chr', '') if gene.chrom else None)
             reg.add_record('Ave depth', gene.ave_depth)
             m = clinical_cov_metric_storage.find_metric('% cov at {}x'.format(self.experiment.depth_cutoff))
             reg.add_record(m.name, next((cov for cutoff, cov in gene.cov_by_threshs.items() if cutoff == self.experiment.depth_cutoff), None))
