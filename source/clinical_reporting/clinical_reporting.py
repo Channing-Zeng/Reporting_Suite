@@ -103,7 +103,7 @@ class BaseClinicalReporting:
                 row = report.add_row()
                 row.add_record('Gene', mut.gene.name)
                 row_class = ' expandable_gene_row collapsed'
-                row.add_record('Position', **self._pos_recargs(mut))
+                row.add_record('Position', **self._pos_recargs(mut, jbrowser_link))
                 row.add_record('Change', **self._g_chg_recargs(mut))
 
                 if len(mutations_by_experiment.values()) == 1:
