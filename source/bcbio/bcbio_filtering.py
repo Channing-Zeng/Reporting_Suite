@@ -2,7 +2,6 @@ from collections import OrderedDict, defaultdict
 import os
 from os.path import basename, join, isfile, islink, splitext, isdir
 
-from joblib import Parallel, delayed
 import source
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.logger import err, warn, send_email, critical
@@ -39,7 +38,7 @@ def combine_vcf2txt(cnf, bcbio_structure, callers):
                     with open(tx, 'w') as out:
                         for s in samples:
                             verify_file(s.get_vcf2txt_by_callername(c.name), is_critical=True, description=c.name + ' vcf2txt file')
-                            with open(s.get_mut_by_callername(c.name)) as f:
+                            with open(s.get_vcf2txt_by_callername(c.name)) as f:
                                 for i, l in enumerate(f):
                                     if i > 0:
                                         out.write(l)

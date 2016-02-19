@@ -8,7 +8,7 @@ from time import sleep
 from traceback import format_exc
 
 import source
-from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio, combine_muts, combine_vcf2txt, combine_vcfs
+from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
@@ -114,8 +114,6 @@ class BCBioRunner:
     def __init__(self, cnf, bcbio_structure, bcbio_cnf):
         self.bcbio_structure = bcbio_structure
 
-        get_run_info(cnf, bcbio_structure)
-
         self.final_dir = bcbio_structure.final_dirpath
         self.bcbio_cnf = bcbio_cnf
         self.cnf = cnf
@@ -151,7 +149,7 @@ class BCBioRunner:
                 # self.varqc_after,
                 self.varqc_after_summary])
         if Steps.contains(cnf.steps, 'VarAnnotate'):
-            self.steps.extend([self.varannotate, self.varqc, self.varqc_summary])
+            self.steps.extend([self.varannotate, self.varqc_summary])
         if Steps.contains(cnf.steps, 'VarQC'):
             self.steps.extend([self.varqc_summary, self.varqc_after_summary])
         if Steps.contains(cnf.steps, 'VarFilter'):
@@ -163,15 +161,11 @@ class BCBioRunner:
             self.steps.extend([self.targetcov, self.targqc_summary, self.abnormal_regions])
         if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
-        # if Steps.contains(cnf.steps, 'Qualimap'):
-        #     self.steps.extend([self.qualimap, self.targqc_summary])
-        if Steps.contains(cnf.steps, 'ngsCAT'):
-            self.steps.extend([self.ngscat, self.targqc_summary])
 
         if Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
-        #if Steps.contains(cnf.steps, 'AbnormalCovReport'):
-        #    self.steps.append(self.abnormal_regions)
+        if Steps.contains(cnf.steps, 'AbnormalCovReport'):
+           self.steps.append(self.abnormal_regions)
 
         if Steps.contains(cnf.steps, 'FastQC'):
             self.steps.extend([self.fastqc_summary])
@@ -240,7 +234,7 @@ class BCBioRunner:
 
         anno_paramline = params_for_one_sample + ('' +
             ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
-            '-o \'{output_dir}\' -s \'{sample}\' -c {caller} ' +
+            '-o \'{output_dir}\' -s \'{sample}\' -c {caller} --qc ' +
             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
         # log_fpath = join(self.bcbio_structure.log_dirpath,
         #      (step.name + ('_' + sample_name if sample_name else '') +
@@ -279,7 +273,7 @@ class BCBioRunner:
 
         ##### FILTERING #####
         varfilter_paramline = params_for_one_sample + (' ' +
-            '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} ' +
+            '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
         if cnf.min_freq is not None:
             self.min_af = cnf.min_freq

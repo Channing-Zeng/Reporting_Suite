@@ -113,7 +113,7 @@ def main(args):
         index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, filt_vcf, cnf.caller)
 
         if cnf.qc:
-            report = qc.make_report(cnf, var_s.filt_vcf_fpath, var_s)
+            report = qc.make_report(cnf, var_s.pass_filt_vcf_fpath, var_s)
             qc_dirpath = join(cnf.output_dir, 'qc')
             safe_mkdir(qc_dirpath)
             qc.save_report(cnf, report, var_s, cnf.caller, qc_dirpath, source.varqc_after_name)
