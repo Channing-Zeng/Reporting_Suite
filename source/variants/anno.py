@@ -278,15 +278,14 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         os.remove(final_vcf_fpath)
     shutil.copy(vcf_fpath, final_vcf_fpath)
 
-    # QC #
-    report = qc.make_report(cnf, final_vcf_fpath, sample)
-    qc_dirpath = join(cnf.output_dir, 'qc')
-    safe_mkdir(qc_dirpath)
-    report = qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
-    info('Saved QC to ' + qc_dirpath + ' (' + report.html_fpath + ')')
-    info('-' * 70)
-    info()
-    # QC #
+    if cnf.qc:
+        report = qc.make_report(cnf, final_vcf_fpath, sample)
+        qc_dirpath = join(cnf.output_dir, 'qc')
+        safe_mkdir(qc_dirpath)
+        report = qc.save_report(cnf, report, sample, callername, qc_dirpath, source.varqc_name)
+        info('Saved QC to ' + qc_dirpath + ' (' + report.html_fpath + ')')
+        info('-' * 70)
+        info()
 
     if final_vcf_fpath.endswith('.gz'):
         if not is_gz(final_vcf_fpath):

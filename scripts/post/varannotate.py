@@ -48,7 +48,7 @@ def main(args):
             (['--qc'], dict(
                 dest='qc',
                 action='store_true',
-                default=None,
+                default=True,
                 help=SUPPRESS_HELP)
              ),
             (['--transcripts'], dict(

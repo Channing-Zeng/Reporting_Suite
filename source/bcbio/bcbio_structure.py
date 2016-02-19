@@ -515,8 +515,10 @@ class BaseProjectStructure:
     targqc_repr      = 'TargQC'
 
     fastqc_dir       = fastqc_summary_dir      = join('qc', fastqc_name)
-    varqc_dir        = varqc_summary_dir       = join(varannotate_dir, 'qc',)
-    varqc_after_dir  = varqc_after_summary_dir = join(varfilter_dir, 'qc')
+    varqc_summary_dir                          = join('qc', varqc_name)
+    varqc_after_summary_dir                    = join('qc', varqc_after_name)
+    varqc_dir                                  = join(varannotate_dir, 'qc',)
+    varqc_after_dir                            = join(varfilter_dir, 'qc')
     targqc_dir       = targqc_summary_dir      = join('qc', targqc_name)
     ngscat_dir                                 = join(targqc_dir, ngscat_name)
 

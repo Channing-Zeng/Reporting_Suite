@@ -8,7 +8,7 @@ from time import sleep
 from traceback import format_exc
 
 import source
-from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio, combine_muts
+from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio, combine_muts, combine_vcf2txt, combine_vcfs
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
@@ -898,11 +898,9 @@ class BCBioRunner:
                  ', total was: ' + str(len([j for j in self.jobs_running]))
             )
 
-            if not self.is_wgs:
-                combine_muts(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
-
             if self.varfilter in self.steps:
-                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
+                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure,
+                    self.bcbio_structure.variant_callers.values(), self.is_wgs)
 
             if is_us():
                 add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)

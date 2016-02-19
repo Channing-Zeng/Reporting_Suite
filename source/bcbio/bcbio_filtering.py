@@ -29,11 +29,39 @@ def combine_muts(cnf, bcbio_structure, callers):
                 info('Saved ' + c.name + ' mutations to ' + mut_fpath)
 
 
-def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
+def combine_vcf2txt(cnf, bcbio_structure, callers):
+    for c in callers:
+        for (samples, mut_fpath) in ((c.get_single_samples(), c.single_vcf2txt_res_fpath), (c.get_paired_samples(), c.paired_vcf2txt_res_fpath)):
+            if samples and mut_fpath:
+                if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
+                    info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
+                with file_transaction(cnf.work_dir, mut_fpath) as tx:
+                    with open(tx, 'w') as out:
+                        for s in samples:
+                            verify_file(s.get_vcf2txt_by_callername(c.name), is_critical=True, description=c.name + ' vcf2txt file')
+                            with open(s.get_mut_by_callername(c.name)) as f:
+                                for i, l in enumerate(f):
+                                    if i > 0:
+                                        out.write(l)
+                verify_file(mut_fpath, is_critical=True, description='final combined vcf2txt calls')
+                info('Saved ' + c.name + ' vcf2txt to ' + mut_fpath)
+
+
+def finish_filtering_for_bcbio(cnf, bcbio_structure, callers, is_wgs):
     email_msg = ['Variant filtering finished.']
 
-    errory = _symlink_vcfs(callers, bcbio_structure.var_dirpath)
+    info('')
+    if is_wgs:
+        info('Combining resulting vcf2txt results')
+        combine_vcf2txt(cnf, bcbio_structure, callers)
+    info('Combining resulting mutations')
+    combine_muts(cnf, bcbio_structure, callers)
 
+    info()
+    info('Symlinking final VCFs:')
+    errory = _symlink_vcfs(callers, bcbio_structure.var_dirpath)
+    info()
+    info('Combining final VCFs:')
     _combine_vcfs(cnf, callers, bcbio_structure.var_dirpath)
 
     if any(c.single_mut_res_fpath or c.paired_mut_res_fpath for c in callers):
@@ -132,8 +160,6 @@ def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
 
 
 def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
-    info()
-    info('Combining final VCFs:')
     for caller in callers:
         combined_vcf_fpath = join(datestamp_var_dirpath, caller.name + '.vcf')
         vcf_fpath_by_sname = {s.name: s.find_filt_vcf_by_callername(caller.name) for s in caller.samples}
@@ -413,8 +439,6 @@ def _copy_to_datahub(cnf, caller, datahub_dirpath):
 
 
 def _symlink_vcfs(callers, datestamp_var_dirpath):
-    info()
-    info('Symlinking final VCFs:')
     errory = []
     for caller in callers:
         info(caller.name)
