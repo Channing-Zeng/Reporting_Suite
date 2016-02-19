@@ -638,6 +638,7 @@ class BCBioRunner:
                     if not sample.bam or not verify_bam(sample.bam):
                         err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
                         info('Target coverage for "' + sample.name + '"')
+                    else:
                         self._submit_job(
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,

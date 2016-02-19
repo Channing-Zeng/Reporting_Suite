@@ -18,11 +18,13 @@ def combine_muts(cnf, bcbio_structure, callers):
                     info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
                 with file_transaction(cnf.work_dir, mut_fpath) as tx:
                     with open(tx, 'w') as out:
-                        for s in samples:
+                        for i, s in enumerate(samples):
                             verify_file(s.get_mut_by_callername(c.name), is_critical=True, description=c.name + ' mutations file')
                             with open(s.get_mut_by_callername(c.name)) as f:
-                                for i, l in enumerate(f):
-                                    if i > 0:
+                                for j, l in enumerate(f):
+                                    if j == 0 and i == 0:
+                                        out.write(l)
+                                    if j > 0:
                                         out.write(l)
                 verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
                 info('Saved ' + c.name + ' mutations to ' + mut_fpath)
@@ -36,11 +38,13 @@ def combine_vcf2txt(cnf, bcbio_structure, callers):
                     info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
                 with file_transaction(cnf.work_dir, mut_fpath) as tx:
                     with open(tx, 'w') as out:
-                        for s in samples:
+                        for i, s in enumerate(samples):
                             verify_file(s.get_vcf2txt_by_callername(c.name), is_critical=True, description=c.name + ' vcf2txt file')
                             with open(s.get_vcf2txt_by_callername(c.name)) as f:
-                                for i, l in enumerate(f):
-                                    if i > 0:
+                                for j, l in enumerate(f):
+                                    if j == 0 and i == 0:
+                                        out.write(l)
+                                    if j > 0:
                                         out.write(l)
                 verify_file(mut_fpath, is_critical=True, description='final combined vcf2txt calls')
                 info('Saved ' + c.name + ' vcf2txt to ' + mut_fpath)

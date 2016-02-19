@@ -15,7 +15,8 @@ from source.tools_from_cnf import get_script_cmdline, get_system_path, get_java_
 from source.logger import err, warn, send_email, critical
 from source.utils import is_us
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import iterate_vcf, get_sample_column_index, bgzip_and_tabix, igvtools_index
+from source.variants.vcf_processing import iterate_vcf, get_sample_column_index, bgzip_and_tabix, igvtools_index, \
+    verify_vcf
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, \
     symlink_plus, file_transaction, num_lines
 from source.logger import info
@@ -27,7 +28,11 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
     cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq}'.format(**locals())
     for s_name, vcf_fpath in vcf_fpath_by_sname.items():
         cmdl += ' --variant:' + s_name + ' ' + vcf_fpath
-    cmdl += ' -o ' + combined_vcf_fpath
+    if isfile(combined_vcf_fpath + '.gz') and verify_vcf(combined_vcf_fpath + '.gz'):
+        info(combined_vcf_fpath + '.gz exists, reusing')
+        return combined_vcf_fpath
+
+    cmdl += ' -o ' + combined_vcf_fpath + '.gz'
     res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)
     if res:
         info('Joined VCFs, saved into ' + combined_vcf_fpath)
@@ -37,8 +42,7 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
             except OSError:
                 err(traceback.format_exc())
                 info()
-        bgzip_and_tabix(cnf, combined_vcf_fpath)
-        return combined_vcf_fpath
+        return bgzip_and_tabix(cnf, combined_vcf_fpath)
     else:
         warn('Could not join VCFs')
         return None
