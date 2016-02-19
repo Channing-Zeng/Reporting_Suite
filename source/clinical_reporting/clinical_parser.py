@@ -311,6 +311,47 @@ def clinical_sample_info_from_cnf(cnf):
         targqc_report_path=verify_file(cnf.targqc_report_path, silent=False) if cnf.targqc_report_path else None)
 
 
+class GeneDict(dict):  # supports genes without specified chromosome
+    def __init__(self, *args, **kwargs):
+        super(GeneDict, self).__init__(**kwargs)
+        self.gene_by_name = dict()
+        for (gn, ch), g in self.items():
+            if ch is None:
+                self.gene_by_name[gn] = g
+
+    def __delitem__(self, (gname, chrom)):
+        if (gname, chrom) in super(GeneDict, self).keys():
+            del super(GeneDict, self)[(gname, chrom)]
+        else:
+            del self.gene_by_name[gname]
+
+    def __setitem__(self, (gname, chrom), gene):
+        if chrom is None:
+            self.gene_by_name[gname] = gene
+        else:
+            super(GeneDict, self).__setitem__((gname, chrom), gene)
+            if gname in self.gene_by_name:
+                del self.gene_by_name[gname]
+
+    def __contains__(self, (gname, chrom)):
+        return super(GeneDict, self).__contains__((gname, chrom)) or gname in self.gene_by_name
+
+    def __getitem__(self, (gname, chrom)):
+        return super(GeneDict, self).get((gname, chrom)) or self.gene_by_name[gname]
+
+    def get(self, (gname, chrom), *args, **kwargs):
+        return super(GeneDict, self).get((gname, chrom), *args, **kwargs) or self.gene_by_name.get(gname, *args, **kwargs)
+
+    def keys(self):
+        return super(GeneDict, self).keys() + self.gene_by_name.keys()
+
+    def values(self):
+        return super(GeneDict, self).values() + self.gene_by_name.values()
+
+    def items(self):
+        return super(GeneDict, self).items() + self.gene_by_name.items()
+
+
 class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
                  bed_fpath, mutations_fpath, sv_fpath, varqc_json_fpath,
@@ -320,7 +361,7 @@ class ClinicalExperimentInfo:
         self.sample = sample
         self.project_report_path = project_report_path
         self.project_name = project_name
-        self.key_gene_by_name_chrom = dict()
+        self.key_gene_by_name_chrom = GeneDict()
         self.genes_collection_type = ''
         self.genes_description = ''
         self.key = ''
@@ -472,7 +513,7 @@ class ClinicalExperimentInfo:
         return seq2c_events_by_gene
 
     def parse_targetseq_detailed_report(self):
-        info('Preparing coverage stats for ' + self.genes_collection_type + ' gene')
+        info('Preparing coverage stats for the ' + self.genes_collection_type + ' genes')
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):
@@ -496,11 +537,13 @@ class ClinicalExperimentInfo:
 
                 if feature in ['Whole-Gene', 'Gene-Exon']:
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))
-                    gene.chrom = chrom
-                    gene.start = start
-                    gene.end = end
-                    gene.ave_depth = ave_depth
-                    gene.cov_by_threshs = cov_by_threshs
+                    if gene:
+                        gene.chrom = chrom
+                        gene.start = start
+                        gene.end = end
+                        gene.ave_depth = ave_depth
+                        gene.cov_by_threshs = cov_by_threshs
+                        self.key_gene_by_name_chrom[(symbol, chrom)] = gene
 
                 elif feature in ['CDS', 'Exon']:
                     cds = CDS()
@@ -509,7 +552,8 @@ class ClinicalExperimentInfo:
                     cds.ave_depth = ave_depth
                     cds.cov_by_threshs = cov_by_threshs
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))
-                    gene.cdss.append(cds)
+                    if gene:
+                        gene.cdss.append(cds)
 
         # Cleaning up records that are not found in the target gene panel,
         # so we don't know about them and don't even want to report them
@@ -644,7 +688,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
 
                     mutations.append(mut)
 
-    info('Found ' + str(len(mutations)) + ' mutations in ' + key_collection_type + ' genes')
+    info('Found ' + str(len(mutations)) + ' mutations in ' + str(len(key_gene_by_name_chrom)) + ' ' + key_collection_type + ' genes')
     return mutations
 
 
@@ -726,6 +770,7 @@ def get_key_or_target_bed_genes(bed_fpath, key_genes):
         if len(key_gene_names_chroms) < 2000:
             use_custom_panel = True
     if not use_custom_panel:
-        key_gene_names_chroms = get_key_genes(key_genes)
-    key_gene_names_chroms = [(gn, c) for gn, c in key_gene_names_chroms if gn and gn != '.' and c and c != '.']
+        key_gene_names = get_key_genes(key_genes)
+        key_gene_names_chroms = [(gn, None) for gn in key_gene_names]
+    key_gene_names_chroms = [(gn, c) for (gn, c) in key_gene_names_chroms if (gn and gn != '.')]
     return key_gene_names_chroms, use_custom_panel
