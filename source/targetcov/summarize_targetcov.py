@@ -497,7 +497,7 @@ def _get_depth_for_each_variant(cnf, samtools, bedtools,
         for l in f:
             # 1,2,4,5,8,11,12,13,14,15,16,17,18,19,20
             # c,p,r,a,f,ch,st,en,ge,ex,st,ft,bt,de,ov
-            fs = l[:-1].split('\t')
+            fs = l.replace('\n', '').split('\t')
             chrom, pos, _, ref, alt = fs[:5]
             depth, overlap = fs[-2:]
             var = var_by_site.get((chrom, pos, ref, alt))

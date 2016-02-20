@@ -263,7 +263,7 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
     if not cnf.no_check and 'vardict' not in callername:
         info()
         info('Adding SAMPLE=' + sample.name + ' annotation...')
-        vcf_fpath = _add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')
+        vcf_fpath = add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')
 
     final_vcf_fpath = join(cnf.output_dir, sample.name + (('-' + callername) if callername else '') + '.anno.vcf')
     if cnf.output_file:
@@ -578,7 +578,7 @@ def _tracks(cnf, track_fpath, input_fpath):
     return verify_vcf(output_fpath, is_critical=True)
 
 
-def _add_annotation(cnf, input_fpath, key, value, number, type_, description):
+def add_annotation(cnf, input_fpath, key, value, number, type_, description):
     step_greetings('Adding annotation...')
     def proc_rec(rec):
         rec.INFO[key] = value

@@ -32,7 +32,7 @@ def main():
             elif l.startswith('#') or '\t' not in l:
                 sys.stdout.write(l)
             else:
-                fields = l[:-1].split('\t')
+                fields = l.replace('\n', '').split('\t')
                 if len(fields) != num_bed_cols:
                     sys.stderr.write('Error: number of fields inconsistent. Expected ' + str(num_bed_cols) + ', got ' + str(len(fields)) + ' at + ' + ' | '.join(fields) + '\n')
                     sys.exit(1)

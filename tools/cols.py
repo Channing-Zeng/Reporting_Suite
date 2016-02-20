@@ -18,7 +18,7 @@ def cols(in_f):
             sys.stdout.write(l)
             continue
         line_num += 1
-        l = l[:-1]  # removing the trailing '\n'
+        l = l.replace('\n', '')  # removing the trailing '\n'
         if line_num == 1:
             if delimiter not in l and ',' in l:
                 delimiter = ','

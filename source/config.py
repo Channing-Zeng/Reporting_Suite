@@ -4,6 +4,7 @@ from os import getcwd
 from os.path import abspath, expanduser, join, dirname, pardir
 from traceback import format_exc
 
+import bcbio_postproc
 from source import logger
 from source.file_utils import verify_file, verify_module, adjust_path
 
@@ -18,9 +19,12 @@ if verify_module('yaml'):
 else:
     critical('Error: cannot import module yaml. ')
 
-this_script_dirpath = dirname(abspath(__file__))
+# this_script_dirpath = dirname(abspath(__file__))
+# configs_dirpath = abspath(join(abspath(this_script_dirpath), pardir, 'configs'))
 
-configs_dirpath = abspath(join(abspath(this_script_dirpath), pardir, 'configs'))
+
+configs_dirpath = abspath(join(abspath(bcbio_postproc.project_dir), 'configs'))
+test_dirpath = abspath(join(abspath(bcbio_postproc.project_dir), 'test'))
 
 defaults = dict(
     sys_cnfs = dict(
@@ -28,9 +32,9 @@ defaults = dict(
         uk = join(configs_dirpath, 'system_info_AP.yaml'),
         china = join(configs_dirpath, 'system_info_China.yaml'),
         cloud = join(configs_dirpath, 'system_info_cloud.yaml'),
-        local = abspath(join(this_script_dirpath, pardir, 'test', 'system_info.yaml')),
+        local = abspath(join(test_dirpath, 'system_info.yaml')),
     ),
-    run_cnf_exome_seq = join(configs_dirpath,  'run_info_ExomeSeq.yaml'),
+    run_cnf_exome_seq = join(configs_dirpath, 'run_info_ExomeSeq.yaml'),
     run_cnf_wgs = join(configs_dirpath, 'run_info_WGS.yaml'),
     run_cnf_deep_seq = join(configs_dirpath, 'run_info_DeepSeq.yaml'),
 
@@ -42,7 +46,6 @@ defaults = dict(
     threads = 25
 )
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
-
 
 defaults_yaml_fpath = join(configs_dirpath, 'RUNINFO_DEFAULTS.yaml')
 verify_file(defaults_yaml_fpath, is_critical=True)

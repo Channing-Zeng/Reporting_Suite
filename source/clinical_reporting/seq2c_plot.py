@@ -63,7 +63,7 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
     with open(seq2c_tsv_fpath) as f:
         for i, l in enumerate(f):
             if i == 0: continue
-            fs = l[:-1].split('\t')
+            fs = l.replace('\n', '').split('\t')
             sname, gname = fs[0], fs[1]
             if key_gene_names and gname not in key_gene_names: continue
             if sname != sample_name: continue

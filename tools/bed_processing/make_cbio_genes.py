@@ -127,7 +127,7 @@ def read_hgnc_genes(hgnc_fpath):
         i = 0
         for l in f:
             if l and not l.startswith('#'):
-                symbol, locus_group, cytoband, entrez_gene_id, ensembl_id, entrez_gene_id_ncbi = l[:-1].split('\t')
+                symbol, locus_group, cytoband, entrez_gene_id, ensembl_id, entrez_gene_id_ncbi = l.replace('\n', '').split('\t')
                 approved_gene = ApprovedGene(symbol, cytoband, locus_group, entrez_gene_id_ncbi, ensembl_id)
                 approved_gene_by_name[symbol] = approved_gene
 
@@ -225,7 +225,7 @@ def _proc_ucsc(inp, out, approved_gene_by_name, approved_gnames_by_prev_gname, a
 
     for l in inp:
         if l and not l.startswith('#'):
-            ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, geneSymbol = l[:-1].split('\t')
+            ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, geneSymbol = l.replace('\n', '').split('\t')
 
             approved_gene_symbol, status = get_approved_gene_symbol(
                 approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
@@ -321,7 +321,7 @@ def _proc_ensembl(inp, out, approved_gene_by_name):
 
     for l in inp:
         if l and not l.startswith('#'):
-            chrom, _, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
+            chrom, _, feature, start, end, _, strand, _, props_line = l.replace('\n', '').split('\t')
 
             # if is_local():
             #     if chrom != '21':

@@ -490,7 +490,7 @@ class ClinicalExperimentInfo:
         with open(seq2c_tsv_fpath) as f_inp:
             for i, l in enumerate(f_inp):
                 if i == 0: continue
-                fs = l[:-1].split('\t')
+                fs = l.replace('\n', '').split('\t')
                 sname, gname = fs[0], fs[1]
                 #if gname not in self.key_gene_by_name: continue
                 if sname != self.sample.name: continue

@@ -227,7 +227,7 @@ def read_approved_genes(synonyms_fpath):
         i = 0
         for l in f:
             if l and not l.startswith('#'):
-                approved_gn, prev_names, synonyms, hgnc_chrom, ensembl_id, ucsc_id = l[:-1].split('\t')
+                approved_gn, prev_names, synonyms, hgnc_chrom, ensembl_id, ucsc_id = l.replace('\n', '').split('\t')
                 if hgnc_chrom:
                     hgnc_chrom = parse_hgnc_chrom(hgnc_chrom)
 
@@ -347,7 +347,7 @@ def _proc_ucsc(inp, out):  #, approved_gene_by_name, approved_gnames_by_prev_gna
     for l in inp:
         if l and not l.startswith('#'):
             ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, gene_symbol =\
-                l[:-1].split('\t')
+                l.replace('\n', '').split('\t')
             cdsStart = int(cdsStart)
             cdsEnd = int(cdsEnd)
             exonCount = int(exonCount)
@@ -483,7 +483,7 @@ def _proc_ensembl(inp, out, additional_feature_list=None):
 
     for l in inp:
         if l and not l.startswith('#'):
-            chrom, _, feature, start, end, _, strand, _, props_line = l[:-1].split('\t')
+            chrom, _, feature, start, end, _, strand, _, props_line = l.replace('\n', '').split('\t')
 
             # if is_local():
             #     if chrom != '21':
