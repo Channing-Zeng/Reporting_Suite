@@ -106,8 +106,8 @@ def main(args):
         var_s.filt_vcf_fpath = ungz_filt_vcf_fpath + '.gz'
         var_s.pass_filt_vcf_fpath = add_suffix(ungz_filt_vcf_fpath, 'pass')
 
-        var_s.varfilter_result = vcf2txt_res_fpath
-        var_s.varfilter_pass_result = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
+        var_s.variants_fpath = vcf2txt_res_fpath
+        var_s.variants_pass_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
         filt_vcf = write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
         index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, filt_vcf, cnf.caller)

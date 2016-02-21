@@ -979,7 +979,7 @@ class BCBioRunner:
                         if not j.is_done:
                             l = sum(1 for j2 in self.jobs_running if not j2.is_done and j2.step.name == j.step.name)
                             strs.add(j.step.name + ' (' + str(l) + ')')
-                    info('Waiting for the jobs to be processed on a GRID (monitor with qstat). '
+                    info('Waiting for the jobs to be processed on the cluster (monitor with qstat). '
                          'Jobs running: ' + ', '.join(strs))
                     info('', print_date=True, ending='')
                 sleep(20)

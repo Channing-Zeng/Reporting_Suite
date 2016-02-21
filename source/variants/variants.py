@@ -11,26 +11,28 @@ from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transact
 from source.variants.vcf_processing import verify_vcf
 
 
-def run_variants(cnf, samples, main_script_name=None, mut_fpath=None):
+def run_variants(cnf, samples, main_script_name=None, variants_fpath=None):
     info('Annotating...')
     _annotate(cnf, samples)
     info()
     _summarize_varqc(cnf, output_dir=cnf.output_dir, samples=samples, caption=cnf.qc_caption)
     info('')
 
-    mut_fname = (cnf.caller or 'variants') + '.txt'
-    if mut_fpath:
-        mut_fname = basename(mut_fpath)
+    variants_fname = (cnf.caller or 'variants') + '.txt'
+    if variants_fpath:
+        variants_fname = basename(variants_fpath)
 
     info('Filtering...')
-    _filter(cnf, samples, mut_fname)
+    _filter(cnf, samples, variants_fname)
     info()
     info('Combining results...')
-    mut_fpath = _combine_results(cnf, samples, mut_fpath or join(cnf.output_dir, mut_fname))
+    variants_fpath, pass_variants_fpath = _combine_results(cnf, samples, variants_fpath or join(cnf.output_dir, variants_fname))
 
     info()
     info('*' * 70)
-    info('Saved results to ' + mut_fpath)
+    info('Saved results:')
+    info('  ' + variants_fpath)
+    info('  ' + pass_variants_fpath)
 
 
 def _annotate(cnf, samples):
@@ -146,7 +148,7 @@ def _annotate(cnf, samples):
     info()
 
 
-def _filter(cnf, samples, mut_fname):
+def _filter(cnf, samples, variants_fname):
     total_reused = 0
     total_processed = 0
     total_success = 0
@@ -159,7 +161,7 @@ def _filter(cnf, samples, mut_fname):
         submitted_samples = []
         for sample in not_submitted_samples:
             output_dirpath = sample.varfilter_dirpath = join(sample.dirpath, source.varfilter_name)
-            output_fpath = sample.mut_fpath = join(sample.varfilter_dirpath, mut_fname)
+            output_fpath = sample.variants_fpath = join(sample.varfilter_dirpath, variants_fname)
 
             if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
                 info('Filtered results ' + output_fpath + ' exist, reusing.')
@@ -176,7 +178,7 @@ def _filter(cnf, samples, mut_fname):
                     ' --vcf {sample.anno_vcf_fpath}' +
                     ' --sample {sample.name}' +
                     ' -o {output_dirpath}' +
-                    ' --output-file {sample.mut_fpath}' +
+                    ' --output-file {sample.variants_fpath}' +
                     ' --project-name ' + cnf.project_name +
                     ' --genome {cnf.genome.name}' +
                     ' --work-dir {work_dir}' +
@@ -218,7 +220,7 @@ def _filter(cnf, samples, mut_fname):
         for j in jobs_to_wait:
             if j.is_done and not j.is_failed and not verify_vcf(j.output_fpath):
                 j.is_failed = True
-            if j.is_done and not j.is_failed:
+            if j.is_done and not j.is_failed and not cnf.debug:
                 if isdir(j.work_dir):
                     os.system('rm -rf ' + j.work_dir)
                 else:
@@ -249,21 +251,39 @@ def _filter(cnf, samples, mut_fname):
     info()
 
 
-def _combine_results(cnf, samples, mut_fpath):
-    if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
-        info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
-    with file_transaction(cnf.work_dir, mut_fpath) as tx:
+def _combine_results(cnf, samples, variants_fpath):
+    if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
+        info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
+    with file_transaction(cnf.work_dir, variants_fpath) as tx:
         with open(tx, 'w') as out:
-            for var_s in samples:
-                verify_file(var_s.mut_fpath, is_critical=True, description='mutations file')
-                with open(var_s.mut_fpath) as f:
-                    out.write(f.read())
-    verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
-    info('Saved all mutations to ' + mut_fpath)
+            for i, s in enumerate(samples):
+                verify_file(s.variants_fpath, is_critical=True, description='variants file')
+                with open(s.variants_fpath) as f:
+                    for j, l in enumerate(f):
+                        if j == 0 and i == 0:
+                            out.write(l)
+                        if j > 0:
+                            out.write(l)
+    verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
+
+    pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+    if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
+        info('Combined filtered results ' + pass_variants_fpath + ' exist, reusing.')
+    with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
+        with open(tx, 'w') as out:
+            for i, s in enumerate(samples):
+                verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), is_critical=True, description='variants file')
+                with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
+                    for j, l in enumerate(f):
+                        if j == 0 and i == 0:
+                            out.write(l)
+                        if j > 0:
+                            out.write(l)
+    info('Saved all mutations to ' + pass_variants_fpath)
 
     _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
-    return mut_fpath
+    return variants_fpath, pass_variants_fpath
 
 
 def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):

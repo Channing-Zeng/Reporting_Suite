@@ -138,7 +138,7 @@ def wait_for_jobs(cnf, jobs):
             if not all(j.is_done for j in jobs):
                 if not waiting:
                     waiting = True
-                    info('Waiting for the jobs to be processed on a GRID (monitor with qstat). '
+                    info('Waiting for the jobs to be processed on the cluster (monitor with qstat). '
                          'Jobs running: ' + str(len(sorted([j.repr for j in jobs if not j.is_done]))))
                     info('', print_date=True, ending='')
                 sleep(10)
