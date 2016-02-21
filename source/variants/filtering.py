@@ -425,15 +425,15 @@ def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=None):
     if c.amplicon_based:
         cmdline += ' -a '
 
-    corr_vcf_fpath_by_sample = dict()
-    for sn, vcf_fpath in vcf_fpath_by_sample.items():
-        ungz = vcf_fpath
-        if vcf_fpath.endswith('.gz'):
-            ungz = splitext(vcf_fpath)[0]
-            call(cnf, 'gunzip ' + vcf_fpath, output_fpath=ungz)
-        corr_vcf_fpath_by_sample[sn] = ungz
+    # corr_vcf_fpath_by_sample = dict()
+    # for sn, vcf_fpath in vcf_fpath_by_sample.items():
+    #     ungz = vcf_fpath
+    #     if vcf_fpath.endswith('.gz'):
+    #         ungz = splitext(vcf_fpath)[0]
+    #         call(cnf, 'gunzip ' + vcf_fpath, output_fpath=ungz)
+    #     corr_vcf_fpath_by_sample[sn] = ungz
 
-    cmdline += ' ' + ' '.join(corr_vcf_fpath_by_sample.values())
+    cmdline += ' ' + ' '.join(vcf_fpath_by_sample.values())
     return cmdline
 
 

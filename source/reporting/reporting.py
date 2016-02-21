@@ -664,8 +664,7 @@ class FullReport(BaseReport):
         for i, sr in enumerate(self.sample_reports):
             recs = []
             recs.append(Record(metric=self.sample_metric, value=sr.display_name,
-                url=sr.url, html_fpath=sr.html_fpath, num=len(self.sample_reports) - i),
-                        id='"' + sr.sample.name + '"')
+                url=sr.url, html_fpath=sr.html_fpath, num=len(self.sample_reports) - i))
 
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
                 if not metric.is_hidden and not metric.name == 'Sample':

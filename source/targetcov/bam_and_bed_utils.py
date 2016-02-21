@@ -24,6 +24,8 @@ def index_bam(cnf, bam_fpath, sambamba=None):
             sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
         cmdline = '{sambamba} index -t {cnf.threads} {bam_fpath}'.format(**locals())
         call(cnf, cmdline)
+    else:
+        info('Acutal BAM index exist.')
     info('Index: ' + indexed_bam)
 
 

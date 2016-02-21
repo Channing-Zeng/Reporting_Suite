@@ -538,7 +538,8 @@ def adjust_path(path):
     return path
 
 
-code_base_path = abspath(join(dirname(abspath(__file__)), pardir))
+import bcbio_postproc
+code_base_path = abspath(join(abspath(bcbio_postproc.project_dir)))
 
 def adjust_system_path(path):
     if path is None: return None
@@ -775,9 +776,9 @@ def remove_quotes(s):
     return s
 
 
-def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=True,
-                 overwrite=False, reuse_intermediate=True, ctx=None):
-    output_fpath = intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
+def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, output_fpath=None,
+                 check_result=True, overwrite=False, reuse_intermediate=True, ctx=None):
+    output_fpath = output_fpath or intermediate_fname(cnf, input_fpath, suf=suffix or 'tmp')
     if output_fpath.endswith('.gz'):
         info('output_fpath is .gz, but writing to uncompressed.')
         output_fpath = splitext(output_fpath)[0]
@@ -785,8 +786,12 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
     if islink(output_fpath):
         os.unlink(output_fpath)
 
-    if suffix and cnf.reuse_intermediate and reuse_intermediate and not overwrite and file_exists(output_fpath):
-        info(output_fpath + ' exists, reusing')
+    if (suffix or output_fpath) and cnf.reuse_intermediate and reuse_intermediate and not overwrite and \
+            (file_exists(output_fpath) or file_exists(output_fpath + '.gz')):
+        if file_exists(output_fpath):
+            info(output_fpath + ' exists, reusing')
+        if file_exists(output_fpath + '.gz'):
+            info(output_fpath + '.gz exists, reusing')
         return output_fpath
     else:
         info('Writing to ' + output_fpath)
@@ -798,12 +803,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
             else:
                 convert_file_fn(inp_f, out_f)
 
-    if overwrite or suffix is None:
-        info('Overwriting (overwrite=' + str(overwrite) + ', suffix=' + str(suffix) + ')')
-        shutil.move(output_fpath, input_fpath)
-        output_fpath = input_fpath
-
-    if suffix:
+    if suffix or output_fpath:
         info('Saved to ' + output_fpath)
 
     verify_file(output_fpath, is_critical=check_result)
@@ -811,7 +811,7 @@ def convert_file(cnf, input_fpath, convert_file_fn, suffix=None, check_result=Tr
 
 
 def iterate_file(cnf, input_fpath, proc_line_fun,
-                 suffix=None, check_result=True, **kwargs):
+                 suffix=None, output_fpath=None, check_result=True, **kwargs):
     def _proc_file(inp_f, out_f, ctx=None):
         max_bunch_size = 1000 * 1000
         written_lines = 0
@@ -840,7 +840,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun,
         info('Written lines: ' + str(written_lines))
 
     return convert_file(cnf, input_fpath, _proc_file,
-        suffix=suffix, check_result=check_result, **kwargs)
+        suffix=suffix, output_fpath=output_fpath, check_result=check_result, **kwargs)
 
 
 def dots_to_empty_cells(config, tsv_fpath):

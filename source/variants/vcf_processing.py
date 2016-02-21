@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 import traceback
-from genericpath import exists, isfile
+from genericpath import exists, isfile, getctime
 import os
 import sys
 import shutil
@@ -737,18 +737,23 @@ def igvtools_index(cnf, vcf_fpath):
 
 
 def bgzip_and_tabix(cnf, vcf_fpath, **kwargs):
-    bgzip = get_system_path(cnf, 'bgzip')
-    tabix = get_system_path(cnf, 'tabix')
-
-    if not bgzip:
-        err('Cannot index VCF because bgzip is not found in PATH or '  + cnf.sys_cnf)
-    if not tabix:
-        err('Cannot index VCF because tabix is not found in PATH or '  + cnf.sys_cnf)
-    if not bgzip and not tabix:
-        return vcf_fpath
-
     gzipped_fpath = join(vcf_fpath + '.gz')
     tbi_fpath = gzipped_fpath + '.tbi'
+
+    if file_exists(gzipped_fpath) and \
+            file_exists(tbi_fpath) and getctime(tbi_fpath) >= getctime(gzipped_fpath):
+        info('Acutal compressed VCF and index exist.')
+        return gzipped_fpath
+
+    info('Compressing and tabixing VCF file, writing ' + gzipped_fpath + '(.tbi)')
+    bgzip = get_system_path(cnf, 'bgzip')
+    tabix = get_system_path(cnf, 'tabix')
+    if not bgzip:
+        err('Cannot index VCF because bgzip is not found in PATH or ' + cnf.sys_cnf)
+    if not tabix:
+        err('Cannot index VCF because tabix is not found in PATH or ' + cnf.sys_cnf)
+    if not bgzip and not tabix:
+        return vcf_fpath
 
     if isfile(gzipped_fpath): os.remove(gzipped_fpath)
     if isfile(tbi_fpath): os.remove(tbi_fpath)

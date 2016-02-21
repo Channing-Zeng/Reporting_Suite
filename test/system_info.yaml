@@ -61,6 +61,11 @@ genomes:
 
   hg38:
     seq: ~/Dropbox/az/reference_data/hg38.fa
+
+    dbsnp: ~/Dropbox/az/reference_data/dbsnp.chr21.vcf.gz
+    cosmic: ~/Dropbox/az/reference_data/cosmic.chr21.vcf.gz
+    oncomine: ~/Dropbox/az/reference_data/oncomine.chr21.vcf
+
     exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.hg38.bed
 
 #    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering.hg38/dbSNP_multi_mafs_latest.txt
