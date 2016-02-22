@@ -235,9 +235,9 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
     if target_bed:
         info()
         gene_key_set, gene_key_list = get_gene_keys(target_bed)
-        info('Using genes from the amplicons list.')
-        if exons_bed:
-            info('Trying filtering exons with these genes.')
+        info('Using genes from the amplicons list ' + target_bed)
+        if exons_bed and cnf.prep_bed:
+            info('Trying filtering exons with these ' + str(len(gene_key_list)) + ' genes.')
             exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_key_set, suffix='filt_genes_1st_round')
             if not verify_file(exons_anno_bed):
                 info()
@@ -279,7 +279,7 @@ def get_gene_keys(bed_fpath, chrom_index=0, gene_index=3):
             if not line or not line.strip() or line.startswith('#'):
                 continue
 
-            tokens = line.split()
+            tokens = line.replace('\n', '').split('\t')
             if len(tokens) <= gene_index or len(tokens) <= chrom_index:
                 continue
 
@@ -356,9 +356,9 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_keys_set, suffix=None):
     def fn(l, i):
         if l:
             fs = l.split('\t')
-            new_gns = []
             if len(fs) < 4:
                 return None
+            new_gns = []
             c = fs[0]
             for g in fs[3].split(','):
                 if (g, c) in gene_keys_set:

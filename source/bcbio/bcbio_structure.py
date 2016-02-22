@@ -675,23 +675,35 @@ class BCBioStructure(BaseProjectStructure):
         # setting bed files for samples
         if cnf.bed:
             self.sv_bed = self.bed = cnf.bed = verify_bed(cnf.bed, is_critical=True)
-            for s in self.samples:
-                s.bed = self.bed  # for TargQC
             info('Using ' + (self.bed or 'no bed file') + ' for TargQC')
-
-        sv_bed_files_used = [s.sv_bed for s in self.samples]
-        if len(set(sv_bed_files_used)) > 2:
-            critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
-        self.sv_bed = sv_bed_files_used[0] if sv_bed_files_used else self.bed
-        info('Using ' + (self.sv_bed or 'CDS') + ' for Seq2C')
-        if not cnf.bed and self.sv_bed:
-            self.bed = self.sv_bed
-            info('Using sv_regions for TargQC: ' + self.bed)
+        else:
+            sv_bed_files_used = [s.sv_bed for s in self.samples]
+            if len(set(sv_bed_files_used)) > 2:
+                critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
+            if sv_bed_files_used:
+                self.sv_bed = sv_bed_files_used[0]
+                info('Using ' + (self.sv_bed or 'CDS') + ' for Seq2C')
 
         is_wgs_flags = [s.is_wgs for s in self.samples]
         if len(set(is_wgs_flags)) > 2:
             critical('Error: more than 1 variant_regions file found: ' + str(is_wgs_flags))
         self.is_wgs = is_wgs_flags[0] if is_wgs_flags else False
+
+        if not self.is_wgs:
+            if not self.bed and self.sv_bed:
+                info('Not WGS, no --bed, setting --bed as sv_regions: ' + self.sv_bed)
+                self.bed = self.sv_bed
+            if not self.bed and cnf.genome.refseq:
+                info('Not WGS, no --bed, setting --bed as RefSeq: ' + cnf.genome.refseq)
+                self.bed = cnf.genome.refseq
+        if not self.sv_bed and cnf.genome.refseq:
+            info('No sv_regions, setting sv_regions as RefSeq ' + cnf.genome.refseq)
+            self.sv_bed = cnf.genome.refseq
+
+        for s in self.samples:
+            s.bed = self.bed  # for TargQC
+            s.sv_bed = self.sv_bed  # for TargQC
+
         if self.is_wgs:
             self.target_type = 'genome'
             info('Using WGS parameters for filtering')
@@ -899,10 +911,10 @@ class BCBioStructure(BaseProjectStructure):
         if self.cnf.bed:  # Custom BED provided in command line?
             sample.bed = verify_bed(self.cnf.bed, is_critical=True)
             info('TargQC BED file for ' + sample.name + ': ' + str(sample.bed))
-        else:
-            sample.bed = sample.sv_bed
-            if sample.bed:
-                info('Setting TargQC BED file for ' + sample.name + ' same as sv_regions: ' + str(sample.bed))
+        # else:
+            # sample.bed = sample.sv_bed
+            # if sample.bed:
+            #     info('Setting TargQC BED file for ' + sample.name + ' same as sv_regions: ' + str(sample.bed))
 
     def _set_bam_file(self, sample):
         bam = adjust_path(join(sample.dirpath, sample.name + '-ready.bam'))
