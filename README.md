@@ -1,7 +1,7 @@
 Target and WGS sequencing coverage analysis, variant annotation and quality control after alignment and variant calling.
 
 Includes:
-- Read and alignment quality via Qualimpa, NGSCat, AZ TargQC and FASTQC at probe, exon and CDS level
+- Read and alignment quality via Qualimap, NGSCat, AZ TargQC and FASTQC at probe, exon and CDS level
 - variant (SNP, Indel and SV) annotation
 - variant (SNP, Indel and SV) quality control
 - variant (SNP, Indel and SV) filtration and prioritization
