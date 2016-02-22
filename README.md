@@ -1,16 +1,15 @@
-AZ pipeline for post-processing the [bcbio-nextgen] analysis results.
-
+Target and WGS sequencing coverage analysis, variant annotation and quality control after alignment and variant calling.
 
 Includes:
-- variant annotation,
-- variant quality control,
-- variant filtration,
-- amplicon and exon coverage statistics using built-in means and [ngsCAT],
-- integrated [Qualimap] for alignment quality control,
-- CNV caller Seq2C.
+- Read and alignment quality via Qualimpa, NGSCat, AZ TargQC and FASTQC at probe, exon and CDS level
+- variant (SNP, Indel and SV) annotation
+- variant (SNP, Indel and SV) quality control
+- variant (SNP, Indel and SV) filtration and prioritization
+- CNV caller Seq2C
+- Variant, CNV, Coverage reporting via single, easy to interpret HTML Report
 
 <br>
-####Usage
+####Usage (bcbio decoupling in progress)
 ```
 az-reporting.py [/path/to/a/bcbio/directory] [--run-cnf run_info.yaml] [--sys-cnf system_info.yaml] [--bed target.bed]
 ```
@@ -25,7 +24,7 @@ az-reporting.py
 The tool reads the bcbio-nextgen YAML configuration file inside the ```config``` directory in order to extract the information on samples, batches, variant callers, and final directory name.
 
 <br>
-####SGE
+####SGE (SGE decoupling in progress over to iPython)
 
 The pipeline uses qsub to submit jobs. The qsub command line template is the following:
 
@@ -40,7 +39,8 @@ The tool also can be provided with its own configuration file to tune up the pos
 The tool also uses system configuration file with the paths to external tools, reference data. You can make you own system config based on one of the predefined AstraZeneca YAMLs (```system_info_Waltham.yaml``` or ```system_info_AP.yaml```) and provide it with the ```--sys-cnf``` option.
 
 <br>
-####Email notification&nbsp;\[Temporary disabled. Ask Vlad if you need it.\]
+####Email notification
+
 You can provide your email-address with the ```--email``` option, e.g.:
 
 ```
