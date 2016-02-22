@@ -818,7 +818,7 @@ def iterate_file(cnf, input_fpath, proc_line_fun,
         bunch = []
 
         for i, line in enumerate(inp_f):
-            clean_line = line.strip()
+            clean_line = line.replace('\n', '')
             if clean_line:
                 if ctx:
                     new_l = proc_line_fun(clean_line, i, ctx)

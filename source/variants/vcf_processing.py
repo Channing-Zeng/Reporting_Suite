@@ -363,7 +363,6 @@ def vcf_is_empty(cnf, vcf_fpath):
 
 
 def remove_rejected(cnf, input_fpath, output_fpath=None):
-    step_greetings('Removing rejeted records...')
     bcftools = get_system_path(cnf, 'bcftools')
     output_fpath = output_fpath or add_suffix(input_fpath, 'pass')
     if output_fpath.endswith('.gz'):
@@ -742,7 +741,7 @@ def bgzip_and_tabix(cnf, vcf_fpath, **kwargs):
 
     if file_exists(gzipped_fpath) and \
             file_exists(tbi_fpath) and getctime(tbi_fpath) >= getctime(gzipped_fpath):
-        info('Acutal compressed VCF and index exist.')
+        info('Actual compressed VCF and index exist.')
         return gzipped_fpath
 
     info('Compressing and tabixing VCF file, writing ' + gzipped_fpath + '(.tbi)')

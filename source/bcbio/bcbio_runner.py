@@ -682,6 +682,7 @@ class BCBioRunner:
                                     for v in self.bcbio_structure.variant_callers.values()
                                     for s in v.samples
                                     if self.varannotate in self.steps])
+                                # mem_m=sum(getsize(c.single_anno_vcf_by_sample.values())) / 1024 / 1024 * 10 + 500)
 
                         if c.paired_anno_vcf_by_sample:
                             self._submit_job(
@@ -695,6 +696,7 @@ class BCBioRunner:
                                     for v in self.bcbio_structure.variant_callers.values()
                                     for s in v.samples
                                     if self.varannotate in self.steps])
+                                # mem_m=sum([getsize(v) for v in c.paired_anno_vcf_by_sample.values() if v]) / 1024 / 1024 * 10 + 500)
 
                 info('Per-sample variant filtering')
                 for sample in self.bcbio_structure.samples:

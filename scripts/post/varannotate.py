@@ -2,6 +2,8 @@
 # noinspection PyUnresolvedReferences
 from os.path import splitext
 
+import re
+
 import bcbio_postproc
 
 
@@ -18,11 +20,11 @@ from source.file_utils import iterate_file, open_gzipsafe, intermediate_fname
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.tools_from_cnf import get_system_path
-from source.variants.vcf_processing import remove_rejected, get_sample_column_index, verify_vcf
+from source.variants.vcf_processing import remove_rejected, get_sample_column_index, verify_vcf, bgzip_and_tabix
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
 from source.utils import info
-from source.logger import err, warn
+from source.logger import err, warn, step_greetings
 
 
 def main(args):
@@ -75,9 +77,31 @@ def main(args):
         shutil.rmtree(cnf['work_dir'])
 
 
+def fix_vcf_sample_name(cnf, sample_name, vcf_fpath, output_fpath=None):
+    output_fpath = output_fpath or intermediate_fname(cnf, vcf_fpath, 'sample')
+    def fix_sample_name(l, i):
+        if l.startswith('#CHROM'):
+            fs = l.split('\t')
+            fs[9] = sample_name
+            l = '\t'.join(fs)
+        elif not l.startswith('#'):
+            fs = l.split('\t')
+            kvs = fs[7].split(';')
+            for i, kv in enumerate(kvs[:]):
+                if kv.startswith('SAMPLE='):
+                    kvs[i] = 'SAMPLE=' + sample_name
+            l = '\t'.join(fs[:7]) + '\t' + ';'.join(kvs) + '\t' + '\t'.join(fs[8:])
+            # l = re.sub("(?<=SAMPLE=)[^;](?=;)", sample_name, l)
+        return l
+    fixed_vcf = iterate_file(cnf, vcf_fpath, fix_sample_name, output_fpath=output_fpath)
+    return bgzip_and_tabix(cnf, fixed_vcf)
+
+
 def process_one(cnf):
-    info('process_one')
     sample = VarSample(cnf.sample, cnf.output_dir, vcf=cnf.vcf, bam=cnf.bam, genome=cnf.genome)
+
+    step_greetings('Fixing "SAMPLE" INFO annotation and SAMPLE header...')
+    vcf_fpath = fix_vcf_sample_name(cnf, sample.name, cnf.vcf)
 
     # this method will also gunzip the vcf file
     # sample.vcf = fix_chromosome_names(cnf, sample.vcf)
@@ -90,7 +114,8 @@ def process_one(cnf):
     #     verify_vcf(vcf_fpath)
     #     sample.vcf = vcf_fpath
 
-    ungz_pass_vcf_fpath = remove_rejected(cnf, cnf.vcf, intermediate_fname(cnf, cnf.vcf, ''))
+    step_greetings('Removing rejeted records...')
+    ungz_pass_vcf_fpath = remove_rejected(cnf, vcf_fpath)
     info()
 
     # if sample.vcf is None:
