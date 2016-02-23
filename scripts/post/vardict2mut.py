@@ -342,6 +342,11 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             var_class, var_type, fclass, gene_coding, effect, cdna_chg, transcript = \
                 fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
             var_type = var_type.upper()
+
+            if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
+                filter_matches_counter['PROTEIN_PROTEIN_CONTACT'] += 1
+                continue
+
             status, reasons = check_by_var_class(var_class, status, reasons, fields, header)
             status, reasons = check_by_type(var_type, status, reasons, aa_chg, effect)
 
