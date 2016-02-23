@@ -2,7 +2,7 @@ from collections import OrderedDict, defaultdict
 from itertools import dropwhile
 import re
 import os
-from os.path import join, isfile, isdir, basename
+from os.path import join, isfile, isdir, basename, exists
 import shutil
 import traceback
 from source import TargQC_Sample
@@ -121,8 +121,10 @@ class DatasetStructure:
 
         for i, info_d in enumerate(sample_infos):
             proj_name = info_d.get('Sample_Project', info_d.get('SampleProject'))
-            if not proj_name:
+            if proj_name is None:
                 warn('  no SampleProject or Sample_Project field in the SampleSheet ' + sample_sheet_fpath)
+            if not proj_name:
+                warn('  SampleProject/Sample_Project field is empty in the SampleSheet ' + sample_sheet_fpath)
                      # ', using ' + self.az_prjname_by_subprj[''])
                 # proj_name = self.az_prjname_by_subprj['']
             if proj_name is not None and proj_name not in project_by_name:
@@ -159,7 +161,7 @@ class HiSeqStructure(DatasetStructure):
         for pname, project in self.project_by_name.items():
             proj_dirpath = join(self.unaligned_dirpath, 'Project_' + pname.replace(' ', '-'))  #.replace('-', '_').replace('.', '_'))
 
-            az_proj_name = az_prjname_by_subprj.get(pname)
+            az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
                     critical('Error: ' + pname + ' not found in the configuration.')
@@ -171,14 +173,16 @@ class HiSeqStructure(DatasetStructure):
                 sample.set_up_out_dirs(project.fastq_dirpath, project.fastqc_dirpath, project.downsample_targqc_dirpath)
 
             basecalls_symlink = join(project.dirpath, 'BaseCallsReports')
-            info('Creating BaseCalls symlink ' + self.basecalls_dirpath + ' -> ' + basecalls_symlink)
-            try:
-                os.symlink(self.basecalls_dirpath, basecalls_symlink)
-            except OSError:
-                err('Cannot crate symlink')
-                traceback.print_exc()
-            else:
-                info('Created')
+            if not exists(basecalls_symlink):
+                info('Creating BaseCalls symlink ' + self.basecalls_dirpath + ' -> ' + basecalls_symlink)
+                try:
+                    os.symlink(self.basecalls_dirpath, basecalls_symlink)
+                except OSError:
+                    err('Cannot create symlink')
+                    traceback.print_exc()
+                else:
+                    info('Created')
+            if exists(basecalls_symlink):
                 self.basecalls_dirpath = basecalls_symlink
 
         self.get_fastq_regexp_fn = get_hiseq_regexp
@@ -220,7 +224,7 @@ class MiSeqStructure(DatasetStructure):
             if not verify_dir(proj_dirpath, silent=True):
                 proj_dirpath = base_dirpath
 
-            az_proj_name = az_prjname_by_subprj.get(pname)
+            az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
                     critical('Error: ' + pname + ' not found in the configuration.')
@@ -253,7 +257,7 @@ class HiSeq4000Structure(DatasetStructure):
         for pname, project in self.project_by_name.items():
             proj_dirpath = join(self.unaligned_dirpath, pname)
 
-            az_proj_name = az_prjname_by_subprj.get(pname)
+            az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
                     critical('Error: ' + pname + ' not found in the configuration.')
@@ -292,7 +296,7 @@ class NextSeq500Structure(DatasetStructure):
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
         for pname, project in self.project_by_name.items():
-            az_proj_name = az_prjname_by_subprj.get(pname)
+            az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
                     critical('Error: ' + pname + ' not found in the configuration.')
@@ -426,13 +430,19 @@ class DatasetSample:
 
 
 def _concat_fastq(cnf, fastq_fpaths, output_fpath):
-    info('  merging ' + ', '.join(fastq_fpaths))
-    if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
-        info(output_fpath + ' exists, reusing')
+    if len(fastq_fpaths) == 1:
+        if not isfile(output_fpath):
+            info('  no need to merge - symlinking ' + fastq_fpaths[0] + ' -> ' + output_fpath)
+            os.symlink(fastq_fpaths[0], output_fpath)
+            return output_fpath
     else:
-        with file_transaction(cnf.work_dir, output_fpath) as tx:
-            with open(tx, 'w') as out:
-                for fq_fpath in fastq_fpaths:
-                    with open(fq_fpath, 'r') as inp:
-                        shutil.copyfileobj(inp, out)
-    return output_fpath
+        info('  merging ' + ', '.join(fastq_fpaths))
+        if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+            info(output_fpath + ' exists, reusing')
+        else:
+            with file_transaction(cnf.work_dir, output_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for fq_fpath in fastq_fpaths:
+                        with open(fq_fpath, 'r') as inp:
+                            shutil.copyfileobj(inp, out)
+        return output_fpath
