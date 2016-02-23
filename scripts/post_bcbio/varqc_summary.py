@@ -15,7 +15,7 @@ def main():
     info(' '.join(sys.argv))
     info()
 
-    cnf, bcbio_structure = bcbio_summary_script_proc_params(BCBioStructure.varqc_name, BCBioStructure.varqc_dir)
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(BCBioStructure.varqc_name, BCBioStructure.varqc_summary_dir)
 
     jsons_by_sample_by_caller = defaultdict(dict)
     htmls_by_sample_by_caller = defaultdict(dict)

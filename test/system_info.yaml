@@ -37,6 +37,8 @@ genomes:
 #    dbnsfp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.5.gz
     clinvar: ~/Dropbox/az/reference_data/clinvar_latest.chr21.vcf
     1000genomes: ~/Dropbox/az/reference_data/1000G.chr21.vcf
+    snpeff:
+      reference: hg19
 
     exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.with_genes.chr21.bed
     refseq: ~/Dropbox/az/reference_data/Exons/Refseq/RefSeq_HGNC.hg38.bed

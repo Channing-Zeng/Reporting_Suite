@@ -14,21 +14,23 @@ from source.utils import is_us
 
 class JobRunning:
     def __init__(self, job_id, log_fpath, qsub_cmdline, done_marker_fpath, error_marker_fpath,
-                 output_fpath=None, tx_output_fpath=None, stdout_to_outputfile=True, sample=None, **kwargs):
+                 output_fpath=None, tx_output_fpath=None, stdout_to_outputfile=True, sample=None,
+                 not_wait=False, **kwargs):
         self.job_id = job_id
         self.log_fpath = log_fpath
         self.qsub_cmdline = qsub_cmdline
         self.done_marker = done_marker_fpath
         self.error_marker = error_marker_fpath
         self.repr = job_id
-        self.is_done = False
-        self.is_failed = False
         self.output_fpath = output_fpath
         self.tx_output_fpath = tx_output_fpath
         self.stdout_to_outputfile = stdout_to_outputfile
         self.sample = sample
         for k, v in kwargs.items():
             self.__dict__[k] = v
+        self.not_wait = not_wait
+        self.is_done = False
+        self.is_failed = False
 
 
 def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,

@@ -296,10 +296,10 @@ def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
         else:
             info(final_vcf_fpath + ' is a good gzipped file.')
             return [final_vcf_fpath]
-    # else:
-    #     info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
-    #     final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
-    #     info('Saved VCF again to ' + final_vcf_fpath)
+    else:
+        info('Compressing and indexing with bgzip+tabix ' + final_vcf_fpath)
+        final_vcf_fpath = bgzip_and_tabix(cnf, final_vcf_fpath)
+        info('Saved VCF again to ' + final_vcf_fpath)
 
     return [final_vcf_fpath]
 
@@ -511,12 +511,19 @@ def _snpeff(cnf, input_fpath):
     else:
         opts += ' -csvStats ' + stats_fpath
 
-    cmdline = ('{snpeff} eff {opts} -noLog -i vcf -o vcf {ref_name} '
-               '{input_fpath}').format(**locals())
+    cmdline = '{snpeff} eff {opts} -noLog -i vcf -o vcf {ref_name} {input_fpath}'.format(**locals())
 
     res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
                           exit_on_error=False, stdout_to_outputfile=True, overwrite=True)
     output_fpath = verify_vcf(output_fpath, is_critical=True)
+
+    snpeff_summary_html_fpath = 'snpEff_summary.html'
+    if isfile(snpeff_summary_html_fpath):
+        info('SnpEff created ' + snpeff_summary_html_fpath + ' in the cwd, removing it...')
+        try:
+            os.remove(snpeff_summary_html_fpath)
+        except OSError:
+            pass
 
     if res:
         return output_fpath, stats_fpath, splitext(stats_fpath)[0] + '.genes.txt'

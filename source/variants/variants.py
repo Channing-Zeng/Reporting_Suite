@@ -218,7 +218,7 @@ def _filter(cnf, samples, variants_fname):
         info('-' * 70)
         info('Finihsed filtering ' + str(len(jobs_to_wait)) + ' jobs')
         for j in jobs_to_wait:
-            if j.is_done and not j.is_failed and not verify_vcf(j.output_fpath):
+            if j.is_done and not j.is_failed and not verify_file(j.output_fpath):
                 j.is_failed = True
             if j.is_done and not j.is_failed and not cnf.debug:
                 if isdir(j.work_dir):

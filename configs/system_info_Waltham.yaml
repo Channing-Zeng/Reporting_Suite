@@ -136,6 +136,7 @@ genomes:
     snpeff:
       reference: hg19
 
+#    exons:     /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq.bed
     exons:     /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
     refseq:    /ngs/reference_data/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed

@@ -41,6 +41,11 @@ def main():
                 action='store_true',
                 default=False)
             ),
+           (['--wgs'], dict(
+                dest='is_wgs',
+                action='store_true',
+                default=False)
+            ),
             (['--no-prep-bed'], dict(
                 dest='prep_bed',
                 help='do not fix input beds and exons',

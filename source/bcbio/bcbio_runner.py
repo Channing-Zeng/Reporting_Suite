@@ -101,11 +101,11 @@ class JobRunning:
         self.error_marker = error_marker_fpath
         self.repr = step.name
         self.threads = threads
-        self.not_wait = not_wait
         if sample_name:
             self.repr += ' for ' + sample_name
         if caller_suf:
             self.repr += ', ' + caller_suf
+        self.not_wait = not_wait
         self.is_done = False
         self.has_errored = False
 
@@ -387,7 +387,9 @@ class BCBioRunner:
             script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
             dir_name=BCBioStructure.varqc_summary_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary.log'),
-            paramln=summaries_cmdline_params + ' ' + self.final_dir
+            paramln=summaries_cmdline_params + ' ' + self.final_dir +
+                ' --varqc-name ' + BCBioStructure.varqc_name +
+                ' --varqc-dir ' + BCBioStructure.varqc_summary_dir
         )
         self.varqc_after_summary = Step(cnf, run_id,
             name=BCBioStructure.varqc_after_name + '_summary', short_name='vqas',
@@ -397,7 +399,7 @@ class BCBioRunner:
             log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary.log'),
             paramln=summaries_cmdline_params + ' ' + self.final_dir +
                 ' --varqc-name ' + BCBioStructure.varqc_after_name +
-                ' --varqc-dir ' + BCBioStructure.varqc_after_dir
+                ' --varqc-dir ' + BCBioStructure.varqc_after_summary_dir
         )
 
         clinreport_paramline = (params_for_one_sample +
@@ -442,6 +444,8 @@ class BCBioRunner:
 
         seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome} '
         seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
+        if self.is_wgs:
+            seq2c_cmdline += ' --wgs '
         normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
         if normal_snames or cnf.seq2c_controls:
             controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
@@ -702,7 +706,7 @@ class BCBioRunner:
                 for sample in self.bcbio_structure.samples:
                     for caller in self.bcbio_structure.variant_callers.values():
                         if sample.vcf_by_callername.get(caller.name):
-                            anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=False)
+                            anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
                             vcf2txt_cmdl = ''
                             if not self.is_wgs:
                                 if sample.normal_match:

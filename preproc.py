@@ -13,6 +13,7 @@ import traceback
 
 from joblib import Parallel, delayed
 import source
+from scripts.pre.downsampled_targqc_all import downsample_fastq
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
@@ -204,29 +205,9 @@ def main():
             info()
             downsample_to = int(5e5)
             info('Downsampling the reads to ' + str(downsample_to))
+            lefts, rights = downsample_fastq(cnf, samples, downsample_to)
+
             bam_by_sample = dict()
-
-            downsample_script = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'downsample_fastq.py'))
-            cmdl = '{downsample_script} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
-                   '--downsample-to {downsample_to} -o {cnf.work_dir} --suffix subset '.format(**locals())
-            if cnf.reuse:
-                cmdl += ' --reuse'
-            js = []
-            for s in samples:
-                s_cmdl = cmdl + ' --sample ' + s.name + ' -1 ' + s.l_fpath
-                l_subset_fpath, r_subset_fpath = None, None
-                if s.r_fpath:
-                    s_cmdl += ' -2 ' + s.r_fpath
-                    r_subset_fpath = join(cnf.work_dir, add_suffix(basename(s.l_fpath), 'subset'))
-                l_subset_fpath = join(cnf.work_dir, add_suffix(basename(s.l_fpath), 'subset'))
-                j = submit_job(cnf, s_cmdl, 'downsample_' + s.name,
-                    l_subset_fpath=l_subset_fpath, r_subset_fpath=r_subset_fpath)
-                js.append(j)
-            js = wait_for_jobs(cnf, js)
-
-            lefts = [j.l_subset_fpath for j in js if j.l_subset_fpath]
-            rights = [j.r_subset_fpath for j in js if j.r_subset_fpath]
-
             sambamba = get_system_path(cnf, 'sambamba')
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')
@@ -342,13 +323,6 @@ def main():
     #         shutil.rmtree(cnf.work_dir)
     #     except OSError:
     #         err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
-
-
-def downsample_fastq(cnf, sample, reads_num=int(5e5)):
-    # downsampled_reads_fpath = join(cnf.work_dir, sample.name + '_' + str(reads_num) + '.fastq')
-    info('Downsampling ' + sample.name + ' to ' + str(int(reads_num)))
-    l_fpath, r_fpath = downsample(cnf, sample.l_fpath, sample.r_fpath, int(reads_num), output_dir=cnf.work_dir)
-    return l_fpath, r_fpath
 
 
 def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):

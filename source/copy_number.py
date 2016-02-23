@@ -82,7 +82,7 @@ def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=Fal
                 amplicons.append(ampl)
 
     if not amplicons:
-        critical('No "Capture" record was found in ' + detailed_gene_report_fpath)
+        critical('No ' + ('"Capture"' if not is_wgs else '"Exon"') + ' record was found in ' + detailed_gene_report_fpath)
 
     return amplicons
 
@@ -212,8 +212,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
         if cnf.bed or bcbio_structure.bed:
             _, _, _, seq2c_bed = \
-                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=cnf.bed or bcbio_structure.bed,
-                             seq2c_bed=cnf.bed or bcbio_structure.bed)
+                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.bed, seq2c_bed=bcbio_structure.sv_bed)
         else:
             seq2c_bed = verify_bed(cnf.genome.refseq)
     else:
@@ -247,7 +246,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif verify_file(s.targetcov_detailed_tsv, silent=True):
+        elif not cnf.is_wgs and verify_file(s.targetcov_detailed_tsv, silent=True):  # is_wgs is temporary!
             info('Using bedcoverage output for Seq2C coverage.')
             # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
