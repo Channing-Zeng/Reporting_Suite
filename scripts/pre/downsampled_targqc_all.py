@@ -214,27 +214,43 @@ def main():
 
 
 def downsample_fastq(cnf, samples, downsample_to=5e5):
-    downsample_script = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'downsample_fastq.py'))
-    cmdl = '{downsample_script} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
-           '--downsample-to {downsample_to} -o {cnf.work_dir} --suffix subset '.format(**locals())
-    if cnf.reuse:
-        cmdl += ' --reuse'
-    js = []
-    for s in samples:
-        s_cmdl = cmdl + ' --sample ' + s.name + ' -1 ' + s.l_fpath
-        l_subset_fpath, r_subset_fpath = None, None
-        if s.r_fpath:
-            s_cmdl += ' -2 ' + s.r_fpath
-            r_subset_fpath = join(cnf.work_dir, add_suffix(basename(s.l_fpath), 'subset'))
-        l_subset_fpath = join(cnf.work_dir, add_suffix(basename(s.l_fpath), 'subset'))
-        j = submit_job(cnf, s_cmdl, 'downsample_' + s.name,
-            l_subset_fpath=l_subset_fpath, r_subset_fpath=r_subset_fpath)
-        js.append(j)
-    js = wait_for_jobs(cnf, js)
+    info('Downsampling reads to ' + str(int(downsample_to)) + ' pairs')
+    # lefts, rights = [], []
+    # for s in samples:
+    #     info('Downsampling ' + s.name)
+    #     l, r = downsample(cnf, s.l_fpath, s.r_fpath, N=downsample_to, output_dir=cnf.work_dir, suffix='subset')
+    #     lefts.append(l)
+    #     rights.append(r)
 
-    lefts = [j.l_subset_fpath for j in js if j.l_subset_fpath]
-    rights = [j.r_subset_fpath for j in js if j.r_subset_fpath]
+    fastqs = Parallel(n_jobs=len(samples)) \
+        (delayed(downsample)(CallCnf(cnf.__dict__), s.l_fpath, s.r_fpath, N=downsample_to,
+                             output_dir=cnf.work_dir, suffix='subset') \
+            for s in samples)
+    lefts = [l for l, r in fastqs]
+    rights = [r for l, r in fastqs]
     return lefts, rights
+
+    # downsample_script = get_script_cmdline(cnf, 'python', join('scripts', 'pre', 'downsample_fastq.py'))
+    # cmdl = '{downsample_script} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
+    #        '--downsample-to {downsample_to} -o {cnf.work_dir} --suffix subset '.format(**locals())
+    # if cnf.reuse:
+    #     cmdl += ' --reuse'
+    # js = []
+    # for s in samples:
+    #     s_cmdl = cmdl + ' --sample ' + s.name + ' -1 ' + s.l_fpath
+    #     l_subset_fpath, r_subset_fpath = None, None
+    #     if s.r_fpath:
+    #         s_cmdl += ' -2 ' + s.r_fpath
+    #         r_subset_fpath = join(cnf.work_dir, add_suffix(basename(s.l_fpath), 'subset'))
+    #     l_subset_fpath = join(cnf.work_dir, add_suffix(basename(s.l_fpath), 'subset'))
+    #     j = submit_job(cnf, s_cmdl, 'downsample_' + s.name,
+    #         l_subset_fpath=l_subset_fpath, r_subset_fpath=r_subset_fpath)
+    #     js.append(j)
+    # js = wait_for_jobs(cnf, js)
+    #
+    # lefts = [j.l_subset_fpath for j in js if j.l_subset_fpath]
+    # rights = [j.r_subset_fpath for j in js if j.r_subset_fpath]
+    # return lefts, rights
 
 
 def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):

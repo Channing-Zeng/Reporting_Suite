@@ -203,7 +203,7 @@ def main():
 
         if cnf.targqc or cnf.metamapping:
             info()
-            downsample_to = int(5e5)
+            downsample_to = int(1e5)
             info('Downsampling the reads to ' + str(downsample_to))
             lefts, rights = downsample_fastq(cnf, samples, downsample_to)
 

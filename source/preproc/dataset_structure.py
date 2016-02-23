@@ -46,7 +46,7 @@ class DatasetStructure:
             return NextSeq500Structure(dir_path, az_prjname_by_subprj, samplesheet)
 
         else:
-            critical('Directory must be datasets/miseq/, datasets/hiseq/, or datasets/hiseq4000/. Found ' + dir_path)
+            critical('Directory must be datasets/miseq/, datasets/nextseq500, datasets/hiseq/, or datasets/hiseq4000/. Found ' + dir_path)
 
     def __init__(self, dirpath, az_prjname_by_subprj, samplesheet=None):
         self.az_prjname_by_subprj = az_prjname_by_subprj
@@ -292,6 +292,7 @@ class NextSeq500Structure(DatasetStructure):
         info('Parsing the NextSeq500 project structure')
         self.kind = 'nextseq500'
         DatasetStructure.__init__(self, dirpath, az_prjname_by_subprj, samplesheet=samplesheet)
+        info('az_prjname_by_subprj: ' + str(az_prjname_by_subprj))
 
         verify_dir(self.unaligned_dirpath, is_critical=True)
 
@@ -355,7 +356,7 @@ class DatasetProject:
         self.project_report_html_fpath = join(self.dirpath, az_project_name + '.html')
 
     def concat_fastqs(self, get_fastq_regexp, cnf):
-        info('Concatenating fastq files for ' + self.name or self.az_project_name)
+        info('Preparing fastq files for the project named ' + self.name or self.az_project_name)
         if self.mergred_dir_found:
             info('  found already merged fastq dir, skipping.')
             return

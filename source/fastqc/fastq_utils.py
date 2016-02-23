@@ -19,28 +19,32 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, output_dir, suffix=None, qu
     quick=True will just grab the first N reads rather than do a true
     downsampling
     """
+    sample_name = splitext(''.join(lc if lc == rc else '' for lc, rc in izip(fastq_L_fpath, fastq_R_fpath)))[0]
+
     l_out_fpath = join(output_dir, add_suffix(basename(fastq_L_fpath), suffix or 'subset'))
     r_out_fpath = join(output_dir, add_suffix(basename(fastq_R_fpath), suffix or 'subset'))
     if cnf.reuse_intermediate and verify_file(l_out_fpath, silent=True) and verify_file(r_out_fpath, silent=True):
         info(l_out_fpath + ' and ' + r_out_fpath + ' exist, reusing.')
         return l_out_fpath, r_out_fpath
 
+    info('Processing ' + sample_name)
     N = int(N)
     records_num = N
     if quick:
         rand_records = range(N)
     else:
-        records_num = sum(1 for _ in open(fastq_L_fpath)) / 4
+        info(sample_name + ': getting number of reads in fastq...')
+        records_num = sum(1 for _ in open_gzipsafe(fastq_L_fpath)) / 4
         if records_num > LIMIT:
-            info('The number of reads is higher than ' + str(LIMIT) +
+            info(sample_name + ' the number of reads is higher than ' + str(LIMIT) +
                  ', sampling from only first ' + str(LIMIT))
             records_num = LIMIT
-        info(str(records_num) + ' reads in ' + fastq_L_fpath)
+        info(sample_name + ': ' + str(records_num) + ' reads')
         if records_num < N:
-            info('...it is less than ' + str(N) + ', so no downsampling.')
+            info(sample_name + ': and it is less than ' + str(N) + ', so no downsampling.')
             return fastq_L_fpath, fastq_R_fpath
         else:
-            info('Downsampling to ' + str(N))
+            info(sample_name + ': downsampling to ' + str(N))
             rand_records = sorted(random.sample(xrange(records_num), N))
 
     info('Opening ' + fastq_L_fpath)
@@ -73,17 +77,17 @@ def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, output_dir, suffix=None, qu
                     sub2.write(fh2.readline())
             written_records += 1
             rec_no += 1
-            if written_records % 100000 == 0:
-                info('written ' + str(written_records) + ', rec_no ' + str(rec_no))
+            if written_records % 10000 == 0:
+                info(sample_name + ': written ' + str(written_records) + ', rec_no ' + str(rec_no))
             if rec_no > records_num:
-                info('Reached the limit of ' + str(records_num), ' read lines, stopping.')
+                info(sample_name + ' reached the limit of ' + str(records_num), ' read lines, stopping.')
                 break
-        info('Done, written ' + str(written_records) + ', rec_no ' + str(rec_no))
+        info(sample_name + ': done, written ' + str(written_records) + ', rec_no ' + str(rec_no))
         fh1.close()
         sub1.close()
         if fastq_R_fpath:
             fh2.close()
             sub2.close()
 
-    info('Done downsampling, saved to ' + l_out_fpath + ' and ' + r_out_fpath + ', total ' + str(written_records) + ' paired reads written')
+    info(sample_name + ': done downsampling, saved to ' + l_out_fpath + ' and ' + r_out_fpath + ', total ' + str(written_records) + ' paired reads written')
     return l_out_fpath, r_out_fpath
