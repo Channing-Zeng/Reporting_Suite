@@ -53,6 +53,7 @@ def proc_opts():
     parser.add_option('--samplesheet', dest='samplesheet', help='Sample sheet (default is located under the dataset root as SampleSheet.csv')
     # parser.add_option('--datahub-path', dest='datahub_path', help='DataHub directory path to upload final MAFs and CNV (can be remote).')
     # parser.add_option('--reporter', dest='reporter', help='Reporter name (goes to the ngs-website).')
+    parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
 
     # parser.add_option('-e', '--expose', dest='expose_to_ngs_server', action='store_true', default=True, help='Add project to the webserver')
     parser.add_option('--expose-only', dest='expose_to_ngs_server_only', action='store_true', default=False, help='Only add project to the webserver')

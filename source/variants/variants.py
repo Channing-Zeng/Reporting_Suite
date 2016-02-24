@@ -28,11 +28,12 @@ def run_variants(cnf, samples, main_script_name=None, variants_fpath=None):
     info('Combining results...')
     variants_fpath, pass_variants_fpath = _combine_results(cnf, samples, variants_fpath or join(cnf.output_dir, variants_fname))
 
-    info()
-    info('*' * 70)
-    info('Saved results:')
-    info('  ' + variants_fpath)
-    info('  ' + pass_variants_fpath)
+    if variants_fpath and pass_variants_fpath:
+        info()
+        info('*' * 70)
+        info('Saved results:')
+        info('  ' + variants_fpath)
+        info('  ' + pass_variants_fpath)
 
 
 def _annotate(cnf, samples):
@@ -252,49 +253,53 @@ def _filter(cnf, samples, variants_fname):
 
 
 def _combine_results(cnf, samples, variants_fpath):
+    not_existing = []
     if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
         info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
-
-    not_existing = []
-    for i, s in enumerate(samples):
-        if not verify_file(s.variants_fpath, description='variants file'):
-            not_existing.append(s)
-    if not_existing:
-        err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
-        return None, None
-
-    with file_transaction(cnf.work_dir, variants_fpath) as tx:
-        with open(tx, 'w') as out:
-            for i, s in enumerate(samples):
-                with open(s.variants_fpath) as f:
-                    for j, l in enumerate(f):
-                        if j == 0 and i == 0:
-                            out.write(l)
-                        if j > 0:
-                            out.write(l)
-    verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
-
-    not_existing = []
-    for i, s in enumerate(samples):
-        if not verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), description='PASS variants file'):
-            not_existing.append(s)
-    if not_existing:
-        err('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing))
-        return None, None
+    else:
+        for i, s in enumerate(samples):
+            if not verify_file(s.variants_fpath, description='variants file'):
+                not_existing.append(s)
+        if not_existing:
+            err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
+        else:
+            with file_transaction(cnf.work_dir, variants_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for i, s in enumerate(samples):
+                        with open(s.variants_fpath) as f:
+                            for j, l in enumerate(f):
+                                if j == 0 and i == 0:
+                                    out.write(l)
+                                if j > 0:
+                                    out.write(l)
+            verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
 
     pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+    not_existing_pass = []
     if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
         info('Combined filtered results ' + pass_variants_fpath + ' exist, reusing.')
-    with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
-        with open(tx, 'w') as out:
-            for i, s in enumerate(samples):
-                with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
-                    for j, l in enumerate(f):
-                        if j == 0 and i == 0:
-                            out.write(l)
-                        if j > 0:
-                            out.write(l)
-    info('Saved all mutations to ' + pass_variants_fpath)
+    else:
+        for i, s in enumerate(samples):
+            if not verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), description='PASS variants file'):
+                not_existing_pass.append(s)
+        if not_existing_pass:
+            err('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing_pass))
+        else:
+            if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
+                info('Combined filtered results ' + pass_variants_fpath + ' exist, reusing.')
+            with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for i, s in enumerate(samples):
+                        with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
+                            for j, l in enumerate(f):
+                                if j == 0 and i == 0:
+                                    out.write(l)
+                                if j > 0:
+                                    out.write(l)
+            info('Saved all mutations to ' + pass_variants_fpath)
+
+    if not_existing or not_existing_pass:
+        return None, None
 
     _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
