@@ -204,8 +204,8 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
 
     if target_bed:
         info()
-        info('Merging amplicons...')
-        target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
+        #info('Merging amplicons...')
+        #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
 
         info('Sorting exons by (chrom, gene name, start)')
         target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
@@ -243,8 +243,8 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
                 info()
                 warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating target...')
                 target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
-                info('Merging regions within genes...')
-                target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
+                #info('Merging regions within genes...')
+                #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
                 info('Sorting amplicons_bed by (chrom, gene name, start)')
                 target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
                 info('Getting gene names again...')
