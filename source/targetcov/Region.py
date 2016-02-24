@@ -4,57 +4,23 @@ import re
 import os
 from os.path import isfile
 from source.file_utils import file_transaction, verify_file
-
 from source.logger import info, err, critical
+from source.utils import get_chr_lengths
 
 
-HG19_CHROMS = [('X', 23), ('Y', 24), ('M', 0), ('Un', 25)]
-for i in range(22, 0, -1):
-    HG19_CHROMS.append((str(i), i))
-
-HG38_CHROMS = [('X', 23), ('Y', 24), ('M', 25), ('random', 100), ('Un', 200), ('alt', 300)]
-for i in range(22, 0, -1):
-    HG38_CHROMS.append((str(i), i))
-
-MM10_CHROMS = [('X', 22), ('Y', 23), ('M', 24), ('Un', 25)]
-for i in range(21, -1, -1):
-    MM10_CHROMS.append((str(i), i))
+def get_chrom_order(cnf):
+    chr_lengths = get_chr_lengths(cnf)
+    chr_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
+    return chr_order
 
 
 class SortableByChrom:
-    def __init__(self, chrom, genome):
+    def __init__(self, chrom, chrom_ref_order):
         self.chrom = chrom
-        self.genome = genome
-        self._chrom_key = self.__make_chrom_key(genome)
-
-    def __make_chrom_key(self, genome):
-        chroms = HG19_CHROMS
-        if self.genome == 'mm10':
-            chroms = MM10_CHROMS
-        if 'hg38' in self.genome:
-            chroms = HG38_CHROMS
-
-        chr_remainder = self.chrom
-        if self.chrom.startswith('chr'):
-            chr_remainder = self.chrom[3:]
-        for (c, i) in chroms:
-            if chr_remainder == c:
-                return i
-            elif chr_remainder.startswith(c):  # chr22_KI270739v1_random
-                offset = 0
-                for (c, num_c) in chroms:
-                    if c in chr_remainder and not chr_remainder.startswith(c) and not c.isdigit():  # random
-                        offset = num_c
-                cur_offset = float(re.findall('_\D*(\d+)\D*', chr_remainder)[0]) / 10 ** 6  # 0.270739
-                return offset + i + cur_offset
-
-        err('Warning: cannot parse chromosome ' + self.chrom)
-        additional_num = re.findall('_\D*(\d+)\D*', chr_remainder)
-        cur_offset = float(additional_num[0]) / 10 ** 6 if additional_num else 0
-        return 999 + cur_offset
+        self.chrom_ref_order = chrom_ref_order
 
     def get_key(self):
-        return self._chrom_key
+        return self.chrom_ref_order
 
 
 class Region:

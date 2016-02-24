@@ -13,7 +13,7 @@ from source.logger import critical
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_system_resources
 from source.prepare_args_and_cnf import check_genome_resources
-from source.targetcov.Region import SortableByChrom
+from source.targetcov.Region import SortableByChrom, get_chrom_order
 from source.targetcov.bam_and_bed_utils import intersect_bed
 from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
@@ -83,6 +83,8 @@ def main():
     check_system_resources(cnf)
     check_genome_resources(cnf)
 
+    chr_order = get_chrom_order(cnf)
+
     exons_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
     if not verify_file(exons_fpath, 'Ensemble file with exons w/genes for annotate_bed'):
         critical('Ensemble file with exons w/genes for annotate_bed is required')
@@ -92,7 +94,7 @@ def main():
 
     log('Annotating based on CDS and exons...')
 
-    annotated, off_targets = _annotate(cnf, bed, no_genes_exons_bed)
+    annotated, off_targets = _annotate(cnf, bed, no_genes_exons_bed, chr_order)
 
     if off_targets:
         off_target_bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
@@ -100,7 +102,7 @@ def main():
         # log('Saved off target1 to ' + str(off_target_fpath))
         log()
         log('Trying to annotate based on genes rather than CDS and exons...')
-        annotated_2, off_targets = _annotate(cnf, off_target_bed, genes_exons_bed)
+        annotated_2, off_targets = _annotate(cnf, off_target_bed, genes_exons_bed, chr_order)
 
         for a in annotated_2:
             a.feature = 'UTR/Intron/Decay'
@@ -129,8 +131,8 @@ def log(msg=''):
 
 
 class Region(SortableByChrom):
-    def __init__(self, chrom, start, end, genome_build, gene_symbol=None, exon=None, strand=None, feature=None, biotype=None):
-        SortableByChrom.__init__(self, chrom, genome_build)
+    def __init__(self, chrom, start, end, ref_chrom_order, gene_symbol=None, exon=None, strand=None, feature=None, biotype=None):
+        SortableByChrom.__init__(self, chrom, ref_chrom_order)
         self.chrom = chrom
         self.start = start
         self.end = end
@@ -157,11 +159,11 @@ def merge_fields(consensus_field, other_field):
     return consensus_field
 
 
-def _resolve_ambiguities(annotated_by_loc_by_gene, genome_build):
+def _resolve_ambiguities(annotated_by_loc_by_gene, chrom_order):
     annotated = []
     for (chrom, start, end), overlaps_by_gene in annotated_by_loc_by_gene.iteritems():
         for g_name, overlaps in overlaps_by_gene.iteritems():
-            consensus = Region(chrom, start, end, genome_build=genome_build, gene_symbol=g_name, exon='', strand='', feature='', biotype='')
+            consensus = Region(chrom, start, end, ref_chrom_order=chrom_order.get(chrom), gene_symbol=g_name, exon='', strand='', feature='', biotype='')
             for r, overlap_size in overlaps:
                 if consensus.strand:
                     # RefSeq has exons from different strands with the same gene name (e.g. CTAGE4 for hg19),
@@ -182,7 +184,7 @@ def _resolve_ambiguities(annotated_by_loc_by_gene, genome_build):
     return annotated
 
 
-def _annotate(cnf, bed, ref_bed):
+def _annotate(cnf, bed, ref_bed, chr_order):
         # off_targets = []
         # with open(bed_fpath) as f:
         #     for l in f:
@@ -217,14 +219,14 @@ def _annotate(cnf, bed, ref_bed):
             total_uniq_lines += 1
 
         if e_chr == '.':
-            off_targets.append(Region(a_chr, int(a_start), int(a_end), genome_build=cnf.genome.name))
+            off_targets.append(Region(a_chr, int(a_start), int(a_end), ref_chrom_order=chr_order.get(a_chr)))
         else:
             total_annotated += 1
             if (a_chr, a_start, a_end) not in met:
                 total_uniq_annotated += 1
 
             annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
-                Region(chrom=e_chr, start=int(e_start), end=int(e_end), genome_build=cnf.genome.name,
+                Region(chrom=e_chr, start=int(e_start), end=int(e_end), ref_chrom_order=chr_order.get(a_chr),
                        gene_symbol=e_gene, exon=e_exon, strand=e_strand, feature=e_feature, biotype=e_biotype),
                 int(overlap_size)))
 

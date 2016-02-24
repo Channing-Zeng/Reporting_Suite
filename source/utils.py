@@ -7,7 +7,6 @@ from os.path import join, basename
 
 from source.logger import info, critical, err
 from source.file_utils import file_exists, verify_file, file_transaction, adjust_path
-from source.targetcov.Region import SortableByChrom
 
 
 class OrderedDefaultDict(OrderedDict):
@@ -53,56 +52,47 @@ def human_sorted(l):
     return l
 
 
-def get_chr_len_fpath(cnf):
-    chr_len_fpath = join(cnf['work_dir'], 'chr_lengths.txt')
-    if cnf.reuse_intermediate and file_exists(chr_len_fpath):
-        info(chr_len_fpath + ' exists, reusing')
-        return chr_len_fpath
-
+def get_chr_len_fpath_from_seq(seq_fpath):
     chr_lengths = []
 
-    if cnf.genome.get('chr_lengths'):
-        if not verify_file(cnf.genome.get('chr_lengths')):
-            critical('Could not open a file with chromosome lengths provided in system config. '
-                     'Remove it from the config to generate it automatically.')
-        info('Reading ' + cnf.genome.get('chr_lengths') + ' to get chromosome lengths')
-        with open(cnf.genome.get('chr_lengths')) as handle:
+    if verify_file(seq_fpath + '.fai', silent=True):
+        info('Reading genome index file (.fai) to get chromosome lengths')
+        with open(adjust_path(seq_fpath + '.fai'), 'r') as handle:
             for line in handle:
                 line = line.strip()
                 if line:
                     chrom, length = line.split()[0], line.split()[1]
-                    chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
+                    chr_lengths.append((chrom, length))
+    elif verify_file(seq_fpath, silent=True):
+        info('Reading genome sequence (.fa) to get chromosome lengths')
+        with open(adjust_path(seq_fpath), 'r') as handle:
+            from Bio import SeqIO
+            reference_records = SeqIO.parse(handle, 'fasta')
+            for record in reference_records:
+                chrom = record.id
+                chr_lengths.append((chrom, len(record.seq)))
     else:
-        genome_seq_fpath = adjust_path(cnf.genome.seq)
-        if not genome_seq_fpath:
+        critical('Can\'t find ' + seq_fpath + ' and ' + seq_fpath + '.fai')
+    return chr_lengths
+
+
+def get_chr_len_fpath(cnf):
+    chr_len_fpath = join(cnf.work_dir, 'chr_lengths.txt')
+    if cnf.reuse_intermediate and file_exists(chr_len_fpath):
+        info(chr_len_fpath + ' exists, reusing')
+        return chr_len_fpath
+
+    else:
+        if not cnf.genome.seq:
             critical('There is no "seq" key in ' + cnf.sys_cnf + ' for "' + cnf.genome.name + '" section')
             return None
 
-        if verify_file(genome_seq_fpath + '.fai'):
-            info('Reading genome index file (.fai) to get chromosome lengths')
-            with open(genome_seq_fpath + '.fai', 'r') as handle:
-                for line in handle:
-                    line = line.strip()
-                    if line:
-                        chrom, length = line.split()[0], line.split()[1]
-                        chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), length])
-        elif verify_file(genome_seq_fpath):
-            info('Reading genome sequence (.fa) to get chromosome lengths')
-            with open(genome_seq_fpath, 'r') as handle:
-                from Bio import SeqIO
-                reference_records = SeqIO.parse(handle, 'fasta')
-                for record in reference_records:
-                    chrom = record.id
-                    chr_lengths.append([SortableByChrom(chrom, cnf.genome.name), len(record.seq)])
-        else:
-            critical('Can\'t find ' + genome_seq_fpath + ' and ' + genome_seq_fpath + '.fai in ' + cnf.sys_cnf + ' for "' + cnf.genome.name + '" section')
+        chr_lengths = get_chr_len_fpath_from_seq(adjust_path(cnf.genome.seq))
 
-    #chr_lengths = sorted(chr_lengths, key=lambda (k, l): k.get_key())  Do not sort to keep the order
-
-    with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
-        with open(tx, 'w') as handle:
-            for c, l in chr_lengths:
-                handle.write(c.chrom + '\t' + str(l) + '\n')
+        with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
+            with open(tx, 'w') as handle:
+                for c, l in chr_lengths:
+                    handle.write(c + '\t' + str(l) + '\n')
     return chr_len_fpath
 
 

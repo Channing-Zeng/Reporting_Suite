@@ -16,7 +16,7 @@ from source.targetcov.Region import SortableByChrom
 from source.targetcov.bam_and_bed_utils import get_gene_keys
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
-
+from source.targetcov.Region import get_chrom_order
 
 ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
 
@@ -46,8 +46,8 @@ class KeyGene:
 
 
 class Mutation(SortableByChrom):
-    def __init__(self, chrom, genome):
-        SortableByChrom.__init__(self, chrom, genome=genome)
+    def __init__(self, chrom, chrom_ref_order):
+        SortableByChrom.__init__(self, chrom, chrom_ref_order)
         self.gene = None
         self.transcript = None
         self.codon_change = None
@@ -618,6 +618,8 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
     ids_col = None
     var_type_col = None
 
+    chr_order = get_chrom_order(cnf)
+
     with open(mutations_fpath) as f:
         for i, l in enumerate(f):
             if i == 0:
@@ -664,7 +666,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                         continue
                     alts_met_before.add((chrom, start, ref, alt, transcript))
 
-                    mut = Mutation(chrom=chrom, genome=cnf.genome.name)
+                    mut = Mutation(chrom=chrom, chrom_ref_order=chr_order.get(chrom))
                     mut.gene = KeyGene(gname, chrom=chrom)
                     mut.transcript = transcript
                     mut.is_canonical = transcript in canonical_transcripts if canonical_transcripts else True

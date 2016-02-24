@@ -5,10 +5,12 @@ import sys
 import tempfile
 import shutil
 import os
-from os.path import abspath, dirname, realpath, join, splitext
+from os.path import abspath, join, splitext
 import subprocess
 import copy
 from source.file_utils import add_suffix, verify_file, which, adjust_path
+from source.logger import critical, info
+from source.targetcov.Region import SortableByChrom
 from source.utils import human_sorted
 from optparse import OptionParser
 from os.path import exists, basename
@@ -97,31 +99,31 @@ def _read_args(args_list):
         sys.exit(1)
 
     work_dirpath = tempfile.mkdtemp()
-    log('Creating a temporary working directory ' + work_dirpath)
+    info('Creating a temporary working directory ' + work_dirpath)
     if not exists(work_dirpath):
         os.mkdir(work_dirpath)
 
     input_bed_fpath = abspath(args[0])
-    log('Input: ' + input_bed_fpath)
+    info('Input: ' + input_bed_fpath)
 
     output_bed_fpath = adjust_path(opts.output_fpath)
-    log('Writing to: ' + output_bed_fpath)
+    info('Writing to: ' + output_bed_fpath)
 
     # process configuration
     # for k, v in opts.__dict__.iteritems():
     #     if k.endswith('fpath') and verify_file(v, is_critical=True):
     #         opts.__dict__[k] = verify_file(v, k)
     if opts.output_grch and opts.output_hg:
-        err('you cannot specify --output-hg and --output-grch simultaneously!')
+        info('you cannot specify --output-hg and --output-grch simultaneously!')
     if not which(opts.bedtools):
-        err('bedtools executable not found, please specify correct path (current is %s)! '
+        info('bedtools executable not found, please specify correct path (current is %s)! '
             'Did you forget to execute "module load bedtools"?' % opts.bedtools)
 
     if opts.debug:
-        log('Configuration: ')
+        info('Configuration: ')
         for k, v in opts.__dict__.iteritems():
-            log('\t' + k + ': ' + str(v))
-    log()
+            info('\t' + k + ': ' + str(v))
+    info()
 
     opts.ensembl_bed_fpath = verify_file(opts.ensembl_bed_fpath or \
         ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed'))
@@ -130,15 +132,6 @@ def _read_args(args_list):
         ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq.bed'))
 
     return input_bed_fpath, output_bed_fpath, work_dirpath, opts
-
-
-def log(msg=''):
-    sys.stderr.write(msg + '\n')
-
-
-def err(msg=''):
-    log('Error: ' + msg + '\n')
-    sys.exit(1)
 
 
 class BedParams:
@@ -164,21 +157,19 @@ class BedParams:
             return 4
 
 
-class Region:
-    GRCh_names = False
+class Region(SortableByChrom):
+    GRCh_names = None
     n_cols_needed = 4
     approved_genes = []
     key_genes = []
 
-    def __init__(self, bed_line):
-        entries = bed_line.strip().split('\t')
-        self.chrom = entries[0]
-        self.start = int(entries[1])
-        self.end = int(entries[2])
+    def __init__(self, chrom, genome, start, end):
+        SortableByChrom.__init__(self, chrom, genome)
+        self.start = start
+        self.end = end
         self.symbol = None
         self.type = None
-        self.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(self.chrom, self.start, self.end))
-        self.rest = entries[4:]
+        self.rest = None
 
     def set_symbol(self, symbol):
         self.symbol = symbol
@@ -195,23 +186,23 @@ class Region:
         return '\t'.join(fs) + '\n'
 
     def get_key(self):
-        return '\t'.join([self.chrom, str(self.start), str(self.end)])
+        return SortableByChrom.get_key(self), self.start, self.end, self.symbol
 
     def is_control(self):
         if self.symbol.startswith('_CONTROL'):
             return True
         return False
 
-    def __lt__(self, other):
-        # special case: chrM goes to the end (in GRCh reference) or to the beginning (in hg reference)
-        if self.chrom != other.chrom and (self.chrom == 'chrM' or other.chrom == 'chrM'):
-            return True ^ (not self.GRCh_names) if other.chrom == 'chrM' else False ^ (not self.GRCh_names)
-        sorted_pair = human_sorted([self.get_key(), other.get_key()])
-        if sorted_pair[0] == self.get_key() and sorted_pair[1] != self.get_key():
-            return True
-        if self.get_key() == other.get_key() and self.is_control():
-            return True
-        return False
+    # def __lt__(self, other):
+    #     # special case: chrM goes to the end (in GRCh reference) or to the beginning (in hg reference)
+    #     if self.chrom != other.chrom and (self.chrom == 'chrM' or other.chrom == 'chrM'):
+    #         return True ^ (not self.GRCh_names) if other.chrom == 'chrM' else False ^ (not self.GRCh_names)
+    #     sorted_pair = human_sorted([self.get_key(), other.get_key()])
+    #     if sorted_pair[0] == self.get_key() and sorted_pair[1] != self.get_key():
+    #         return True
+    #     if self.get_key() == other.get_key() and self.is_control():
+    #         return True
+    #     return False
 
     def __eq__(self, other):
         return self.get_key() == other.get_key()
@@ -220,10 +211,10 @@ class Region:
         return hash(self.get_key())
 
 
-def _preprocess(bed_fpath, work_dirpath):
+def _preprocess(cnf, bed_fpath, work_dirpath):
     bed_params = BedParams()
     output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'prep')
-    log('preprocessing: ' + bed_fpath + ' --> ' + output_fpath)
+    info('preprocessing: ' + bed_fpath + ' --> ' + output_fpath)
     with open(bed_fpath, 'r') as in_f:
         with open(output_fpath, 'w') as out_f:
             for line in in_f:
@@ -232,11 +223,11 @@ def _preprocess(bed_fpath, work_dirpath):
                 else:
                     cur_ncn = BedParams.calc_n_cols_needed(line)
                     if bed_params.n_cols_needed is not None and cur_ncn != bed_params.n_cols_needed:
-                        err('number and type of columns should be the same on all lines!')
+                        critical('number and type of columns should be the same on all lines!')
                     bed_params.n_cols_needed = cur_ncn
                     if line.startswith('chr'):
                         if bed_params.GRCh_names is not None and bed_params.GRCh_names:
-                            err('mixing of GRCh and hg chromosome names!')
+                            critical('mixing of GRCh and hg chromosome names!')
                         bed_params.GRCh_names = False
                         if line.startswith('chrMT'):  # common misprint, correcting chrMT --> chrM
                             processed_line = '\t'.join(['chrM'] + line.split('\t')[1:])
@@ -244,13 +235,21 @@ def _preprocess(bed_fpath, work_dirpath):
                             processed_line = line
                     elif line.split('\t')[0] in BedParams.GRCh_to_hg:  # GRCh chr names
                         if bed_params.GRCh_names is not None and not bed_params.GRCh_names:
-                            err('mixing of GRCh and hg chromosome names!')
+                            critical('mixing of GRCh and hg chromosome names!')
                         bed_params.GRCh_names = True
                         processed_line = '\t'.join([BedParams.GRCh_to_hg[line.split('\t')[0]]] + line.split('\t')[1:])
                     else:
-                        err('incorrect chromosome name!')
-                    if Region(processed_line).is_control():
-                        bed_params.controls.append(Region(processed_line))
+                        critical('incorrect chromosome name!')
+
+                    entries = processed_line.strip().split('\t')
+                    chrom = entries[0]
+                    start = int(entries[1])
+                    end = int(entries[2])
+                    r = Region(cnf.genome, chrom, start, end)
+                    if r.is_control():
+                        r.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(chrom, start, end))
+                        r.rest = entries[4:] if len(entries) > 4 else None
+                        bed_params.controls.append(r)
                     else:
                         out_f.write(processed_line)
     return output_fpath, bed_params
@@ -263,7 +262,7 @@ def _annotate(bed_fpath, work_dirpath, cnf):
 
     for id, (db_name, db_bed_fpath) in enumerate(references):
         output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann_' + db_name.lower())
-        log('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
+        info('annotating based on {db_name}: {bed_fpath} --> {output_fpath}'.format(**locals()))
         annotate_bed_py = sys.executable + ' ' + splitext(annotate_bed.__file__)[0] + '.py'
 
         cmdline = '{annotate_bed_py} {input_fpath} --reference {db_bed_fpath} -o {output_fpath} --genome {cnf.genome}'.format(**locals())
@@ -271,18 +270,18 @@ def _annotate(bed_fpath, work_dirpath, cnf):
 
         if id < len(references) - 1:
             if cnf.debug:
-                log("filtering annotated and not annotated regions into separate files:")
+                info("filtering annotated and not annotated regions into separate files:")
             only_annotated_bed = __intermediate_fname(work_dirpath, bed_fpath, 'only_ann_' + db_name.lower())
             not_annotated_bed = __intermediate_fname(work_dirpath, bed_fpath, 'not_ann_' + db_name.lower())
             with open(only_annotated_bed, 'w') as out:
                 cmdline = 'grep -v -E "\.$" {output_fpath}'.format(**locals())
                 if cnf.debug:
-                    log(cmdline + ' > ' + only_annotated_bed)
+                    info(cmdline + ' > ' + only_annotated_bed)
                 subprocess.call(cmdline, shell=True, stdout=out)
             with open(not_annotated_bed, 'w') as out:
                 cmdline = 'grep -E "\.$" {output_fpath}'.format(**locals())
                 if cnf.debug:
-                    log(cmdline + ' > ' + not_annotated_bed)
+                    info(cmdline + ' > ' + not_annotated_bed)
                 subprocess.call(cmdline, shell=True, stdout=out)
             if not cnf.debug:
                 os.remove(output_fpath)
@@ -301,7 +300,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
     1. Chooses appropriate number of columns (4 or 8 for BEDs with primers).
     2. Removes duplicates.
     '''
-    log('postprocessing (sorting, cutting, removing duplicates)')
+    info('postprocessing (sorting, cutting, removing duplicates)')
 
     key_genes = []
     with open(cnf.key_genes_fpath, 'r') as f:
@@ -317,11 +316,11 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
     if cnf.output_grch:
         Region.GRCh_names = True
         if cnf.debug and not bed_params.GRCh_names:
-            log('Changing chromosome names from hg-style to GRCh-style.')
+            info('Changing chromosome names from hg-style to GRCh-style.')
     if cnf.output_hg:
         Region.GRCh_names = False
         if cnf.debug and bed_params.GRCh_names:
-            log('Changing chromosome names from GRCh-style to hg-style.')
+            info('Changing chromosome names from GRCh-style to hg-style.')
     Region.n_cols_needed = bed_params.n_cols_needed
     Region.key_genes = key_genes
     Region.approved_genes = approved_genes
@@ -329,12 +328,27 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
     input_regions = set()  # we want only unique regions
     with open(input_fpath) as f:
         for line in f:
-            input_regions.add(Region(line))
+            entries = line.strip().split('\t')
+            chrom = entries[0]
+            start = int(entries[1])
+            end = int(entries[2])
+            r = Region(cnf.genome, chrom, start, end)
+            r.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(chrom, start, end))
+            r.rest = entries[4:] if len(entries) > 4 else None
+            input_regions.add(r)
+
     annotated_regions = []
     for annotated_fpath in annotated_fpaths:
         with open(annotated_fpath) as f:
             for line in f:
-                annotated_regions.append(Region(line))
+                entries = line.strip().split('\t')
+                chrom = entries[0]
+                start = int(entries[1])
+                end = int(entries[2])
+                r = Region(cnf.genome, chrom, start, end)
+                r.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(chrom, start, end))
+                r.rest = entries[4:] if len(entries) > 4 else None
+                annotated_regions.append(r)
 
     # starting to output result
     with open(output_bed_fpath, 'w') as f:
@@ -371,7 +385,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
                             cur_region = duplicate
                             ambiguous_regions = [cur_region]
                             if cnf.debug:
-                                log('key gene priority over approved gene was used')
+                                info('key gene priority over approved gene was used')
                         elif annotated_regions[i].type == cur_region.type:
                             ambiguous_regions.append(duplicate)
                     i += 1
@@ -404,7 +418,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
                         if cur_region.symbol == prev_solid.symbol:
                             found = True
                             if cnf.debug:
-                                log('gene name was chosen based on previous solid region')
+                                info('gene name was chosen based on previous solid region')
                             break
                 if not found and cur_solid_id + 1 < len(solid_regions) and cur_region < solid_regions[cur_solid_id + 1] \
                         and cur_region.chrom == solid_regions[cur_solid_id + 1].chrom:
@@ -413,7 +427,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
                         if cur_region.symbol == next_solid.symbol:
                             found = True
                             if cnf.debug:
-                                log('gene name was chosen based on next solid region')
+                                info('gene name was chosen based on next solid region')
                             break
                 if not found:
                     cur_region = entry[0]
@@ -431,7 +445,7 @@ def __call(cnf, cmdline, output_fpath=None):
     stdout = open(output_fpath, 'w') if output_fpath else None
     stderr = None if cnf.debug else open('/dev/null', 'w')
     if cnf.debug:
-        log(cmdline)
+        info(cmdline)
     ret_code = subprocess.call(cmdline, shell=True, stdout=stdout, stderr=stderr, stdin=None)
     return ret_code
 
@@ -447,7 +461,7 @@ def __call(cnf, cmdline, output_fpath=None):
 def main():
     input_bed_fpath, output_bed_fpath, work_dirpath, cnf = _read_args(sys.argv[1:])
 
-    preprocessed_fpath, bed_params = _preprocess(input_bed_fpath, work_dirpath)
+    preprocessed_fpath, bed_params = _preprocess(cnf, input_bed_fpath, work_dirpath)
     annotated_fpaths = _annotate(preprocessed_fpath, work_dirpath, cnf)
     _postprocess(preprocessed_fpath, annotated_fpaths, bed_params, output_bed_fpath, cnf)
     if not cnf.debug:

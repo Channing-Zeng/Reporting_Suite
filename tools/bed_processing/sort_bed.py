@@ -1,59 +1,27 @@
 #!/usr/bin/env python
 import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 
-from os.path import abspath, dirname, realpath, join
 import sys
-
-from source.logger import critical
-from source.targetcov.Region import SortableByChrom
-from tools.bed_processing.get_chr_lengths import get_chr_lengths
-
-
-class Region(SortableByChrom):
-    def __init__(self, chrom, start, end, other_fields, ref_order=None, genome=None):
-        SortableByChrom.__init__(self, chrom, genome)
-        self.start = start
-        self.end = end
-        self.ref_order = ref_order
-        self.other_fields = tuple(other_fields)
-
-    def get_key(self):
-        return self.ref_order, self.start, self.end, self.other_fields
+from optparse import OptionParser
+from source.config import Config
+from source.file_utils import adjust_path
+from source.prepare_args_and_cnf import determine_sys_cnf
+from source.targetcov.bam_and_bed_utils import verify_bed, sort_bed
 
 
-def main(seq_fpath, genome):
-    regions = []
+def main():
+    parser = OptionParser(usage='Usage: %prog [options] Input_BED_file')
+    parser.add_option('-o', '--output-bed', dest='output_fpath')
+    parser.add_option('-g', '--genome', dest='genome')
+    (opts, args) = parser.parse_args(sys.argv[1:])
 
-    sys.stderr.write('Genome: ' + genome + '\n')
-    chr_lengths = get_chr_lengths(seq_fpath, genome, silence=True)
-    chr_order = [chr for (chr, l) in chr_lengths]
-    for l in sys.stdin:
-        if not l.strip():
-            continue
-        if l.strip().startswith('#'):
-            sys.stdout.write(l)
-            continue
+    if len(args) < 1:
+        parser.print_help(file=sys.stderr)
+        sys.exit(1)
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), {})
 
-        fs = l.strip().split('\t')
-        chrom = fs[0]
-        start = int(fs[1])
-        end = int(fs[2])
-        other_fields = fs[3:]
-        if chrom in chr_order:
-            regions.append(Region(chrom, start, end, other_fields, chr_order.index(chrom), genome))
-
-    for region in sorted(regions, key=lambda r: r.get_key()):
-        fs = [region.chrom, str(region.start), str(region.end)]
-        fs.extend(region.other_fields)
-        sys.stdout.write('\t'.join(fs) + '\n')
-
-    sys.stderr.write('Sorted ' + str(len(regions)) + ' regions.\n')
+    sort_bed(cnf, verify_bed(args[0], is_critical=True), adjust_path(cnf.output_fpath))
 
 
 if __name__ == '__main__':
-    if len(sys.argv) <= 2:
-        critical('Usage: ' + __file__ + ' path_to_.fa genome_build_name')
-
-    seq_fpath = sys.argv[1]
-    genome_build = sys.argv[2]
-    main(seq_fpath, genome_build)
+    main()

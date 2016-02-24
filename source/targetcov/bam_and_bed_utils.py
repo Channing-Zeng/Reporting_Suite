@@ -11,8 +11,9 @@ from source.file_utils import intermediate_fname, iterate_file, splitext_plus, v
     safe_mkdir
 from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
+from source.targetcov.Region import SortableByChrom
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import md5
+from source.utils import md5, get_chr_len_fpath_from_seq
 
 
 def index_bam(cnf, bam_fpath, sambamba=None):
@@ -124,20 +125,18 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
     # Exons
     exons_no_genes_bed = None
     if exons_bed:
-        info()
-        info('Merging regions within genes...')
-        exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
-
-        info()
-        info('Sorting exons by (chrom, gene name, start)')
-        exons_bed = sort_bed(cnf, exons_bed, cnf.genome.name)
+        # info()
+        # info('Merging regions within genes...')
+        # exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
+        #
+        # info()
+        # info('Sorting exons by (chrom, gene name, start)')
+        # exons_bed = sort_bed(cnf, exons_bed)
 
         info()
         info('Filtering exon bed file to have only non-gene records...')
-        exons_no_genes_bed_1 = intermediate_fname(cnf, exons_bed, 'no_genes_cut')
-        exons_no_genes_bed = intermediate_fname(cnf, exons_no_genes_bed_1, 'no_mgenes_cut')
-        call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed_1)
-        call(cnf, 'grep -vw Multi_Gene ' + exons_no_genes_bed_1, output_fpath=exons_no_genes_bed)
+        exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes_cut')
+        call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
 
     ori_target_bed_path = target_bed
     if target_bed:
@@ -151,7 +150,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
 
         info()
         info('Sorting target...')
-        target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
+        target_bed = sort_bed(cnf, target_bed)
 
         cols = count_bed_cols(target_bed)
         if cnf.reannotate or cols < 4:
@@ -164,14 +163,13 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
 
-    # remove regions with no gene annotation
-    def f(l, i):
-        if l.split('\t')[3].strip() == '.': return None
-        else: return l
-
     if not seq2c_bed and target_bed or seq2c_bed and seq2c_bed == ori_target_bed_path:
+        info('Seq2C bed: remove regions with no gene annotation')
+        def remove_no_anno(l, i):
+            if l.split('\t')[3].strip() == '.': return None
+            else: return l
         seq2c_bed = target_bed
-        seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
+        seq2c_bed = iterate_file(cnf, seq2c_bed, remove_no_anno, suffix='filt')
 
     elif seq2c_bed:
         info()
@@ -180,7 +178,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
 
         info()
         info('Sorting seq2c bed...')
-        seq2c_bed = sort_bed(cnf, seq2c_bed, cnf.genome.name)
+        seq2c_bed = sort_bed(cnf, seq2c_bed)
 
         cols = count_bed_cols(seq2c_bed)
         if cols < 4:
@@ -204,11 +202,11 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
 
     if target_bed:
         info()
-        #info('Merging amplicons...')
-        #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
+        # info('Merging amplicons...')
+        # target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
 
-        info('Sorting exons by (chrom, gene name, start)')
-        target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
+        info('Sorting target by (chrom, gene name, start)')
+        target_bed = sort_bed(cnf, target_bed)
 
     return exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
 
@@ -236,7 +234,7 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
         info()
         gene_key_set, gene_key_list = get_gene_keys(target_bed)
         info('Using genes from the amplicons list ' + target_bed)
-        if exons_bed and cnf.prep_bed:
+        if exons_bed and cnf.prep_bed is True:
             info('Trying filtering exons with these ' + str(len(gene_key_list)) + ' genes.')
             exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_key_set, suffix='filt_genes_1st_round')
             if not verify_file(exons_anno_bed):
@@ -246,7 +244,7 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
                 #info('Merging regions within genes...')
                 #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
                 info('Sorting amplicons_bed by (chrom, gene name, start)')
-                target_bed = sort_bed(cnf, target_bed, cnf.genome.name)
+                target_bed = sort_bed(cnf, target_bed)
                 info('Getting gene names again...')
                 gene_key_set, gene_key_list = get_gene_keys(target_bed)
                 info()
@@ -369,37 +367,51 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_keys_set, suffix=None):
     return iterate_file(cnf, bed_fpath, fn, suffix=suffix or 'filt_genes', check_result=False)
 
 
-def sort_bed(cnf, bed_fpath, genome, **kwargs):
-    output_fpath = intermediate_fname(cnf, bed_fpath, 'sorted')
-    genome_seq_fpath = adjust_path(cnf.genome.seq)
+def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
+    input_bed_fpath = verify_bed(input_bed_fpath)
+    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else intermediate_fname(cnf, input_bed_fpath, 'sorted')
 
-    cmdl = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sort_bed.py'), is_critical=True)
-    cmdl += ' ' + genome_seq_fpath + ' ' + genome
+    class Region(SortableByChrom):
+        def __init__(self, chrom, start, end, other_fields, chrom_ref_order):
+            SortableByChrom.__init__(self, chrom, chrom_ref_order)
+            self.start = start
+            self.end = end
+            self.chrom_ref_order = chrom_ref_order
+            self.other_fields = tuple(other_fields)
 
-    res = call(cnf, cmdl, stdin_fpath=bed_fpath, output_fpath=output_fpath, **kwargs)
-    if not res:
-        return None
+        def get_key(self):
+            return self.chrom_ref_order, self.start, self.end, self.other_fields
 
-    # sort = get_system_path(cnf, 'sort')
-    # cmdline = '{sort} -V -k1,1 -k2,2 -k3,3 {bed_fpath}'.format(**locals())
-    # res = call(cnf, cmdline, output_fpath, exit_on_error=False)
-    # if not res:
-    #     warn('Cannot sort with -V, trying with -n')
-    #     cmdline = '{sort} -k1,1n -k2,2n -k3,3n {bed_fpath}'.format(**locals())
-    #     res = call(cnf, cmdline, output_fpath, exit_on_error=False)
-    #     if not res:
-    #         warn('Cannot uniq-sort, trying with bedtools')
-    #         bedtools = get_system_path(cnf, 'bedtools')
-    #         cmdline = '{bedtools} sort -i {bed_fpath}'.format(**locals())
-    #         res = call(cnf, cmdline, output_fpath)
-    #
-    # if genome != 'mm10':
-    #     cmdline = 'grep "^chrM" {output_fpath} > {output_fpath}_1; grep -v "^chrM" {output_fpath} >> {output_fpath}_1; mv {output_fpath}_1 {output_fpath}'.format(**locals())
-    #     res = call(cnf, cmdline)
-    # else:
-    #     cmdline = 'grep "^chrM" {output_fpath} > {output_fpath}_1; grep -v "^chrM" {output_fpath} >> {output_fpath}_1; mv {output_fpath}_1 {output_fpath}'.format(**locals())
+    regions = []
+    chr_lengths = get_chr_len_fpath_from_seq(cnf.genome.seq)
+    chr_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
 
-    return output_fpath
+    info('Sorting regions...')
+    with open(input_bed_fpath) as f:
+        with open(output_bed_fpath, 'w') as out:
+            for l in f:
+                if not l.strip():
+                    continue
+                if l.strip().startswith('#'):
+                    out.write(l)
+                    continue
+
+                fs = l.strip().split('\t')
+                chrom = fs[0]
+                start = int(fs[1])
+                end = int(fs[2])
+                other_fields = fs[3:]
+                if chrom in chr_order:
+                    regions.append(Region(chrom, start, end, other_fields, chr_order[chrom]))
+                else:
+                    warn('Warn: ' + str(chrom) + ' is not in ' + str(chr_order.keys()) + '.\n')
+
+            for region in sorted(regions, key=lambda r: r.get_key()):
+                fs = [region.chrom, str(region.start), str(region.end)]
+                fs.extend(region.other_fields)
+                out.write('\t'.join(fs) + '\n')
+
+    info('Sorted ' + str(len(regions)) + ' regions, saved to ' + output_bed_fpath + '\n')
 
 
 def total_merge_bed(cnf, bed_fpath):

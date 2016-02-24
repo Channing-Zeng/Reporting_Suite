@@ -160,7 +160,7 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed):
     index_bam(cnf, bam_fpath)
 
     gene_keys_list = None
-    if cnf.prep_bed:
+    if cnf.prep_bed is True:
         info('Preparing the BED file.')
         exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
 
