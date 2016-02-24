@@ -21,6 +21,7 @@ from source.prepare_args_and_cnf import determine_sys_cnf
 
 
 statuses = ['', 'known', 'likely', 'unlikely', 'unknown']  # Tier 1, 2, 3, 3
+sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
 
 SIMULATE_OLD_VARDICT2MUT = False
 
@@ -230,7 +231,6 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
     header = ''
 
     sensitizations = []
-    sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
     cur_gene_mutations = []
     prev_gene = ''
 
@@ -715,7 +715,7 @@ def check_by_general_rules(var_type, status, reasons, aa_chg, is_lof):
     elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
     elif status != 'unlikely':
-        status, reasons = update_status(status, reasons, 'unlikely', '', force=True)
+        status, reasons = update_status(status, reasons, 'unlikely', 'not_alter_protein_function', force=True)
     return status, reasons
 
 
@@ -759,10 +759,11 @@ def print_mutations_for_one_gene(out_f, lines_written, cur_gene_mutations, gene,
     for line in cur_gene_mutations:
         fields, status, reasons, gene_aachg, fm_data = line
         for sens_mut in genes_with_dependent_mutations[gene]:
+            aa_chg = sensitization_aa_changes.keys()[sensitization_aa_changes.values().index(sens_mut)]
             if sens_mut not in sensitizations and status == 'known':
                 status, reasons = update_status(status, reasons, 'likely', reasons, force=True)
-            if sens_mut not in sensitizations and status == 'likely':
-                status, reasons = update_status(status, reasons, 'unlikely', '', force=True)
+            elif sens_mut not in sensitizations and status == 'likely':
+                status, reasons = update_status(status, reasons, 'unlikely', aa_chg + '_required', force=True)
         lines_written = print_mutation(out_f, lines_written, status, reasons, fields, fm_data, is_output_fm)
     return lines_written
 
