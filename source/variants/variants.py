@@ -254,10 +254,18 @@ def _filter(cnf, samples, variants_fname):
 def _combine_results(cnf, samples, variants_fpath):
     if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
         info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
+
+    not_existing = []
+    for i, s in enumerate(samples):
+        if not verify_file(s.variants_fpath, description='variants file'):
+            not_existing.append(s)
+    if not_existing:
+        err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
+        return None, None
+
     with file_transaction(cnf.work_dir, variants_fpath) as tx:
         with open(tx, 'w') as out:
             for i, s in enumerate(samples):
-                verify_file(s.variants_fpath, is_critical=True, description='variants file')
                 with open(s.variants_fpath) as f:
                     for j, l in enumerate(f):
                         if j == 0 and i == 0:
@@ -266,13 +274,20 @@ def _combine_results(cnf, samples, variants_fpath):
                             out.write(l)
     verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
 
+    not_existing = []
+    for i, s in enumerate(samples):
+        if not verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), description='PASS variants file'):
+            not_existing.append(s)
+    if not_existing:
+        err('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing))
+        return None, None
+
     pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
     if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
         info('Combined filtered results ' + pass_variants_fpath + ' exist, reusing.')
     with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
         with open(tx, 'w') as out:
             for i, s in enumerate(samples):
-                verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), is_critical=True, description='variants file')
                 with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
                     for j, l in enumerate(f):
                         if j == 0 and i == 0:
