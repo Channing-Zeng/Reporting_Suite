@@ -2,6 +2,7 @@
 import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 from source.file_utils import file_transaction
 from source.targetcov.bam_and_bed_utils import check_md5
+from source.utils import get_ext_tools_dirpath
 
 '''Convert BAM files to BigWig file format in a specified region.
 Usage:
@@ -40,10 +41,6 @@ from tools.add_jbrowse_tracks import create_jbrowse_symlink
 
 
 def proc_args(argv):
-    from sys import platform as _platform
-    if 'linux' not in _platform:
-        critical('bam_to_bigwig is supported only for Linux')
-
     cnf = read_opts_and_cnfs(
         extra_opts=[
             (['--bam'], dict(
@@ -131,9 +128,9 @@ def convert_to_bigwig(wig_fpath, chr_sizes, cnf, bw_fpath=None):
             out_handle.write('%s\t%s\n' % (chrom, size))
     try:
         with file_transaction(cnf.work_dir, bw_fpath) as tx_fpath:
-            cmdl = get_system_path(cnf, join('tools', 'wigToBigWig'), is_critical=True)
+            cmdl = get_system_path(cnf, join(get_ext_tools_dirpath(), 'wigToBigWig'), is_critical=True)
             cmdl += ' ' + wig_fpath + ' ' + chr_sizes_fpath + ' ' + tx_fpath
-            call(cnf, cmdl, exit_on_error=False)
+            call(cnf, cmdl, exit_on_error=True)
     finally:
         os.remove(chr_sizes_fpath)
     return bw_fpath

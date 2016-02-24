@@ -106,6 +106,14 @@ def get_chr_len_fpath(cnf):
     return chr_len_fpath
 
 
+def get_ext_tools_dirpath():
+    from sys import platform as _platform
+    if 'darwin' in _platform:
+        return join('ext_tools', 'osx')
+    else:
+        return 'ext_tools'
+
+
 def get_chr_lengths(cnf):
     chr_len_fpath = get_chr_len_fpath(cnf)
     if not chr_len_fpath:
