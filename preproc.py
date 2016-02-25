@@ -38,7 +38,8 @@ if is_local():
     NGS_WEBSERVER_PREPROC_DIR = '/Users/vlad/Sites/reports'
 
 def proc_opts():
-    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL(S)> [--bed BED] [--project-name STR] [--expose-only]\n' \
+    usage = 'Usage: ' + __file__ + ' <DATASET_DIR_LOCATION> <JIRA_URL(S)>' \
+               ' [--bed BED] [--project-name STR] [--no-targqc] [--no-fastqc]]\n' \
             '\tNote that DATASET_DIR_LOCATION can be either the root of a Illumina run ' \
             '(in witch case multiple projects may be detected and processed, or ' \
             'a specific project in <root>/Unalign/<Project>'

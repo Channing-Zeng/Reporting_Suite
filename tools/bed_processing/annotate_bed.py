@@ -9,7 +9,7 @@ import shutil
 from os.path import abspath, dirname, realpath, join, exists, basename, splitext
 from source.calling_process import call
 
-from source.logger import critical
+from source.logger import critical, info, warn
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_system_resources
 from source.prepare_args_and_cnf import check_genome_resources
@@ -92,7 +92,7 @@ def main():
     genes_exons_bed, no_genes_exons_bed = _split_reference(cnf, exons_fpath)
     bed = BedTool(input_bed_fpath).cut([0, 1, 2])
 
-    log('Annotating based on CDS and exons...')
+    info('Annotating based on CDS and exons...')
 
     annotated, off_targets = _annotate(cnf, bed, no_genes_exons_bed, chr_order)
 
@@ -100,8 +100,8 @@ def main():
         off_target_bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
         # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
         # log('Saved off target1 to ' + str(off_target_fpath))
-        log()
-        log('Trying to annotate based on genes rather than CDS and exons...')
+        info()
+        info('Trying to annotate based on genes rather than CDS and exons...')
         annotated_2, off_targets = _annotate(cnf, off_target_bed, genes_exons_bed, chr_order)
 
         for a in annotated_2:
@@ -110,8 +110,8 @@ def main():
 
         annotated.extend(off_targets)
 
-    log()
-    log('Saving annotated regions to ' + str(cnf.output_file))
+    info()
+    info('Saving annotated regions to ' + str(cnf.output_file))
     with open(cnf.output_file, 'w') as out:
         for region in sorted(annotated, key=lambda r: r.get_key()):
             out.write(str(region))
@@ -123,11 +123,7 @@ def main():
         #         '{:.2f}%'.format(100.0 * overlap_size / (r.end - r.start))
         #     ]))
         # sys.stdout.write('\n')
-    log('Done.')
-
-
-def log(msg=''):
-    sys.stderr.write(msg + '\n')
+    info('Done.')
 
 
 class Region(SortableByChrom):
@@ -169,7 +165,7 @@ def _resolve_ambiguities(annotated_by_loc_by_gene, chrom_order):
                     # RefSeq has exons from different strands with the same gene name (e.g. CTAGE4 for hg19),
                     # Such pair of exons may overlap with a single region, so taking strand from the first one
                     if consensus.strand != r.strand:
-                        log('Warning: different strands between consensus and next region (gene: ' + g_name + ')')
+                        warn('Warning: different strands between consensus and next region (gene: ' + g_name + ')')
                     #assert consensus.strand == r.strand, 'Consensus strand is ' + \
                     #     consensus.strand + ', region strand is ' + r.strand
                 else:
@@ -232,15 +228,15 @@ def _annotate(cnf, bed, ref_bed, chr_order):
 
         met.add((a_chr, a_start, a_end))
 
-    log('Total intersections, including off-target: ' + str(total_lines))
-    log('Total uniq regions in intersections, including off-target: ' + str(total_uniq_lines))
-    log('Total annotated regions: ' + str(total_annotated))
-    log('Total uniq annotated regions: ' + str(total_uniq_annotated))
-    log('Total off target regions: ' + str(len(off_targets)))
-    log()
+    info('Total intersections, including off-target: ' + str(total_lines))
+    info('Total uniq regions in intersections, including off-target: ' + str(total_uniq_lines))
+    info('Total annotated regions: ' + str(total_annotated))
+    info('Total uniq annotated regions: ' + str(total_uniq_annotated))
+    info('Total off target regions: ' + str(len(off_targets)))
+    info()
 
-    log('Resolving ambiguities...')
-    annotated = _resolve_ambiguities(annotated_by_loc_by_gene, cnf.genome.name)
+    info('Resolving ambiguities...')
+    annotated = _resolve_ambiguities(annotated_by_loc_by_gene, chr_order)
 
     return annotated, off_targets
 
@@ -254,7 +250,7 @@ def _save_regions(regions, fpath):
 
 
 def _split_reference(cnf, exons_bed_fpath):
-    log('Splitting reference file into genes and non-genes:')
+    info('Splitting reference file into genes and non-genes:')
     exons_bed = BedTool(exons_bed_fpath)
     genes_exons_bed = exons_bed.filter(lambda x: x[6] in ['Gene'])
     no_genes_exons_bed = exons_bed.filter(lambda x: x[6] not in ['Gene', 'Multi_Gene'])

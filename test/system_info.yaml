@@ -40,8 +40,8 @@ genomes:
     snpeff:
       reference: hg19
 
-    exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.with_genes.chr21.bed
-    refseq: ~/Dropbox/az/reference_data/Exons/Refseq/RefSeq_HGNC.hg38.bed
+    exons: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_all_features.hg19.bed
+
     az_exome: ~/Dropbox/az/reference_data/AZ_Exome.chr21.bed
 
     dbsnp_multi_mafs: ~/Dropbox/az/reference_data/filtering/dbSNP_multi_mafs_latest.txt
@@ -59,7 +59,7 @@ genomes:
 
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
-    exons: ~/Dropbox/az/reference_data/Exons/Exons.with_genes.chr21.bed
+    exons: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_all_features.hg19.bed
 
   hg38:
     seq: ~/Dropbox/az/reference_data/hg38.fa
@@ -68,8 +68,7 @@ genomes:
     cosmic: ~/Dropbox/az/reference_data/cosmic.chr21.vcf.gz
     oncomine: ~/Dropbox/az/reference_data/oncomine.chr21.vcf
 
-#    exons: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.hg38.bed
-    exons: ~/Dropbox/az/reference_data/Exons/RefSeq/Exons.hg38.bed
+    exons: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_all_features.hg38.bed
 
 #    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering.hg38/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            ~/Dropbox/az/reference_data/filtering.hg38/filter_common_snp.txt

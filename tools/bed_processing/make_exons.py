@@ -5,9 +5,9 @@ from collections import defaultdict, OrderedDict
 import sys
 from traceback import format_exc
 from source.file_utils import adjust_path, verify_file
-from source.logger import err
+from source.logger import err, info
 from source.targetcov.Region import SortableByChrom
-from source.utils import get_chr_len_fpath_from_seq
+from source.utils import get_chr_lengths_from_seq
 
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
 hg38_seq_fpath = '~/Dropbox/az/reference_data/hg38.fa'
@@ -19,47 +19,47 @@ ALL_EXONS = True
 
 def main():
     if len(sys.argv) < 4:
-        err('The script writes all CDS, stop codon, and ncRNA exon regions for all known Ensembl genes, with '
+        info('The script writes all CDS, stop codon, and ncRNA exon regions for all known Ensembl genes, with '
             'associated gene symbols.')
-        err('When the gene name is found in HGNC, it get replaced with an approved name.')
-        err('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.')
-        err('')
-        err('Usage:')
-        err('    ' + __file__ + ' hg19 DB output.bed [HGNC_gene_synonyms.txt=' + us_syn_path + '] [additional_feature_list]')
-        err('')
-        err('   where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:')
-        err('     #Approved Symbol  Previous Symbols                    Synonyms                          '
+        info('When the gene name is found in HGNC, it get replaced with an approved name.')
+        info('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.')
+        info('')
+        info('Usage:')
+        info('    ' + __file__ + ' hg19 DB output.bed [HGNC_gene_synonyms.txt=' + us_syn_path + '] [additional_feature_list]')
+        info('')
+        info('   where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:')
+        info('     #Approved Symbol  Previous Symbols                    Synonyms                          '
             'Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)')
-        err('     OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  '
+        info('     OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  '
             '19q13.43	    ENSG00000121410   uc002qsg.3')
-        err('     ...')
-        err('')
-        err('   feature_list is by default empty, but could be transcript')
-        err('')
-        err('   and DB is either RefSeq_knownGene.txt or UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:')
-        err('     #hg19.knownGene.name  hg19.knownGene.chrom  hg19.knownGene.strand  hg19.knownGene.txStart  '
+        info('     ...')
+        info('')
+        info('   feature_list is by default empty, but could be transcript')
+        info('')
+        info('   and DB is either RefSeq_knownGene.txt or UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:')
+        info('     #hg19.knownGene.name  hg19.knownGene.chrom  hg19.knownGene.strand  hg19.knownGene.txStart  '
             'hg19.knownGene.txEnd  hg19.knownGene.exonCount  hg19.knownGene.exonStarts  hg19.knownGene.exonEnds'
             '  hg19.kgXref.geneSymbol')
-        err('     uc001aaa.3	          chr1	                +	                   11873                   '
+        info('     uc001aaa.3	          chr1	                +	                   11873                   '
             '14409                 3                         11873,12612,13220,	      12227,12721,14409,	   DDX11L1')
-        err('     ...')
-        err('   or DB is Ensembl.gtf (ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz)')
-        err('     1  pseudogene            gene        11869  14412  .  +  .  gene_id "ENSG00000223972"; '
+        info('     ...')
+        info('   or DB is Ensembl.gtf (ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz)')
+        info('     1  pseudogene            gene        11869  14412  .  +  .  gene_id "ENSG00000223972"; '
             'gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene";')
-        err('     1  processed_transcript  transcript  11869  14409  .  +  .  gene_id "ENSG00000223972"; '
+        info('     1  processed_transcript  transcript  11869  14409  .  +  .  gene_id "ENSG00000223972"; '
             'transcript_id "ENST00000456328"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype '
             '"pseudogene"; transcript_name "DDX11L1-002"; transcript_source "havana";')
-        err('     ...')
-        err('')
-        err('   Writes to Exons.bed')
-        err('')
-        err('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons'
+        info('     ...')
+        info('')
+        info('   Writes to Exons.bed')
+        info('')
+        info('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons'
             '+with+approved+HUGO+gene+symbols')
         sys.exit(1)
 
     genome_name = sys.argv[1]
     seq_fpath = hg19_seq_fpath if genome_name == 'hg19' else hg38_seq_fpath
-    chr_lengths = get_chr_len_fpath_from_seq(seq_fpath)
+    chr_lengths = get_chr_lengths_from_seq(seq_fpath)
     chr_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
 
     input_fpath = verify_file(sys.argv[2])
@@ -68,14 +68,15 @@ def main():
     synonyms_fpath = None
     if len(sys.argv) > 4:
         synonyms_fpath = verify_file(sys.argv[4])
-        err('Synonyms file provided ' + synonyms_fpath + '')
+        info('Synonyms file provided ' + synonyms_fpath + '')
     else:
-        err('No synonyms file provided, skipping approving')
+        info('No synonyms file provided, skipping approving')
 
     not_approved_fpath = None
     if len(sys.argv) > 5:
         not_approved_fpath = adjust_path(sys.argv[5])
 
+    info('Reading the features...')
     with open(adjust_path(output_fpath), 'w') as out:
         with open(input_fpath) as inp:
             l = inp.readline()
@@ -87,28 +88,39 @@ def main():
         if synonyms_fpath and synonyms_fpath != "''":
             gene_by_name, not_approved_gene_names = _approve(gene_by_name, synonyms_fpath)
 
-            err('')
-            err('Not approved by HGNC - ' + str(len(not_approved_gene_names)) + ' genes.')
+            info('')
+            info('Not approved by HGNC - ' + str(len(not_approved_gene_names)) + ' genes.')
             if not_approved_fpath:
                 with open(not_approved_fpath, 'w') as f:
                     f.write('#Searched as\tStatus\n')
                     f.writelines((l + '\n' for l in not_approved_gene_names))
-                err('Saved not approved to ' + not_approved_fpath)
+                info('Saved not approved to ' + not_approved_fpath)
 
-            with open('serialized_genes.txt', 'w') as f:
-                for g in gene_by_name.values():
-                    f.write(str(g) + '\t' + str(g.db_id) + '\n')
-                    for e in g.exons:
-                        f.write('\t' + str(e) + '\n')
+            # with open('serialized_genes.txt', 'w') as f:
+            #     for g in gene_by_name.values():
+            #         f.write(str(g) + '\t' + str(g.db_id) + '\n')
+            #         for e in g.exons:
+            #             f.write('\t' + str(e) + '\n')
 
+        info('Found:')
+        info('  ' + str(len(gene_by_name)) + ' genes')
+        coding_genes = [g for g in gene_by_name.values() if any(e.feature == 'CDS' for e in g.exons)]
+        info('  ' + str(len(coding_genes)) + ' coding genes')
+
+        info('Sorting...')
         regions = []
-        for g in sorted(gene_by_name.values(), key=lambda r: r.get_key()):
+        for g in sorted(coding_genes, key=lambda r: r.get_key()):
             regions.append(g)
             for e in sorted(g.exons, key=lambda r: r.get_key()):
                 regions.append(e)
 
+        info('Writing ' + str(len(regions)) + ' regions')
+
         for r in regions:
             out.write(r.__str__())
+
+    info()
+    info('Saved results to ' + output_fpath)
 
 
 def _approve(gene_by_name, synonyms_fpath):
@@ -134,15 +146,15 @@ def _approve(gene_by_name, synonyms_fpath):
 
         j += 1
         if j % 1000 == 0:
-            err('processed ' + str(j / 1000) + 'k genes...')
+            info('processed ' + str(j / 1000) + 'k genes...')
 
-    err('-----')
-    err('Total: ' + str(j))
+    info('-----')
+    info('Total: ' + str(j))
     if approved_gene_by_name:
-        err('Total approved: ' + str(total_approved))
-        err('Total not approved: ' + str(total_not_approved))
-    err()
-    err('Saving genes...')
+        info('Total approved: ' + str(total_approved))
+        info('Total not approved: ' + str(total_not_approved))
+    info()
+    info('Saving genes...')
 
     gene_features = 0
     features_counter = defaultdict(int)
@@ -167,23 +179,23 @@ def _approve(gene_by_name, synonyms_fpath):
                 elif e.feature == 'stop_codon': e.feature = 'CDS'
                 else: e.feature = e.feature[0].upper() + e.feature[1:]
 
-    err('Skipped {} genes with no sub-features.'.format(no_exon_gene_num))
-    err('Approved {} genes, including:'.format(gene_features))
-    err('    Gene: {}'.format(features_counter['Gene']))
-    err('    Multi_Gene: {}'.format(features_counter['Multi_Gene']))
-    err('')
+    info('Skipped {} genes with no sub-features.'.format(no_exon_gene_num))
+    info('Approved {} genes, including:'.format(gene_features))
+    info('    Gene: {}'.format(features_counter['Gene']))
+    info('    Multi_Gene: {}'.format(features_counter['Multi_Gene']))
+    info('')
 
-    err('Out of total: {} protein coding genes, {} ncRNA genes, including:'.format(
+    info('Out of total: {} protein coding genes, {} ncRNA genes, including:'.format(
         biotypes_counter['protein_coding'], sum(biotypes_counter.values()) - biotypes_counter['protein_coding']))
     for bt, cnt in biotypes_counter.items():
         if bt != 'protein_coding':
             err('    ' + bt + ': ' + str(cnt))
 
-    err()
+    info()
     if ALL_EXONS:
-        err('Found {} exons.'.format(features_counter['exon']))
+        info('Found {} exons.'.format(features_counter['exon']))
     else:
-        err('Also found {} CDS, {} stop codons, and {} ncRNA exons.'.format(
+        info('Also found {} CDS, {} stop codons, and {} ncRNA exons.'.format(
             features_counter['CDS'], features_counter['stop_codon'], features_counter['exon']))
 
     return filtered_gene_after_approving_by_name, not_approved_gene_names
@@ -213,7 +225,7 @@ def parse_hgnc_chrom(chrom):
                 return 'chrM'
             return 'chr' + c
 
-    err('  Notice: cannot parse chromosome ' + chrom)
+    info('  Notice: cannot parse chromosome ' + chrom)
     return None
 
 
@@ -236,7 +248,7 @@ def read_approved_genes(synonyms_fpath):
     approved_gnames_by_prev_gname = defaultdict(list)
     approved_gnames_by_synonym = defaultdict(list)
 
-    err('Parsing HGNC database ' + synonyms_fpath + '...')
+    info('Parsing HGNC database ' + synonyms_fpath + '...')
     with open(synonyms_fpath) as f:
         i = 0
         for l in f:
@@ -256,8 +268,8 @@ def read_approved_genes(synonyms_fpath):
                     if gn:
                         approved_gnames_by_synonym[gn].append(approved_gene)
             i += 1
-        err('  Processed ' + str(i) + ' lines from ' + synonyms_fpath)
-        err()
+        info('  Processed ' + str(i) + ' lines from ' + synonyms_fpath)
+        info()
 
     return approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym
 
@@ -285,7 +297,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
         if _check_gene_symbol(approved_gene_by_name[gene_symbol], gene_symbol, db_id, db_chrom):
             return approved_gene_by_name[gene_symbol].name, None
 
-    err(indent + 'Gene name ' + gene_symbol + ' is not approved, searching for an approved version... ',
+    info(indent + 'Gene name ' + gene_symbol + ' is not approved, searching for an approved version... ',
         ending='', print_date=False)
 
     def _get_approved_genes_by_kind(approved_genes, kind):
@@ -317,7 +329,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
 
             if len(approved_genes_same_chrom) == 1:
                 g = approved_genes_same_chrom[0]
-                err(' only ' + g.name + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom '
+                info(' only ' + g.name + ' for ' + gene_symbol + ' (as ' + kind + ') has the same chrom '
                     + db_chrom + ', picking it', print_date=False)
                 if _check_gene_symbol(g, gene_symbol, db_id, db_chrom):
                     return g.name
@@ -331,7 +343,7 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
 
         if len(approved_genes) == 1:
             if _check_gene_symbol(approved_genes[0], gene_symbol, db_id, db_chrom):
-                err(' found approved gene symbol for ' + gene_symbol + ': ' + approved_genes[0].name + ' (as '
+                info(' found approved gene symbol for ' + gene_symbol + ': ' + approved_genes[0].name + ' (as '
                     + kind + ')', print_date=False)
                 return approved_genes[0].name
 
@@ -348,10 +360,10 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
             err(' not found.', print_date=False)
             return None, res
         else:
-            err(indent + 'Finally found approved gene for ' + gene_symbol + ' (as synonym): ' + res, print_date=False)
+            info(indent + 'Finally found approved gene for ' + gene_symbol + ' (as synonym): ' + res, print_date=False)
             return res, None
     else:
-        err(indent + 'Finally found approved gene for ' + gene_symbol + ' (as prev): ' + res, print_date=False)
+        info(indent + 'Finally found approved gene for ' + gene_symbol + ' (as prev): ' + res, print_date=False)
         return res, None
 
 
@@ -403,18 +415,13 @@ def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_
                 exon = None
                 if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0,
                                                          # no CDS for this gene, thus reporting exons
-                    exon = Exon(gene, eStart, eEnd, '', 'Exon')
-                    # out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), gene_symbol, '.',
-                    #                      strand, 'Exon', '.']) + '\n')
+                    # exon = Exon(gene, eStart, eEnd, '', 'Exon')
+                    pass
                 else:
                     if cdsStart <= eStart:
                         exon = Exon(gene, eStart, eEnd, '', 'CDS')
-                        # out.write('\t'.join([ucsc_chrom, str(eStart), str(eEnd), gene_symbol, '.',
-                        #                      strand, 'CDS', '.']) + '\n')
                     elif eEnd > cdsStart:
                         exon = Exon(gene, cdsStart, eEnd, '', 'CDS')
-                        # out.write('\t'.join([ucsc_chrom, str(cdsStart), str(eEnd), gene_symbol, '.',
-                        #                      strand, 'CDS', '.']) + '\n')
                     else:
                         err('Warn: exon ' + str(eStart) + ':' + str(eEnd) +
                             ' does not contain CDS, CDS start = ' + str(cdsStart))
@@ -494,12 +501,12 @@ def _proc_ensembl(inp, out, chr_order, additional_feature_list=None):
     if additional_feature_list is None:
         additional_feature_list = []
 
-    err('additional_feature_list = ' + str(additional_feature_list))
+    info('additional_feature_list = ' + str(additional_feature_list))
 
     gene_by_name = OrderedDict()
     gene_by_id = OrderedDict()
 
-    err('Parsing Ensembl input...')
+    info('Parsing Ensembl input...')
     total_lines = 0
     total_non_coding_genes = 0
 
@@ -513,9 +520,8 @@ def _proc_ensembl(inp, out, chr_order, additional_feature_list=None):
 
             total_lines += 1
             if total_lines % 1000 == 0:
-                sys.stderr.write(str(total_lines / 1000) + 'k lines, ' + str(len(gene_by_name)) +
-                                 ' genes found\n')
-                sys.stderr.flush()
+                info(str(total_lines / 1000) + 'k lines, ' + str(len(gene_by_name)) + ' genes found')
+                sys.stdout.flush()
 
             try:
                 _prop_dict = dict((t.strip().split(' ')[0], ' '.join(t.strip().split(' ')[1:]))
@@ -556,7 +562,7 @@ def _proc_ensembl(inp, out, chr_order, additional_feature_list=None):
             start, end = int(start) - 1, int(end)
 
             if int(end) <= int(start):
-                sys.stderr.write('Error: start > end: ' + l + '\n')
+                info('Error: start > end: ' + l)
                 continue
 
             chrom = parse_ensembl_chrom(chrom)
@@ -604,7 +610,7 @@ def _proc_ensembl(inp, out, chr_order, additional_feature_list=None):
                         prev_gene.feature = 'Multi_Gene'
                         continue
 
-                    sys.stderr.write('\n')
+                    err('')
 
                 gene_by_name[gene_symbol] = gene
                 gene_by_id[gene_id] = gene
@@ -621,13 +627,13 @@ def _proc_ensembl(inp, out, chr_order, additional_feature_list=None):
                     exon = Exon(gene, start, end, gene_biotype, feature)
                     gene.exons.append(exon)
 
-    err()
-    err(
+    info()
+    info(
         'Processed ' +
         str(total_lines) + ' lines, ' +
         str(total_non_coding_genes) + ' non-coding genes skipped, ' +
         str(len(gene_by_name)) + ' coding genes found')
-    err()
+    info()
     return gene_by_name
 
 

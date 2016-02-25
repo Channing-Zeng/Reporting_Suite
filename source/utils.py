@@ -52,7 +52,7 @@ def human_sorted(l):
     return l
 
 
-def get_chr_len_fpath_from_seq(seq_fpath):
+def get_chr_lengths_from_seq(seq_fpath):
     chr_lengths = []
 
     if verify_file(seq_fpath + '.fai', silent=True):
@@ -87,7 +87,7 @@ def get_chr_len_fpath(cnf):
             critical('There is no "seq" key in ' + cnf.sys_cnf + ' for "' + cnf.genome.name + '" section')
             return None
 
-        chr_lengths = get_chr_len_fpath_from_seq(adjust_path(cnf.genome.seq))
+        chr_lengths = get_chr_lengths_from_seq(adjust_path(cnf.genome.seq))
 
         with file_transaction(cnf.work_dir, chr_len_fpath) as tx:
             with open(tx, 'w') as handle:
@@ -109,14 +109,14 @@ def get_chr_lengths(cnf):
     if not chr_len_fpath:
         return None
 
-    chr_length_by_name = OrderedDict()
+    chr_lengths = []
     with open(chr_len_fpath, 'r') as f:
         for line in f:
             if len(line.split()) == 2:
                 chr_name = line.split()[0]
                 chr_length = int(line.split()[1])
-                chr_length_by_name[chr_name] = chr_length
-    return chr_length_by_name
+                chr_lengths.append([chr_name, chr_length])
+    return chr_lengths
 
 
 def format_integer(name, value, unit=''):

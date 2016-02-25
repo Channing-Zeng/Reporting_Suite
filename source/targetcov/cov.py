@@ -771,12 +771,13 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes
                      info('  Processed {0:,} regions'.format(_total_regions_count))
 
     for g in gene_by_name_and_chrom.values():
-        for a in g.get_amplicons():
-            add_region_to_report(report, a, depth_thresholds)
-        for e in g.get_exons():
-            add_region_to_report(report, e, depth_thresholds)
-        process_gene(g, depth_thresholds)
-        add_region_to_report(report, g, depth_thresholds)
+        if g.gene_name != '.':
+            for a in g.get_amplicons():
+                add_region_to_report(report, a, depth_thresholds)
+            for e in g.get_exons():
+                add_region_to_report(report, e, depth_thresholds)
+            process_gene(g, depth_thresholds)
+            add_region_to_report(report, g, depth_thresholds)
 
     un_annotated_summary_region = next((g for g in gene_by_name_and_chrom.values() if g.gene_name == '.'), None)
     if un_annotated_summary_region and un_annotated_amplicons:

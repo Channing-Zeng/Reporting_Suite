@@ -25,7 +25,7 @@ class Chromosome:
     @staticmethod
     def build_chr_by_name(cnf):
         chr_by_name = OrderedDict(
-            (chr_name, Chromosome(chr_name, length=l)) for chr_name, l in get_chr_lengths(cnf).items()
+            (chr_name, Chromosome(chr_name, length=l)) for chr_name, l in get_chr_lengths(cnf)
             if '_' not in chr_name)  # not drawing extra chromosomes chr1_blablabla
         return chr_by_name
 

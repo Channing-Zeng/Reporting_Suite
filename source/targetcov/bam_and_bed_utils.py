@@ -13,7 +13,7 @@ from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
 from source.targetcov.Region import SortableByChrom
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import md5, get_chr_len_fpath_from_seq
+from source.utils import md5, get_chr_lengths_from_seq
 
 
 def index_bam(cnf, bam_fpath, sambamba=None):
@@ -163,11 +163,12 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
                  '. Annotating amplicons with gene names from Ensembl...')
             target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
 
+    def remove_no_anno(l, i):
+        if l.split('\t')[3].strip() == '.': return None
+        else: return l
+
     if not seq2c_bed and target_bed or seq2c_bed and seq2c_bed == ori_target_bed_path:
         info('Seq2C bed: remove regions with no gene annotation')
-        def remove_no_anno(l, i):
-            if l.split('\t')[3].strip() == '.': return None
-            else: return l
         seq2c_bed = target_bed
         seq2c_bed = iterate_file(cnf, seq2c_bed, remove_no_anno, suffix='filt')
 
@@ -194,7 +195,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         elif cols > 8:
             seq2c_bed = cut(cnf, seq2c_bed, 8)
         info('Filtering non-annotated entries in seq2c bed')
-        seq2c_bed = iterate_file(cnf, seq2c_bed, f, suffix='filt')
+        seq2c_bed = iterate_file(cnf, seq2c_bed, remove_no_anno, suffix='filt')
 
     else:
         info('Filtering non-annotated entries in seq2c bed')
@@ -234,7 +235,7 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
         info()
         gene_key_set, gene_key_list = get_gene_keys(target_bed)
         info('Using genes from the amplicons list ' + target_bed)
-        if exons_bed and cnf.prep_bed is True:
+        if exons_bed and cnf.prep_bed is not False:
             info('Trying filtering exons with these ' + str(len(gene_key_list)) + ' genes.')
             exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_key_set, suffix='filt_genes_1st_round')
             if not verify_file(exons_anno_bed):
@@ -383,7 +384,7 @@ def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
             return self.chrom_ref_order, self.start, self.end, self.other_fields
 
     regions = []
-    chr_lengths = get_chr_len_fpath_from_seq(cnf.genome.seq)
+    chr_lengths = get_chr_lengths_from_seq(cnf.genome.seq)
     chr_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
 
     info('Sorting regions...')
@@ -401,10 +402,8 @@ def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
                 start = int(fs[1])
                 end = int(fs[2])
                 other_fields = fs[3:]
-                if chrom in chr_order:
-                    regions.append(Region(chrom, start, end, other_fields, chr_order[chrom]))
-                else:
-                    warn('Warn: ' + str(chrom) + ' is not in ' + str(chr_order.keys()) + '.\n')
+                ord = chr_order.get(chrom, -1)
+                regions.append(Region(chrom, start, end, other_fields, ord))
 
             for region in sorted(regions, key=lambda r: r.get_key()):
                 fs = [region.chrom, str(region.start), str(region.end)]

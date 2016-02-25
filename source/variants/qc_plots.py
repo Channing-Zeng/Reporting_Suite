@@ -44,7 +44,7 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
     reader = vcf.Reader(open_gzipsafe(vcf_fpath, 'r'))
 
     variants_distribution = dict()
-    for chr_name, chr_length in chr_lengths.items():
+    for chr_name, chr_length in chr_lengths:
         variants_distribution[chr_name] = [0] * max(1, chr_length / plot_scale)
     variants_distribution['OTHER'] = 0
 
@@ -85,7 +85,7 @@ def _get_subs_and_indel_stats(vcf_fpath, chr_lengths, plot_scale):
                     indel_lengths.append(len(alt) - len(rec.REF))
 
     # the last region in each chromosome is not exactly equal to plot_scale
-    for chr_name, chr_length in chr_lengths.items():
+    for chr_name, chr_length in chr_lengths:
         last_region_length = chr_length % plot_scale + (0 if chr_length < plot_scale else plot_scale)
         variants_distribution[chr_name][-1] = int(variants_distribution[chr_name][-1] * plot_scale /
                                                   float(last_region_length))
@@ -100,7 +100,7 @@ def _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variant
     if not_counted:
         info('Warning: some variants were not counted (chromosome names not found): ' + str(not_counted))
     empty_chr = []
-    for chr_name in chr_lengths.keys():
+    for chr_name, _ in chr_lengths:
         if sum(variants_distribution[chr_name]) == 0:
             empty_chr.append(chr_name)
             del variants_distribution[chr_name]
@@ -127,10 +127,11 @@ def _draw_variants_distribution(cnf, variants_distribution, chr_lengths, variant
         ax.get_yaxis().tick_left()
         ax.set_xticklabels('')
         ax.set_ylim(bottom=0)
-        if chr_lengths[chr_name] < mbp / 10:
+        chr_len_by_name = dict(chr_lengths)
+        if chr_len_by_name[chr_name] < mbp / 10:
             chr_size = '<0.1 Mbp'
         else:
-            chr_size = '%.1f Mbp' % (float(chr_lengths[chr_name]) / mbp)
+            chr_size = '%.1f Mbp' % (float(chr_len_by_name[chr_name]) / mbp)
         ax.set_xlabel(chr_name + ', ' + chr_size)
 
         for item in ([ax.xaxis.label] + ax.get_xticklabels() + ax.get_yticklabels()):

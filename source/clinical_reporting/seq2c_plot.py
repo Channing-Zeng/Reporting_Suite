@@ -23,7 +23,7 @@ def draw_seq2c_plot(cnf, seq2c_tsv_fpath, sample_name, output_dir, key_gene_name
     if not verify_file(seq2c_tsv_fpath, 'Seq2C.tsv'):
         return None
 
-    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (chr_lens or get_chr_lengths(cnf)).items()
+    chr_names_lengths = OrderedDict((chr_, l) for chr_, l in (chr_lens or get_chr_lengths(cnf))
                                     if '_' not in chr_)  # not drawing extra chromosomes chr1_blablabla
     chr_names = chr_names_lengths.keys()
     chr_short_names = [chrom[3:] for chrom in chr_names_lengths.keys()]

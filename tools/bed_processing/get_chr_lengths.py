@@ -5,7 +5,7 @@ import sys
 
 from source.logger import err, critical
 from source.file_utils import file_exists, verify_file, file_transaction
-from source.utils import get_chr_len_fpath_from_seq
+from source.utils import get_chr_lengths_from_seq
 
 
 def main():
@@ -14,7 +14,7 @@ def main():
 
     seq_fpath = sys.argv[1]
     seq_fpath = verify_file(seq_fpath, is_critical=True)
-    chr_lengths = get_chr_len_fpath_from_seq(seq_fpath)
+    chr_lengths = get_chr_lengths_from_seq(seq_fpath)
 
     for c, l in chr_lengths:
         sys.stdout.write(c + '\t' + str(l) + '\n')
