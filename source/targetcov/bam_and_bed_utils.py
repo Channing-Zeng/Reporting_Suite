@@ -412,6 +412,7 @@ def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
                 out.write('\t'.join(fs) + '\n')
 
     info('Sorted ' + str(len(regions)) + ' regions, saved to ' + output_bed_fpath + '\n')
+    return output_bed_fpath
 
 
 def total_merge_bed(cnf, bed_fpath):
