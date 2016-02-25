@@ -252,7 +252,7 @@ MALE_READS_THRES = 100
 MALE_TARGET_REGIONS_FACTOR = 0.5
 
 def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
-    chry = sort_bed(cnf, MALE_GENES_BED_FPATH, cnf.genome.name, exit_on_error=False)
+    chry = sort_bed(cnf, MALE_GENES_BED_FPATH)
     if not chry:
         return None
     male_genes_bed = total_merge_bed(cnf, chry)
