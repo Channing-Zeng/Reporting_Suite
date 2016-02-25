@@ -37,6 +37,7 @@ def main():
     parser.add_option('--jira', dest='jira', help='JIRA case path')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
+    parser.add_option('--no-prep-bed', dest='prep_bed', help='do not fix input beds and exons', action='store_false', default=True)
     parser.add_option('--no-dedup', dest='no_dedup', action='store_true', help=SUPPRESS_HELP)
     parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering. Default %f' % defaults['default_min_freq'])
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
