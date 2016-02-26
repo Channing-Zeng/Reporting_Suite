@@ -1,3 +1,4 @@
+import traceback
 from datetime import datetime
 import os
 import shutil
@@ -725,7 +726,7 @@ class BCBioStructure(BaseProjectStructure):
                     # if not isfile(ungz_fpath) and isfile(gz_fpath) and verify_file(gz_fpath):
                     #     call(cnf, 'gunzip ' + gz_fpath + ' -c', output_fpath=ungz_fpath)
                     c.paired_anno_vcf_by_sample[b.tumor[0].name] = gz_fpath
-            else:
+            elif b.tumor:
                 b.paired = False
                 info('Batch ' + b.name + ' is single')
                 for c in self.variant_callers.values():
@@ -734,6 +735,8 @@ class BCBioStructure(BaseProjectStructure):
                     # if not isfile(ungz_fpath) and isfile(gz_fpath) and verify_file(gz_fpath):
                     #     call(cnf, 'gunzip ' + gz_fpath + ' -c', output_fpath=ungz_fpath)
                     c.single_anno_vcf_by_sample[b.tumor[0].name] = gz_fpath
+            else:
+                warn('Batch ' + b.name + ' does not contain tumor samples')
 
         for c in self.variant_callers.values():
             if c.single_anno_vcf_by_sample:
@@ -838,7 +841,7 @@ class BCBioStructure(BaseProjectStructure):
                 batch_names = sample_info['metadata']['batch']
 
         if isinstance(batch_names, basestring):
-            batch_names = [batch_names]
+            batch_names = batch_names.split(', ')
 
         for batch_name in batch_names:
             self.batches[batch_name].name = batch_name

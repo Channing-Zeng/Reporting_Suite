@@ -48,9 +48,10 @@ genomes:
     snpeff:
       reference: hg38
 
-    exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
-    refseq:   /ngs/reference_data/genomes/Hsapiens/hg38/bed/CDS_RefSeq.bed
+
+    features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.bed
+    cds:       /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.bed
 
 #    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
@@ -70,9 +71,10 @@ genomes:
     snpeff:
       reference: hg38
 
-    exons:    /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
-    refseq:   /ngs/reference_data/genomes/Hsapiens/hg38/bed/CDS_RefSeq.bed
+
+    features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.noalt.bed
+    cds:       /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS.noalt.bed
 
 #    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
@@ -97,9 +99,10 @@ genomes:
     snpeff:
       reference: hg19
 
-    exons:    /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
-    refseq:   /ngs/reference_data/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed
+
+    features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.bed
+    cds:       /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.bed
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
@@ -109,27 +112,27 @@ genomes:
 
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
-  GRCh37:
-    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
-    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
-
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
-    1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine/mutation_details.vcf
-    snpeff:
-      reference: GRCh37.75
-
-    exons:    /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
-    az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exome-AZ.bed
-    refseq:   /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/CDS_RefSeq.bed
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
-    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
-    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
-    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+#  GRCh37:
+#    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
+#    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
+#
+#    dbsnp:       /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_latest.vcf
+#    cosmic:      /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_latest.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
+#    1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
+#    clinvar:     /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
+#    oncomine:    /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/oncomine/mutation_details.vcf
+#    snpeff:
+#      reference: GRCh37.75
+#
+#    exons:    /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/Exons.with_genes.bed
+#    az_exome: /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exome-AZ.bed
+#    refseq:   /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/CDS_RefSeq.bed
+#
+#    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
+#    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
+#    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
+#    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
+#    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
 
 snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/snpeffect_export_Polymorphic.txt

@@ -9,7 +9,7 @@ import shutil
 from os.path import abspath, dirname, realpath, join, exists, basename, splitext
 from source.calling_process import call
 
-from source.logger import critical, info, warn
+from source.logger import critical, info, warn, err
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_system_resources
 from source.prepare_args_and_cnf import check_genome_resources
@@ -212,10 +212,17 @@ def _annotate(cnf, bed, ref_bed, chr_order):
             e_feature, e_biotype = fs[:11]
 
         overlap_size = None
-        if len(fs) >= 12:
+        if len(fs) >= 11:  # important! intersection is not a list object, thus it's size would be 11 and the 11'th element would be overlap_size
             overlap_size = fs[11].strip()
-        if len(fs) >= 13:
+        if len(fs) >= 12:  # important! intersection is not a list object, thus it's size would be 12 and the 12'th element would be overlap_size
             e_transcript, overlap_size = fs[11], fs[12].strip()
+        try:
+            overlap_size = int(overlap_size)
+        except ValueError:
+            err('Cannot parse overlap_size ' + str(overlap_size) + ' in line ' + str(fs))
+            err('Line size = ' + str(len(fs)))
+            err('fs[11], fs[12].strip() = ' + str((fs[11], fs[12].strip())))
+
         # else:
         #     critical('Cannot parse the reference BED file - unexpected number of lines '
         #              '(' + str(len(fs)) + ') in ' + '\t'.join(str(f) for f in fs))
@@ -235,7 +242,7 @@ def _annotate(cnf, bed, ref_bed, chr_order):
             annotated_by_loc_by_gene[(a_chr, int(a_start), int(a_end))][e_gene].append((
                 Region(chrom=e_chr, start=int(e_start), end=int(e_end), ref_chrom_order=chr_order.get(a_chr),
                        gene_symbol=e_gene, exon=e_exon, strand=e_strand, feature=e_feature, biotype=e_biotype),
-                int(overlap_size)))
+                       overlap_size))
 
         met.add((a_chr, a_start, a_end))
 

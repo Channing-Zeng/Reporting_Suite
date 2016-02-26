@@ -649,7 +649,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=getsize(sample.bam) * 4 / 1024 / 1024 + 1000)
+                            mem_m=getsize(sample.bam) / 1024 / 1024 + 500)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
@@ -901,16 +901,21 @@ class BCBioRunner:
                  ', jobs didn\'t run: ' + str(len([j for j in self.jobs_running if not j.is_done])) +
                  ', total was: ' + str(len([j for j in self.jobs_running]))
             )
+            info()
 
             if self.varfilter in self.steps:
                 finish_filtering_for_bcbio(self.cnf, self.bcbio_structure,
                     self.bcbio_structure.variant_callers.values(), self.is_wgs)
+                info()
 
             if is_us():
+                info('Exposing to jBrowse')
                 add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
+                info()
 
             if any(s.fastqc_html_fpath and isfile(s.fastqc_html_fpath) for s in self.bcbio_structure.samples):
                 final_summary_report_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.fastqc_summary_dir, source.fastqc_name + '.html')
+                safe_mkdir(final_summary_report_fpath)
                 write_fastqc_combo_report(final_summary_report_fpath, self.bcbio_structure.samples)
 
             html_report_fpath = make_project_level_report(self.cnf, bcbio_structure=self.bcbio_structure)

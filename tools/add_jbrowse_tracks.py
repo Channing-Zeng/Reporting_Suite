@@ -35,7 +35,7 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
         vcf_link = None
         if vcf_fpaths:
             vcf_fpath = vcf_fpaths[sample.name] if sample.name in vcf_fpaths else None
-            if verify_file(vcf_fpath):
+            if vcf_fpath and verify_file(vcf_fpath):
                 vcf_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath)
                 if not verify_file(vcf_fpath + '.tbi'):
                     cmdline = '{tabix} {vcf_fpath}'.format(**locals())

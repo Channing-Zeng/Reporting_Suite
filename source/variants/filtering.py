@@ -32,7 +32,7 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
         info(combined_vcf_fpath + '.gz exists, reusing')
         return combined_vcf_fpath
 
-    cmdl += ' -o ' + combined_vcf_fpath + '.gz'
+    cmdl += ' -o ' + combined_vcf_fpath
     res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)
     if res:
         info('Joined VCFs, saved into ' + combined_vcf_fpath)
