@@ -519,7 +519,7 @@ def make_fastqc_reports(cnf, samples, fastq_dirpath, fastqc_dirpath, comb_fastqc
                 except OSError:
                     pass
 
-        write_fastqc_combo_report(comb_fastqc_fpath, fqc_samples)
+        write_fastqc_combo_report(cnf, comb_fastqc_fpath, fqc_samples)
         verify_file(comb_fastqc_fpath, is_critical=True)
         info('Combined FastQC saved to ' + comb_fastqc_fpath)
         return comb_fastqc_fpath

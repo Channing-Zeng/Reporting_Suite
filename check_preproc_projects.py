@@ -16,7 +16,6 @@ from joblib import Parallel, delayed
 import source
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
-from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.jira_utils import retrieve_jira_info
 from source.preproc.dataset_structure import DatasetStructure
 from source.bcbio.project_level_report import make_project_level_report

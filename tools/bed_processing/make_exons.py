@@ -106,7 +106,12 @@ def main():
 
         info('Found:')
         info('  ' + str(len(gene_by_name_and_chrom)) + ' genes')
-        coding_and_mirna_genes = [g for g in gene_by_name_and_chrom.values() if all(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts)]
+        coding_and_mirna_genes = []
+        for g in gene_by_name_and_chrom.values():
+            if all(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts):
+                coding_and_mirna_genes.append(g)
+            if g.name == 'POLD1':
+                pass
 
         coding_genes = [g for g in coding_and_mirna_genes if any(t.biotype == 'protein_coding' for t in g.transcripts)]
         coding_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype == 'protein_coding']
@@ -133,6 +138,9 @@ def main():
         many_canon_mirna_num = 0
         canon_genes = []
         for g in genes:
+            if g.name == 'POLD1':
+                pass
+
             canon_tx = [t for t in g.transcripts if t.transcript_id in canonical_transcripts]
             if len(canon_tx) > 1:
                 if any(t.biotype == 'protein_coding' for t in g.transcripts):
@@ -488,6 +496,9 @@ def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_
 
             transcript = Transcript(gene, transcript_id, txStart, txEnd, strand)
             gene.transcripts.append(transcript)
+
+            if gene_symbol == 'POLD1':
+                pass
 
             for exon_number, eStart, eEnd in zip(
                    range(exonCount),

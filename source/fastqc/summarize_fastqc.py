@@ -4,6 +4,8 @@ from source import verify_file
 import source
 from source.fastqc.html_parser_fastqc import extract_graphs
 from os.path import join, dirname, abspath
+
+from source.file_utils import file_transaction
 from source.logger import step_greetings, info
 from source.tools_from_cnf import get_system_path
 
@@ -11,28 +13,29 @@ from source.tools_from_cnf import get_system_path
 jquery_fname = 'jquery-1.12.0.min.js'
 
 
-def write_fastqc_combo_report(a_outfile, samples):
+def write_fastqc_combo_report(cnf, output_fpath, samples):
     """ samples = [ Sample(name, fastqc_html_fpath) ]
     """
     graphs = extract_graphs(samples)
-    with open(a_outfile, 'w') as outfile:
-        print >> outfile, """<html> <head> <title>FASTQC</title> """
-        print >> outfile, _print_js()
-        print >> outfile, _print_css()
-        print >> outfile, """ </head> <body>"""
-        _links_show_hide(outfile, samples)
-        _print_graphs(outfile, graphs)
-        print >> outfile, """ </body> </html>"""
+    with file_transaction(cnf.work_dir, output_fpath) as tx:
+        with open(tx, 'w') as out:
+            out.write(' <html> <head> <title>FASTQC</title>\n')
+            out.write(_print_js() + '\n')
+            out.write(_print_css() + '\n')
+            out.write(' </head> <body>\n')
+            _links_show_hide(out, samples)
+            _print_graphs(out, graphs)
+            out.write(' </body> </html>\n')
 
 
-def _print_graphs(outfile, graphs):
-    print >> outfile, '<table >'
+def _print_graphs(out, graphs):
+    out.write('<table >\n')
 
     for graph_name, values in graphs.items():
         line = '<tr class="title"><td colspan="' + str(len(values)) + '"><h2>' + graph_name + '</h2><td></tr>'
         # print line
-        print >> outfile, line
-        print >> outfile, '<tr>'
+        out.write(line)
+        out.write('<tr>\n')
         i = 0
         for div_contains in values:
             bam_file_name = div_contains[0]
@@ -46,11 +49,11 @@ def _print_graphs(outfile, graphs):
             line = '<td name="tcol' + str(i) + '" id="tcol' + str(i) + '" class="data">' + \
                 str(ok_img) + str(bam_file_name) + '</br>' + str(graph) + str(table) + '</td>'
             # print line
-            print >> outfile, line
+            out.write(line)
             i += 1
-        print >> outfile, '</tr>'
+        out.write('</tr>\n')
 
-    print >> outfile, '</table>'
+    out.write('</table>\n')
 
 
 def _none_type_validation(obj):
@@ -74,22 +77,21 @@ def _chunks(l, n):
         yield l[i:i + n]
 
 
-def _links_show_hide(outfile, samples):
-    print >> outfile, '<form name="tcol" onsubmit="return false">  Show columns <br/>'
-    print >> outfile, '<table>'
+def _links_show_hide(out, samples):
+    out.write('<form name="tcol" onsubmit="return false">  Show columns <br/>\n')
+    out.write('<table>\n')
     i = 0
 
     list_of_chunks = list(_chunks([s.name for s in samples if verify_file(s.fastqc_html_fpath)], 6))
    
     for samples in list_of_chunks:
-        print >> outfile, '<tr>'
+        out.write('<tr>\n')
         for sample in samples:
-            print >> outfile, '<td><input type=checkbox name="col' + str(i) + '"  onclick="toggleVis(' + str(
-                i) + ')" checked> ' + sample + '</td>'
+            out.write('<td><input type=checkbox name="col' + str(i) + '"  onclick="toggleVis(' + str(i) + ')" checked> ' + sample + '</td>\n')
             i += 1
-        print >> outfile, '</tr>'
-    print >> outfile, '</table>'
-    print >> outfile, '</form> '
+        out.write('</tr>\n')
+    out.write('</table>\n')
+    out.write('</form> \n')
 
 
 def _print_js():

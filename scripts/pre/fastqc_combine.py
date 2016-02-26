@@ -43,7 +43,7 @@ def main():
         samples = [Sample(name=basename(fp).split('.fq_fastqc.html')[0].split('.htm')[0], fastqc_html_fpath=fp) for fp in input_htmls]
 
     res_fpath = adjust_path(opts.output_fpath)
-    write_fastqc_combo_report(res_fpath, samples)
+    write_fastqc_combo_report(cnf, res_fpath, samples)
 
     verify_file(res_fpath, is_critical=True)
 

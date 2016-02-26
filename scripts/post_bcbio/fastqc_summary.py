@@ -22,7 +22,7 @@ def main():
 
     final_summary_report_fpath = join(cnf.output_dir, source.fastqc_name + '.html')
 
-    write_fastqc_combo_report(final_summary_report_fpath, bcbio_structure.samples)
+    write_fastqc_combo_report(cnf, final_summary_report_fpath, bcbio_structure.samples)
 
     info()
     info('*' * 70)
