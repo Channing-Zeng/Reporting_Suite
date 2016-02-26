@@ -108,21 +108,19 @@ def main():
         info('  ' + str(len(gene_by_name_and_chrom)) + ' genes')
         coding_and_mirna_genes = []
         for g in gene_by_name_and_chrom.values():
-            if all(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts):
+            if any(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts):
                 coding_and_mirna_genes.append(g)
-            if g.name == 'POLD1':
-                pass
 
         coding_genes = [g for g in coding_and_mirna_genes if any(t.biotype == 'protein_coding' for t in g.transcripts)]
         coding_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype == 'protein_coding']
-        nc_genes = [g for g in coding_and_mirna_genes if any(t.biotype != 'protein_coding' for t in g.transcripts)]
-        nc_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype != 'protein_coding']
-        coding_nc_genes = [g for g in coding_and_mirna_genes if any(t.biotype != 'protein_coding' for t in g.transcripts) and any(t.biotype == 'protein_coding' for t in g.transcripts)]
+        mirna_genes = [g for g in coding_and_mirna_genes if any(t.biotype == 'miRNA' for t in g.transcripts)]
+        mirna_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype == 'miRNA']
+        codingmiRNA_genes = [g for g in coding_and_mirna_genes if any(t.biotype == 'miRNA' for t in g.transcripts) and any(t.biotype == 'protein_coding' for t in g.transcripts)]
         info('  ' + str(len(coding_genes)) + ' coding genes')
         info('  ' + str(len(coding_transcripts)) + ' coding transcripts')
-        info('  ' + str(len(nc_genes)) + ' non-coding genes')
-        info('  ' + str(len(nc_transcripts)) + ' non-coding transcripts')
-        info('  ' + str(len(coding_nc_genes)) + ' genes with both coding and non-coding transcripts')
+        info('  ' + str(len(mirna_genes)) + ' miRNA genes')
+        info('  ' + str(len(mirna_transcripts)) + ' miRNA transcripts')
+        info('  ' + str(len(codingmiRNA_genes)) + ' genes with both coding and miRNA transcripts')
 
         info()
         info('Choosing CDS or miRNA genes...')
@@ -138,9 +136,6 @@ def main():
         many_canon_mirna_num = 0
         canon_genes = []
         for g in genes:
-            if g.name == 'POLD1':
-                pass
-
             canon_tx = [t for t in g.transcripts if t.transcript_id in canonical_transcripts]
             if len(canon_tx) > 1:
                 if any(t.biotype == 'protein_coding' for t in g.transcripts):
@@ -497,9 +492,6 @@ def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_
             transcript = Transcript(gene, transcript_id, txStart, txEnd, strand)
             gene.transcripts.append(transcript)
 
-            if gene_symbol == 'POLD1':
-                pass
-
             for exon_number, eStart, eEnd in zip(
                    range(exonCount),
                    [s for s in exonStarts if s],
@@ -509,9 +501,9 @@ def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_
                 exon = None
                 if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0,
                                                          # no CDS for this gene, thus reporting exons
-                    exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
                     if gene_symbol.startswith('MIR'):
                         transcript.biotype = 'miRNA'
+                        exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
                 else:
                     transcript.biotype = 'protein_coding'
                     if cdsStart <= eStart:
