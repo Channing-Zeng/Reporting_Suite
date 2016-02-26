@@ -4,7 +4,7 @@ import bcbio_postproc  # do not remove it: checking for python version and addin
 from collections import defaultdict, OrderedDict
 import sys
 from traceback import format_exc
-from source.file_utils import adjust_path, verify_file
+from source.file_utils import adjust_path, verify_file, open_gzipsafe
 from source.logger import err, info
 from source.targetcov.Region import SortableByChrom
 from source.utils import get_chr_lengths_from_seq
@@ -12,6 +12,7 @@ from source.utils import get_chr_lengths_from_seq
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
 hg38_seq_fpath = '~/Dropbox/az/reference_data/hg38.fa'
 hg19_seq_fpath = '~/Dropbox/az/reference_data/hg19.fa'
+canonical_transcripts_fpath = '~/Dropbox/az/reference_data/common/canonical_transcripts.txt'
 
 
 ALL_EXONS = True
@@ -19,42 +20,38 @@ ALL_EXONS = True
 
 def main():
     if len(sys.argv) < 4:
-        info('The script writes all CDS, stop codon, and ncRNA exon regions for all known Ensembl genes, with '
-            'associated gene symbols.')
-        info('When the gene name is found in HGNC, it get replaced with an approved name.')
-        info('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.')
-        info('')
-        info('Usage:')
-        info('    ' + __file__ + ' hg19 DB output.bed [HGNC_gene_synonyms.txt=' + us_syn_path + '] [additional_feature_list]')
-        info('')
-        info('   where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:')
-        info('     #Approved Symbol  Previous Symbols                    Synonyms                          '
-            'Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)')
-        info('     OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  '
-            '19q13.43	    ENSG00000121410   uc002qsg.3')
-        info('     ...')
-        info('')
-        info('   feature_list is by default empty, but could be transcript')
-        info('')
-        info('   and DB is either RefSeq_knownGene.txt or UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:')
-        info('     #hg19.knownGene.name  hg19.knownGene.chrom  hg19.knownGene.strand  hg19.knownGene.txStart  '
-            'hg19.knownGene.txEnd  hg19.knownGene.exonCount  hg19.knownGene.exonStarts  hg19.knownGene.exonEnds'
-            '  hg19.kgXref.geneSymbol')
-        info('     uc001aaa.3	          chr1	                +	                   11873                   '
-            '14409                 3                         11873,12612,13220,	      12227,12721,14409,	   DDX11L1')
-        info('     ...')
-        info('   or DB is Ensembl.gtf (ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz)')
-        info('     1  pseudogene            gene        11869  14412  .  +  .  gene_id "ENSG00000223972"; '
-            'gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene";')
-        info('     1  processed_transcript  transcript  11869  14409  .  +  .  gene_id "ENSG00000223972"; '
-            'transcript_id "ENST00000456328"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype '
-            '"pseudogene"; transcript_name "DDX11L1-002"; transcript_source "havana";')
-        info('     ...')
-        info('')
-        info('   Writes to Exons.bed')
-        info('')
-        info('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons'
-            '+with+approved+HUGO+gene+symbols')
+        info('The script writes all CDS, stop codon, and ncRNA exon regions for all known Ensembl genes, with associated gene symbols.')
+        # info('When the gene name is found in HGNC, it get replaced with an approved name.         ')
+        # info('If the gene is not charactirized (like LOC729737), this symbol is just kept as is.  ')
+        info('                                                                                      ')
+        info('Usage:                                                                                ')
+        info('    ' + __file__ + ' hg19 db.gtf output.bed [HGNC_gene_synonyms.txt=' + us_syn_path + '] [additional_feature_list]')
+        info('                                                                                      ')
+        info('     where HGNC_gene_synonyms.txt (from http://www.genenames.org/cgi-bin/download) is:')
+        info('     #Approved Symbol  Previous Symbols                    Synonyms                          Chromosome   Ensembl Gene ID   UCSC ID(supplied by UCSC)')
+        info('     OR7E26P           OR7E67P, OR7E69P, OR7E70P, OR7E68P  OR1-51, OR1-72, OR1-73, OR912-95  19q13.43	    ENSG00000121410   uc002qsg.3')
+        info('     ...                                                                              ')
+        info('                                                                                      ')
+        info('     or DB is Ensembl GTF ftp://ftp.ensembl.org/pub/release-75/gtf/homo_sapiens/Homo_sapiens.GRCh37.75.gtf.gz')
+        info('     1  pseudogene            gene        11869  14412  .  +  .  gene_id "ENSG00000223972"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene";')
+        info('     1  processed_transcript  transcript  11869  14409  .  +  .  gene_id "ENSG00000223972"; transcript_id "ENST00000456328"; gene_name "DDX11L1"; gene_source "ensembl_havana"; gene_biotype "pseudogene"; transcript_name "DDX11L1-002"; transcript_source "havana";')
+        info('     ...                                                                              ')
+        info('                                                                                      ')
+        info('     or DB is RefSeq GTF ftp://ftp.ncbi.nlm.nih.gov/refseq/H_sapiens/H_sapiens/GFF/ref_GRCh38.p2_top_level.gff3.gz')
+        info('     NC_000001.10    RefSeq          region       1       249250621       .       +       .       ID=id0;Name=1;Dbxref=taxon:9606;chromosome=1;gbkey=Src;genome=chromosome;mol_type=genomic DNA')
+        info('     NC_000001.10    BestRefSeq      gene         11874   14409           .       +       .       ID=gene0;Name=DDX11L1;Dbxref=GeneID:100287102,HGNC:37102;description=DEAD%2FH %28Asp-Glu-Ala-Asp%2FHis%29 box helicase 11 like 1;gbkey=Gene;gene=DDX11L1;part=1%2F1;pseudo=true')
+        info('     NC_000001.10    BestRefSeq      transcript   11874   14409           .       +       .       ID=rna0;Name=NR_046018.2;Parent=gene0;Dbxref=GeneID:100287102,Genbank:NR_046018.2,HGNC:37102;gbkey=misc_RNA;gene=DDX11L1;product=DEAD%2FH %28Asp-Glu-Ala-Asp%2FHis%29 box helicase 11 like 1;transcript_id=NR_046018.2')
+        info('     NC_000001.10    BestRefSeq      exon         11874   12227           .       +       .       ID=id1;Parent=rna0;Dbxref=GeneID:100287102,Genbank:NR_046018.2,HGNC:37102;gbkey=misc_RNA;gene=DDX11L1;product=DEAD%2FH %28Asp-Glu-Ala-Asp%2FHis%29 box helicase 11 like 1;transcript_id=NR_046018.2')
+        info('     ...                                                                              ')
+        info('                                                                                      ')
+        info('     or either RefSeq_knownGene.txt or UCSC_knownGene.txt (from http://genome.ucsc.edu/cgi-bin/hgTables) is:')
+        info('     #hg19.knownGene.name  hg19.knownGene.chrom  hg19.knownGene.strand  hg19.knownGene.txStart  hg19.knownGene.txEnd  hg19.knownGene.exonCount  hg19.knownGene.exonStarts  hg19.knownGene.exonEnds  hg19.kgXref.geneSymbol')
+        info('     uc001aaa.3	         chr1	               +	                  11873                   14409                 3                         11873,12612,13220,	      12227,12721,14409,	   DDX11L1')
+        info('     ...                                                                              ')
+        info('                                                                                      ')
+        info('     Writes to Exons.bed                                                              ')
+        info('                                                                                      ')
+        info('See more info in http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Making+the+full+list+of+UCSC+exons+with+approved+HUGO+gene+symbols')
         sys.exit(1)
 
     genome_name = sys.argv[1]
@@ -76,17 +73,22 @@ def main():
     if len(sys.argv) > 5:
         not_approved_fpath = adjust_path(sys.argv[5])
 
+    with open(verify_file(canonical_transcripts_fpath)) as f:
+        canonical_transcripts = set(l.strip().split('.')[0] for l in f)
+
     info('Reading the features...')
     with open(adjust_path(output_fpath), 'w') as out:
-        with open(input_fpath) as inp:
+        with open_gzipsafe(input_fpath) as inp:
             l = inp.readline()
-            if l.startswith('#!genome-build'):
-                gene_by_name = _proc_ensembl(inp, out, chr_order)
+            if output_fpath.endswith('.gtf') or output_fpath.endswith('.gtf.gz'):
+                gene_by_name_and_chrom = _proc_ensembl_gtf(inp, out, chr_order)
+            elif output_fpath.endswith('.gff3') or output_fpath.endswith('.gff3.gz'):
+                gene_by_name_and_chrom = _proc_refseq_gff3(inp, out, chr_order)
             else:
-                gene_by_name = _proc_ucsc(inp, out, chr_order)
+                gene_by_name_and_chrom = _proc_ucsc(inp, out, chr_order)
 
         if synonyms_fpath and synonyms_fpath != "''":
-            gene_by_name, not_approved_gene_names = _approve(gene_by_name, synonyms_fpath)
+            gene_by_name_and_chrom, not_approved_gene_names = _approve(gene_by_name_and_chrom, synonyms_fpath)
 
             info('')
             info('Not approved by HGNC - ' + str(len(not_approved_gene_names)) + ' genes.')
@@ -103,16 +105,90 @@ def main():
             #             f.write('\t' + str(e) + '\n')
 
         info('Found:')
-        info('  ' + str(len(gene_by_name)) + ' genes')
-        coding_genes = [g for g in gene_by_name.values() if any(e.feature == 'CDS' for e in g.exons)]
-        info('  ' + str(len(coding_genes)) + ' coding genes')
+        info('  ' + str(len(gene_by_name_and_chrom)) + ' genes')
+        coding_and_mirna_genes = [g for g in gene_by_name_and_chrom.values() if all(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts)]
 
+        coding_genes = [g for g in coding_and_mirna_genes if any(t.biotype == 'protein_coding' for t in g.transcripts)]
+        coding_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype == 'protein_coding']
+        nc_genes = [g for g in coding_and_mirna_genes if any(t.biotype != 'protein_coding' for t in g.transcripts)]
+        nc_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype != 'protein_coding']
+        coding_nc_genes = [g for g in coding_and_mirna_genes if any(t.biotype != 'protein_coding' for t in g.transcripts) and any(t.biotype == 'protein_coding' for t in g.transcripts)]
+        info('  ' + str(len(coding_genes)) + ' coding genes')
+        info('  ' + str(len(coding_transcripts)) + ' coding transcripts')
+        info('  ' + str(len(nc_genes)) + ' non-coding genes')
+        info('  ' + str(len(nc_transcripts)) + ' non-coding transcripts')
+        info('  ' + str(len(coding_nc_genes)) + ' genes with both coding and non-coding transcripts')
+
+        info()
+        info('Choosing CDS or miRNA genes...')
+        genes = []
+        for g in coding_and_mirna_genes:
+            if any(tx.exons for tx in g.transcripts):  # want to report only genes containing any CDS or miRNA exons
+                genes.append(g)
+        info('Choosing canonical...')
+        not_found_in_canon_coding_num = 0
+        not_found_in_canon_coding_num_one_transcript = 0
+        not_found_in_canon_mirna_num = 0
+        many_canon_coding_num = 0
+        many_canon_mirna_num = 0
+        canon_genes = []
+        for g in genes:
+            canon_tx = [t for t in g.transcripts if t.transcript_id in canonical_transcripts]
+            if len(canon_tx) > 1:
+                if any(t.biotype == 'protein_coding' for t in g.transcripts):
+                    many_canon_coding_num += 1
+                    canon_tx = [sorted(canon_tx, key=lambda t: t.end - t.start)[0]]
+                if any(t.biotype != 'protein_coding' for t in g.transcripts):
+                    many_canon_mirna_num += 1
+            if not canon_tx:
+                if any(t.biotype == 'protein_coding' for t in g.transcripts):
+                    not_found_in_canon_coding_num += 1
+                    if len(g.transcripts) == 1:
+                        not_found_in_canon_coding_num_one_transcript += 1
+                    canon_tx = [sorted(g.transcripts, key=lambda t: t.end - t.start)[0]]
+                if any(t.biotype != 'protein_coding' for t in g.transcripts):
+                    not_found_in_canon_mirna_num += 1
+            if canon_tx:
+                g.transcripts = canon_tx
+                canon_genes.append(g)
+
+        info('Coding genes with canonical transcripts: ' +
+             str(sum(1 for g in canon_genes if any(t.biotype == 'protein_coding' for t in g.transcripts))))
+        info('Coding canonical transcripts: ' +
+             str(sum(1 for g in canon_genes for t in g.transcripts if t.biotype == 'protein_coding')))
+        info('Non-coding genes with canonical transcripts: ' +
+             str(sum(1 for g in canon_genes if any(t.biotype != 'protein_coding' for t in g.transcripts))))
+        info('Non-coding canonical transcripts: ' +
+             str(sum(1 for g in canon_genes for t in g.transcripts if t.biotype != 'protein_coding')))
+
+        info()
+        info('Coding genes with no canonical transcripts (picking longest out of the rest): ' + str(not_found_in_canon_coding_num))
+        info('Non-coding genes with no canonical transcripts (skipping all): ' + str(not_found_in_canon_mirna_num))
+        info('Coding genes with many canonical transcripts (picking longest): ' + str(many_canon_coding_num))
+        info('Non-coding genes with many canonical transcripts (keeping all): ' + str(many_canon_mirna_num))
+
+        info()
         info('Sorting...')
         regions = []
-        for g in sorted(coding_genes, key=lambda r: r.get_key()):
-            regions.append(g)
-            for e in sorted(g.exons, key=lambda r: r.get_key()):
-                regions.append(e)
+
+        printed_genes = set()
+        transcripts = []
+        for g in canon_genes:
+            for tx in g.transcripts:
+                transcripts.append(tx)
+        for tx in sorted(transcripts, key=lambda tx: tx.get_key()):
+            to_add_gene = all(other_tx.biotype == 'protein_coding' for other_tx in tx.gene.transcripts) and tx.gene not in printed_genes
+            if to_add_gene:
+                # skip gene feature for all miRNA because there are multi-domain miRNA located in different
+                # places with the same gene name
+                regions.append(tx.gene)
+                printed_genes.add(tx.gene)
+                if len(tx.gene.transcripts) > 1:
+                    pass
+            if tx.exons:
+                regions.append(tx)
+                for e in tx.exons:
+                    regions.append(e)
 
         info('Writing ' + str(len(regions)) + ' regions')
 
@@ -370,15 +446,20 @@ def get_approved_gene_symbol(approved_gene_by_name, approved_gnames_by_prev_gnam
 def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym):
     gene_by_name_and_chrom = dict()
 
+    prev_chrom = None
     for l in inp:
         if l and not l.startswith('#'):
-            ucsc_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, gene_symbol =\
+            transcript_id, ucsc_chrom, strand, cdsStart, cdsEnd, exonCount, exonStarts, exonEnds, gene_symbol =\
                 l.replace('\n', '').split('\t')
             cdsStart = int(cdsStart)
             cdsEnd = int(cdsEnd)
             exonCount = int(exonCount)
             exonStarts = [int(v) + 1 for v in exonStarts.split(',') if v]
             exonEnds = map(int, filter(None, exonEnds.split(',')))
+
+            if ucsc_chrom != prev_chrom:
+                info(ucsc_chrom)
+                prev_chrom = ucsc_chrom
 
             # approved_gene_symbol, status = get_approved_gene_symbol(
             #     approved_gene_by_name, approved_gnames_by_prev_gname, approved_gnames_by_synonym,
@@ -397,16 +478,18 @@ def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_
             # out.write('\t'.join([ucsc_chrom, str(min(txStart, cdsStart)), str(max(txEnd, cdsEnd)),
             #                      gene_symbol, '.', strand, 'Gene', '.']) + '\n')
 
-            if gene_symbol == 'FAM109B':
-                pass
+            assert txStart <= cdsStart, l
+            assert txEnd >= cdsEnd, l
 
             if (gene_symbol, ucsc_chrom) not in gene_by_name_and_chrom:
-                gene = Gene(ucsc_chrom, chr_order.get(ucsc_chrom), min(txStart, cdsStart), str(max(txEnd, cdsEnd)), gene_symbol, strand)
-                gene_by_name_and_chrom[(gene_symbol, ucsc_chrom)] = gene
+                gene = Gene(ucsc_chrom, chr_order.get(ucsc_chrom), gene_symbol, strand)
                 gene_by_name_and_chrom[(gene_symbol, ucsc_chrom)] = gene
             gene = gene_by_name_and_chrom[(gene_symbol, ucsc_chrom)]
 
-            for j, eStart, eEnd in zip(
+            transcript = Transcript(gene, transcript_id, txStart, txEnd, strand)
+            gene.transcripts.append(transcript)
+
+            for exon_number, eStart, eEnd in zip(
                    range(exonCount),
                    [s for s in exonStarts if s],
                    [e for e in exonEnds if e]):
@@ -415,28 +498,57 @@ def _proc_ucsc(inp, out, chr_order):  #, approved_gene_by_name, approved_gnames_
                 exon = None
                 if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0,
                                                          # no CDS for this gene, thus reporting exons
-                    # exon = Exon(gene, eStart, eEnd, '', 'Exon')
-                    pass
+                    exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
+                    if gene_symbol.startswith('MIR'):
+                        transcript.biotype = 'miRNA'
                 else:
+                    transcript.biotype = 'protein_coding'
                     if cdsStart <= eStart:
-                        exon = Exon(gene, eStart, eEnd, '', 'CDS')
+                        exon = Exon(transcript, eStart, eEnd, 'CDS', exon_number)
                     elif eEnd > cdsStart:
-                        exon = Exon(gene, cdsStart, eEnd, '', 'CDS')
+                        exon = Exon(transcript, cdsStart, eEnd, 'CDS', exon_number)
                     else:
-                        err('Warn: exon ' + str(eStart) + ':' + str(eEnd) +
-                            ' does not contain CDS, CDS start = ' + str(cdsStart))
+                        err('Warn: exon ' + str(eStart) + ':' + str(eEnd) + ' does not contain CDS, CDS start = ' + str(cdsStart))
                 if exon:
-                    gene.exons.append(exon)
+                    transcript.exons.append(exon)
 
     return gene_by_name_and_chrom
 
 
-class Gene(SortableByChrom):
-    def __init__(self, chrom, chrom_ref_order, start, end, name, strand, biotype='', db_id='', source=''):
-        SortableByChrom.__init__(self, chrom, chrom_ref_order)
-        self.name = name
+class Transcript(SortableByChrom):
+    def __init__(self, gene, transcript_id, start, end, strand, biotype=None):
+        SortableByChrom.__init__(self, gene.chrom, gene.chrom_ref_order)
+        self.gene = gene
+        self.transcript_id = transcript_id
         self.start = start
         self.end = end
+        self.strand = strand
+        self.biotype = biotype
+        self.feature = 'Transcript'
+
+        self.exons = []
+
+    def __str__(self):
+        fs = [self.chrom,
+              '{}'.format(self.start) if self.start is not None else '.',
+              '{}'.format(self.end) if self.end is not None else '.',
+              self.gene.name or '.',
+              '.',
+              self.strand or '.',
+              self.feature or '.',
+              self.biotype or '.',
+              self.transcript_id,
+              ]
+        return '\t'.join(fs) + '\n'
+
+    def get_key(self):
+        return self.chrom_ref_order, self.start, self.end
+
+
+class Gene(SortableByChrom):
+    def __init__(self, chrom, chrom_ref_order, name, strand, biotype='', db_id='', source=''):
+        SortableByChrom.__init__(self, chrom, chrom_ref_order)
+        self.name = name
         self.strand = strand
         self.biotype = biotype
         self.db_id = db_id
@@ -445,14 +557,27 @@ class Gene(SortableByChrom):
 
         self.approved_gname = None
 
-        self.exons = []
+        self.transcripts = []
+
+    def get_start(self):
+        assert len(self.transcripts) == 1, 'There must be exactly 1 transcript in a gene to get gene start. Number of transcripts is ' + str(len(self.transcripts))
+        return self.transcripts[0].start
+
+    def get_end(self):
+        assert len(self.transcripts) == 1, 'There must be exactly 1 transcript in a gene to get gene end. Number of transcripts is ' + str(len(self.transcripts))
+        return self.transcripts[0].end
 
     def __str__(self):
         fs = [self.chrom,
-              '{}'.format(self.start) if self.start is not None else '.',
-              '{}'.format(self.end) if self.end is not None else '.',
-              self.name or '.', '.', self.strand or '.',
-              self.feature or '.', self.biotype or '.']
+              '{}'.format(self.get_start()) if self.get_start() is not None else '.',
+              '{}'.format(self.get_end()) if self.get_end() is not None else '.',
+              self.name or '.',
+              '.',
+              self.strand or '.',
+              self.feature or '.',
+              self.biotype or '.',
+              '.',
+              ]
         return '\t'.join(fs) + '\n'
 
     def __repr__(self):
@@ -460,24 +585,29 @@ class Gene(SortableByChrom):
                '{self.db_id} {self.source}'.format(self=self)
 
     def get_key(self):
-        return self.chrom_ref_order, self.start, self.end
+        return self.chrom_ref_order, self.get_start(), self.get_end()
 
 
 class Exon(SortableByChrom):
-    def __init__(self, gene, start, end, biotype=None, feature=None):
-        SortableByChrom.__init__(self, gene.chrom, gene.chrom_ref_order)
-        self.gene = gene
+    def __init__(self, transcript, start, end, feature, exon_number):
+        SortableByChrom.__init__(self, transcript.gene.chrom, transcript.gene.chrom_ref_order)
+        self.transcript = transcript
         self.start = start
         self.end = end
-        self.biotype = biotype
         self.feature = feature
+        self.exon_number = exon_number
 
     def __str__(self):
-        fs = [self.gene.chrom,
+        fs = [self.transcript.gene.chrom,
               '{}'.format(self.start) if self.start is not None else '.',
               '{}'.format(self.end) if self.end is not None else '.',
-              self.gene.name or '.', '.', self.gene.strand or '.',
-              self.feature or '.', self.biotype or '.']
+              self.transcript.gene.name or '.',
+              '{}'.format(self.exon_number) if self.exon_number is not None else '.',
+              self.transcript.gene.strand or '.',
+              self.feature or '.',
+              self.transcript.biotype or '.',
+              self.transcript.transcript_id or '.',
+             ]
         return '\t'.join(fs) + '\n'
 
     def get_key(self):
@@ -497,7 +627,146 @@ def is_approved_symbol(gname, approved_gene_by_name):
     return True
 
 
-def _proc_ensembl(inp, out, chr_order, additional_feature_list=None):
+def _proc_refseq_gff3(inp, out, chr_order, additional_feature_list=None):
+    gene_by_name = OrderedDict()
+    gene_by_id = OrderedDict()
+
+    info('Parsing RefSeq GFF3...')
+    total_lines = 0
+    total_non_coding_genes = 0
+
+    # TODO: from here
+
+    for l in inp:
+        if l and not l.startswith('#'):
+            # refseq_id, db, feature, start, end,
+
+            chrom, _, feature, start, end, _, strand, _, props_line = l.replace('\n', '').split('\t')
+
+            # if is_local():
+            #     if chrom != '21':
+            #         continue
+
+            total_lines += 1
+            if total_lines % 1000 == 0:
+                info(str(total_lines / 1000) + 'k lines, ' + str(len(gene_by_name)) + ' genes found')
+                sys.stdout.flush()
+
+            try:
+                _prop_dict = dict((t.strip().split(' ')[0], ' '.join(t.strip().split(' ')[1:]))
+                                  for t in props_line.split(';') if t.strip())
+            except ValueError:
+                sys.stderr.write(format_exc())
+                sys.stderr.write(l)
+
+            gene_symbol = _rm_quotes(_prop_dict['gene_name'])
+            gene_id = _rm_quotes(_prop_dict['gene_id'])
+            gene_biotype = _rm_quotes(_prop_dict['gene_biotype'])
+            gene_source = _rm_quotes(_prop_dict['gene_source'])
+
+            # if gene_symbol == 'PTENP1':
+            #     sys.stderr.write('PTENP1\n')
+
+            if not ALL_EXONS and gene_biotype not in [
+                'protein_coding',
+                'nonsense_mediated_decay',
+                'non_stop_decay',
+                'processed_transcript',
+                'polymorphic_pseudogene',
+                'sense_intronic',
+                'sense_overlapping',
+                'antisense',
+
+            ] and not any(b in gene_biotype for b in ['RNA', 'IG_', 'TR_']):
+                total_non_coding_genes += 1
+                continue
+
+            full_feature_list = ['gene', 'CDS', 'stop_codon', 'exon'] + additional_feature_list
+            if ALL_EXONS:
+                full_feature_list = ['gene', 'exon']
+            # sys.stderr.write('Full feature list: ' + str(full_feature_list) + '\n')
+            if feature not in full_feature_list:
+                continue
+
+            start, end = int(start) - 1, int(end)
+
+            if int(end) <= int(start):
+                info('Error: start > end: ' + l)
+                continue
+
+            chrom = parse_ensembl_chrom(chrom)
+            if not chrom:
+                continue
+
+            if feature == 'gene':
+                # assert gene_biotype == biotype, 'Gene: gene_biotype "' + gene_biotype + '"
+                # do not match biotype "' + biotype + '" for ' + gene_symbol
+
+                gene = Gene(chrom, chr_order.get(chrom), start, end, gene_symbol, strand,
+                            gene_biotype, gene_id, gene_source)
+
+                if gene.name in gene_by_name:
+                    prev_gene = gene_by_name[gene.name]
+
+                    if gene.source != prev_gene.source:
+                        err('    Duplicated gene in different databases:')
+                        err('        This: ' + gene.__repr__())
+                        err('        Prev: ' + prev_gene.__repr__())
+                        # answer = raw_input('Which one to pick? This (1), prev (2), longest (Enter): ')
+                        #
+                        # if answer == '1' or answer == '' and gene.end - gene.start >
+                        # prev_gene.end - prev_gene.start:
+                        #     del gene_by_name[prev_gene.name]
+                        #     del gene_by_id[prev_gene.db_id]
+                        #
+                        # else:
+                        #     continue
+
+                        if gene.source == 'ensembl' or prev_gene.source == 'havana':
+                            del gene_by_name[prev_gene.name]
+                            del gene_by_id[prev_gene.db_id]
+                            err('        Picking up this one.')
+
+                        if prev_gene.source == 'ensembl' or gene.source == 'havana':
+                            err('        Picking up previous one.')
+                            continue
+
+                    else:
+                        err('    Duplicated gene in ' + gene.source + ':')
+                        err('        ' + gene.__repr__())
+                        prev_gene.start = min(prev_gene.start, gene.start)
+                        prev_gene.end = max(prev_gene.end, gene.end)
+                        prev_gene.feature = 'Multi_Gene'
+                        continue
+
+                    err('')
+
+                gene_by_name[gene_symbol] = gene
+                gene_by_id[gene_id] = gene
+
+            elif feature in ['CDS', 'stop_codon'] \
+                    or feature == 'exon' and ('RNA' in gene_biotype or ALL_EXONS) \
+                    or feature in additional_feature_list:
+                assert gene_symbol in gene_by_name, 'Error: ' + feature + ' record before gene record ' + \
+                        gene_symbol + ', ' + gene_id + '; gene_by_name: ' + str(gene_by_name.keys())
+                gene = gene_by_name[gene_symbol]
+                if gene.gene_id == gene_id:
+                    assert gene_biotype == gene.biotype, feature + ': gene_biotype "' + gene_biotype + \
+                         '" do not match biotype "' + gene.biotype + '" for ' + gene_symbol
+                    exon = Exon(gene, start, end, gene_biotype, feature)
+                    gene.exons.append(exon)
+
+    info()
+    info(
+        'Processed ' +
+        str(total_lines) + ' lines, ' +
+        str(total_non_coding_genes) + ' non-coding genes skipped, ' +
+        str(len(gene_by_name)) + ' coding genes found')
+    info()
+    return gene_by_name
+
+
+def _proc_ensembl_gtf(inp, out, chr_order, additional_feature_list=None):
     if additional_feature_list is None:
         additional_feature_list = []
 

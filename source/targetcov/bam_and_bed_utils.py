@@ -105,9 +105,9 @@ def remove_comments(cnf, bed_fpath):
     return iterate_file(cnf, bed_fpath, f, suffix='rmcmt')
 
 
-def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
-    if exons_bed is None and target_bed is None:
-        warn('No bed and no exons in the system config. Not making detailed per-gene reports.')
+def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
+    if features_bed is None and target_bed is None:
+        warn('No input target BED, and no features BED in the system config specified. Not making detailed per-gene reports.')
         # return None, None, None, None
 
     if target_bed:
@@ -116,15 +116,15 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
     if seq2c_bed:
         seq2c_bed = verify_bed(seq2c_bed, is_critical=True)
 
-    if exons_bed:
-        exons_bed = verify_bed(exons_bed, is_critical=True)
+    if features_bed:
+        features_bed = verify_bed(features_bed, is_critical=True)
 
-    if exons_bed and target_bed and abspath(exons_bed) == abspath(target_bed):
-        warn('Same file used for exons and amplicons: ' + exons_bed)
+    # if features_bed and target_bed and abspath(features_bed) == abspath(target_bed):
+    #     warn('Same file used for exons and amplicons: ' + features_bed)
 
-    # Exons
-    exons_no_genes_bed = None
-    if exons_bed:
+    # Features
+    features_no_genes_bed = None
+    if features_bed:
         # info()
         # info('Merging regions within genes...')
         # exons_bed = group_and_merge_regions_by_gene(cnf, exons_bed, keep_genes=True)
@@ -134,9 +134,9 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         # exons_bed = sort_bed(cnf, exons_bed)
 
         info()
-        info('Filtering exon bed file to have only non-gene records...')
-        exons_no_genes_bed = intermediate_fname(cnf, exons_bed, 'no_genes_cut')
-        call(cnf, 'grep -vw Gene ' + exons_bed, output_fpath=exons_no_genes_bed)
+        info('Filtering the features bed file to have only non-gene and no-transcript records...')
+        features_no_genes_bed = intermediate_fname(cnf, features_bed, 'no_genes')
+        call(cnf, 'grep -vw Gene ' + features_bed + ' | grep -vw Transcript', output_fpath=features_no_genes_bed)
 
     ori_target_bed_path = target_bed
     if target_bed:
@@ -155,13 +155,13 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         cols = count_bed_cols(target_bed)
         if cnf.reannotate or cols < 4:
             info()
-            if not exons_bed:
-                critical(str(cols) + ' columns (less than 4), and no exons to annotate regions '
-                                     '(please make sure you have set the "exons" key in the corresponding genomes section '
-                                     '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
-            info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in amplicons bed is ' + str(cols) +
-                 '. Annotating amplicons with gene names from Ensembl...')
-            target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
+            if not features_bed:
+                critical(str(cols) + ' columns (less than 4), and no features to annotate regions '
+                    '(please make sure you have set the "features" key in the corresponding genome section '
+                    '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
+            info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in the target BED is ' + str(cols) +
+                '. Annotating target with the gene names from the "features" file ' + features_bed + '...')
+            target_bed = annotate_amplicons(cnf, target_bed, features_bed)
 
     def remove_no_anno(l, i):
         if l.split('\t')[3].strip() == '.': return None
@@ -184,12 +184,12 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         cols = count_bed_cols(seq2c_bed)
         if cols < 4:
             info()
-            if not exons_bed:
+            if not features_bed:
                 critical(str(cols) + ' columns (less than 4), and no exons to annotate regions '
                                      '(please make sure you have set the "exons" key in the corresponding genomes section '
                                      '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
             info('Number columns in SV bed is ' + str(cols) + '. Annotating amplicons with gene names from Ensembl...')
-            seq2c_bed = annotate_amplicons(cnf, seq2c_bed, exons_bed)
+            seq2c_bed = annotate_amplicons(cnf, seq2c_bed, features_bed)
         elif 8 > cols > 4:
             seq2c_bed = cut(cnf, seq2c_bed, 4)
         elif cols > 8:
@@ -198,8 +198,7 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         seq2c_bed = iterate_file(cnf, seq2c_bed, remove_no_anno, suffix='filt')
 
     else:
-        info('Filtering non-annotated entries in seq2c bed')
-        seq2c_bed = verify_bed(cnf.genome.refseq) or cut(cnf, exons_no_genes_bed, 4)
+        seq2c_bed = verify_bed(cnf.genome.cds)
 
     if target_bed:
         info()
@@ -209,10 +208,10 @@ def prepare_beds(cnf, exons_bed=None, target_bed=None, seq2c_bed=None):
         info('Sorting target by (chrom, gene name, start)')
         target_bed = sort_bed(cnf, target_bed)
 
-    return exons_bed, exons_no_genes_bed, target_bed, seq2c_bed
+    return features_bed, features_no_genes_bed, target_bed, seq2c_bed
 
 
-def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed):
+def extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_no_genes_bed):
     gene_key_set = set()
     gene_key_list = []
 
@@ -235,34 +234,34 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_gen
         info()
         gene_key_set, gene_key_list = get_gene_keys(target_bed)
         info('Using genes from the amplicons list ' + target_bed)
-        if exons_bed and cnf.prep_bed is not False:
+        if features_bed and cnf.prep_bed is not False:
             info('Trying filtering exons with these ' + str(len(gene_key_list)) + ' genes.')
-            exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_key_set, suffix='filt_genes_1st_round')
-            if not verify_file(exons_anno_bed):
+            features_filt_bed = filter_bed_with_gene_set(cnf, features_bed, gene_key_set, suffix='target_genes_1st_round')
+            if not verify_file(features_filt_bed):
                 info()
-                warn('No gene symbols from the capture bed file was found in Ensemble. Re-annotating target...')
-                target_bed = annotate_amplicons(cnf, target_bed, exons_bed)
+                warn('No gene symbols from the capture BED file was found in the features BED file. Re-annotating target...')
+                target_bed = annotate_amplicons(cnf, target_bed, features_bed)
                 #info('Merging regions within genes...')
                 #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
-                info('Sorting amplicons_bed by (chrom, gene name, start)')
+                info('Sorting amplicons_bed by (chrom, gene_name, start)')
                 target_bed = sort_bed(cnf, target_bed)
                 info('Getting gene names again...')
                 gene_key_set, gene_key_list = get_gene_keys(target_bed)
                 info()
-                info('Using genes from the new amplicons list, filtering exons with this genes.')
-                exons_anno_bed = filter_bed_with_gene_set(cnf, exons_bed, gene_key_set, suffix='filt_genes_2nd_round')
-                if not verify_file(exons_anno_bed):
-                    critical('No gene symbols from the capture bed file was found in Ensemble.')
-            exons_bed = exons_anno_bed
-            info('Filtering the full exons file including gene records.')
-            exons_no_genes_bed = filter_bed_with_gene_set(cnf, exons_no_genes_bed, gene_key_set)
-    elif exons_no_genes_bed:
+                info('Using genes from the new amplicons list, filtering features with this genes again.')
+                features_filt_bed = filter_bed_with_gene_set(cnf, features_bed, gene_key_set, suffix='target_genes_2nd_round')
+                if not verify_file(features_filt_bed):
+                    critical('No gene symbols from the capture BED file was found in the features BED.')
+            features_bed = features_filt_bed
+            info('Filtering the full features file including gene records.')
+            features_no_genes_bed = filter_bed_with_gene_set(cnf, features_no_genes_bed, gene_key_set, suffix='target_genes')
+    elif features_no_genes_bed:
         info()
-        info('No target, getting the gene names from exons...')
-        gene_key_set, gene_key_list = get_gene_keys(exons_no_genes_bed)
+        info('No target (WGS), getting the gene names from the full features list...')
+        gene_key_set, gene_key_list = get_gene_keys(features_no_genes_bed)
     info()
 
-    return gene_key_set, gene_key_list, target_bed, exons_bed, exons_no_genes_bed
+    return gene_key_set, gene_key_list, target_bed, features_bed, features_no_genes_bed
 
 
 def calc_region_number(bed_fpath):
@@ -291,13 +290,13 @@ def get_gene_keys(bed_fpath, chrom_index=0, gene_index=3):
     return gene_keys_set, gene_keys_list
 
 
-def annotate_amplicons(cnf, amplicons_bed, exons_bed):
-    output_fpath = intermediate_fname(cnf, amplicons_bed, 'ann')
+def annotate_amplicons(cnf, target_bed, features_bed):
+    output_fpath = intermediate_fname(cnf, target_bed, 'ann')
 
     annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
     bedtools = get_system_path(cnf, 'bedtools')
 
-    cmdline = '{annotate_bed_py} {amplicons_bed} --work-dir {cnf.work_dir} --reference {exons_bed} ' \
+    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} --reference {features_bed} ' \
               '--genome {cnf.genome.name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
               '-o {output_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath, stdout_to_outputfile=False)

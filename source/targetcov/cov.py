@@ -64,11 +64,12 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
             ReportSection('target_metrics_wgs', 'Genome coverage', [
                 Metric('Covered bases in genome', short_name='genome covered', unit='bp'),
                 Metric('Percentage of genome covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Covered bases in exome', short_name='exome covered', unit='bp'),
-                Metric('Percentage of exome covered by at least 1 read', short_name='%', unit='%'),
-                Metric('Percentage of reads mapped on exome', short_name='reads on exome', unit='%',
-                       description='Percentage of reads mapped on regions coding a protein or ncRNA, based on RefSeq.'),
-                Metric('Percentage of reads mapped off exome', short_name='off exome', unit='%', quality='Less is better'),
+                Metric('Covered bases in exome', short_name='CDS covered', description='Covered CDS bases. CDS coordinates are taken from RefSeq', unit='bp'),
+                Metric('Percentage of exome covered by at least 1 read', short_name='%', description='Percentage of CDS covered by at least 1 read. CDS coordinates are taken from RefSeq', unit='%'),
+                Metric('Percentage of reads mapped on exome', short_name='reads on CDS', unit='%',
+                       description='Percentage of reads mapped on CDS. CDS coordinates are taken from RefSeq'),
+                Metric('Percentage of reads mapped off exome', short_name='off CDS', unit='%', quality='Less is better',
+                       description='Percentage of reads mapped outside of CDS. CDS coordinates are taken from RefSeq'),
                 Metric('Percentage of usable reads', short_name='usable reads', unit='%',
                        description='Share of mapped unique reads in all reads (reported in the very first column Reads)'),
             ]),
@@ -290,9 +291,9 @@ def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
     return gender
 
 
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_keys_list):
+def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
-    gene_by_name_and_chrom = build_gene_objects_list(cnf, sample.name, exons_bed, gene_keys_list)
+    gene_by_name_and_chrom = build_gene_objects_list(cnf, sample.name, features_bed, gene_keys_list)
 
     # ref_fapth = cnf.genome.seq
     original_target_bed = cnf.original_target_bed or target_bed
@@ -340,18 +341,18 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, exons_bed, exons_
     if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
         reads_stats['mapped_dedup_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath) or 0
-    elif cnf.genome.refseq:
-        info('Using refseq ' + cnf.genome.refseq + ' to calc reads on exome')
-        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, cnf.genome.refseq, bam_fpath) or 0
-    elif exons_no_genes_bed:
-        info('Using ensemble ' + exons_no_genes_bed + ' to calc reads on exome')
-        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, exons_no_genes_bed, bam_fpath) or 0
+    elif cnf.genome.cds:
+        info('Using the CDS reference BED ' + cnf.genome.cds + ' to calc "reads on CDS"')
+        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, cnf.genome.cds, bam_fpath) or 0
+    # elif features_no_genes_bed:
+    #     info('Using ensemble ' + features_no_genes_bed + ' to calc reads on exome')
+    #     reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, features_no_genes_bed, bam_fpath) or 0
 
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
     info()
-    per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed,
-                                           exons_no_genes_bed, output_dir, gene_by_name_and_chrom)
+    per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed,
+                                           features_no_genes_bed, output_dir, gene_by_name_and_chrom)
 
     # key_genes_report = make_key_genes_reports(cnf, sample, gene_by_name, depth_stats['ave_depth'])
 
@@ -504,7 +505,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     return report
 
 
-def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no_genes_bed, output_dir, gene_by_name_and_chrom):
+def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, features_no_genes_bed, output_dir, gene_by_name_and_chrom):
     info('-' * 70)
     info('Detailed exon-level report')
 
@@ -517,12 +518,17 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
             for l in f:
                 rep.rows.append(1)
                 line = l.strip().split('\t')
+
                 if len(line) < 11 or l.startswith('#'):
                     continue
+                transcript_id = None
                 chrom, start, end, size, gene_name, strand, feature, biotype, min_depth, avg_depth, std_dev = line[:11]
+                if min_depth.startswith('N'):
+                    chrom, start, end, size, gene_name, strand, feature, biotype, transcript_id, min_depth, avg_depth, std_dev = line[:12]
+
                 if gene_name != '.':
-                    region = Region(gene_name=gene_name, exon_num=None, strand=strand, biotype=biotype,
-                         feature=feature, extra_fields=list(), chrom=chrom,
+                    region = Region(gene_name=gene_name, transcript_id=transcript_id, exon_num=None,
+                         strand=strand, biotype=biotype, feature=feature, extra_fields=list(), chrom=chrom,
                          start=int(start) if start != '.' else None,
                          end=int(end) if end != '.' else None,
                          size=int(size) if size != '.' else None,
@@ -550,8 +556,8 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, exons_bed, exons_no
 
     else:
         per_gene_report = None
-        if exons_bed or target_bed:
-            per_gene_report = _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes_bed,
+        if features_bed or target_bed:
+            per_gene_report = _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no_genes_bed,
                                                         target_bed, bam_fpath, gene_by_name_and_chrom)
             #per_gene_report = _generate_report_from_regions(
             #        cnf, sample, output_dir, gene_by_name_and_chrom.values(), un_annotated_amplicons)
@@ -618,6 +624,7 @@ def get_detailed_metric_storage(depth_threshs):
             Metric('Strand'),
             Metric('Feature'),
             Metric('Biotype'),
+            Metric('Transcript'),
             Metric('Min depth'),
             Metric('Ave depth'),
             Metric('Std dev', description='Coverage depth standard deviation'),
@@ -713,15 +720,15 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes
         min_depth_col = None
         std_dev_col = None
         _total_regions_count = 0
-        with open(bedcov_output_fpath) as bed_file:
-            for line in bed_file:
+        with open(bedcov_output_fpath) as bedcov_file:
+            for line in bedcov_file:
                 if line.startswith('#'):
                     read_count_col = line.split('\t').index('readCount')
                     mean_cov_col = line.split('\t').index('meanCoverage')
                     min_depth_col = line.split('\t').index('minDepth')
                     std_dev_col = line.split('\t').index('stdDev')
                     continue
-                line_tokens = line.strip().split()
+                line_tokens = line.replace('\n', '').split()
                 chrom = line_tokens[0]
                 start, end = map(int, line_tokens[1:3])
                 region_size = end - start
@@ -762,6 +769,8 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes
                             region.feature = 'CDS'
                         if len(extra_fields) >= 4:
                             region.biotype = extra_fields[3]
+                        if len(extra_fields) >= 5:
+                            region.transcript_id = extra_fields[4]
                     gene_by_name_and_chrom[(gene_name, chrom)].add_exon(region)
                     gene_by_name_and_chrom[(gene_name, chrom)].chrom = region.chrom
                     gene_by_name_and_chrom[(gene_name, chrom)].strand = region.strand
@@ -854,6 +863,7 @@ def add_region_to_report(report, region, depth_threshs):
     rep_region.add_record('Strand', region.strand)
     rep_region.add_record('Feature', region.feature)
     rep_region.add_record('Biotype', region.biotype)
+    rep_region.add_record('Transcript', region.transcript_id)
     rep_region.add_record('Min depth', region.min_depth)
     rep_region.add_record('Ave depth', region.avg_depth)
     rep_region.add_record('Std dev', region.std_dev)

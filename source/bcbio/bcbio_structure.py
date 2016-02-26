@@ -693,12 +693,12 @@ class BCBioStructure(BaseProjectStructure):
             if not self.bed and self.sv_bed:
                 info('Not WGS, no --bed, setting --bed as sv_regions: ' + self.sv_bed)
                 self.bed = self.sv_bed
-            if not self.bed and cnf.genome.refseq:
-                info('Not WGS, no --bed, setting --bed as RefSeq: ' + cnf.genome.refseq)
-                self.bed = cnf.genome.refseq
-        if not self.sv_bed and cnf.genome.refseq:
-            info('No sv_regions, setting sv_regions as RefSeq ' + cnf.genome.refseq)
-            self.sv_bed = cnf.genome.refseq
+            if not self.bed and cnf.genome.cds:
+                info('Not WGS, no --bed, setting --bed as CDS reference BED file: ' + cnf.genome.cds)
+                self.bed = cnf.genome.cds
+        if not self.sv_bed and cnf.genome.cds:
+            info('No sv_regions, setting sv_regions as CDS reference BED file ' + cnf.genome.cds)
+            self.sv_bed = cnf.genome.cds
 
         for s in self.samples:
             s.bed = self.bed  # for TargQC

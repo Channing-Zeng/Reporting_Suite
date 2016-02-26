@@ -530,9 +530,13 @@ class ClinicalExperimentInfo:
                 if l.startswith('#'):
                     continue
 
-                fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
+                fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
                 chrom, start, end, size, symbol, strand, feature, biotype, min_depth, ave_depth, std_dev, wn20pcnt = fs[:12]
                 pcnt_val_by_thresh = fs[12:]
+                if min_depth.startswith('N'):
+                    chrom, start, end, size, symbol, strand, feature, biotype, transcript_id, min_depth, ave_depth, std_dev, wn20pcnt = fs[:13]
+                    pcnt_val_by_thresh = fs[13:]
+
                 symbol = get_val(symbol)
                 if (symbol, chrom) not in self.key_gene_by_name_chrom:
                     continue

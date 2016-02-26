@@ -37,21 +37,21 @@ def main(args):
                 dest='bed',
                 help='a BED file for capture panel or amplicons')
              ),
-            (['--exons', '--exome'], dict(
-                dest='exons',
-                help='a BED file with real CDS regions (default Ensembl is in system_config)')
+            (['--exons', '--exome', '--features'], dict(
+                dest='features',
+                help='a BED file with real CDS/Exon/Gene/Transcript regions with annotations (default "features" is in system_config)')
              ),
-            (['--exons-no-genes'], dict(
-                dest='exons_no_genes',
-                help='a BED file with real CDS regions, w/o Gene records (default Ensembl is in system_config)')
+            (['--exons-no-genes', '--features-no-genes'], dict(
+                dest='features_no_genes',
+                help='a BED file with real CDS/Exon regions with annotations, w/o Gene/Transcript records (default "features" is in system_config)')
              ),
             (['--original-bed'], dict(
                 dest='original_target_bed',
                 help='original bed file path (just for reporting)')
              ),
-            (['--original-exons'], dict(
-                dest='original_exons_bed',
-                help='original exons genes bed file path (just for reporting)')
+            (['--original-exons', '--original-features'], dict(
+                dest='original_features_bed',
+                help='original features genes bed file path (just for reporting)')
              ),
             (['--reannotate'], dict(
                 dest='reannotate',
@@ -101,12 +101,12 @@ def main(args):
 
     check_genome_resources(cnf)
 
-    exons_bed = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    if exons_bed:
-        info('Exons: ' + exons_bed)
-        exons_bed = verify_file(exons_bed)
+    features_bed = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
+    if features_bed:
+        info('Features: ' + features_bed)
+        features_bed = verify_file(features_bed)
     else:
-        info('no exons found')
+        info('No features BED found')
 
     if cnf.genes:
         genes_fpath = verify_file(cnf.genes)
@@ -119,11 +119,11 @@ def main(args):
     if cnf.bed:
         cnf.bed = verify_file(cnf.bed, is_critical=True)
         info('Using amplicons/capture panel ' + cnf.bed)
-    elif exons_bed:
+    elif features_bed:
         info('WGS, taking CDS as target')
 
     run_one(cnf, process_one, finalize_one, output_dir=cnf.output_dir,
-        exons_bed=exons_bed, exons_no_genes_bed=cnf.exons_no_genes)
+            features_bed=features_bed, features_no_genes_bed=cnf.features_no_genes)
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
@@ -146,12 +146,12 @@ def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
              stdout_to_outputfile=False, exit_on_error=False)
 
 
-def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed):
+def process_one(cnf, output_dir, features_bed, features_no_genes_bed):
     sample = TargQC_Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
 
     bam_fpath = cnf.bam
     target_bed = cnf.bed
-    cnf.original_exons_bed = cnf.original_exons_bed or exons_no_genes_bed or exons_bed
+    cnf.original_features_bed = cnf.original_features_bed or features_no_genes_bed or features_bed
     cnf.original_target_bed = cnf.original_target_bed or cnf.bed
 
     bam_fpath = bam_fpath
@@ -162,17 +162,17 @@ def process_one(cnf, output_dir, exons_bed, exons_no_genes_bed):
     gene_keys_list = None
     if cnf.prep_bed is not False:
         info('Preparing the BED file.')
-        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
+        features_bed, features_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, features_bed, target_bed)
 
-        gene_keys_set, gene_keys_list, target_bed, exons_bed, exons_no_genes_bed = \
-            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
+        gene_keys_set, gene_keys_list, target_bed, features_bed, features_no_genes_bed = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_no_genes_bed)
     else:
         info('The BED file is ready, skipping preparing.')
         gene_keys_set, gene_keys_list, _, _, _ = \
-            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
+            extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_no_genes_bed)
 
     avg_depth, gene_by_name_and_chrom, reports = make_targetseq_reports(
-        cnf, output_dir, sample, bam_fpath, exons_bed, exons_no_genes_bed, target_bed, gene_keys_list)
+        cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list)
 
     picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 

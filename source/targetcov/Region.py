@@ -24,8 +24,8 @@ class SortableByChrom:
 
 
 class Region:
-    def __init__(self, sample_name=None, gene_name=None, exon_num=None, strand=None, biotype=None,
-                 feature=None, extra_fields=list(),
+    def __init__(self, sample_name=None, gene_name=None, transcript_id=None,
+                 exon_num=None, strand=None, biotype=None, feature=None, extra_fields=list(),
                  chrom=None, start=None, end=None, size=None, min_depth=None,
                  avg_depth=None, std_dev=None, rate_within_normal=None, bases_by_depth=None):
 
@@ -36,6 +36,7 @@ class Region:
         self.exon_num = exon_num
         self.strand = strand
         self.biotype = biotype
+        self.transcript_id = transcript_id
 
         self.chrom = chrom
         self.start = start  # int
@@ -268,7 +269,7 @@ class GeneInfo(Region):
             self.min_depth = min(self.min_depth, amplicon.min_depth) if self.min_depth else amplicon.min_depth
 
 
-def build_gene_objects_list(cnf, sample_name, exons_bed, gene_keys_list):
+def build_gene_objects_list(cnf, sample_name, features_bed, gene_keys_list):
     # info('Making unique gene list without affecting the order')
     # fixed_gene_names_list = []
     # added_gene_names_set = set()
@@ -290,7 +291,7 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_keys_list):
         info('Processed ' + str(len(gene_keys_list)) + ' gene records -> ' + str(len(gene_by_name_and_chrom)) + ' uniq gene sybmols')
 
     info('Building the Gene objects list based on target')
-    if exons_bed and gene_by_name_and_chrom:
+    if features_bed and gene_by_name_and_chrom:
         info()
         # info('Filtering exon bed file to have only gene records...')
         # exons_only_genes_bed = intermediate_fname(cnf, exons_bed, 'only_genes')
@@ -298,11 +299,11 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_keys_list):
         # info('Saved genes to ' + exons_only_genes_bed)
 
         info()
-        info('Setting start and end for the genes (based only on the target gene names found in the Exons list)')
+        info('Setting start and end for the genes (based only on the target gene names found in the features list)')
         i = 0
-        with open(exons_bed) as f:
+        with open(features_bed) as f:
             for l in f:
-                if '\tGene\t' in l:
+                if '\tTranscript\t' in l:
                     l = l.strip()
                     if l and not l.startswith('#'):
                         fs = l.split('\t')
@@ -312,6 +313,8 @@ def build_gene_objects_list(cnf, sample_name, exons_bed, gene_keys_list):
                         gene_by_name_and_chrom[(symbol, chrom)].end = int(end)
                         if len(fs) >= 8:
                             gene_by_name_and_chrom[(symbol, chrom)].biotype = fs[7]
+                        if len(fs) >= 9:
+                            gene_by_name_and_chrom[(symbol, chrom)].transcript_id = fs[8]
                         i += 1
         info('Processed ' + str(i) + ' genes')
         info()

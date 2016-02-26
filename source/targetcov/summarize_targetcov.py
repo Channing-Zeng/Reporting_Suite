@@ -160,7 +160,7 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
     return txt_fpath, tsv_fpath, html_fpath
 
 
-def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, exons_fpath=None, tag_by_sample=None):
+def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, features_fpath=None, tag_by_sample=None):
     step_greetings('TargQC coverage statistics for all samples')
 
     correct_samples = []
@@ -192,10 +192,10 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
     '''
 
     if cnf.extended:
-        if not exons_fpath or not bed_fpath:
-            err('For the extended analysis, capture and exons beds are required!')
+        if not features_fpath or not bed_fpath:
+            err('For the extended analysis, capture and features BED files are required!')
         else:
-            exons_bed, exons_no_genes_cut_bed, target_bed, _ = prepare_beds(cnf, exons_fpath, bed_fpath)
+            features_bed, features_no_genes_cut_bed, target_bed, _ = prepare_beds(cnf, features_fpath, bed_fpath)
 
             #norm_best_var_fpath, norm_comb_var_fpath = _report_normalize_coverage_for_variant_sites(
             #    cnf, summary_threads, output_dir, samples, 'oncomine', bed_fpath)
@@ -875,19 +875,17 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
 
 def get_bed_targqc_inputs(cnf, bed_fpath=None):
     if bed_fpath:
-        bed_fpath = verify_bed(bed_fpath, description='input bed file', is_critical=True)
-
-    exons_bed_fpath = adjust_path(cnf.exons if cnf.exons else cnf.genome.exons)
-    if exons_bed_fpath:
-        info('Exons: ' + exons_bed_fpath)
-
-    if bed_fpath:
+        bed_fpath = verify_bed(bed_fpath, description='Input BED file', is_critical=True)
         info('Using amplicons/capture panel ' + bed_fpath)
+
+    features_bed_fpath = adjust_path(cnf.features or cnf.genome.features)
+    if features_bed_fpath:
+        info('Features: ' + features_bed_fpath)
 
     genes_fpath = None
     if cnf.genes:
         genes_fpath = adjust_path(cnf.genes)
         info('Custom genes list: ' + genes_fpath)
 
-    return bed_fpath, exons_bed_fpath, genes_fpath
+    return bed_fpath, features_bed_fpath, genes_fpath
 

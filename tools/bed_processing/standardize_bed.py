@@ -125,11 +125,11 @@ def _read_args(args_list):
             info('\t' + k + ': ' + str(v))
     info()
 
-    opts.ensembl_bed_fpath = verify_file(opts.ensembl_bed_fpath or \
-        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed'))
+    # opts.ensembl_bed_fpath = verify_file(opts.ensembl_bed_fpath or \
+    #     ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed'))
 
     opts.refseq_bed_fpath = verify_file(opts.refseq_bed_fpath or \
-        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq.bed'))
+        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.bed'))
 
     return input_bed_fpath, output_bed_fpath, work_dirpath, opts
 
@@ -258,7 +258,7 @@ def _preprocess(cnf, bed_fpath, work_dirpath):
 def _annotate(bed_fpath, work_dirpath, cnf):
     annotated_files = []
     input_fpath = bed_fpath
-    references = [('RefSeq', cnf.refseq_bed_fpath), ('Ensembl', cnf.ensembl_bed_fpath)]
+    references = [('RefSeq', cnf.refseq_bed_fpath)]  #, ('Ensembl', cnf.ensembl_bed_fpath)]
 
     for id, (db_name, db_bed_fpath) in enumerate(references):
         output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann_' + db_name.lower())

@@ -11,7 +11,7 @@ from source.targetcov.summarize_targetcov import summarize_targqc
 from source.tools_from_cnf import get_system_path
 
 
-def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, exons_bed, genes_fpath=None):
+def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, features_bed, genes_fpath=None):
     # if not target_bed:
     #     target_bed = exons_bed
     #     info('No target_bed, using exons_bed instead')
@@ -23,9 +23,9 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, exons_bed
 
     jobs_to_wait = []
     if not cnf.only_summary:
-        exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed)
-        gene_keys_set, gene_keys_list, target_bed, exons_bed, exons_no_genes_bed = \
-            extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
+        features_bed, features_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, features_bed, target_bed)
+        gene_keys_set, gene_keys_list, target_bed, features_bed, features_no_genes_bed = \
+            extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_no_genes_bed)
         if not genes_fpath:
             genes_fpath = join(cnf.work_dir, 'genes.txt')
             with open(genes_fpath, 'w') as f:
@@ -36,7 +36,7 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, exons_bed
 
         targetcov_step, ngscat_step, qualimap_step = \
             _prep_steps(cnf, threads_per_sample, summary_threads,
-                samples, target_bed, exons_bed, exons_no_genes_bed, genes_fpath, main_script_name)
+                        samples, target_bed, features_bed, features_no_genes_bed, genes_fpath, main_script_name)
 
         summary_wait_for_steps = []
 
@@ -67,7 +67,7 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, exons_bed
 
     info('Making targqc summary')
     return summarize_targqc(cnf, summary_threads, output_dir, samples,
-                            bed_fpath=target_bed, exons_fpath=exons_bed)
+                            bed_fpath=target_bed, exons_fpath=features_bed)
 
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples,

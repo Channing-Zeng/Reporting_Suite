@@ -69,16 +69,16 @@ def proc_args(argv):
 
     check_genome_resources(cnf)
 
-    target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
+    target_bed, features_bed, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
     if not target_bed:
-        info('No bed is specified, using exons instead: ' + str(exons_bed))
+        info('No input BED is specified, using exons instead from ' + str(features_bed))
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
         if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
         verify_file(cnf.qsub_runner, is_critical=True)
 
-    return cnf, samples, target_bed, exons_bed, genes_fpath
+    return cnf, samples, target_bed, features_bed, genes_fpath
 
 
 def main():

@@ -14,7 +14,7 @@ from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_system_resources
 from source.prepare_args_and_cnf import check_genome_resources
 from source.targetcov.Region import SortableByChrom, get_chrom_order
-from source.targetcov.bam_and_bed_utils import intersect_bed
+from source.targetcov.bam_and_bed_utils import intersect_bed, verify_bed
 from source.utils import OrderedDefaultDict
 from collections import defaultdict, OrderedDict
 from os.path import getsize
@@ -25,7 +25,8 @@ from pybedtools import BedTool
 usage = """
     Input: Any BED file
     Output:
-        BED file with regions from input, followed by symbol from best gene overlap from Ensembl.
+        BED file with regions from input, followed by symbol from best gene overlap from the reference
+        features BED (RefSeq or Ensembl).
         Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
         If a region do not overlap any gene, it gets output once in a 3-col line (no symbol is provided).
 
@@ -68,7 +69,7 @@ def main():
     input_bed_fpath = verify_file(sys.argv[1], is_critical=True, description='Input BED file for ' + __file__)
 
     cnf = read_opts_and_cnfs(
-        description='Annotating BED file based on Ensemble exons and genes annotations.',
+        description='Annotating BED file based on reference features annotations.',
         extra_opts=[
             (['--reference'], dict(
                 dest='reference')
@@ -85,24 +86,24 @@ def main():
 
     chr_order = get_chrom_order(cnf)
 
-    exons_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    if not verify_file(exons_fpath, 'Ensemble file with exons w/genes for annotate_bed'):
-        critical('Ensemble file with exons w/genes for annotate_bed is required')
+    exons_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
+    if not verify_bed(exons_fpath, 'Annotated reference BED file'):
+        critical('Annotated reference is required')
 
-    genes_exons_bed, no_genes_exons_bed = _split_reference(cnf, exons_fpath)
+    gene_transcript_bed, cds_exon_bed = _split_reference(cnf, exons_fpath)
     bed = BedTool(input_bed_fpath).cut([0, 1, 2])
 
     info('Annotating based on CDS and exons...')
 
-    annotated, off_targets = _annotate(cnf, bed, no_genes_exons_bed, chr_order)
+    annotated, off_targets = _annotate(cnf, bed, cds_exon_bed, chr_order)
 
     if off_targets:
         off_target_bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
         # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
         # log('Saved off target1 to ' + str(off_target_fpath))
         info()
-        info('Trying to annotate based on genes rather than CDS and exons...')
-        annotated_2, off_targets = _annotate(cnf, off_target_bed, genes_exons_bed, chr_order)
+        info('Trying to annotate missed regions based on genes and transcrips rather than CDS and exons...')
+        annotated_2, off_targets = _annotate(cnf, off_target_bed, gene_transcript_bed, chr_order)
 
         for a in annotated_2:
             a.feature = 'UTR/Intron/Decay'
@@ -208,7 +209,17 @@ def _annotate(cnf, bed, ref_bed, chr_order):
 
     for fs in intersection:
         a_chr, a_start, a_end, e_chr, e_start, e_end, e_gene, e_exon, e_strand, \
-            e_feature, e_biotype, overlap_size = fs
+            e_feature, e_biotype = fs[:11]
+
+        overlap_size = None
+        if len(fs) == 12:
+            overlap_size = fs[11]
+        elif len(fs) == 13:
+            e_transcript, overlap_size = fs[11], fs[12]
+        else:
+            critical('Cannot parse the reference BED file - unexpected number of lines '
+                     '(' + str(len(fs)) + ') in ' + '\t'.join(str(f) for f in fs))
+
         assert e_chr == '.' or a_chr == e_chr, str((a_chr + ', ' + e_chr))
         total_lines += 1
         if (a_chr, a_start, a_end) not in met:
@@ -249,11 +260,11 @@ def _save_regions(regions, fpath):
     return fpath
 
 
-def _split_reference(cnf, exons_bed_fpath):
-    info('Splitting reference file into genes and non-genes:')
-    exons_bed = BedTool(exons_bed_fpath)
-    genes_exons_bed = exons_bed.filter(lambda x: x[6] in ['Gene'])
-    no_genes_exons_bed = exons_bed.filter(lambda x: x[6] not in ['Gene', 'Multi_Gene'])
+def _split_reference(cnf, features_bed_fpath):
+    info('Splitting the reference file into genes and non-genes:')
+    features_bed = BedTool(features_bed_fpath)
+    gene_transcript_bed = features_bed.filter(lambda x: x[6] in ['Gene', 'Transcript'])
+    cds_exon_bed = features_bed.filter(lambda x: x[6] in ['CDS', 'Exon'])
 
     # ref_bed_no_genes_fpath = join(cnf.work_dir, basename(exons_fpath) + '__no_whole_genes')
     # ref_bed_genes_fpath = join(cnf.work_dir, basename(exons_fpath) + '__whole_genes')
@@ -275,7 +286,7 @@ def _split_reference(cnf, exons_bed_fpath):
     #         subprocess.call(cmdline, shell=True, stdout=out)
     # log()
 
-    return genes_exons_bed, no_genes_exons_bed
+    return gene_transcript_bed, cds_exon_bed
 
 
 if __name__ == '__main__':

@@ -32,7 +32,7 @@ def main():
     parser.add_option('--reannotate', dest='reannotate', action='store_true', default=False, help='re-annotate BED file with gene names')
     parser.add_option('--dedup', dest='dedup', action='store_true', default=False, help='count duplicates in coverage metrics')
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
-    parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
+    parser.add_option('--exons', '--exome', '--features', dest='features', help='Annotated CDS/Exon/Gene/Transcripts BED file to make targetSeq exon/amplicon regions reports.')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
@@ -65,8 +65,8 @@ def main():
     bed_fpath = adjust_path(cnf.bed)
     info('Using amplicons/capture panel ' + bed_fpath)
 
-    exons_bed_fpath = adjust_path(cnf.exons) if cnf.exons else adjust_path(cnf.genome.exons)
-    info('Exons: ' + exons_bed_fpath)
+    features_bed_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
+    info('Features: ' + features_bed_fpath)
 
     genes_fpath = None
     if cnf.genes:
@@ -81,7 +81,7 @@ def main():
     info('*' * 70)
     info()
 
-    targqc_html_fpath = run_targqc(cnf, cnf.output_dir, bam_fpaths, basename(__file__), bed_fpath, exons_bed_fpath, genes_fpath)
+    targqc_html_fpath = run_targqc(cnf, cnf.output_dir, bam_fpaths, basename(__file__), bed_fpath, features_bed_fpath, genes_fpath)
     if targqc_html_fpath:
         send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
 

@@ -209,12 +209,12 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
 
     info('Preparing BED files')
     if cnf.prep_bed is not False:
-        exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons  # only for annotation
+        features_bed_fpath = cnf.features or cnf.genome.features  # only for annotation
         if cnf.bed or bcbio_structure.bed:
             _, _, _, seq2c_bed = \
-                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.bed, seq2c_bed=bcbio_structure.sv_bed)
+                prepare_beds(cnf, features_bed=features_bed_fpath, target_bed=bcbio_structure.bed, seq2c_bed=bcbio_structure.sv_bed)
         else:
-            seq2c_bed = verify_bed(cnf.genome.refseq)
+            seq2c_bed = verify_bed(cnf.genome.cds)
     else:
         seq2c_bed = verify_bed(cnf.bed)
 
@@ -344,16 +344,16 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
     seq2cov_fpath_by_sample = {s.name: join(seq2c_work_dir, s.name) for s in samples}
 
     result = []
-    exons_bed_fpath = adjust_path(cnf.exons) or adjust_path(cnf.genome.exons)
+    features_bed_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
     # print any(not verify_file(seq2cov_fpath_by_sample[s.name], silent=True) for s in samples)
     seq2c_bed = None
     if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name,
             silent=True) for s in samples) or not cnf.reuse_intermediate:
         if cnf.prep_bed is not False:
             _, _, _, seq2c_bed = \
-                prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=target_bed, seq2c_bed=target_bed)
+                prepare_beds(cnf, features_bed=features_bed_fpath, target_bed=target_bed, seq2c_bed=target_bed)
         else:
-            seq2c_bed = target_bed or exons_bed_fpath
+            seq2c_bed = target_bed or verify_bed(cnf.genome.cds)
 
     # info('Running first for the de-dupped version, then for the original version.')
     # Parallel(n_jobs=cnf.threads) \
