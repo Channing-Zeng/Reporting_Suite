@@ -584,13 +584,13 @@ class BCBioRunner:
         if step.run_on_chara and is_us():
             extra_qsub_opts += '-l h="chara|rask" '
         mem_opts = ''
-        if mem_m and not is_local():
-            mem_m = min(max(mem_m, 200), 90 * 1024)
-            mem = str(int(mem_m)) + 'M'
-            if mem_m < 1:
-                mem_opts = ''
-            else:
-                mem_opts = '-l h_vmem="' + mem + '" '
+        # if mem_m and not is_local():
+        #     mem_m = min(max(mem_m, 200), 90 * 1024)
+        #     mem = str(int(mem_m)) + 'M'
+        #     if mem_m < 1:
+        #         mem_opts = ''
+        #     else:
+        #         mem_opts = '-l h_vmem="' + mem + '" '
         qsub_cmdline = (
             '{qsub} -pe smp {threads} {mem_opts} {extra_qsub_opts} -S {bash} -q {queue} -p 0 '
             '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
@@ -649,7 +649,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=getsize(sample.bam) / 1024 / 1024 + 500)
+                            mem_m=getsize(sample.bam) / 1.5 / 1024 / 1024 + 500)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():

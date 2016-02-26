@@ -23,18 +23,18 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
     safe_mkdir(jbrowse_project_dirpath)
     jbrowse_tracks_fpath = join(jbrowse_data_path, 'tracks.conf')
 
-    vcf_fpaths = None
-
+    vcf_fpath_by_sample = None
     caller = bcbio_structure.variant_callers.get('vardict') or \
              bcbio_structure.variant_callers.get('vardict-java')
-    vcf_fpaths = caller.get_filt_vcf_by_sample()
+    if caller:
+        vcf_fpath_by_sample = caller.get_filt_vcf_by_sample()
 
     for sample in bcbio_structure.samples:
         if all(isfile(join(jbrowse_project_dirpath, sample.name + ext)) for ext in ['.bam', '.bam.bai', '.vcf.gz', '.vcf.gz.tbi', '.bigwig']):
             continue
         vcf_link = None
-        if vcf_fpaths:
-            vcf_fpath = vcf_fpaths[sample.name] if sample.name in vcf_fpaths else None
+        if vcf_fpath_by_sample:
+            vcf_fpath = vcf_fpath_by_sample[sample.name] if sample.name in vcf_fpath_by_sample else None
             if vcf_fpath and verify_file(vcf_fpath):
                 vcf_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath)
                 if not verify_file(vcf_fpath + '.tbi'):

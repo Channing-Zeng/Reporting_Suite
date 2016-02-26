@@ -48,11 +48,13 @@ def main():
 
     info()
 
-    mem_m = getsize(cnf.bam) / 1024 / 1024 + 500
-    mem_m = min(max(mem_m, 200), 90 * 1024)
-    mem = str(int(mem_m)) + 'M'
+    # mem_m = getsize(cnf.bam) / 3 / 1024 / 1024 + 200
+    # mem_m = min(max(mem_m, 200), 90 * 1024)
+    # mem = str(int(mem_m)) + 'M'
+    # mem_cmdl = ' --java-mem-size=' + mem
+    mem_cmdl = ''
 
-    cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + ' --java-mem-size=' + mem + ' -nr 5000 '
+    cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + mem_cmdl + ' -nr 5000 '
         '-bam {cnf.bam} -outdir {cnf.output_dir} {bed} -c -gd HUMAN').format(**locals())
     report_fpath = join(cnf.output_dir, 'qualimapReport.html')
 
