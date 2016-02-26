@@ -12,7 +12,7 @@ from source.qualimap.report_parser import parse_qualimap_sample_report
 import source.targetcov
 from source.calling_process import call
 from source.file_utils import intermediate_fname, verify_file, safe_mkdir, splitext_plus
-from source.logger import critical, info, err
+from source.logger import critical, info, err, warn
 from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
 from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list, Region, GeneInfo
@@ -544,7 +544,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, featu
                     region.rates_within_threshs = rates_within_threshs
                     if 'Capture' in feature:
                         gene_by_name_and_chrom[(gene_name, chrom)].add_amplicon(region)
-                    elif 'Gene' not in feature:
+                    elif 'CDS' in feature or 'Exon' in feature:
                         gene_by_name_and_chrom[(gene_name, chrom)].add_exon(region)
                     else:
                         gene_by_name_and_chrom[(gene_name, chrom)].chrom = region.chrom
@@ -689,29 +689,31 @@ def _unique_longest_exons(cnf, exons_bed_fpath):
     return unique_bed_fpath
 
 
-def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes_bed, target_bed, bam, gene_by_name_and_chrom):
+def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_genes_bed, target_bed, bam, gene_by_name_and_chrom):
     depth_thresholds = cnf.coverage_reports.depth_thresholds
     sample_name = sample.name
-    un_annotated_amplicons = []
 
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_thresholds))
     report.add_record('Sample', sample.name)
-    if exons_no_genes_bed or target_bed:
+    if features_no_genes_bed or target_bed:
         ready_target_bed = join(output_dir, 'target.bed')
         try:
             shutil.copy(target_bed or exons_bed, ready_target_bed)
         except OSError:
             err(traceback.format_exc())
 
-        info()
-        info('Calculation of coverage statistics for the regions in the input BED file...')
+    ready_to_report_genes = []
+    ready_to_report_set = set()
 
-    for (bed, feature) in zip([target_bed, exons_no_genes_bed], ['amplicons', 'exons']):
+    for (bed, feature) in zip([target_bed, features_no_genes_bed], ['amplicons', 'exons']):
         if not bed:
             continue
-        if feature == 'exons' and target_bed:
+        if feature == 'exons':
             info()
-            info('Calculating coverage statistics for exons...')
+            info('Calculating coverage statistics for CDS and miRNA exons...')
+        if feature == 'amplicons':
+            info()
+            info('Calculation of coverage statistics for the regions in the target BED file...')
         bedcov_output_fpath = launch_sambamba_depth(cnf, bed, bam)
         if not bedcov_output_fpath:
             continue
@@ -719,7 +721,10 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes
         mean_cov_col = None
         min_depth_col = None
         std_dev_col = None
-        _total_regions_count = 0
+        total_regions_count = 0
+
+        cur_unannotated_gene = None
+        info('Summarizing coverage statistiscs...')
         with open(bedcov_output_fpath) as bedcov_file:
             for line in bedcov_file:
                 if line.startswith('#'):
@@ -739,26 +744,36 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes
                 rates_within_threshs = line_tokens[std_dev_col + 1:-1]
 
                 extra_fields = tuple(line_tokens[4:read_count_col]) if read_count_col > 4 else ()
-                if (gene_name, chrom) not in gene_by_name_and_chrom:
-                    gene_by_name_and_chrom[(gene_name, chrom)] = GeneInfo(sample_name=sample_name, gene_name=gene_name, chrom=chrom)
 
                 region = Region(
                     sample_name=sample_name, chrom=chrom,
                     start=start, end=end, size=region_size,
                     avg_depth=ave_depth,
                     gene_name=gene_name, extra_fields=extra_fields)
-                if region.gene_name == '.':
-                    pass
+
                 region.rates_within_threshs = OrderedDict((depth, float(rate) / 100.0) for (depth, rate) in zip(depth_thresholds, rates_within_threshs))
                 region.min_depth = min_depth
                 region.std_dev = std_dev
+
                 if feature == 'amplicons':
                     region.feature = 'Capture'
                     if gene_name != '.':
-                        gene_by_name_and_chrom[(gene_name, chrom)].add_amplicon(region)
+                        cur_unannotated_gene = None
+                        gene = gene_by_name_and_chrom[(gene_name, chrom)]
+                        if (gene.gene_name, gene.chrom) not in ready_to_report_set:
+                            ready_to_report_genes.append(gene)
+                            ready_to_report_set.add((gene.gene_name, gene.chrom))
+                        gene.add_amplicon(region)
                     else:
-                        un_annotated_amplicons.append(region)
+                        if cur_unannotated_gene is None:
+                            cur_unannotated_gene = GeneInfo(sample_name=sample_name, gene_name=gene_name, chrom=chrom, feature='NotAnnotatedSummary')
+                            ready_to_report_genes.append(cur_unannotated_gene)
+                        cur_unannotated_gene.add_amplicon(region)
+                    # if (gene_name, chrom) not in gene_by_name_and_chrom:
+                    #     gene_by_name_and_chrom[(gene_name, chrom)] = GeneInfo(sample_name=sample_name, gene_name=gene_name, chrom=chrom)
+
                 else:
+                    gene = gene_by_name_and_chrom[(gene_name, chrom)]
                     if extra_fields:
                         region.exon_num = extra_fields[0]
                         if len(extra_fields) >= 2:
@@ -771,31 +786,43 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, exons_no_genes
                             region.biotype = extra_fields[3]
                         if len(extra_fields) >= 5:
                             region.transcript_id = extra_fields[4]
-                    gene_by_name_and_chrom[(gene_name, chrom)].add_exon(region)
-                    gene_by_name_and_chrom[(gene_name, chrom)].chrom = region.chrom
-                    gene_by_name_and_chrom[(gene_name, chrom)].strand = region.strand
+                    if gene.gene_name == 'MIR3687-1':
+                        pass
+                    gene.add_exon(region)
+                    if not target_bed:  # in case if only reporting based on features_bed
+                        if (gene.gene_name, gene.chrom) not in ready_to_report_set:
+                            ready_to_report_genes.append(gene)
+                            ready_to_report_set.add((gene.gene_name, gene.chrom))
 
-                _total_regions_count += 1
-                if _total_regions_count > 0 and _total_regions_count % 10000 == 0:
-                     info('  Processed {0:,} regions'.format(_total_regions_count))
+                    # gene.chrom = region.chrom
+                    # gene.strand = region.strand
 
-    for g in gene_by_name_and_chrom.values():
-        if g.gene_name != '.':
-            for a in g.get_amplicons():
-                add_region_to_report(report, a, depth_thresholds)
-            for e in g.get_exons():
-                add_region_to_report(report, e, depth_thresholds)
+                total_regions_count += 1
+                if total_regions_count > 0 and total_regions_count % 10000 == 0:
+                     info('  Processed {0:,} regions'.format(total_regions_count))
+
+    info('Collecting regions for the report (total ' + str(len(ready_to_report_genes)) + '): ', ending='')
+    for g in ready_to_report_genes:
+        info(g.gene_name, ending=', ', print_date=False)
+        for a in g.get_amplicons():
+            add_region_to_report(report, a, depth_thresholds)
+        for e in g.get_exons():
+            add_region_to_report(report, e, depth_thresholds)
+        if g.feature != 'NotAnnotatedSummary':
+            if g.gene_name == 'MIR3687-1':
+                pass
             process_gene(g, depth_thresholds)
             add_region_to_report(report, g, depth_thresholds)
+    info(print_date=True)
 
-    un_annotated_summary_region = next((g for g in gene_by_name_and_chrom.values() if g.gene_name == '.'), None)
-    if un_annotated_summary_region and un_annotated_amplicons:
-        un_annotated_summary_region.feature = 'NotAnnotatedSummary'
-        for ampl in un_annotated_amplicons:
-            ampl.gene_name = un_annotated_summary_region.gene_name
-            un_annotated_summary_region.add_amplicon(ampl)
-            add_region_to_report(report, ampl, depth_thresholds)
-        add_region_to_report(report, un_annotated_summary_region, depth_thresholds)
+    # un_annotated_summary_region = next((g for g in gene_by_name_and_chrom.values() if g.gene_name == '.'), None)
+    # if un_annotated_summary_region and un_annotated_amplicons:
+    #     un_annotated_summary_region.feature = 'NotAnnotatedSummary'
+    #     for ampl in un_annotated_amplicons:
+    #         ampl.gene_name = un_annotated_summary_region.gene_name
+    #         un_annotated_summary_region.add_amplicon(ampl)
+    #         add_region_to_report(report, ampl, depth_thresholds)
+    #     add_region_to_report(report, un_annotated_summary_region, depth_thresholds)
 
     report.txt_fpath = sample.targetcov_detailed_txt
     report.tsv_fpath = sample.targetcov_detailed_tsv
@@ -869,11 +896,10 @@ def add_region_to_report(report, region, depth_threshs):
     rep_region.add_record('Std dev', region.std_dev)
     rep_region.add_record('W/n 20% of ave depth', region.rate_within_normal)
 
+    if region.rates_within_threshs is None:
+        warn('Error: no rates_within_threshs for ' + str(region))
     for thresh in depth_threshs:
-        if region.rates_within_threshs is None:
-            err('Error: no rates_within_threshs for ' + str(region))
-        else:
-            rep_region.add_record('{}x'.format(thresh), region.rates_within_threshs[thresh])
+        rep_region.add_record('{}x'.format(thresh), region.rates_within_threshs.get(thresh) if region.rates_within_threshs else None)
 
 # def _bases_by_depth(depth_vals, depth_thresholds):
 #     bases_by_min_depth = {depth: 0 for depth in depth_thresholds}

@@ -72,7 +72,7 @@ def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=Fal
 
     with open(detailed_gene_report_fpath, 'r') as f:
         for i, line in enumerate(f):
-            if (not is_wgs and 'Capture' in line) or (is_wgs and ('\tExon' in line or 'CDS' in line)):
+            if (not is_wgs and 'Capture' in line) or (is_wgs and ('CDS' in line)):
                 ts = line.split('\t')
                 # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave  ...
                 chrom, s, e, size, symbol, strand, feature, biotype, min_depth, ave_depth = ts[:10]
@@ -82,7 +82,7 @@ def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=Fal
                 amplicons.append(ampl)
 
     if not amplicons:
-        critical('No ' + ('"Capture"' if not is_wgs else '"Exon"') + ' record was found in ' + detailed_gene_report_fpath)
+        critical('No ' + ('"Capture"' if not is_wgs else '"CDS"') + ' record was found in ' + detailed_gene_report_fpath)
 
     return amplicons
 

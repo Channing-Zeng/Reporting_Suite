@@ -826,7 +826,7 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
             break
 
         if all([not l.startswith('#') and ('Whole-Gene' in l or 'Gene-Exon' in l) for l in lines_for_each_sample]):
-            shared_fields = lines_for_each_sample[0].split('\t')[first_col:first_col+8]
+            shared_fields = lines_for_each_sample[0].split('\t')[first_col:first_col+9]
             reg = report.add_row()
             reg.add_record('Chr', get_val(shared_fields[0]))
             reg.add_record('Start', get_int_val(shared_fields[1]))
@@ -836,6 +836,7 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
             reg.add_record('Strand', get_val(shared_fields[5]))
             reg.add_record('Feature', get_val(shared_fields[6]))
             reg.add_record('Biotype', get_val(shared_fields[7]))
+            reg.add_record('Transcript', get_val(shared_fields[8]))
 
             min_depths, ave_depths, stddevs, withins = ([], [], [], [])
             percents_by_threshs = {t: [] for t in depth_threshs}
@@ -843,11 +844,11 @@ def _save_best_details_for_each_gene(depth_threshs, samples, output_dir):
             for l in lines_for_each_sample:
                 fs = l.split('\t')
 
-                min_depths.append(get_int_val(fs[first_col+8]))
-                ave_depths.append(get_float_val(fs[first_col+9]))
-                stddevs.append(get_float_val(fs[first_col+10]))
-                withins.append(get_float_val(fs[first_col+11]))
-                for t, f in zip(depth_threshs, fs[first_col+12:]):
+                min_depths.append(get_int_val(fs[first_col+9]))
+                ave_depths.append(get_float_val(fs[first_col+10]))
+                stddevs.append(get_float_val(fs[first_col+11]))
+                withins.append(get_float_val(fs[first_col+12]))
+                for t, f in zip(depth_threshs, fs[first_col+13:]):
                     percents_by_threshs[t].append(get_float_val(f))
 
             # counting bests

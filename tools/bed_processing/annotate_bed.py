@@ -66,7 +66,7 @@ usage = """
 def main():
     if len(sys.argv[1]) < 0:
         critical('Usage: ' + __file__ + ' Input_BED_file -o Annotated_BED_file')
-    input_bed_fpath = verify_file(sys.argv[1], is_critical=True, description='Input BED file for ' + __file__)
+    input_bed_fpath = verify_bed(sys.argv[1], is_critical=True, description='Input BED file for ' + __file__)
 
     cnf = read_opts_and_cnfs(
         description='Annotating BED file based on reference features annotations.',
@@ -86,14 +86,14 @@ def main():
 
     chr_order = get_chrom_order(cnf)
 
-    exons_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
-    if not verify_bed(exons_fpath, 'Annotated reference BED file'):
+    features_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
+    if not verify_bed(features_fpath, 'Annotated reference BED file'):
         critical('Annotated reference is required')
 
-    gene_transcript_bed, cds_exon_bed = _split_reference(cnf, exons_fpath)
+    gene_transcript_bed, cds_exon_bed = _split_reference(cnf, features_fpath)
     bed = BedTool(input_bed_fpath).cut([0, 1, 2])
 
-    info('Annotating based on CDS and exons...')
+    info('Annotating based on CDS and exons from ' + features_fpath)
 
     annotated, off_targets = _annotate(cnf, bed, cds_exon_bed, chr_order)
 
@@ -212,13 +212,13 @@ def _annotate(cnf, bed, ref_bed, chr_order):
             e_feature, e_biotype = fs[:11]
 
         overlap_size = None
-        if len(fs) == 12:
-            overlap_size = fs[11]
-        elif len(fs) == 13:
-            e_transcript, overlap_size = fs[11], fs[12]
-        else:
-            critical('Cannot parse the reference BED file - unexpected number of lines '
-                     '(' + str(len(fs)) + ') in ' + '\t'.join(str(f) for f in fs))
+        if len(fs) >= 12:
+            overlap_size = fs[11].strip()
+        if len(fs) >= 13:
+            e_transcript, overlap_size = fs[11], fs[12].strip()
+        # else:
+        #     critical('Cannot parse the reference BED file - unexpected number of lines '
+        #              '(' + str(len(fs)) + ') in ' + '\t'.join(str(f) for f in fs))
 
         assert e_chr == '.' or a_chr == e_chr, str((a_chr + ', ' + e_chr))
         total_lines += 1

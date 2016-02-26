@@ -242,16 +242,13 @@ class GeneInfo(Region):
         return self.amplicons  # self.subregions_by_feature['Capture']['regions']
 
     def add_exon(self, exon):  # exons come sorted by start
-        if self.exons == []:
-            if self.start is None:
-                self.start = exon.start
-            if self.end is None:
-                self.end = exon.end
-        else:
-            if self.end is None:
-                if exon.end > self.end:
-                    self.end = exon.end
-        self.size += exon.get_size()
+        # Start, End and Size are set earlier when parsing the features file
+        # if self.end and self.end > exon.start:
+        #     self.size += exon.end - self.end
+        # else:
+        #     self.size += exon.get_size()
+        # self.start = min(self.start, exon.start) if self.start else exon.start
+        # self.end = max(self.end, exon.end) if self.end else exon.end
         self.exons.append(exon)
         for depth, bases in exon.bases_by_depth.items():
             self.bases_by_depth[depth] += bases
@@ -262,8 +259,13 @@ class GeneInfo(Region):
         # amplicon = copy.copy(amplicon)
         amplicon.gene_name = amplicon.gene_name or self.gene_name
         self.amplicons.append(amplicon)
-        if self.gene_name == '.':  # no exon
-            self.size += amplicon.get_size()
+        if self.gene_name == '.':  # no exons!
+            if self.end and self.end > amplicon.start:
+                self.size += amplicon.end - self.end
+            else:
+                self.size += amplicon.get_size()
+            self.start = min(self.start, amplicon.start) if self.start else amplicon.start
+            self.end = max(self.end, amplicon.end) if self.end else amplicon.end
             for depth, bases in amplicon.bases_by_depth.items():
                 self.bases_by_depth[depth] += bases
             self.min_depth = min(self.min_depth, amplicon.min_depth) if self.min_depth else amplicon.min_depth
@@ -311,6 +313,7 @@ def build_gene_objects_list(cnf, sample_name, features_bed, gene_keys_list):
                         gene_by_name_and_chrom[(symbol, chrom)].chrom = chrom
                         gene_by_name_and_chrom[(symbol, chrom)].start = int(start)
                         gene_by_name_and_chrom[(symbol, chrom)].end = int(end)
+                        gene_by_name_and_chrom[(symbol, chrom)].size = int(end) - int(start)
                         if len(fs) >= 8:
                             gene_by_name_and_chrom[(symbol, chrom)].biotype = fs[7]
                         if len(fs) >= 9:
