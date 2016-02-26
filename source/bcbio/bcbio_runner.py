@@ -649,7 +649,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=getsize(sample.bam) * 4 / 1024 / 1024 + 500)
+                            mem_m=getsize(sample.bam) * 4 / 1024 / 1024 + 1000)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
