@@ -54,18 +54,21 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     key_genes, _ = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
     depth_cutoff = get_depth_cutoff(ave_depth, depth_threshs)
     genes_sorted = sorted(gene_by_key.values())
+    min_cov, max_cov = min_and_max_based_on_outliers(genes_sorted)
 
     for coverage_type in ['low', 'high']:
         info('Selecting and saving ' + coverage_type + ' covered genes')
+        selected_genes = []
+
         if coverage_type == 'low':
             selected_genes = [g for g in genes_sorted if g.gene_name in key_genes and (
                 any(e.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for e in g.get_exons()) or
                 any(a.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH for a in g.get_amplicons()))]
         else:
-            min_cov, max_cov = min_and_max_based_on_outliers(genes_sorted)
-            selected_genes = [g for g in genes_sorted if g.gene_name in key_genes and (
-                any(e.avg_depth > max_cov for e in g.get_exons()) or
-                any(a.avg_depth > max_cov for a in g.get_amplicons()))]
+            if max_cov:
+                selected_genes = [g for g in genes_sorted if g.gene_name in key_genes and (
+                    any(e.avg_depth > max_cov for e in g.get_exons()) or
+                    any(a.avg_depth > max_cov for a in g.get_amplicons()))]
         for region_type in ['exons', 'amplicons']:
             selected_regions = []
             for gene in selected_genes:
@@ -101,13 +104,13 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     return report
 
 def min_and_max_based_on_outliers(regions):
-    rs_by_depth = sorted(regions, key=lambda r: r.avg_depth)
+    rs_by_depth = sorted([r for r in regions if r.avg_depth is not None], key=lambda r: r.avg_depth)
     l = len(rs_by_depth)
     q1 = rs_by_depth[int((l - 1) / 4)].avg_depth
     q3 = rs_by_depth[int((l - 1) * 3 / 4)].avg_depth
     d = q3 - q1
     _min_cov = max(0, q1 - 3 * d)
-    _max_cov = q1 + 3 * d
+    _max_cov = q3 + 3 * d
 
     info('Using outliers mechanism. l = {}, q1 = {}, q3 = {}, d = {},'
          'min_cov = {}, max_cov = {}'.format(l, q1, q3, d, _min_cov, _max_cov))
