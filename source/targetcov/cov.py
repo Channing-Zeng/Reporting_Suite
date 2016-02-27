@@ -544,7 +544,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, featu
                     region.rates_within_threshs = rates_within_threshs
                     if 'Capture' in feature:
                         gene_by_name_and_chrom[(gene_name, chrom)].add_amplicon(region)
-                    elif 'CDS' in feature or 'Exon' in feature:
+                    elif 'CDS' in feature or feature == 'Exon':
                         gene_by_name_and_chrom[(gene_name, chrom)].add_exon(region)
                     else:
                         gene_by_name_and_chrom[(gene_name, chrom)].chrom = region.chrom
