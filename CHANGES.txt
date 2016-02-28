@@ -1,0 +1,23 @@
+v1.0.0, 26 Feb 2016
+New features:
+- Using McEwen, Robert and Hedley's rules and manual curations - 3 tiers
+- Standalone script for variant annotation and filtration - variants.py
+- TargQC detailed coverage stats for unmerged regions
+- RefSeq CDS + Transcripts + miRNA exons in TargQC detailed reports; RefSeq CDS for Seq2C
+- Extended summary HTML: phenotype info, project and codebase datestamps and versions
+- New snpEff 4.2
+- Using the same RefSeq canonical transcripts list to report coverage and mutation effects
+- NGS oncology report with many new features: Allele frequency plot, flagged regions, downloadable tables, Seq2C for whole profile
+- Integration and exposing to jBrowse, includes convertion to BigWig
+- Integration with LIMS
+- Support bcbio 0.10.0
+
+Optimization
+- Memory efficient vcf2txt.pl - first round filtering script
+- Using BCFTools, which is faster and memory efficient, but also which addresses problem of compressed VCF refernce data in hg19/hg38 notation
+- Using tweaked sambamba for region coverage calculation - faster and memory effecient, and works for unmerged regions
+
+Fixes
+- Fix issue when a intergenic/intragenic change is annotated by COSMIC as a missence change from another gene
+- Fix occasionally missing dbSNP annotations in chr1
+- Internally referring to genes by symbol+chromosome rather than by symbol, which fixes some region annotation
