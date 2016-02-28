@@ -68,6 +68,7 @@ def sync_with_ngs_server(
     html_report_url = None
     if any(p in realpath((bcbio_final_dirpath or dataset_dirpath)) for p in loc.proper_path_should_contain):
         if jira_case is None and jira_case != 'unreached' and is_az() and jira_url:
+            info()
             info('Getting info from JIRA...')
             jira_case = retrieve_jira_info(jira_url)
 

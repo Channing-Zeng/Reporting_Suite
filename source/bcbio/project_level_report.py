@@ -204,9 +204,8 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
 
         if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
-            recs.append(_make_url_record(OrderedDict([(region, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region + '.html'))
-                                          for region in ['amplicons', 'exons']]),
-                             general_section.find_metric(ABNORMAL_NAME), base_dirpath))
+            recs.append(_make_url_record(OrderedDict([(region_type, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region_type + '.html'))
+                for region_type in ['target', 'exons']]), general_section.find_metric(ABNORMAL_NAME), base_dirpath))
 
     return recs
 

@@ -2,9 +2,6 @@ steps:
 - Variants
 - TargQC
 - Seq2C
-- ClinicalReport
-- AbnormalCovReport
-- Summary
 
 
 variant_filtering:
@@ -56,28 +53,6 @@ variant_filtering:
   signal_noise:       1.5     # SN.     -o   Signal/noise value.
 
   bias:               False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
-
-
-quality_control:
-  databases: ['dbsnp', 'cosmic', '1000genomes']
-  novelty: ['known', 'novel', 'all']
-  db_for_summary: cosmic
-  variant_distribution_scale: 1000  ## in kilobases
-  metrics: [
-      'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-      'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-      'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
-
-
-coverage_reports:
-  min_depth: 30  # regions with depth below this value will be flagged
-  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
-  padding: 200
-  saturation: 'n'
-  depthlist: 'auto'
-  availablefeatures: [
-     'percbases', 'saturation', 'specificity', 'coveragefreq',
-     'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
 
 
 annotation:
@@ -286,7 +261,28 @@ annotation:
   - set                           : SourceVCF_forMergedRecInCombineVariants
 
 
+quality_control:
+  databases: ['dbsnp', 'cosmic', '1000genomes']
+  novelty: ['known', 'novel', 'all']
+  db_for_summary: cosmic
+  variant_distribution_scale: 1000  ## in kilobases
+  metrics: [
+      'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+      'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+      'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+
+
+coverage_reports:
+  min_depth: 30  # regions with depth below this value will be flagged
+  depth_thresholds: [1, 5, 10, 25, 50, 100, 500, 1000, 5000, 10000, 50000]
+  padding: 200
+  saturation: 'n'
+  depthlist: 'auto'
+  availablefeatures: [
+     'percbases', 'saturation', 'specificity', 'coveragefreq',
+     'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
+
+
 verbose: True                 ## Prints tools' output
 keep_intermediate: True       ## Keeps "work_dir" with intermediate files for each step
 reuse_intermediate: False     ## If an intermediate VCFs exists and is not empty, skip a step and reuse the file
-

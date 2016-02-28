@@ -156,11 +156,11 @@ class BCBioRunner:
             self.steps.extend([self.targetcov, self.targqc_summary, self.abnormal_regions])
         if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
+        # if Steps.contains(cnf.steps, 'AbnormalCovReport'):
+        #    self.steps.append(self.abnormal_regions)
 
         if Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
-        if Steps.contains(cnf.steps, 'AbnormalCovReport'):
-           self.steps.append(self.abnormal_regions)
 
         # if Steps.contains(cnf.steps, 'ClinicalReport') or \
         #         Steps.contains(cnf.steps, 'ClinicalReports') or \
@@ -875,9 +875,9 @@ class BCBioRunner:
 
             if self.bw_converting in self.steps:
                 for sample in self.bcbio_structure.samples:
-                    self._submit_job(self.bw_converting,sample.name,
+                    self._submit_job(self.bw_converting, sample.name,
                         sample=sample.name, genome=sample.genome, bam=sample.bam,
-                        wait_for_steps=[self.clin_report.job_name(sample.name) if self.clin_report in self.steps else None],
+                        # wait_for_steps=[self.clin_report.job_name(sample.name) if self.clin_report in self.steps else None],
                         mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
             if not self.cnf.verbose:
                 print ''

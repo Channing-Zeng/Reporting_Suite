@@ -37,9 +37,7 @@ def retrieve_jira_info(url):
     :return: instance of JiraCase
     """
     try:
-        jira_inst = JIRA(server=JIRA_SERVER,
-                    basic_auth=('NGSG_user', 'todngs'),
-                    options={'verify': False})
+        jira_inst = JIRA(server=JIRA_SERVER, basic_auth=('NGSG_user', 'todngs'), options={'verify': False})
     except:
         warn('Cannot create JIRA obj:')
         warn(format_exc())
