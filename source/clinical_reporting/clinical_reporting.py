@@ -398,6 +398,9 @@ class BaseClinicalReporting:
                 gene_names.append(gene.name)
                 gene_ave_depths.append(gene.ave_depth)
                 covs_in_thresh.append(gene.cov_by_threshs.get(e.depth_cutoff))
+                # if not gene.start or not gene.end:
+                #     print gene.name, gene.chrom
+                #     continue
                 coord_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
                 cds_cov_by_gene[gene.name] = [dict(
                     start=cds.start,

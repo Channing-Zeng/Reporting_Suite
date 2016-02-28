@@ -322,7 +322,7 @@ class GeneDict(dict):  # supports genes without specified chromosome
 
     def __delitem__(self, (gname, chrom)):
         if (gname, chrom) in super(GeneDict, self).keys():
-            del super(GeneDict, self)[(gname, chrom)]
+            super(GeneDict, self).__delitem__((gname, chrom))
         if gname in self.gene_by_name:
             del self.gene_by_name[gname]
 
@@ -408,7 +408,7 @@ class ClinicalExperimentInfo:
             info('Parsing target and patient info from ' + str(self.sample.targetcov_json_fpath))
             self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
             self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
-            info('Parsing TargetCov ' + self.genes_collection_type + ' genes stats...')
+            info('Parsing TargQC ' + self.genes_collection_type + ' genes stats...')
             self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
             self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
             self.sample.targetcov_detailed_tsv = verify_file(self.sample.targetcov_detailed_tsv)
@@ -427,8 +427,8 @@ class ClinicalExperimentInfo:
             self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
                 self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
-            info('Retrieving SolveBio...')
-            self.get_mut_info_from_solvebio()
+            # info('Retrieving SolveBio...')
+            # self.get_mut_info_from_solvebio()
         else:
             warn('No mutations_fpath provided, skipping mutation stats.')
 
@@ -525,6 +525,7 @@ class ClinicalExperimentInfo:
         if not verify_file(self.sample.targetcov_detailed_tsv):
             return None
 
+        info('Parsing coverage stats from ' + self.sample.targetcov_detailed_tsv)
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):
@@ -546,6 +547,9 @@ class ClinicalExperimentInfo:
                     err('For gene ' + str(symbol) + ', chrom value is empty in line ' + l + ' in ' + self.sample.targetcov_detailed_tsv)
                     continue
 
+                if start == '.' or end == '.':
+                    continue
+
                 start, end = int(start), int(end)
                 ave_depth = get_float_val(ave_depth)
                 cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(self.cnf.coverage_reports.depth_thresholds, pcnt_val_by_thresh))
@@ -555,7 +559,9 @@ class ClinicalExperimentInfo:
                     if gene:
                         gene.chrom = chrom
                         gene.start = start
+                        assert gene.start
                         gene.end = end
+                        assert gene.end
                         gene.ave_depth = ave_depth
                         gene.cov_by_threshs = cov_by_threshs
                         self.key_gene_by_name_chrom[(symbol, chrom)] = gene
@@ -574,6 +580,8 @@ class ClinicalExperimentInfo:
         # so we don't know about them and don't even want to report them
         for gene in self.key_gene_by_name_chrom.values():
             if not gene.chrom and (gene.name, gene.chrom) in self.key_gene_by_name_chrom:
+                del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
+            if not gene.start or not gene.end:
                 del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
 
 

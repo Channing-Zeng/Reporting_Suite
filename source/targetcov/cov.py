@@ -808,9 +808,7 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_ge
             add_region_to_report(report, a, depth_thresholds)
         for e in g.get_exons():
             add_region_to_report(report, e, depth_thresholds)
-        if g.feature != 'NotAnnotatedSummary':
-            if g.gene_name == 'MIR3687-1':
-                pass
+        if g.get_exons():
             process_gene(g, depth_thresholds)
             add_region_to_report(report, g, depth_thresholds)
     info(print_date=True)

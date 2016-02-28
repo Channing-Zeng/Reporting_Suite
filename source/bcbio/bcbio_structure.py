@@ -292,23 +292,23 @@ class BCBioSample(BaseSample):
     def get_filtered_vcfs_dirpath(self):
         return join(self.dirpath, BCBioStructure.varfilter_dir)
 
-    # raw variants
-    def find_raw_vcf_by_callername(self, callername):
-        fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=True)
-        if not isfile(fpath):
-            fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=False)
-        if not isfile(fpath):
-            fpath = self.get_rawest_vcf_fpath_by_callername(callername, gz=True)
-        if not isfile(fpath):
-            fpath = self.get_rawest_vcf_fpath_by_callername(callername, gz=False)
-        return verify_file(fpath)
-
-    def get_raw_vcf_fpath_by_callername(self, callername, gz):
-        return join(self.dirpath, BCBioStructure.var_dir,
-                    self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
-
-    def get_rawest_vcf_fpath_by_callername(self, callername, gz):
-        return join(self.dirpath, self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
+    # # raw variants
+    # def find_raw_vcf_by_callername(self, callername):
+    #     fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=True)
+    #     if not isfile(fpath):
+    #         fpath = self.get_raw_vcf_fpath_by_callername(callername, gz=False)
+    #     if not isfile(fpath):
+    #         fpath = self.get_rawest_vcf_fpath_by_callername(callername, gz=True)
+    #     if not isfile(fpath):
+    #         fpath = self.get_rawest_vcf_fpath_by_callername(callername, gz=False)
+    #     return verify_file(fpath)
+    #
+    # def get_raw_vcf_fpath_by_callername(self, callername, gz):
+    #     return join(self.dirpath, BCBioStructure.var_dir,
+    #                 self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
+    #
+    # def get_rawest_vcf_fpath_by_callername(self, callername, gz):
+    #     return join(self.dirpath, self.name + '-' + callername + '.vcf' + ('.gz' if gz else ''))
 
     # annotated vcf
     def find_anno_vcf_by_callername(self, callername):
@@ -615,15 +615,14 @@ class BCBioStructure(BaseProjectStructure):
         set_up_work_dir(cnf)
 
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
-
+        self.raw_var_dirpath = join(self.var_dirpath, 'raw')
         # Moving raw variants in the date dir to var/raw
-        raw_dirpath = join(self.var_dirpath, 'raw')
-        safe_mkdir(raw_dirpath)
+        safe_mkdir(self.raw_var_dirpath)
         for fname in os.listdir(self.date_dirpath):
             if '.vcf' in fname and '.anno.filt' not in fname:
                 src_fpath = join(self.date_dirpath, fname)
-                dst_fpath = join(raw_dirpath, fname)
-                info('Moving ' + src_fpath + ' to ' + raw_dirpath)
+                dst_fpath = join(self.raw_var_dirpath, fname)
+                info('Moving ' + src_fpath + ' to ' + self.raw_var_dirpath)
                 try:
                     os.rename(src_fpath, dst_fpath)
                 except OSError:
@@ -861,20 +860,25 @@ class BCBioStructure(BaseProjectStructure):
         if 'ensemble' in sample_info['algorithm'] and len(variantcallers) >= 2:
             variantcallers.append('ensemble')
 
-        if isinstance(variantcallers, basestring):
-            variantcallers = [variantcallers]
+        if sample.phenotype and sample.phenotype != 'normal':
+            assert len(batch_names) == 1, 'Multiple batches for ' + sample.name + ': ' + ', '.join(batch_names)
+            batch_name = batch_names[0]
 
-        for caller_name in variantcallers:
-            info(caller_name)
-            vcf_fpath = self._set_vcf_file(caller_name, sample)
+            if isinstance(variantcallers, basestring):
+                variantcallers = [variantcallers]
 
-            if vcf_fpath:
-                caller = self.variant_callers.get(caller_name)
-                if not caller:
-                    self.variant_callers[caller_name] = VariantCaller(caller_name, self)
+            for caller_name in variantcallers:
+                info(caller_name)
 
-                self.variant_callers[caller_name].samples.append(sample)
-                sample.vcf_by_callername[caller_name] = vcf_fpath
+                vcf_fpath = self._set_vcf_file(caller_name, batch_name)
+
+                if vcf_fpath:
+                    caller = self.variant_callers.get(caller_name)
+                    if not caller:
+                        self.variant_callers[caller_name] = VariantCaller(caller_name, self)
+
+                    self.variant_callers[caller_name].samples.append(sample)
+                    sample.vcf_by_callername[caller_name] = vcf_fpath
 
         info()
         return sample
@@ -928,13 +932,13 @@ class BCBioStructure(BaseProjectStructure):
             sample.bam = None
             err('No BAM file for ' + sample.name)
 
-    def _set_vcf_file(self, caller_name, sample):
-        vcf_fname = sample.name + '-' + caller_name + '.vcf'
+    def _set_vcf_file(self, caller_name, batch_name):
+        vcf_fname = batch_name + '-' + caller_name + '.vcf'
 
-        vcf_fpath_gz = adjust_path(join(sample.dirpath, vcf_fname + '.gz'))  # in var
-        var_vcf_fpath_gz = adjust_path(join(sample.var_dirpath, vcf_fname + '.gz'))  # in var
-        vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))
-        var_vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
+        vcf_fpath_gz = adjust_path(join(self.date_dirpath, vcf_fname + '.gz'))  # in var
+        var_vcf_fpath_gz = adjust_path(join(self.raw_var_dirpath, vcf_fname + '.gz'))  # in var
+        vcf_fpath = adjust_path(join(self.date_dirpath, vcf_fname))
+        var_vcf_fpath = adjust_path(join(self.raw_var_dirpath, vcf_fname))  # in var
 
         if isfile(vcf_fpath_gz):
             verify_file(vcf_fpath_gz, is_critical=True)
@@ -956,12 +960,8 @@ class BCBioStructure(BaseProjectStructure):
             info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
             return var_vcf_fpath
 
-        if sample.phenotype != 'normal':
-            warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outsize '
-                'the var directory. Phenotype is ' + str(sample.phenotype))
-        else:
-            info('Notice: no VCF file for ' + sample.name + ', ' + caller_name + ', phenotype ' + str(sample.phenotype))
-
+        warn('Warning: no VCF found for batch ' + batch_name + ', ' + caller_name + ', gzip or '
+            'uncompressed version in and outsize the var directory.')
         return None
 
     def clean(self):

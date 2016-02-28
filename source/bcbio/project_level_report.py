@@ -500,7 +500,7 @@ def get_run_info(cnf, bcbio_structure):
         if version and last_modified_datestamp:
             version_text += ', '
         if last_modified_datestamp:
-            version_text += 'last modified on ' + last_modified_datestamp
+            version_text += 'last modified ' + last_modified_datestamp
         run_info_dict['suite_version'] = version_text
 
     var_filtering_params = []

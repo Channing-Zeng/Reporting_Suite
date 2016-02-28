@@ -299,7 +299,7 @@ class BCBioRunner:
             name='vcf2txt_single', short_name='vcf2txt_single',
             interpreter='perl',
             script='vcf2txt',
-            dir_name=BCBioStructure.varfilter_dir,
+            dir_name=BCBioStructure.var_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'vcf2txt-single-{caller}.log'),
             paramln='{paramln}',
         )
@@ -307,7 +307,7 @@ class BCBioRunner:
             name='vcf2txt_paired', short_name='vcf2txt_paired',
             interpreter='perl',
             script='vcf2txt',
-            dir_name=BCBioStructure.varfilter_dir,
+            dir_name=BCBioStructure.var_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'vcf2txt-paired-{caller}.log'),
             paramln='{paramln}',
         )
@@ -501,9 +501,15 @@ class BCBioRunner:
         exons_no_genes_bed = None
         seq2c_bed = self.bcbio_structure.sv_bed
 
-        reuse = False
-        if target_bed or exons_bed:
-            reuse = check_md5(self.cnf.work_dir, target_bed or exons_bed, 'bed')
+        reuse = self.cnf.reuse_intermediate
+        if reuse and target_bed:
+            reuse = check_md5(self.cnf.work_dir, target_bed, 'bed')
+            if reuse:
+                info('Target ' + target_bed + ' didn\'t change')
+                if exons_bed:
+                    reuse = check_md5(self.cnf.work_dir, exons_bed, 'bed')
+                    if reuse:
+                        info('Features ' + exons_bed + ' didn\'t change')
 
         with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
             exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed, seq2c_bed)
