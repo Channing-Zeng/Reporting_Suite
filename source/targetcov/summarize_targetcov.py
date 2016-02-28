@@ -225,7 +225,7 @@ def summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=None, 
 
 
 def _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, mutations, key_or_target_genes):
-    region_types = ['exons', 'amplicons']
+    region_types = ['exons', 'target']
     coverage_types = ['low', 'high']
     flagged_regions_metrics = [
             Metric('Gene', min_width=50, max_width=70),

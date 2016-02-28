@@ -315,13 +315,16 @@ class BaseClinicalReporting:
             )
 
             for gene, se in e.seq2c_events_by_gene.items():
-                d['events'].append(dict(
-                    x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
-                    geneName=gene.name,
-                    logRatio=se.ab_log2r if se.ab_log2r is not None else se.log2r,
-                    ampDel=se.amp_del,
-                    fragment=se.fragment,
-                    isKeyGene=gene.key in e.key_gene_by_name_chrom))
+                if gene.chrom not in chr_cum_len_by_chrom:
+                   warn('Gene ' + gene.name + ' chromosome ' + gene.chrom + ' not found in ' + str(chr_cum_len_by_chrom))
+                else:
+                    d['events'].append(dict(
+                        x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
+                        geneName=gene.name,
+                        logRatio=se.ab_log2r if se.ab_log2r is not None else se.log2r,
+                        ampDel=se.amp_del,
+                        fragment=se.fragment,
+                        isKeyGene=gene.key in e.key_gene_by_name_chrom))
 
                     # if not gene.seq2c_event.ab_log2r or gene.seq2c_event.fragment == 'BP':  # breakpoint, meaning part of exon is not amplified
 

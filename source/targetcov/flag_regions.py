@@ -69,14 +69,14 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
                 selected_genes = [g for g in genes_sorted if g.gene_name in key_genes and (
                     any(e.avg_depth > max_cov for e in g.get_exons()) or
                     any(a.avg_depth > max_cov for a in g.get_amplicons()))]
-        for region_type in ['exons', 'amplicons']:
+        for region_type in ['exons', 'target']:
             selected_regions = []
             for gene in selected_genes:
                 if coverage_type == 'low':
-                    cur_regions = [a for a in (gene.get_amplicons() if region_type == 'amplicons' else gene.get_exons())
+                    cur_regions = [a for a in (gene.get_amplicons() if region_type == 'target' else gene.get_exons())
                                    if a.rates_within_threshs[depth_cutoff] < MIN_DEPTH_PERCENT_AT_THRESH and 'Multi' not in a.feature]
                 else:
-                    cur_regions = [a for a in (gene.get_amplicons() if region_type == 'amplicons' else gene.get_exons())
+                    cur_regions = [a for a in (gene.get_amplicons() if region_type == 'target' else gene.get_exons())
                                    if a.avg_depth > max_cov and 'Multi' not in a.feature]
                 selected_regions.extend(cur_regions)
 

@@ -37,12 +37,20 @@ def retrieve_jira_info(url):
     :return: instance of JiraCase
     """
     try:
+        info('Creating JIRA instance...')
         jira_inst = JIRA(server=JIRA_SERVER, basic_auth=('NGSG_user', 'todngs'), options={'verify': False})
     except:
         warn('Cannot create JIRA obj:')
         warn(format_exc())
         return None
 
+    info('Adding JIRA proxy...')
+    jira_inst._session.proxies = {
+        'http': 'http://hpcproxy.usbod.astrazeneca.net:3128',
+        'https': 'http://hpcproxy.usbod.astrazeneca.net:3128'
+    }
+
+    info('Parsing JIRA url ' + str(url))
     case_id = __parse_id(url)
     if case_id:
         info('Parsing the JIRA case ' + case_id)
@@ -50,7 +58,9 @@ def retrieve_jira_info(url):
         err('Could not parse JIRA case from ' + str(url) + ', skipping connecting to JIRA.')
         return None
 
+    info('Getting issue ' + case_id)
     issue = jira_inst.issue('NGSG-' + case_id)
+
     case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
     case.reporter = issue.fields.reporter.displayName    # 'Greenawalt, Danielle'
