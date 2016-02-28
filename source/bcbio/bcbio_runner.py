@@ -2,6 +2,7 @@ import getpass
 import os
 import hashlib
 import base64
+from collections import defaultdict
 from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize
 import datetime
 from time import sleep
@@ -22,6 +23,7 @@ from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed, \
     check_md5
 from source.utils import is_us, md5
+from source.variants import summarize_qc
 from source.variants.filtering import make_vcf2txt_cmdl_params
 from source.variants.vcf_processing import verify_vcf
 from source.webserver.exposing import sync_with_ngs_server, convert_path_to_url
@@ -144,19 +146,11 @@ class BCBioRunner:
         if 'Variants' in cnf.steps:
             self.steps.extend([
                 self.varannotate,
-                # self.varqc,
-                self.varqc_summary,
-                self.varfilter,
-                # self.varqc_after,
-                self.varqc_after_summary])
+                self.varfilter])
         if Steps.contains(cnf.steps, 'VarAnnotate'):
-            self.steps.extend([self.varannotate, self.varqc_summary])
-        if Steps.contains(cnf.steps, 'VarQC'):
-            self.steps.extend([self.varqc_summary, self.varqc_after_summary])
+            self.steps.extend([self.varannotate])
         if Steps.contains(cnf.steps, 'VarFilter'):
-            self.steps.extend([self.varfilter, self.varqc_after_summary])
-        if Steps.contains(cnf.steps, 'VarQC_postVarFilter'):
-            self.steps.extend([self.varqc_after_summary])
+            self.steps.extend([self.varfilter])
 
         if Steps.contains(cnf.steps, 'TargQC'):
             self.steps.extend([self.targetcov, self.targqc_summary, self.abnormal_regions])
@@ -174,7 +168,7 @@ class BCBioRunner:
         self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
-            self.steps.extend([self.varqc_summary, self.varqc_after_summary, self.targqc_summary])
+            self.steps.extend([self.targqc_summary])
 
         # fastqc summary and clinical report -- special case (turn on if user uses default steps)
         if set(defaults['steps']) == set(cnf.steps):
@@ -349,7 +343,7 @@ class BCBioRunner:
             script=join('scripts', 'post', 'targetcov.py'),
             dir_name=BCBioStructure.targqc_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
-            paramln=targetcov_params,
+            paramln=targetcov_params
         )
         abnormal_regions_cmdl = summaries_cmdline_params + ' --mutations {mutations_fpath} ' + self.final_dir
         if target_bed:
@@ -381,26 +375,26 @@ class BCBioRunner:
         # )
         #############
         # Summaries #
-        self.varqc_summary = Step(cnf, run_id,
-            name=BCBioStructure.varqc_name + '_summary', short_name='vqs',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
-            dir_name=BCBioStructure.varqc_summary_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary.log'),
-            paramln=summaries_cmdline_params + ' ' + self.final_dir +
-                ' --varqc-name ' + BCBioStructure.varqc_name +
-                ' --varqc-dir ' + BCBioStructure.varqc_summary_dir
-        )
-        self.varqc_after_summary = Step(cnf, run_id,
-            name=BCBioStructure.varqc_after_name + '_summary', short_name='vqas',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
-            dir_name=BCBioStructure.varqc_after_summary_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary.log'),
-            paramln=summaries_cmdline_params + ' ' + self.final_dir +
-                ' --varqc-name ' + BCBioStructure.varqc_after_name +
-                ' --varqc-dir ' + BCBioStructure.varqc_after_summary_dir
-        )
+        # self.varqc_summary = Step(cnf, run_id,
+        #     name=BCBioStructure.varqc_name + '_summary', short_name='vqs',
+        #     interpreter='python',
+        #     script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
+        #     dir_name=BCBioStructure.varqc_summary_dir,
+        #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary.log'),
+        #     paramln=summaries_cmdline_params + ' ' + self.final_dir +
+        #         ' --varqc-name ' + BCBioStructure.varqc_name +
+        #         ' --varqc-dir ' + BCBioStructure.varqc_summary_dir
+        # )
+        # self.varqc_after_summary = Step(cnf, run_id,
+        #     name=BCBioStructure.varqc_after_name + '_summary', short_name='vqas',
+        #     interpreter='python',
+        #     script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
+        #     dir_name=BCBioStructure.varqc_after_summary_dir,
+        #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary.log'),
+        #     paramln=summaries_cmdline_params + ' ' + self.final_dir +
+        #         ' --varqc-name ' + BCBioStructure.varqc_after_name +
+        #         ' --varqc-dir ' + BCBioStructure.varqc_after_summary_dir
+        # )
 
         clinreport_paramline = (params_for_one_sample +
            ' -s {sample}' +
@@ -590,13 +584,13 @@ class BCBioRunner:
         if step.run_on_chara and is_us():
             extra_qsub_opts += '-l h="chara|rask" '
         mem_opts = ''
-        # if mem_m and not is_local():
-        #     mem_m = min(max(mem_m, 200), 90 * 1024)
-        #     mem = str(int(mem_m)) + 'M'
-        #     if mem_m < 1:
-        #         mem_opts = ''
-        #     else:
-        #         mem_opts = '-l h_vmem="' + mem + '" '
+        if mem_m and not is_local():
+            mem_m = min(max(mem_m, 200), 90 * 1024)
+            mem = str(int(mem_m)) + 'M'
+            if mem_m < 1:
+                mem_opts = ''
+            else:
+                mem_opts = '-l h_vmem="' + mem + '" '
         qsub_cmdline = (
             '{qsub} -pe smp {threads} {mem_opts} {extra_qsub_opts} -S {bash} -q {queue} -p 0 '
             '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
@@ -655,7 +649,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=getsize(sample.bam) / 1.5 / 1024 / 1024 + 500)
+                            mem_m=getsize(sample.bam) / 1.5 / 1024 / 1024 + 500, run_on_chara=True)
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
@@ -669,6 +663,7 @@ class BCBioRunner:
                 info('-' * 70)
 
             if self.varfilter in self.steps:
+                info('Filtering')
                 if not self.is_wgs:
                     info('Not WGS, thus processing cohorts')
                     for c in self.bcbio_structure.variant_callers.values():
@@ -726,10 +721,13 @@ class BCBioRunner:
                                         critical('Error: VarAnnotate is not in steps, and annotated VCF does not exist: ' + anno_vcf_fpath)
 
                             wait_for_steps = []
-                            if caller.paired_anno_vcf_by_sample:
-                                wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
-                            if caller.single_anno_vcf_by_sample:
-                                wait_for_steps.append(self.vcf2txt_single.job_name(caller=caller.name))
+                            if not self.is_wgs:
+                                if caller.paired_anno_vcf_by_sample:
+                                    wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
+                                if caller.single_anno_vcf_by_sample:
+                                    wait_for_steps.append(self.vcf2txt_single.job_name(caller=caller.name))
+                            else:
+                                wait_for_steps.append(self.varannotate.job_name(sample=sample.name, caller=caller.name))
 
                             self._submit_job(
                                 self.varfilter, sample.name, caller_suf=caller.name,
@@ -768,14 +766,14 @@ class BCBioRunner:
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps)
 
-            if self.varqc_summary in self.steps:
-                self._submit_job(
-                    self.varqc_summary,
-                    wait_for_steps=[
-                        self.varannotate.job_name(s.name, v.name)
-                        for v in self.bcbio_structure.variant_callers.values()
-                        for s in v.samples
-                        if self.varannotate in self.steps])
+            # if self.varqc_summary in self.steps:
+            #     self._submit_job(
+            #         self.varqc_summary,
+            #         wait_for_steps=[
+            #             self.varannotate.job_name(s.name, v.name)
+            #             for v in self.bcbio_structure.variant_callers.values()
+            #             for s in v.samples
+            #             if self.varannotate in self.steps])
 
             # if self.varqc_after in self.steps:
             #     info('VarQC_postVarFilter:')
@@ -798,14 +796,14 @@ class BCBioRunner:
             #                         wait_for_steps=([self.varfilter.job_name(caller=caller.name)] if self.varfilter in self.steps else []),
             #                         vcf=filt_vcf_fpath, sample=sample.name, caller=caller.name, genome=sample.genome)
 
-            if self.varqc_after_summary in self.steps:
-                self._submit_job(
-                    self.varqc_after_summary,
-                    wait_for_steps=[
-                        self.varfilter.job_name(s.name, v.name)
-                        for v in self.bcbio_structure.variant_callers.values()
-                        for s in v.samples
-                        if self.varfilter in self.steps])
+            # if self.varqc_after_summary in self.steps:
+            #     self._submit_job(
+            #         self.varqc_after_summary,
+            #         wait_for_steps=[
+            #             self.varfilter.job_name(s.name, v.name)
+            #             for v in self.bcbio_structure.variant_callers.values()
+            #             for s in v.samples
+            #             if self.varfilter in self.steps])
 
             if self.clin_report in self.steps:
                 clinical_report_caller = \
@@ -914,9 +912,15 @@ class BCBioRunner:
                 safe_mkdir(dirname(final_summary_report_fpath))
                 write_fastqc_combo_report(self.cnf, final_summary_report_fpath, self.bcbio_structure.samples)
 
+            if self.varannotate in self.steps:
+                info('Making varQC summary reports')
+                self._varqc_summary(BCBioStructure.varqc_dir, BCBioStructure.varqc_summary_dir, BCBioStructure.varqc_name)
+                info()
+
             if self.varfilter in self.steps:
-                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure,
-                    self.bcbio_structure.variant_callers.values(), self.is_wgs)
+                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values(), self.is_wgs)
+                info('Making varQC-post-filtering summary reports')
+                self._varqc_summary(BCBioStructure.varqc_after_dir, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name)
                 info()
 
             if is_us():
@@ -960,6 +964,30 @@ class BCBioRunner:
                 change_permissions(join(self.bcbio_structure.work_dir, '..', 'config'))
             info()
             info('Done post-processing.')
+
+
+    def _varqc_summary(self, sample_qc_path, summary_qc_path, varqc_level_name):
+        jsons_by_sample_by_caller = defaultdict(dict)
+        htmls_by_sample_by_caller = defaultdict(dict)
+        for vc in self.bcbio_structure.variant_callers.values():
+            fpath = vc.find_fpaths_by_sample(sample_qc_path, varqc_level_name, 'json', self.bcbio_structure.final_dirpath)
+            if fpath:
+                jsons_by_sample_by_caller[vc.name] = fpath
+            info('Found JSONs: ' + str(', '.join(k + ': ' + str(v) for k, v in jsons_by_sample_by_caller[vc.name].items())))
+            fpath = vc.find_fpaths_by_sample(sample_qc_path, varqc_level_name, 'html', self.bcbio_structure.final_dirpath)
+            if fpath:
+                htmls_by_sample_by_caller[vc.name] = fpath
+            info('Found HTMLs: ' + str(', '.join(k + ': ' + str(v) for k, v in htmls_by_sample_by_caller[vc.name].items())))
+
+        info()
+        if jsons_by_sample_by_caller and htmls_by_sample_by_caller:
+            info('Writing summary reports...')
+            summarize_qc.make_summary_reports(self.cnf, 1, join(self.bcbio_structure.date_dirpath, summary_qc_path),
+                 self.bcbio_structure.variant_callers.values(), self.bcbio_structure.samples,
+                 jsons_by_sample_by_caller, htmls_by_sample_by_caller,
+                 varqc_name=BCBioStructure.varqc_name, caption='Variant QC')
+        else:
+            err('Not JSON and HTML found, cannot generate summary reports.')
 
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):

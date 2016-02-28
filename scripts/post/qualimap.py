@@ -48,11 +48,11 @@ def main():
 
     info()
 
-    # mem_m = getsize(cnf.bam) / 3 / 1024 / 1024 + 200
-    # mem_m = min(max(mem_m, 200), 90 * 1024)
-    # mem = str(int(mem_m)) + 'M'
-    # mem_cmdl = ' --java-mem-size=' + mem
     mem_cmdl = ''
+    mem_m = getsize(cnf.bam) / 3 / 1024 / 1024 + 200
+    mem_m = min(max(mem_m, 200), 90 * 1024)
+    mem = str(int(mem_m)) + 'M'
+    mem_cmdl = ' --java-mem-size=' + mem
 
     cmdline = ('{qualimap} bamqc --skip-duplicated -nt ' + str(cnf.threads) + mem_cmdl + ' -nr 5000 '
         '-bam {cnf.bam} -outdir {cnf.output_dir} {bed} -c -gd HUMAN').format(**locals())
