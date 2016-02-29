@@ -379,6 +379,8 @@ class BaseClinicalReporting:
         chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
 
         gene_names = []
+        transcript_names = []
+        strands = []
         coord_x = []
 
         ticks_x = [[(chr_cum_lens[i] + chr_cum_lens[i + 1])/2, self.chromosomes_by_name.values()[i].short_name]
@@ -399,6 +401,8 @@ class BaseClinicalReporting:
 
             for gene in e.key_gene_by_name_chrom.values():
                 gene_names.append(gene.name)
+                transcript_names.append(gene.transcript_id)
+                strands.append(gene.strand)
                 gene_ave_depths.append(gene.ave_depth)
                 covs_in_thresh.append(gene.cov_by_threshs.get(e.depth_cutoff))
                 # if not gene.start or not gene.end:
@@ -422,6 +426,8 @@ class BaseClinicalReporting:
         data = dict(
             coords_x=coord_x,
             gene_names=gene_names,
+            transcript_names=transcript_names,
+            strands=strands,
             ticks_x=ticks_x,
             lines_x=chr_cum_lens,
         )

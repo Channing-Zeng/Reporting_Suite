@@ -28,6 +28,8 @@ class KeyGene:
         self.key = self.name, self.chrom
         self.start = None
         self.end = None
+        self.transcript_id = None
+        self.strand = None
         self.cdss = []
         self.ave_depth = ave_depth
         self.cov_by_threshs = dict()
@@ -534,6 +536,7 @@ class ClinicalExperimentInfo:
                 fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
                 chrom, start, end, size, symbol, strand, feature, biotype, min_depth, ave_depth, std_dev, wn20pcnt = fs[:12]
                 pcnt_val_by_thresh = fs[12:]
+                transcript_id = None
                 if min_depth.startswith('N'):
                     chrom, start, end, size, symbol, strand, feature, biotype, transcript_id, min_depth, ave_depth, std_dev, wn20pcnt = fs[:13]
                     pcnt_val_by_thresh = fs[13:]
@@ -564,6 +567,8 @@ class ClinicalExperimentInfo:
                         assert gene.end
                         gene.ave_depth = ave_depth
                         gene.cov_by_threshs = cov_by_threshs
+                        gene.transcript_id = transcript_id
+                        gene.strand = strand
                         self.key_gene_by_name_chrom[(symbol, chrom)] = gene
 
                 elif feature in ['CDS', 'Exon']:

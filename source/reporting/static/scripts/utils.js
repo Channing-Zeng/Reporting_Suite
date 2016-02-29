@@ -304,7 +304,7 @@ function addTooltipIfDefinitionExists(glossary, metricName) {
 
 /*************/
 /* PLOTs     */
-function bindTip(placeholder, key, showTipFn, plot, direction, generalData) {
+function bindTip(placeholder, key, showTipFn, plot, direction, generalData, addClickFn) {
     var prevPoint = null;
 
     $(placeholder).bind("plothover", function(event, pos, item) {
@@ -321,6 +321,13 @@ function bindTip(placeholder, key, showTipFn, plot, direction, generalData) {
             $('#' + key + '_plot_tip_horizontal_rule').hide(hideDuration);
         }
     });
+    if (addClickFn) {
+        $(placeholder).bind("plotclick", function (event, pos, item) {
+            if (item) {
+                addClickFn(item);
+            }
+        });
+    }
 }
 
 

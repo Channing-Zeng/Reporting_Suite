@@ -117,6 +117,10 @@ table.draggable {
 .gene_plot_placeholder {
   min-height: 400px; }
 
+.detailed_gene_plot_placeholder {
+  display: none;
+  height: 120px; }
+
 .mut_plot_placeholder {
   min-height: 400px; }
 

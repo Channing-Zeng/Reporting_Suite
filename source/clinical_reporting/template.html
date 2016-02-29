@@ -345,6 +345,7 @@
             <p style="margin-top: -5px;">
                 Height indicates gene average coverage,
                 <span style="color: green;">green</span> means that > 90% gene is covered at {depth_cutoff}x (half of global average coverage).
+                More detailed plot for each gene is expanded by clicking on the corresponding point.
             </p>
             <div class="js_plot" id="gene_plot">
                 <table>
@@ -355,6 +356,13 @@
                         </td>
                         <td>
                             <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">
+                               <span id="title_detailed_plot"><b></b></span>
+                            <div class='plot_placeholder detailed_gene_plot_placeholder' id="detailed_gene_plot_placeholder">
+                            </div>
                         </td>
                     </tr>
                 </table>
