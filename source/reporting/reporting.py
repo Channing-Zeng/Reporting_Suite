@@ -905,16 +905,13 @@ def load_records(json_fpath):
 #             for sample_name, fpaths in report_fpath_by_sample.items()])
 
 
-def write_txt_rows(rows, output_fpath):
+def write_txt_rows(rows, output_fpath, col_widths=None):
     if not rows:
         return None
 
     # output_fpath = join(output_dirpath, base_fname + '.txt')
-
-    col_widths = repeat(0)
-    for row in rows:
-        if not row[0].startswith('##'):
-            col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
+    if not col_widths:
+        col_widths = get_col_widths(rows)
 
     with open(output_fpath, 'w') as out:
         for row in rows:
@@ -937,6 +934,15 @@ def write_tsv_rows(rows, output_fpath):
             out.write('\t'.join([val for val in row]) + '\n')
 
     return output_fpath
+
+
+def get_col_widths(rows):
+    col_widths = repeat(0)
+    for row in rows:
+        if not row[0].startswith('##'):
+            col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
+
+    return col_widths
 
 
 # def parse_value(string):

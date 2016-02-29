@@ -1,6 +1,7 @@
 # coding=utf-8
 
 from collections import OrderedDict
+from itertools import izip
 from os.path import join, isfile, abspath, realpath, dirname, relpath, basename
 import shutil
 import traceback
@@ -13,7 +14,8 @@ import source.targetcov
 from source.calling_process import call
 from source.file_utils import intermediate_fname, verify_file, safe_mkdir, splitext_plus
 from source.logger import critical, info, err, warn
-from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport
+from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, Row, \
+    BaseReport, write_txt_rows, write_tsv_rows, get_col_widths
 from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list, Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
@@ -695,6 +697,9 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_ge
 
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_thresholds))
     report.add_record('Sample', sample.name)
+    report.txt_fpath = sample.targetcov_detailed_txt
+    report.tsv_fpath = sample.targetcov_detailed_tsv
+
     if features_no_genes_bed or target_bed:
         ready_target_bed = join(output_dir, 'target.bed')
         try:
@@ -704,6 +709,10 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_ge
 
     ready_to_report_genes = []
     ready_to_report_set = set()
+
+    first_txt_rows = report.flatten(None, human_readable=True)
+    col_widths = get_col_widths(first_txt_rows)
+    col_widths[6] = len('Gene-Exon')
 
     for (bed, feature) in zip([target_bed, features_no_genes_bed], ['amplicons', 'exons']):
         if not bed:
@@ -796,21 +805,35 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_ge
 
                     # gene.chrom = region.chrom
                     # gene.strand = region.strand
+                row = [region.chrom, region.start, region.end, region.get_size(), region.gene_name, region.strand,
+                       region.feature, region.biotype, region.transcript_id, region.min_depth, region.avg_depth, region.std_dev,
+                       region.rate_within_normal]
+                row = [Metric.format_value(val, human_readable=True) for val in row]
+                rates = [Metric.format_value(val, unit='%', human_readable=True) for val in region.rates_within_threshs.values()]
+                row.extend(rates)
+                col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
 
                 total_regions_count += 1
                 if total_regions_count > 0 and total_regions_count % 10000 == 0:
                      info('  Processed {0:,} regions'.format(total_regions_count))
 
     info('Collecting regions for the report (total ' + str(len(ready_to_report_genes)) + '): ', ending='')
+
+    safe_mkdir(dirname(report.tsv_fpath))
+    write_tsv_rows(report.flatten(None, human_readable=False), report.tsv_fpath)
+    write_txt_rows(first_txt_rows, report.txt_fpath, col_widths=col_widths)
+    fpaths_to_write = [report.tsv_fpath, report.txt_fpath]
+
     for g in ready_to_report_genes:
         info(g.gene_name, ending=', ', print_date=False)
         for a in g.get_amplicons():
-            add_region_to_report(report, a, depth_thresholds)
+            add_region_to_report(report, a, depth_thresholds, fpaths_to_write, col_widths=col_widths)
         for e in g.get_exons():
-            add_region_to_report(report, e, depth_thresholds)
+            add_region_to_report(report, e, depth_thresholds, fpaths_to_write, col_widths=col_widths)
         if g.get_exons():
             process_gene(g, depth_thresholds)
-            add_region_to_report(report, g, depth_thresholds)
+            add_region_to_report(report, g, depth_thresholds, fpaths_to_write, col_widths=col_widths)
+
     info(print_date=True)
 
     # un_annotated_summary_region = next((g for g in gene_by_name_and_chrom.values() if g.gene_name == '.'), None)
@@ -822,10 +845,8 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_ge
     #         add_region_to_report(report, ampl, depth_thresholds)
     #     add_region_to_report(report, un_annotated_summary_region, depth_thresholds)
 
-    report.txt_fpath = sample.targetcov_detailed_txt
-    report.tsv_fpath = sample.targetcov_detailed_tsv
-    report.save_txt(sample.targetcov_detailed_txt)
-    report.save_tsv(sample.targetcov_detailed_tsv)
+    #report.save_txt(sample.targetcov_detailed_txt)
+    #report.save_tsv(sample.targetcov_detailed_tsv)
     info('')
     info('Regions (total ' + str(len(report.rows)) + ') saved into:')
     info('  ' + report.txt_fpath)
@@ -878,8 +899,12 @@ def process_gene(gene, depth_thresholds):
         gene.rates_within_threshs[t] = rate
 
 
-def add_region_to_report(report, region, depth_threshs):
-    rep_region = report.add_row()
+def add_region_to_report(report, region, depth_threshs, fpaths_to_write=None, col_widths=None):
+    if fpaths_to_write:
+        report.rows.append(1)
+        rep_region = Row(parent_report=report)
+    else:
+        rep_region = report.add_row()
     rep_region.add_record('Chr', region.chrom)
     rep_region.add_record('Start', region.start)
     rep_region.add_record('End', region.end)
@@ -898,6 +923,23 @@ def add_region_to_report(report, region, depth_threshs):
         warn('Error: no rates_within_threshs for ' + str(region))
     for thresh in depth_threshs:
         rep_region.add_record('{}x'.format(thresh), region.rates_within_threshs.get(thresh) if region.rates_within_threshs else None)
+
+    if fpaths_to_write:
+        for fpath in fpaths_to_write:
+            human_readable = fpath.endswith('txt')
+            flat_row = []
+            for m in report.metric_storage.get_metrics(None, skip_general_section=True):
+                rec = BaseReport.find_record(rep_region.records, m.name)
+                if rec:
+                    flat_row.append(rec.format(human_readable=human_readable))
+
+            with open(fpath, 'a') as out:
+                if fpath.endswith('tsv'):
+                    out.write('\t'.join([val for val in flat_row]) + '\n')
+                else:
+                    for val, w in izip(flat_row, col_widths):
+                                out.write(val + (' ' * (w - len(val) + 2)))
+                    out.write('\n')
 
 # def _bases_by_depth(depth_vals, depth_thresholds):
 #     bases_by_min_depth = {depth: 0 for depth in depth_thresholds}
