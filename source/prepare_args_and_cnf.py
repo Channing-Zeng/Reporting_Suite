@@ -35,6 +35,7 @@ def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR', help=SUPPRESS_HELP)  # Default is temporary directory
     parser.add_option('--debug', dest='debug', help=SUPPRESS_HELP, action='store_true', default=False)
     parser.add_option('--queue', dest='queue', help=SUPPRESS_HELP)  # Queue name for qsub
+    parser.add_option('--priority', dest='qsub_priority', help='Priority to submit jobs to qsub')  # Queue name for qsub
 
 
 def check_genome_resources(cnf):

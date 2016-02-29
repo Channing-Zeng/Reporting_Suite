@@ -21,11 +21,11 @@ resources:
   java:
     path: /apps/java/x64/jdk1.7.0_45/bin/java
   python:
-    path: /apps/bcbio-nextgen/0.9.5/rhel6-x64/anaconda/bin/python
+    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/anaconda/bin/python
   tabix:
-    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/tabix
+    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/tabix
   bgzip:
-    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/bgzip
+    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bgzip
   picard:
     path: ext_tools/picard/picard.jar
   qsub:
@@ -33,9 +33,11 @@ resources:
   qdel:
     path: /apps/sge61/bin/lx24-amd64/qdel
   bwa:
-    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/bwa
+    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bwa
   sambamba:
-    path: /apps/bcbio-nextgen/0.9.4/rhel6-x64/bin/sambamba
+    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/sambamba
+  bcftools:
+    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/anaconda/bin/bcftools
 
 genomes:
   hg38:

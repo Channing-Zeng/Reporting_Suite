@@ -254,13 +254,13 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
     return vcf_fpath
 
 
-def finialize_annotate_file(cnf, vcf_fpath, sample, callername):
+def finialize_annotate_file(cnf, vcf_fpath, sample, callername=None):
     # vcf_fpath = leave_first_sample(cnf, vcf_fpath)
 
     # if not cnf.no_check:
     #     vcf_fpath = _filter_malformed_fields(cnf, vcf_fpath)
 
-    if not cnf.no_check and 'vardict' not in callername:
+    if not cnf.no_check and callername and 'vardict' not in callername:
         info()
         info('Adding SAMPLE=' + sample.name + ' annotation...')
         vcf_fpath = add_annotation(cnf, vcf_fpath, 'SAMPLE', sample.name, number='1', type_='String', description='Sample name')

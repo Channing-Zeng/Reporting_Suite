@@ -583,6 +583,7 @@ class BCBioRunner:
         extra_qsub_opts = ''
         if step.run_on_chara and is_us():
             extra_qsub_opts += '-l h="chara|rask" '
+
         mem_opts = ''
         if mem_m and not is_local():
             mem_m = min(max(mem_m, 200), 90 * 1024)
@@ -591,8 +592,13 @@ class BCBioRunner:
                 mem_opts = ''
             else:
                 mem_opts = '-l h_vmem="' + mem + '" '
+
+        priority = 0
+        if self.cnf.qsub_priority:
+            priority = self.cnf.qsub_priority
+
         qsub_cmdline = (
-            '{qsub} -pe smp {threads} {mem_opts} {extra_qsub_opts} -S {bash} -q {queue} -p 0 '
+            '{qsub} -pe smp {threads} {mem_opts} {extra_qsub_opts} -S {bash} -q {queue} -p {priority} '
             '-j n -o {log_err_fpath} -e {log_err_fpath} {hold_jid_line} '
             '-N {job_name} {runner_script} {done_marker_fpath} {error_marker_fpath} "{cmdline}"'.format(**locals()))
         # print qsub_cmdline
