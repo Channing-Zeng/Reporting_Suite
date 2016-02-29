@@ -1,4 +1,4 @@
-v1.0.0, 28 Feb 2016
+v1.0.0, 29 Feb 2016
 
 New features:
 - New mutation filtering: using rules and manual curations by Robert McEwen and Hedley Carr. Reporting clasification assignment rationale.
@@ -7,7 +7,7 @@ New features:
 - Using canonical RefSeq transcripts (coding and miRNA) for TargQC detailed reports. The same RefSeq canonical transcripts are used to report mutation effects, and RefSeq CDS are used for Seq2C cnv calls.
 - Extended summary HTML: phenotype info, project and codebase datestamps, and versions.
 - New snpEff 4.2.
-- NGS oncology report has many new features: Allele frequency plot, flagged regions, exportable data, Seq2C plos for whole profile.
+- NGS oncology report has many new features: Allele frequency plot, flagged regions, exportable data, Seq2C plos for whole profile, detailed gene-level coverage plot.
 - Integration and exposing mutations, regions and alignment data to jBrowse. Includes convertion to BigWig.
 - Integration with LIMS to pull sample data.
 - Support bcbio 0.9.6.
