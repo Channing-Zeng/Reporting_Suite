@@ -7,6 +7,8 @@ CMDLINE=$3
 
 date >&2
 hostname >&2
+finger $(whoami) | head -n1 >&2
+echo "" >&2
 source /etc/profile.d/modules.sh >&2
 module unload python >&2 2>&2
 module unload gcc >&2 2>&2
