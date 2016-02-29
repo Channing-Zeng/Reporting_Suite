@@ -611,6 +611,11 @@ class BCBioStructure(BaseProjectStructure):
             safe_mkdir(self.log_dirpath)
         set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
 
+        info()
+        info(' '.join(sys.argv))
+        info()
+        info('-' * 70)
+
         self.work_dir = self.cnf.work_dir = self.cnf.work_dir or abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
         set_up_work_dir(cnf)
 
@@ -640,10 +645,9 @@ class BCBioStructure(BaseProjectStructure):
                 info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
                 _extract_project_summary(project_summary_fpath, dst_fpath)
 
-        info(' '.join(sys.argv))
         info()
         info('-' * 70)
-
+        
         # reading sampels
         for sample in [self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']]:
             if sample.dirpath is None:

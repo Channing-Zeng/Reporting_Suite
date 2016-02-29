@@ -11,10 +11,12 @@ from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
 from source.main import read_opts_and_cnfs
 
+
 def get_qualimap_max_mem(bam):
     mem_m = getsize(bam) / 3 / 1024 / 1024
     mem_m = min(max(mem_m, 1200), 4000)
     return mem_m
+
 
 def main():
     cnf = read_opts_and_cnfs(
