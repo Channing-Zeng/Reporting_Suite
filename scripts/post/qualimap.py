@@ -11,6 +11,10 @@ from source.tools_from_cnf import get_system_path
 from source.logger import info, critical
 from source.main import read_opts_and_cnfs
 
+def get_qualimap_max_mem(bam):
+    mem_m = getsize(bam) / 3 / 1024 / 1024
+    mem_m = min(max(mem_m, 1200), 4000)
+    return mem_m
 
 def main():
     cnf = read_opts_and_cnfs(
@@ -49,8 +53,7 @@ def main():
     info()
 
     mem_cmdl = ''
-    mem_m = getsize(cnf.bam) / 3 / 1024 / 1024 + 200
-    mem_m = min(max(mem_m, 200), 90 * 1024)
+    mem_m = get_qualimap_max_mem(cnf.bam)
     mem = str(int(mem_m)) + 'M'
     mem_cmdl = ' --java-mem-size=' + mem
 

@@ -9,6 +9,7 @@ from time import sleep
 from traceback import format_exc
 
 import source
+from scripts.post.qualimap import get_qualimap_max_mem
 from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
@@ -177,8 +178,6 @@ class BCBioRunner:
         from sys import platform as _platform
         if 'linux' in _platform:
             self.steps.append(self.bw_converting)
-        else:
-            warn('bam2bigwig is not supported for platform ' + _platform)
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -655,7 +654,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=getsize(sample.bam) / 1.5 / 1024 / 1024 + 500, run_on_chara=True)
+                            mem_m=get_qualimap_max_mem(sample.bam) + 4100, run_on_chara=True)  # --java-mem-size + 4Gb for qualimap
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
