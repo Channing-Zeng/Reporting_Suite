@@ -22,16 +22,16 @@ from source.file_utils import verify_file, adjust_path
 from pybedtools import BedTool
 
 
-usage = """
-    Input: Any BED file
-    Output:
-        BED file with regions from input, followed by symbol from best gene overlap from the reference
-        features BED (RefSeq or Ensembl).
-        Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
-        If a region do not overlap any gene, it gets output once in a 3-col line (no symbol is provided).
-
-    Usage: python %s Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file
-""" % __file__
+# usage = """
+#     Input: Any BED file
+#     Output:
+#         BED file with regions from input, followed by symbol from best gene overlap from the reference
+#         features BED (RefSeq or Ensembl).
+#         Regions can be duplicated, in case if they overlap multiple genes. For each gene, only one record.
+#         If a region do not overlap any gene, it gets output once in a 3-col line (no symbol is provided).
+#
+#     Usage: python %s Input_BED_file [Reference_BED_file] [bedtools_tool_path] > Annotated_BED_file
+# """ % __file__
 
 
 # def _read_args(args):

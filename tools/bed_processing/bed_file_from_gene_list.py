@@ -14,7 +14,7 @@ def main():
         sys.exit(1)
 
     genes_list_fpath = sys.argv[1]
-    exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.bed'
+    exons_fpath = '/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19.bed'
     synonyms_fpath = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
     if len(sys.argv) > 2: exons_fpath = sys.argv[2]
     if len(sys.argv) > 3: synonyms_fpath = sys.argv[3]

@@ -107,7 +107,7 @@ def read_opts_and_cnfs(extra_opts,
         (['--proc-name'], dict(dest='proc_name', help=SUPPRESS_HELP)),
         (['--project-name'], dict(dest='project_name')),
         (['--no-check'], dict(dest='no_check', action='store_true', help=SUPPRESS_HELP)),
-        (['--genome'], dict(dest='genome')),
+        (['-g', '--genome'], dict(dest='genome')),
         (['--email'], dict(dest='email', help=SUPPRESS_HELP)),
         (['--done-marker'], dict(dest='done_marker', help=SUPPRESS_HELP)),
     ]
