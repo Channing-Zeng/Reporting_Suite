@@ -654,7 +654,7 @@ class BCBioRunner:
                             self.targetcov, sample.name,
                             bam=sample.bam, sample=sample.name, genome=sample.genome,
                             caller_names='', vcfs='', threads=self.threads_per_sample, wait_for_steps=targqc_wait_for_steps,
-                            mem_m=get_qualimap_max_mem(sample.bam) + 4100, run_on_chara=True)  # --java-mem-size + 4Gb for qualimap
+                            mem_m=max(3000, get_qualimap_max_mem(sample.bam)) + 4100, run_on_chara=True)  # --java-mem-size (or 3Gb for picard) + 4Gb for JavaVM
 
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():

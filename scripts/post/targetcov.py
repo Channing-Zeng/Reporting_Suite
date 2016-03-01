@@ -171,10 +171,10 @@ def process_one(cnf, output_dir, features_bed, features_no_genes_bed):
         gene_keys_set, gene_keys_list, _, _, _ = \
             extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_no_genes_bed)
 
+    picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
+
     avg_depth, gene_by_name_and_chrom, reports = make_targetseq_reports(
         cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list)
-
-    picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 
     #if cnf.extended:
     try:
