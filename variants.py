@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+from collections import OrderedDict
+
 import bcbio_postproc
 
 import sys
@@ -46,7 +48,7 @@ def proc_args(argv):
     run_cnf = determine_run_cnf(opts, is_targetseq=opts.is_deep_seq, is_wgs=opts.is_wgs)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
 
-    sample_names, vcf_fpaths = read_samples(args, cnf.caller)
+    vcf_fpath_by_sample = read_samples(args, cnf.caller)
     info()
 
     if not cnf.project_name:
@@ -60,7 +62,7 @@ def proc_args(argv):
 
     samples = [
         source.VarSample(s_name, join(cnf.output_dir, s_name), vcf=vcf_fpath)
-            for s_name, vcf_fpath in zip(sample_names, vcf_fpaths)]
+            for s_name, vcf_fpath in vcf_fpath_by_sample.items()]
     samples.sort(key=lambda _s: _s.key_to_sort())
 
     check_genome_resources(cnf)
@@ -80,8 +82,7 @@ def main():
 
 
 def read_samples(args, caller_name=None):
-    vcf_fpaths = []
-    sample_names = []
+    vcf_fpath_by_sample = OrderedDict()
     bad_vcf_fpaths = []
 
     info('Reading samples...')
@@ -99,30 +100,34 @@ def read_samples(args, caller_name=None):
                     sn, vcf_fpath = fs
                     if not verify_file(vcf_fpath):
                         bad_vcf_fpaths.append(vcf_fpath)
-                    sample_names.append(sn)
-                    vcf_fpaths.append(adjust_path(vcf_fpath))
+                    vcf_fpath_by_sample[sn] = adjust_path(vcf_fpath)
 
             if bad_vcf_fpaths:
                 critical('VCF files cannot be found, empty or not VCFs:' + ', '.join(bad_vcf_fpaths))
-            info('Done reading ' + str(len(sample_names)) + ' samples')
-            return sample_names, vcf_fpaths
+            info('Done reading ' + str(len(vcf_fpath_by_sample)) + ' samples')
+            return vcf_fpath_by_sample
 
     for arg in args or [os.getcwd()]:
         vcf_fpath = verify_vcf(arg.split(',')[0])
         if not verify_file(vcf_fpath):
             bad_vcf_fpaths.append(vcf_fpath)
-        vcf_fpaths.append(vcf_fpath)
         if len(arg.split(',')) > 1:
-            sample_names.append(arg.split(',')[1])
+            sn = arg.split(',')[1]
         else:
             sn = basename(splitext_plus(vcf_fpath)[0])
             if caller_name and sn.endswith('-' + caller_name):
                 sn = sn[:-len(caller_name) - 1]
-            sample_names.append(sn)
             info('  ' + sn)
+        if sn in vcf_fpath_by_sample:
+            if vcf_fpath_by_sample[sn] != vcf_fpath:
+                warn('Duplicated record ' + sn + ', VCF file is different (existing: ' + vcf_fpath_by_sample[sn] + ', new: ' + vcf_fpath + ')')
+            else:
+                warn('Duplicated record ' + sn + ', VCF file is the same: ' + vcf_fpath)
+        else:
+            vcf_fpath_by_sample[sn] = vcf_fpath
     if bad_vcf_fpaths:
         critical('VCF files cannot be found, empty or not VCFs:' + ', '.join(bad_vcf_fpaths))
-    info('Done reading ' + str(len(sample_names)) + ' samples')
+    info('Done reading ' + str(len(vcf_fpath_by_sample)) + ' samples')
 
     # TODO: read sample names from VCF
     # def get_main_sample(self, main_sample_index=None):
@@ -138,7 +143,7 @@ def read_samples(args, caller_name=None):
     #     else:
     #         return self.samples[sample_index]
 
-    return sample_names, vcf_fpaths
+    return vcf_fpath_by_sample
 
 
 if __name__ == '__main__':
