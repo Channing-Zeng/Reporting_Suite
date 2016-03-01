@@ -67,7 +67,7 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, features_
 
     info('Making targqc summary')
     return summarize_targqc(cnf, summary_threads, output_dir, samples,
-                            bed_fpath=target_bed, exons_fpath=features_bed)
+                            bed_fpath=target_bed, features_fpath=features_bed)
 
 
 def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
