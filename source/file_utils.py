@@ -940,7 +940,7 @@ def _flatten_plus_safe(tmp_dir, rollback_files):
             fnames = [fnames]
         for fname in fnames:
             tx_file = fname + '.tx'
-            tx_fpath = join(tmp_dir, tx_file)
+            tx_fpath = join(tmp_dir, tx_file) if tmp_dir else tx_file
             tx_fpaths.append(tx_fpath)
             orig_files.append(fname)
     return tx_fpaths, orig_files
