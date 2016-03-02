@@ -278,9 +278,10 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                     lof_col = header.index('LOF')
                 except ValueError:
                     lof_col = None
-                if not cnf.is_output_fm and not status_col and not reason_col:
-                    l += '\tSignificance\tReason'
-                out_f.write(l + '\n')
+                if not cnf.is_output_fm:
+                    if not status_col and not reason_col:
+                        l += '\tSignificance\tReason'
+                    out_f.write(l + '\n')
                 continue
             fields = l.split('\t')
             if len(fields) < len(header):
@@ -446,7 +447,8 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                     if gene_aachg in sensitization_aa_changes:
                         sens_mut = sensitization_aa_changes[gene_aachg]
                         sensitizations.append(sens_mut)
-                    cur_gene_mutations.append([fields, status, reasons, gene_aachg, [sample, platform, prev_gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq]])
+                    fm_data = [sample, platform, prev_gene, pos, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq]
+                    cur_gene_mutations.append([fields, status, reasons, gene_aachg, fm_data])
                 else:
                     if cur_gene_mutations:
                         lines_written = print_mutations_for_one_gene(out_f, lines_written,
@@ -458,7 +460,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
 
             if gene not in genes_with_dependent_mutations:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
                 lines_written = print_mutation(out_f, lines_written, status, reasons, fields,
-                    is_output_fm=cnf.is_output_fm, fm_data=[sample, platform, gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq])
+                    is_output_fm=cnf.is_output_fm, fm_data=[sample, platform, gene, pos, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq])
 
     info()
     info('Written ' + str(lines_written) + ' lines')
@@ -744,9 +746,10 @@ def parse_genes_list(fpath):
 def print_mutation(out_f, lines_written, status, reasons, fields, fm_data=None, is_output_fm=False):
     lines_written += 1
     if fm_data and is_output_fm:
-        sample, platform, gene, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq = fm_data
-        out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[cdna_chg_col], 'chr:' + fields[chr_col],
-                         str(depth), str(allele_freq * 100), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
+        sample, platform, gene, pos, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq = fm_data
+        out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, fields[aa_chg_col], fields[cdna_chg_col],
+                               fields[chr_col] + ':' + pos, str(depth), str(allele_freq * 100),
+                               '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
     else:
         out_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
         # if status != fields[-2] or ','.join(reasons) != fields[-1]:
