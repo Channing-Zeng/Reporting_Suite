@@ -289,7 +289,7 @@ def get_gene_keys(bed_fpath, chrom_index=0, gene_index=3):
 
 def annotate_amplicons(cnf, target_bed):
     output_fpath = intermediate_fname(cnf, target_bed, 'ann')
-    features_bed = verify_bed(cnf.bed_annotation_features, is_critical=True, description='bed_annotation_features in system config')
+    features_bed = verify_bed(cnf.genome.bed_annotation_features, is_critical=True, description='bed_annotation_features in system config')
 
     annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
     bedtools = get_system_path(cnf, 'bedtools')

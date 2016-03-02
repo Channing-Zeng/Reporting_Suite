@@ -58,8 +58,8 @@ def check_genome_resources(cnf):
                     if verify_file(gz_fpath, silent=True):
                         cnf.genome[key] = gz_fpath
 
-    if not cnf.genome.features or not cnf.genome.bed_annotation_features:
-        critical('features and bed_annotation_features in the system config (' + cnf.sys_cnf + ') must be specified.')
+    if not cnf.genome.features or not cnf.genome.bed_annotation_features or not cnf.genome.cds:
+        critical('features and bed_annotation_features and cds in the system config (' + cnf.sys_cnf + ') must be specified.')
 
     custom_transcripts_fpath = None
     if cnf.canonical_transcripts:
@@ -78,9 +78,6 @@ def check_genome_resources(cnf):
     cnf.canonical_transcripts = verify_file(canonical_transcripts_fpath, description='Canonical transcripts')
     if not cnf.canonical_transcripts:
         critical('Please, specify canonical_transcripts or in snpeff transcripts in ' + cnf.sys_cnf)
-
-    if not cnf.genome.features and not cnf.genome.cds:
-        critical('"features" or "cds" fields are required in the system config.')
 
 
 def check_keys_presence(cnf, required_keys):

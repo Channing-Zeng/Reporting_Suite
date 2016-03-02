@@ -86,7 +86,7 @@ def main():
 
     chr_order = get_chrom_order(cnf)
 
-    features_fpath = adjust_path(cnf.bed_annotation_features)
+    features_fpath = adjust_path(cnf.genome.bed_annotation_features)
     if not verify_bed(features_fpath, 'Annotated reference BED file'):
         critical('Annotated reference is required')
 
