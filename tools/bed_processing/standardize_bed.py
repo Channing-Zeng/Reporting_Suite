@@ -8,10 +8,13 @@ import os
 from os.path import abspath, join, splitext
 import subprocess
 import copy
+
+from source.config import Config
 from source.file_utils import add_suffix, verify_file, which, adjust_path
 from source.logger import critical, info
+from source.prepare_args_and_cnf import determine_sys_cnf
 from source.targetcov.Region import SortableByChrom
-from source.utils import human_sorted
+from source.utils import human_sorted, get_chr_lengths_from_seq
 from optparse import OptionParser
 from os.path import exists, basename
 from tools.bed_processing import annotate_bed
@@ -32,29 +35,29 @@ from tools.bed_processing import annotate_bed
 
 def _read_args(args_list):
     options = [
-        (['-k', '--key-genes'], dict(
-            dest='key_genes_fpath',
-            help='list of key genes (they are at top priority when choosing one of multiple annotations)',
-            default='/ngs/reference_data/genomes/Hsapiens/common/az_key_genes.300.txt')
-         ),
-        (['-a', '--approved-genes'], dict(
-            dest='approved_genes_fpath',
-            help='list of HGNC approved genes (they are preferable when choosing one of multiple annotations)',
-            default='/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt')
-         ),
-        (['-e', '--ensembl-bed'], dict(
-            dest='ensembl_bed_fpath',
-            help='reference BED file for annotation (Ensembl)')
-         ),
-        (['-r', '--refseq-bed'], dict(
-            dest='refseq_bed_fpath',
-            help='reference BED file for annotation (RefSeq)')
-         ),
-        (['-b', '--bedtools'], dict(
-            dest='bedtools',
-            help='path to bedtools',
-            default='bedtools')
-         ),
+        # (['-k', '--key-genes'], dict(
+        #     dest='key_genes_fpath',
+        #     help='list of key genes (they are at top priority when choosing one of multiple annotations)',
+        #     default='/ngs/reference_data/genomes/Hsapiens/common/az_key_genes.300.txt')
+        #  ),
+        # (['-a', '--approved-genes'], dict(
+        #     dest='approved_genes_fpath',
+        #     help='list of HGNC approved genes (they are preferable when choosing one of multiple annotations)',
+        #     default='/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt')
+        #  ),
+        # (['-e', '--ensembl-bed'], dict(
+        #     dest='ensembl_bed_fpath',
+        #     help='reference BED file for annotation (Ensembl)')
+        #  ),
+        # (['-r', '--refseq-bed'], dict(
+        #     dest='refseq_bed_fpath',
+        #     help='reference BED file for annotation (RefSeq)')
+        #  ),
+        # (['-b', '--bedtools'], dict(
+        #     dest='bedtools',
+        #     help='path to bedtools',
+        #     default='bedtools')
+        #  ),
         (['-o', '--output-bed'], dict(
             dest='output_fpath')
          ),
@@ -76,7 +79,7 @@ def _read_args(args_list):
             default=False,
             action='store_true')
          ),
-        (['--genome'], dict(
+        (['-g', '--genome'], dict(
             dest='genome',
             default='hg19')
          ),
@@ -98,6 +101,8 @@ def _read_args(args_list):
         parser.print_help(file=sys.stderr)
         sys.exit(1)
 
+    cnf = Config(opts.__dict__, determine_sys_cnf(opts), {})
+
     work_dirpath = tempfile.mkdtemp()
     info('Creating a temporary working directory ' + work_dirpath)
     if not exists(work_dirpath):
@@ -106,32 +111,32 @@ def _read_args(args_list):
     input_bed_fpath = abspath(args[0])
     info('Input: ' + input_bed_fpath)
 
-    output_bed_fpath = adjust_path(opts.output_fpath)
+    output_bed_fpath = adjust_path(cnf.output_fpath)
     info('Writing to: ' + output_bed_fpath)
 
     # process configuration
     # for k, v in opts.__dict__.iteritems():
     #     if k.endswith('fpath') and verify_file(v, is_critical=True):
     #         opts.__dict__[k] = verify_file(v, k)
-    if opts.output_grch and opts.output_hg:
+    if cnf.output_grch and cnf.output_hg:
         info('you cannot specify --output-hg and --output-grch simultaneously!')
-    if not which(opts.bedtools):
-        info('bedtools executable not found, please specify correct path (current is %s)! '
-            'Did you forget to execute "module load bedtools"?' % opts.bedtools)
+    # if not which(opts.bedtools):
+    #     info('bedtools executable not found, please specify correct path (current is %s)! '
+    #         'Did you forget to execute "module load bedtools"?' % opts.bedtools)
 
-    if opts.debug:
-        info('Configuration: ')
-        for k, v in opts.__dict__.iteritems():
-            info('\t' + k + ': ' + str(v))
+    # if opts.debug:
+    #     info('Configuration: ')
+    #     for k, v in opts.__dict__.iteritems():
+    #         info('\t' + k + ': ' + str(v))
     info()
 
     # opts.ensembl_bed_fpath = verify_file(opts.ensembl_bed_fpath or \
     #     ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/Exons.with_genes.bed'))
 
-    opts.refseq_bed_fpath = verify_file(opts.refseq_bed_fpath or \
-        ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.bed'))
+    # opts.refseq_bed_fpath = verify_file(opts.refseq_bed_fpath or \
+    #     ('/ngs/reference_data/genomes/Hsapiens/' + opts.genome + '/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.bed'))
 
-    return input_bed_fpath, output_bed_fpath, work_dirpath, opts
+    return input_bed_fpath, output_bed_fpath, work_dirpath, cnf
 
 
 class BedParams:
@@ -163,8 +168,8 @@ class Region(SortableByChrom):
     approved_genes = []
     key_genes = []
 
-    def __init__(self, chrom, genome, start, end):
-        SortableByChrom.__init__(self, chrom, genome)
+    def __init__(self, chrom, chrom_ref_order, start, end):
+        SortableByChrom.__init__(self, chrom, chrom_ref_order)
         self.start = start
         self.end = end
         self.symbol = None
@@ -183,26 +188,18 @@ class Region(SortableByChrom):
     def __str__(self):
         fs = [BedParams.hg_to_GRCh[self.chrom] if self.GRCh_names else self.chrom,
               str(self.start), str(self.end), self.symbol] + (self.rest if self.n_cols_needed > 4 else [])
-        return '\t'.join(fs) + '\n'
+        return '\t'.join(fs)
 
     def get_key(self):
-        return SortableByChrom.get_key(self), self.start, self.end, self.symbol
+        return SortableByChrom.get_key(self), self.start, self.end, self.is_control(), self.symbol
 
     def is_control(self):
-        if self.symbol.startswith('_CONTROL'):
+        if self.symbol and self.symbol.startswith('_CONTROL'):
             return True
         return False
 
-    # def __lt__(self, other):
-    #     # special case: chrM goes to the end (in GRCh reference) or to the beginning (in hg reference)
-    #     if self.chrom != other.chrom and (self.chrom == 'chrM' or other.chrom == 'chrM'):
-    #         return True ^ (not self.GRCh_names) if other.chrom == 'chrM' else False ^ (not self.GRCh_names)
-    #     sorted_pair = human_sorted([self.get_key(), other.get_key()])
-    #     if sorted_pair[0] == self.get_key() and sorted_pair[1] != self.get_key():
-    #         return True
-    #     if self.get_key() == other.get_key() and self.is_control():
-    #         return True
-    #     return False
+    def __lt__(self, other):
+        return self.get_key() < other.get_key()
 
     def __eq__(self, other):
         return self.get_key() == other.get_key()
@@ -211,7 +208,7 @@ class Region(SortableByChrom):
         return hash(self.get_key())
 
 
-def _preprocess(cnf, bed_fpath, work_dirpath):
+def _preprocess(cnf, bed_fpath, work_dirpath, chrom_order):
     bed_params = BedParams()
     output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'prep')
     info('preprocessing: ' + bed_fpath + ' --> ' + output_fpath)
@@ -245,7 +242,7 @@ def _preprocess(cnf, bed_fpath, work_dirpath):
                     chrom = entries[0]
                     start = int(entries[1])
                     end = int(entries[2])
-                    r = Region(cnf.genome, chrom, start, end)
+                    r = Region(chrom, chrom_order.get(chrom), start, end)
                     if r.is_control():
                         r.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(chrom, start, end))
                         r.rest = entries[4:] if len(entries) > 4 else None
@@ -258,7 +255,7 @@ def _preprocess(cnf, bed_fpath, work_dirpath):
 def _annotate(bed_fpath, work_dirpath, cnf):
     annotated_files = []
     input_fpath = bed_fpath
-    references = [('RefSeq', cnf.refseq_bed_fpath)]  #, ('Ensembl', cnf.ensembl_bed_fpath)]
+    references = [('RefSeq', cnf.genome.features), ('Ensembl', cnf.genome.ensembl)]
 
     for id, (db_name, db_bed_fpath) in enumerate(references):
         output_fpath = __intermediate_fname(work_dirpath, bed_fpath, 'ann_' + db_name.lower())
@@ -294,7 +291,7 @@ def _annotate(bed_fpath, work_dirpath, cnf):
     return annotated_files
 
 
-def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cnf):
+def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cnf, chrom_order):
     '''
     1. Sorts.
     1. Chooses appropriate number of columns (4 or 8 for BEDs with primers).
@@ -303,14 +300,15 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
     info('postprocessing (sorting, cutting, removing duplicates)')
 
     key_genes = []
-    with open(cnf.key_genes_fpath, 'r') as f:
+    with open(adjust_path(cnf.key_genes), 'r') as f:
         for line in f:
             key_genes.append(line.strip())
     approved_genes = []
-    with open(cnf.approved_genes_fpath, 'r') as f:
-        f.readline()  # header
-        for line in f:
-            approved_genes.append(line.split('\t')[0])
+    if cnf.hgnc:
+        with open(adjust_path(cnf.hgnc), 'r') as f:
+            f.readline()  # header
+            for line in f:
+                approved_genes.append(line.split('\t')[0])
 
     Region.GRCh_names = bed_params.GRCh_names
     if cnf.output_grch:
@@ -326,32 +324,32 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
     Region.approved_genes = approved_genes
 
     input_regions = set()  # we want only unique regions
-    with open(input_fpath) as f:
+    with open(adjust_path(input_fpath)) as f:
         for line in f:
             entries = line.strip().split('\t')
             chrom = entries[0]
             start = int(entries[1])
             end = int(entries[2])
-            r = Region(cnf.genome, chrom, start, end)
+            r = Region(chrom, chrom_order.get(chrom), start, end)
             r.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(chrom, start, end))
             r.rest = entries[4:] if len(entries) > 4 else None
             input_regions.add(r)
 
     annotated_regions = []
     for annotated_fpath in annotated_fpaths:
-        with open(annotated_fpath) as f:
+        with open(adjust_path(annotated_fpath)) as f:
             for line in f:
                 entries = line.strip().split('\t')
                 chrom = entries[0]
                 start = int(entries[1])
                 end = int(entries[2])
-                r = Region(cnf.genome, chrom, start, end)
+                r = Region(chrom, chrom_order.get(chrom), start, end)
                 r.set_symbol(entries[3] if len(entries) > 3 else '{0}:{1}-{2}'.format(chrom, start, end))
                 r.rest = entries[4:] if len(entries) > 4 else None
                 annotated_regions.append(r)
 
     # starting to output result
-    with open(output_bed_fpath, 'w') as f:
+    with open(adjust_path(output_bed_fpath), 'w') as f:
         for line in bed_params.header:
             f.write(line)
 
@@ -433,7 +431,7 @@ def _postprocess(input_fpath, annotated_fpaths, bed_params, output_bed_fpath, cn
                     cur_region = entry[0]
             else:
                 cur_region = entry
-            f.write(str(cur_region))  # automatically outputs correct number of columns and GRCh/hg names
+            f.write(str(cur_region) + '\n')  # automatically outputs correct number of columns and GRCh/hg names
 
 
 def __intermediate_fname(work_dir, fname, suf):
@@ -461,9 +459,13 @@ def __call(cnf, cmdline, output_fpath=None):
 def main():
     input_bed_fpath, output_bed_fpath, work_dirpath, cnf = _read_args(sys.argv[1:])
 
-    preprocessed_fpath, bed_params = _preprocess(cnf, input_bed_fpath, work_dirpath)
+    chr_lengths = get_chr_lengths_from_seq(cnf.genome.seq)
+    chrom_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
+
+    preprocessed_fpath, bed_params = _preprocess(cnf, input_bed_fpath, work_dirpath, chrom_order)
     annotated_fpaths = _annotate(preprocessed_fpath, work_dirpath, cnf)
-    _postprocess(preprocessed_fpath, annotated_fpaths, bed_params, output_bed_fpath, cnf)
+
+    _postprocess(preprocessed_fpath, annotated_fpaths, bed_params, output_bed_fpath, cnf, chrom_order)
     if not cnf.debug:
         for f in [preprocessed_fpath] + annotated_fpaths:
             os.remove(f)

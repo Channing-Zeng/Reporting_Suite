@@ -62,6 +62,7 @@ genomes:
 
     features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
+    ensembl: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.full.bed
 
   hg38:
     seq: ~/Dropbox/az/reference_data/hg38.fa
@@ -88,6 +89,7 @@ suppressors:                  ~/Dropbox/az/reference_data/common/suppressors.txt
 oncogenes:                    ~/Dropbox/az/reference_data/common/oncogenes.txt
 specific_mutations:           ~/Dropbox/az/reference_data/common/specific_mutations.csv
 snpeff_transcripts:           ~/Dropbox/az/reference_data/common/canonical_transcripts.txt
+hgnc:                         ~/Dropbox/az/reference_data/Exons/HGNC_gene_synonyms.txt
 
 queue: ngs.q
 

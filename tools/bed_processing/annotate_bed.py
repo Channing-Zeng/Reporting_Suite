@@ -65,7 +65,7 @@ from pybedtools import BedTool
 
 def main():
     if len(sys.argv[1]) < 0:
-        critical('Usage: ' + __file__ + ' Input_BED_file -o Annotated_BED_file')
+        critical('Usage: ' + __file__ + ' Input_BED_file -g hg19 -o Annotated_BED_file')
     input_bed_fpath = verify_bed(sys.argv[1], is_critical=True, description='Input BED file for ' + __file__)
 
     cnf = read_opts_and_cnfs(
@@ -209,19 +209,8 @@ def _annotate(cnf, bed, ref_bed, chr_order):
 
     for fs in intersection:
         a_chr, a_start, a_end, e_chr, e_start, e_end, e_gene, e_exon, e_strand, \
-            e_feature, e_biotype = fs[:11]
-
-        overlap_size = None
-        if len(fs) >= 11:  # important! intersection is not a list object, thus it's size would be 11 and the 11'th element would be overlap_size
-            overlap_size = fs[11].strip()
-        if len(fs) >= 12:  # important! intersection is not a list object, thus it's size would be 12 and the 12'th element would be overlap_size
-            e_transcript, overlap_size = fs[11], fs[12].strip()
-        try:
-            overlap_size = int(overlap_size)
-        except ValueError:
-            err('Cannot parse overlap_size ' + str(overlap_size) + ' in line ' + str(fs))
-            err('Line size = ' + str(len(fs)))
-            err('fs[11], fs[12].strip() = ' + str((fs[11], fs[12].strip())))
+            e_feature, e_biotype, e_transcript = fs[:12]
+        overlap_size = int(fs[-1])
 
         # else:
         #     critical('Cannot parse the reference BED file - unexpected number of lines '

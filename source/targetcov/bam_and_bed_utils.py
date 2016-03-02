@@ -8,7 +8,7 @@ from collections import OrderedDict
 
 from source.calling_process import call, call_pipe
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
-    safe_mkdir
+    safe_mkdir, file_transaction
 from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
 from source.targetcov.Region import SortableByChrom
@@ -369,7 +369,7 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_keys_set, suffix=None):
 
 def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
     input_bed_fpath = verify_bed(input_bed_fpath)
-    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else intermediate_fname(cnf, input_bed_fpath, 'sorted')
+    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else add_suffix(cnf, input_bed_fpath, 'sorted')
 
     class Region(SortableByChrom):
         def __init__(self, chrom, start, end, other_fields, chrom_ref_order):
@@ -386,28 +386,34 @@ def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
     chr_lengths = get_chr_lengths_from_seq(cnf.genome.seq)
     chr_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
 
-    info('Sorting regions...')
+    info('Sorting regions in ' + input_bed_fpath)
+    if cnf.reuse_intermediate and isfile(output_bed_fpath) and verify_bed(output_bed_fpath):
+        info(output_bed_fpath + ' exists, reusing')
+        return output_bed_fpath
+
     with open(input_bed_fpath) as f:
-        with open(output_bed_fpath, 'w') as out:
-            for l in f:
-                if not l.strip():
-                    continue
-                if l.strip().startswith('#'):
-                    out.write(l)
-                    continue
+        if cnf.work_dir:
+            with file_transaction(cnf.work_dir, output_bed_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for l in f:
+                        if not l.strip():
+                            continue
+                        if l.strip().startswith('#'):
+                            out.write(l)
+                            continue
 
-                fs = l.strip().split('\t')
-                chrom = fs[0]
-                start = int(fs[1])
-                end = int(fs[2])
-                other_fields = fs[3:]
-                ord = chr_order.get(chrom, -1)
-                regions.append(Region(chrom, start, end, other_fields, ord))
+                        fs = l.strip().split('\t')
+                        chrom = fs[0]
+                        start = int(fs[1])
+                        end = int(fs[2])
+                        other_fields = fs[3:]
+                        ord = chr_order.get(chrom, -1)
+                        regions.append(Region(chrom, start, end, other_fields, ord))
 
-            for region in sorted(regions, key=lambda r: r.get_key()):
-                fs = [region.chrom, str(region.start), str(region.end)]
-                fs.extend(region.other_fields)
-                out.write('\t'.join(fs) + '\n')
+                    for region in sorted(regions, key=lambda r: r.get_key()):
+                        fs = [region.chrom, str(region.start), str(region.end)]
+                        fs.extend(region.other_fields)
+                        out.write('\t'.join(fs) + '\n')
 
     info('Sorted ' + str(len(regions)) + ' regions, saved to ' + output_bed_fpath + '\n')
     return output_bed_fpath
