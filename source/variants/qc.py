@@ -52,8 +52,6 @@ def make_report(cnf, vcf_fpath, sample):
     transitions = 0
     transversions = 0
 
-    main_sample_index = get_sample_column_index(vcf_fpath, sample.name)
-
     with open_gzipsafe(vcf_fpath) as f:
         reader = vcf_parser.Reader(f)
         for rec in (vcf_processing.Record(rec, vcf_fpath, i) for i, rec in enumerate(reader)):
@@ -88,7 +86,7 @@ def make_report(cnf, vcf_fpath, sample):
                     if any(id.startswith('rs') for id in ids):
                         dbsnps += 1
 
-                call = rec.get_main_sample(main_sample_index)
+                call = rec.samples[0]
                 if call.called:
                     if call.gt_type == 1:
                         hets += 1

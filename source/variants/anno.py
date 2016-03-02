@@ -152,6 +152,13 @@ def get_db_path(cnf, dbconf, dbname):
     return verify_file(db_path, is_critical=True)
 
 
+def rm_gz_ext(fpath):
+    if fpath.endswith('.gz'):
+        return splitext(fpath)[0]
+    else:
+        return fpath
+
+
 def run_annotators(cnf, vcf_fpath, bam_fpath):
     original_vcf = cnf.vcf
 
@@ -190,7 +197,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
 
     cmdl = '{bcftools} annotate --remove ID {vcf_fpath}'
-    res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(vcf_fpath, 'rmid'))
+    res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(rm_gz_ext(vcf_fpath), 'rmid'))
     if res:
         vcf_fpath = res
         vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
@@ -203,7 +210,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         db_fpath = get_db_path(cnf, dbconf, dbname)
         if db_fpath:
             cmdl = '{bcftools} annotate -a ' + db_fpath + ' -c ' + annotations + ' {vcf_fpath}'
-            res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(splitext(vcf_fpath)[0], dbname))
+            res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(rm_gz_ext(vcf_fpath), dbname))
             if res:
                 vcf_fpath = res
                 vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
