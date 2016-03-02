@@ -162,7 +162,7 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
                     '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
             info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in the target BED is ' + str(cols) +
                 '. Annotating target with the gene names from the "features" file ' + features_bed + '...')
-            target_bed = annotate_amplicons(cnf, target_bed, features_bed)
+            target_bed = annotate_amplicons(cnf, target_bed)
 
     def remove_no_anno(l, i):
         if l.split('\t')[3].strip() == '.': return None
@@ -185,12 +185,8 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
         cols = count_bed_cols(seq2c_bed)
         if cols < 4:
             info()
-            if not features_bed:
-                critical(str(cols) + ' columns (less than 4), and no exons to annotate regions '
-                                     '(please make sure you have set the "exons" key in the corresponding genomes section '
-                                     '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
             info('Number columns in SV bed is ' + str(cols) + '. Annotating amplicons with gene names from Ensembl...')
-            seq2c_bed = annotate_amplicons(cnf, seq2c_bed, features_bed)
+            seq2c_bed = annotate_amplicons(cnf, seq2c_bed)
         elif 8 > cols > 4:
             seq2c_bed = cut(cnf, seq2c_bed, 4)
         elif cols > 8:
@@ -241,7 +237,7 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_
             if not verify_file(features_filt_bed):
                 info()
                 warn('No gene symbols from the capture BED file was found in the features BED file. Re-annotating target...')
-                target_bed = annotate_amplicons(cnf, target_bed, features_bed)
+                target_bed = annotate_amplicons(cnf, target_bed)
                 #info('Merging regions within genes...')
                 #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
                 info('Sorting amplicons_bed by (chrom, gene_name, start)')
@@ -291,8 +287,9 @@ def get_gene_keys(bed_fpath, chrom_index=0, gene_index=3):
     return gene_keys_set, gene_keys_list
 
 
-def annotate_amplicons(cnf, target_bed, features_bed):
+def annotate_amplicons(cnf, target_bed):
     output_fpath = intermediate_fname(cnf, target_bed, 'ann')
+    features_bed = verify_bed(cnf.bed_annotation_features, is_critical=True, description='bed_annotation_features in system config')
 
     annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
     bedtools = get_system_path(cnf, 'bedtools')
@@ -393,28 +390,27 @@ def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
         return output_bed_fpath
 
     with open(input_bed_fpath) as f:
-        if cnf.work_dir:
-            with file_transaction(cnf.work_dir, output_bed_fpath) as tx:
-                with open(tx, 'w') as out:
-                    for l in f:
-                        if not l.strip():
-                            continue
-                        if l.strip().startswith('#'):
-                            out.write(l)
-                            continue
+        with file_transaction(cnf.work_dir, output_bed_fpath) as tx:
+            with open(tx, 'w') as out:
+                for l in f:
+                    if not l.strip():
+                        continue
+                    if l.strip().startswith('#'):
+                        out.write(l)
+                        continue
 
-                        fs = l.strip().split('\t')
-                        chrom = fs[0]
-                        start = int(fs[1])
-                        end = int(fs[2])
-                        other_fields = fs[3:]
-                        ord = chr_order.get(chrom, -1)
-                        regions.append(Region(chrom, start, end, other_fields, ord))
+                    fs = l.strip().split('\t')
+                    chrom = fs[0]
+                    start = int(fs[1])
+                    end = int(fs[2])
+                    other_fields = fs[3:]
+                    order = chr_order.get(chrom, -1)
+                    regions.append(Region(chrom, start, end, other_fields, order))
 
-                    for region in sorted(regions, key=lambda r: r.get_key()):
-                        fs = [region.chrom, str(region.start), str(region.end)]
-                        fs.extend(region.other_fields)
-                        out.write('\t'.join(fs) + '\n')
+                for region in sorted(regions, key=lambda r: r.get_key()):
+                    fs = [region.chrom, str(region.start), str(region.end)]
+                    fs.extend(region.other_fields)
+                    out.write('\t'.join(fs) + '\n')
 
     info('Sorted ' + str(len(regions)) + ' regions, saved to ' + output_bed_fpath + '\n')
     return output_bed_fpath

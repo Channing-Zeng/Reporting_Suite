@@ -77,8 +77,9 @@ genomes:
     snpeff:
       reference: hg38
 
-    features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.bed
-    cds:       /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
@@ -101,8 +102,9 @@ genomes:
       reference: hg38
     # the rest is taken from hg19 crossmap
 
-    features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.bed
-    cds:       /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg38-noalt.bed
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg38-noalt.bed
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
@@ -138,8 +140,9 @@ genomes:
     snpeff:
       reference: hg19
 
-    features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed
-    cds:       /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19.bed
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19.bed
 
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 
@@ -174,8 +177,9 @@ genomes:
     snpeff:
       reference: hg19
 
-    features:  /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-noalt.bed
-    cds:       /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg19-noalt.bed
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-noalt.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-noalt.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg19-noalt.bed
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exome-AZ.bed
 
