@@ -62,12 +62,13 @@ def markdup_bam(cnf, in_bam_fpath, bammarkduplicates=None):
         return None
 
 
-def bam_to_bed(cnf, bam_fpath):
+def bam_to_bed(cnf, bam_fpath, to_gzip=True):
     info('Converting the BAM to BED to save some memory.')  # from here: http://davetang.org/muse/2015/08/05/creating-a-coverage-plot-using-bedtools-and-r/
-    bam_bed_fpath = splitext_plus(bam_fpath)[0] + '.bed.gz'
+    bam_bed_fpath = splitext_plus(bam_fpath)[0] + ('.bed.gz' if to_gzip else '.bed')
     bedtools = get_system_path(cnf, 'bedtools')
     gzip = get_system_path(cnf, 'gzip')
-    cmdline = '{bedtools} bamtobed -i {bam_fpath} | {gzip}'.format(**locals())
+    cmdline = '{bedtools} bamtobed -i {bam_fpath}'.format(**locals())
+    cmdline += ' | {gzip}'.format(**locals()) if to_gzip else ''
     call(cnf, cmdline, output_fpath=bam_bed_fpath)
     return bam_bed_fpath
 

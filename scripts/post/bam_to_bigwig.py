@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
-from source.file_utils import file_transaction
-from source.targetcov.bam_and_bed_utils import check_md5
-from source.utils import get_ext_tools_dirpath
 
 '''Convert BAM files to BigWig file format in a specified region.
 Usage:
@@ -29,9 +26,13 @@ import os
 import sys
 from os.path import isfile
 from os.path import splitext, join
-from contextlib import contextmanager, closing
-import pysam
+from collections import defaultdict
 
+
+import source
+from source.file_utils import file_transaction, add_suffix, adjust_path, intermediate_fname
+from source.targetcov.bam_and_bed_utils import check_md5, bam_to_bed, remove_dups, index_bam, verify_bam
+from source.utils import get_ext_tools_dirpath, get_chr_len_fpath, get_chr_lengths
 from source.logger import critical, info
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources
@@ -61,78 +62,83 @@ def proc_args(argv):
     return cnf
 
 
-def process_bam(cnf, bam_file, chrom='all', start=0, end=None,
+def process_bam(cnf, bam_fpath, chrom='all', start=0, end=None,
          outfile=None, normalize=False, use_tempfile=False):
     if outfile is None:
-        outfile = '%s.bigwig' % splitext(bam_file)[0]
+        outfile = '%s.bigwig' % splitext(bam_fpath)[0]
     if start > 0:
         start = int(start) - 1
     if end is not None:
         end = int(end)
-    regions = [(chrom, start, end)]
+
     bigwig_fpath = outfile
-    if not (check_md5(cnf.work_dir, bam_file, 'bam', silent=True) and os.path.exists(outfile)):
-        wig_file = '%s.wig' % splitext(outfile)[0]
-        with file_transaction(cnf.work_dir, wig_file) as tx:
-            with open(tx, 'w') as out:
-                chr_sizes, wig_valid = write_bam_track(bam_file, regions, out, normalize)
-        try:
-            if wig_valid:
-                bigwig_fpath = convert_to_bigwig(wig_file, chr_sizes, cnf, outfile)
-        finally:
-            os.remove(wig_file)
+    if not (cnf.reuse_intermediate and os.path.exists(bigwig_fpath) and check_md5(cnf.work_dir, bam_fpath, 'bam', silent=True)):
+        chr_len_fpath = get_chr_len_fpath(cnf)
+        dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
+        if not verify_bam(dedup_bam, silent=True):
+            info('Deduplicating bam file ' + bam_fpath)
+            remove_dups(cnf, bam_fpath, dedup_bam)
+        else:
+            info(dedup_bam + ' exists')
+        index_bam(cnf, dedup_bam)
+        bam_bed_fpath = bam_to_bed(cnf, dedup_bam, to_gzip=False)
+        sorted_bed_fpath = sort_bed_by_alphabet(cnf, bam_bed_fpath)
+        bedgraph_fpath = '%s.bedgraph' % splitext(bam_fpath)[0]
+        with file_transaction(cnf.work_dir, bedgraph_fpath) as tx_fpath:
+            bedtools = get_system_path(cnf, 'bedtools')
+            cmdl = '{bedtools} genomecov -bg -split -g {chr_len_fpath} -i {sorted_bed_fpath}'.format(**locals())
+            call(cnf, cmdl, exit_on_error=True, output_fpath=tx_fpath)
+
+        convert_to_bigwig(bedgraph_fpath, cnf, chr_len_fpath, bigwig_fpath)
     else:
         info(outfile + ' exists, reusing')
     return bigwig_fpath
 
 
-@contextmanager
-def indexed_bam(bam_fpath):
-    sam_reader = pysam.Samfile(bam_fpath, 'rb')
-    yield sam_reader
-    sam_reader.close()
+def sort_bed_by_alphabet(cnf, input_bed_fpath, output_bed_fpath=None):
+    chr_lengths = get_chr_lengths(cnf)
+    chromosomes = set([c for (c, l) in chr_lengths])
+    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else add_suffix(input_bed_fpath, 'sorted')
+
+    regions = defaultdict(list)
+
+    info('Sorting regions...')
+    chunk_size = 10
+    chunk_counter = 0
+    with open(input_bed_fpath) as f:
+        with file_transaction(cnf.work_dir, output_bed_fpath) as tx:
+            with open(tx, 'w') as out:
+                for l in f:
+                    if not l.strip():
+                        continue
+                    if l.strip().startswith('#'):
+                        out.write(l)
+                        continue
+
+                    fs = l.strip().split('\t')
+                    chrom = fs[0]
+                    if chrom not in chromosomes:
+                        continue
+                    if chunk_counter == chunk_size or not regions[chrom]:
+                        chunk_counter = 0
+                        regions[chrom].append('')
+                    regions[chrom][-1] += l
+                    chunk_counter += 1
+                for chr in sorted(regions.keys()):
+                    for region in regions[chr]:
+                        out.write(region)
+
+    return output_bed_fpath
 
 
-def write_bam_track(bam_fpath, regions, out_handle, normalize):
-    out_handle.write('track %s\n' % ' '.join(['type=wiggle_0',
-        'name=%s' % os.path.splitext(os.path.split(bam_fpath)[-1])[0],
-        'visibility=full']))
-    normal_scale = 1e6
-    is_valid = False
-    with indexed_bam(bam_fpath) as work_bam:
-        total = sum(1 for r in work_bam.fetch() if not r.is_unmapped) if normalize else None
-        sizes = zip(work_bam.references, work_bam.lengths)
-        if len(regions) == 1 and regions[0][0] == 'all':
-            regions = [(name, 0, length) for name, length in sizes]
-        for chrom, start, end in regions:
-            if end is None and chrom in work_bam.references:
-                end = work_bam.lengths[work_bam.references.index(chrom)]
-            assert end is not None
-            out_handle.write('variableStep chrom=%s\n' % chrom)
-            for col in work_bam.pileup(chrom, start, end):
-                if normalize:
-                    n = float(col.n) / total * normal_scale
-                else:
-                    n = col.n
-                out_handle.write('%s %.1f\n' % (col.pos+1, n))
-                is_valid = True
-    return sizes, is_valid
-
-
-def convert_to_bigwig(wig_fpath, chr_sizes, cnf, bw_fpath=None):
-    if not bw_fpath:
-        bw_fpath = '%s.bigwig' % (os.path.splitext(wig_fpath)[0])
-    chr_sizes_fpath = '%s-sizes.txt' % (os.path.splitext(wig_fpath)[0])
-    with open(chr_sizes_fpath, 'w') as out_handle:
-        for chrom, size in chr_sizes:
-            out_handle.write('%s\t%s\n' % (chrom, size))
+def convert_to_bigwig(bedgraph_fpath, cnf, chr_len_fpath, bw_fpath):
     try:
         with file_transaction(cnf.work_dir, bw_fpath) as tx_fpath:
-            cmdl = get_system_path(cnf, join(get_ext_tools_dirpath(), 'wigToBigWig'), is_critical=True)
-            cmdl += ' ' + wig_fpath + ' ' + chr_sizes_fpath + ' ' + tx_fpath
+            cmdl = get_system_path(cnf, join(get_ext_tools_dirpath(), 'bedGraphToBigWig'), is_critical=True)
+            cmdl += ' ' + bedgraph_fpath + ' ' + chr_len_fpath + ' ' + tx_fpath
             call(cnf, cmdl, exit_on_error=True)
     finally:
-        os.remove(chr_sizes_fpath)
+        os.remove(bedgraph_fpath)
     return bw_fpath
 
 
