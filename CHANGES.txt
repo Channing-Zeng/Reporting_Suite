@@ -1,3 +1,16 @@
+v1.0.1, 2 Mar 2016
+
+- Stanalone variants.py - handling incorrect input
+- BED processing scripts updates: annotate_bed.py, sort_bed.py, standardize_bed.py
+
+Optimization
+- TargQC memory optimization: Do not keep regions in memory. Run Picard before coverage.
+
+Fixes
+- More memory allocated to qsub for TargQC - fixes some crashes
+- TargQC standalone fix - thanks Sally Luke (https://github.com/AstraZeneca-NGS/Reporting_Suite/issues/19)
+
+
 v1.0.0, 29 Feb 2016
 
 New features:
