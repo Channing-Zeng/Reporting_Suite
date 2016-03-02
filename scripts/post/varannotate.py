@@ -115,7 +115,7 @@ def process_one(cnf):
     #     sample.vcf = vcf_fpath
 
     step_greetings('Removing rejeted records...')
-    ungz_pass_vcf_fpath = remove_rejected(cnf, vcf_fpath)
+    pass_vcf_fpath = remove_rejected(cnf, vcf_fpath)
     info()
 
     # if sample.vcf is None:
@@ -150,7 +150,7 @@ def process_one(cnf):
     #         return line
     #     sample.vcf = iterate_file(cnf, sample.vcf, fn, suffix='main_col')
 
-    anno_vcf_fpath = run_annotators(cnf, ungz_pass_vcf_fpath, sample.bam)
+    anno_vcf_fpath = run_annotators(cnf, pass_vcf_fpath, sample.bam)
 
     return finialize_annotate_file(cnf, anno_vcf_fpath, sample, cnf.caller)
 

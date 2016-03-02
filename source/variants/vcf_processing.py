@@ -363,6 +363,9 @@ def vcf_is_empty(cnf, vcf_fpath):
 
 
 def remove_rejected(cnf, input_fpath, output_fpath=None):
+    if not input_fpath.endswith('.gz') or not file_exists(input_fpath + '.tbi'):
+        input_fpath = bgzip_and_tabix(cnf, input_fpath)
+
     bcftools = get_system_path(cnf, 'bcftools')
     output_fpath = output_fpath or add_suffix(input_fpath, 'pass')
     if output_fpath.endswith('.gz'):

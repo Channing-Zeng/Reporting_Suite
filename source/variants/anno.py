@@ -186,6 +186,9 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
 
     bcftools = get_system_path(cnf, 'bcftools')
 
+    if not vcf_fpath.endswith('.gz') or not file_exists(vcf_fpath + '.tbi'):
+        vcf_fpath = bgzip_and_tabix(cnf, vcf_fpath)
+
     cmdl = '{bcftools} annotate --remove ID {vcf_fpath}'
     res = call(cnf, cmdl.format(**locals()), output_fpath=add_suffix(vcf_fpath, 'rmid'))
     if res:
