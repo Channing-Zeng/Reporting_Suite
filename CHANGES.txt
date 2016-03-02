@@ -2,9 +2,11 @@ v1.0.1, 2 Mar 2016
 
 - Stanalone variants.py - handling incorrect input
 - BED processing scripts updates: annotate_bed.py, sort_bed.py, standardize_bed.py
+- Using all transcripts for bed annotation, canonical only for reports and CNV. make_exons.py udpated to make both canon and all
 
 Optimization
-- TargQC memory optimization: Do not keep regions in memory. Run Picard before coverage.
+- TargQC memory optimization: Do not keep regions in memory. Run Picard before coverage
+- Bam to bigwig converion using bedgraph as intermediate (faster, reduce memory usage)
 
 Fixes
 - More memory allocated to qsub for TargQC - fixes some crashes
