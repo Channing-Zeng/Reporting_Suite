@@ -33,7 +33,7 @@ import source
 from source.file_utils import file_transaction, add_suffix, adjust_path, intermediate_fname
 from source.targetcov.bam_and_bed_utils import check_md5, bam_to_bed, remove_dups, index_bam, verify_bam
 from source.utils import get_ext_tools_dirpath, get_chr_len_fpath, get_chr_lengths
-from source.logger import critical, info
+from source.logger import critical, info, err
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources
 from source.tools_from_cnf import get_system_path
@@ -147,6 +147,9 @@ def main():
     bigwig_fpath = process_bam(cnf, cnf.bam)
     if isfile(bigwig_fpath) and cnf.project_name and cnf.sample:
         create_jbrowse_symlink(cnf.genome.name, cnf.project_name, cnf.sample, bigwig_fpath)
+        info('BAM was successfully converted.')
+    elif not isfile(bigwig_fpath):
+        err('BAM was not converted to BigWig.')
 
 
 if __name__ == '__main__':
