@@ -764,8 +764,11 @@ def add_suffix(fname, suf):
 
 
 def intermediate_fname(cnf, fpath, suf):
-    output_fname = add_suffix(fpath, suf)
-    return join(cnf.work_dir, basename(output_fname))
+    suf_fpath = add_suffix(fpath, suf)
+    if cnf.work_dir:
+        return join(cnf.work_dir, basename(suf_fpath))
+    else:
+        return suf_fpath
 
 
 def remove_quotes(s):
