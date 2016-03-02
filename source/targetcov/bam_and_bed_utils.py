@@ -370,7 +370,7 @@ def filter_bed_with_gene_set(cnf, bed_fpath, gene_keys_set, suffix=None):
 
 def sort_bed(cnf, input_bed_fpath, output_bed_fpath=None):
     input_bed_fpath = verify_bed(input_bed_fpath)
-    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else add_suffix(cnf, input_bed_fpath, 'sorted')
+    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else add_suffix(input_bed_fpath, 'sorted')
 
     class Region(SortableByChrom):
         def __init__(self, chrom, start, end, other_fields, chrom_ref_order):
