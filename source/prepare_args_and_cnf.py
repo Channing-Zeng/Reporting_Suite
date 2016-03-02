@@ -58,7 +58,7 @@ def check_genome_resources(cnf):
                     if verify_file(gz_fpath, silent=True):
                         cnf.genome[key] = gz_fpath
 
-    if not cnf.features or not cnf.bed_annotation_features:
+    if not cnf.genome.features or not cnf.genome.bed_annotation_features:
         critical('features and bed_annotation_features in the system config (' + cnf.sys_cnf + ') must be specified.')
 
     custom_transcripts_fpath = None
