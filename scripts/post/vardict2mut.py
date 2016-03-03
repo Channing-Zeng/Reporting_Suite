@@ -383,7 +383,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
                 if is_loss_of_function(reasons, is_lof):
                     if gene in oncogenes:
                         info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
-                        status, reasons = update_status(status, reasons, 'unlikely', reasons + ['oncogene'], force=True)
+                        status, reasons = update_status(status, reasons, 'unlikely', reasons + ['oncogene_lof'], force=True)
                     elif gene in suppressors:
                         is_act = True
                         info('gene ' + gene + ' is a suppressor, and mutation is LOF. Updating status from ' + status + ' to known')
