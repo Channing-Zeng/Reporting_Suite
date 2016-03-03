@@ -736,6 +736,7 @@ def check_by_mut_type(cdna_chg, status, reasons, region, types_by_region):
                 status, reasons = update_status(status, reasons, statuses[tier], 'manually_curated')
     return status, reasons
 
+
 def parse_genes_list(fpath):
     genes = []
     if fpath and verify_file(fpath):

@@ -678,7 +678,7 @@ class BCBioRunner:
                                 if not verify_vcf(anno_vcf_fpath):
                                     is_err = True
                             if is_err:
-                                critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exists.')
+                                critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exist.')
 
                         if c.single_anno_vcf_by_sample:
                             self._submit_job(

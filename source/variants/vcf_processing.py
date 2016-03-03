@@ -49,7 +49,7 @@ class Record(_Record):
         return self._variant
 
 
-def verify_vcf(vcf_fpath, silent=True, is_critical=False):
+def verify_vcf(vcf_fpath, silent=False, is_critical=False):
     if not verify_file(vcf_fpath, silent=silent, is_critical=is_critical):
         return None
     debug('File ' + vcf_fpath + ' exists and not empty')
