@@ -586,7 +586,7 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
-        if not mut.signif or mut.signif.lower() in ['unknown', 'unlikely']:
+        if not mut.signif or mut.signif.lower() in ['unknown']:
             if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
                 warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
             row.hidden = True
@@ -805,7 +805,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            if mut.signif not in ['unlikely', 'unknown'] and mut.is_canonical:
+                            if mut.signif not in ['unknown'] and mut.is_canonical:
                                 variants.append(mut.aa_change if mut.aa_change else '.')
                                 types.append(mut.var_type)
                                 frequencies.append(Metric.format_value(mut.freq, unit='%'))
