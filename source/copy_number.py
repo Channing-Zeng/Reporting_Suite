@@ -29,11 +29,23 @@ import source
 from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
 
 
-def cnv_reports(cnf, bcbio_structure):
+def run_seq2c_bcbio_structure(cnf, bcbio_structure):
     step_greetings('Coverage statistics for each gene for all samples')
 
+    if cnf.prep_bed is not False:
+        info('Preparing BED files')
+        features_bed_fpath = cnf.features or cnf.genome.features  # only for annotation
+        if cnf.bed or bcbio_structure.bed:
+            _, _, _, seq2c_bed = \
+                prepare_beds(cnf, features_bed=features_bed_fpath,
+                    target_bed=bcbio_structure.bed, seq2c_bed=bcbio_structure.sv_bed)
+        else:
+            seq2c_bed = verify_bed(cnf.genome.cds)
+    else:
+        seq2c_bed = verify_bed(cnf.bed)
+
     info('Calculating normalized coverages for CNV...')
-    cnv_report_fpath = _seq2c(cnf, bcbio_structure)
+    cnv_report_fpath = run_seq2c(cnf, bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
 
     # if not verify_module('matplotlib'):
     #     warn('No matplotlib, skipping plotting Seq2C')
@@ -97,18 +109,18 @@ def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2
         return None
 
 
-def _seq2c(cnf, bcbio_structure):
+def run_seq2c(cnf, samples, seq2c_bed, is_wgs):
     """
     Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
     is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
     """
-    info('Deduplicating BAMs if needed')
+    step_greetings('Running Seq2C')
     # dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
     # safe_mkdir(dedup_bam_dirpath)
     dedupped_bam_by_sample = dict()
     dedup_jobs = []
     ori_work_dir = cnf.work_dir
-    for s in bcbio_structure.samples:
+    for s in samples:
         if not s.bam:
             err('No BAM file for ' + s.name)
             continue
@@ -124,10 +136,10 @@ def _seq2c(cnf, bcbio_structure):
             dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
 
     cnf.work_dir = ori_work_dir
-    dedup_jobs = wait_for_jobs(cnf, dedup_jobs)
+    wait_for_jobs(cnf, dedup_jobs)
 
     ok = True
-    for s in bcbio_structure.samples:
+    for s in samples:
         if not dedupped_bam_by_sample.get(s.name) or not verify_bam(dedupped_bam_by_sample[s.name]):
             err('No BAM file for ' + s.name)
             ok = False
@@ -137,26 +149,16 @@ def _seq2c(cnf, bcbio_structure):
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(cnf.output_dir, 'mapped_reads_by_sample.tsv')
-    __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, mapped_read_fpath)
+    __get_mapped_reads(cnf, samples, dedupped_bam_by_sample, mapped_read_fpath)
     info()
 
     combined_gene_depths_fpath = join(cnf.output_dir, 'cov.tsv')
-    # __cov2cnv(cnf, bcbio_structure.sv_bed or bcbio_structure.bed, bcbio_structure.samples, dedupped_bam_by_sample, combined_gene_depths_fpath)
-    __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, bcbio_structure.samples,
-                                  dedupped_bam_by_sample, combined_gene_depths_fpath)
+    __simulate_cov2cnv_w_bedtools(cnf, samples,
+              dedupped_bam_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
     info()
 
     seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
     __new_seq2c(cnf, mapped_read_fpath, combined_gene_depths_fpath, seq2c_report_fpath)
-
-    # info('Getting old way reads and cov stats, but with amplicons')
-    # info()
-    # cnv_gene_ampl_report_fpath = __cov2cnv2(cnf, read_stats_fpath, combined_gene_depths_fpath, cnv_gene_ampl_report_fpath)
-    # cnv_gene_ampl_report_fpath__mine = __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath__mine, cnv_gene_ampl_report_fpath__mine)
-
-    # run_copy_number__cov2cnv2(cnf, mapped_reads_by_sample, amplicon_summary_lines, cnv_ampl_report_fpath)
-
-    # save_results_separate_for_samples(results)
 
     return seq2c_report_fpath
 
@@ -170,7 +172,6 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
     if cnf.controls:
         controls = '-c ' + cnf.controls  # ':'.join([adjust_path(fpath) for fpath in cnf.controls.split(':')])
         lr2gene_opt = '-c'
-    #TODO: Sakina, what is usually passed to Seq2C as controls? Samples that are part of the project, or something outside of the project?
 
     cmdline = '{cov2lr} -a {controls} {read_stats_fpath} {combined_gene_depths_fpath}'.format(**locals())
     call(cnf, cmdline, cov2lr_output, exit_on_error=False)
@@ -202,21 +203,12 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
 #         seq2c_seq2cov(cnf, seq2cov, samtools, sample, dedupped_bam_by_sample[sample.name], bed_fpath, sample.seq2cov_output_dup_fpath)
 
 
-def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by_sample, output_fpath):
+def __simulate_cov2cnv_w_bedtools(cnf, samples, dedupped_bam_by_sample, bed_fpath, is_wgs, output_fpath):
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing')
         return output_fpath
 
-    info('Preparing BED files')
-    if cnf.prep_bed is not False:
-        features_bed_fpath = cnf.features or cnf.genome.features  # only for annotation
-        if cnf.bed or bcbio_structure.bed:
-            _, _, _, seq2c_bed = \
-                prepare_beds(cnf, features_bed=features_bed_fpath, target_bed=bcbio_structure.bed, seq2c_bed=bcbio_structure.sv_bed)
-        else:
-            seq2c_bed = verify_bed(cnf.genome.cds)
-    else:
-        seq2c_bed = verify_bed(cnf.bed)
+    seq2c_bed = verify_bed(bed_fpath)
 
     output_dirpath = dirname(output_fpath)
     seq2c_exposed_fpath = join(output_dirpath, 'seq2c_target.bed')
@@ -250,8 +242,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, bcbio_structure, samples, dedupped_bam_by
             info('Using bedcoverage output for Seq2C coverage.')
             # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
-            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv,
-                                                              is_wgs=(bcbio_structure.bed is None))
+            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=is_wgs)
             amplicons = (a for a in amplicons if a.gene_name and a.gene_name != '.')
             save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
 
@@ -490,7 +481,7 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
     # return read_stats_fpath, combined_gene_depths_fpath
 
 
-def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, output_fpath):
+def __get_mapped_reads(cnf, samples, dedupped_bam_by_sample, output_fpath):
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing')
         return output_fpath
@@ -498,12 +489,12 @@ def __get_mapped_reads(cnf, bcbio_structure, dedupped_bam_by_sample, output_fpat
     mapped_reads_by_sample = OrderedDict()
 
     jobs_to_wait = []
-    for s in bcbio_structure.samples:
+    for s in samples:
         if verify_file(s.targetcov_json_fpath, silent=True):
             info('Parsing targetSeq output ' + s.targetcov_json_fpath)
             with open(s.targetcov_json_fpath) as f:
                 data = load(f, object_pairs_hook=OrderedDict)
-            cov_report = SampleReport.load(data, s, bcbio_structure)
+            cov_report = SampleReport.load(data, s)
             mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
             info(s.name + ': ')
             info('  Mapped reads: ' + str(mapped_reads))

@@ -8,7 +8,7 @@ from os.path import join
 
 from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.calling_process import call
-from source.copy_number import cnv_reports
+from source.copy_number import run_seq2c_bcbio_structure
 from source.logger import info
 from source.tools_from_cnf import get_system_path
 
@@ -26,7 +26,7 @@ def main():
                 help='Optional control sample names for Seq2C. For multiple controls, separate them using :',
                 default=''
            )),
-           (['--seq2c_opts'], dict(
+           (['--seq2c-opts'], dict(
                 dest='seq2c_opts',
                 help='Options for the final lr2gene.pl script.',
                 default=''
@@ -58,7 +58,7 @@ def main():
         ],
     )
 
-    cnv_reports(cnf, bcbio_structure)
+    run_seq2c_bcbio_structure(cnf, bcbio_structure)
 
     # exons_bed_fpath = cnf.exons if cnf.exons else cnf.genome.exons
     # _, _, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed=exons_bed_fpath, target_bed=bcbio_structure.sv_bed)

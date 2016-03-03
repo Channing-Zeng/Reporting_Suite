@@ -39,7 +39,7 @@ def proc_args(argv):
     parser.add_option('-e', '--extended', dest='extended', action='store_true', default=False, help='count missed variants')
     parser.add_option('--deep-seq', dest='deep_seq', action='store_true', default=False, help='deep targeted sequencing')
     parser.add_option('--no-qualimap', dest='qualimap', action='store_false', default=True, help='do not run qualimap')
-    parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
+    parser.add_option('--bed', dest='bed', help='BED file to run detailed coverage analysis.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
 
     (opts, args) = parser.parse_args()
@@ -52,6 +52,8 @@ def proc_args(argv):
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'), is_targetseq=opts.deep_seq)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
+
+    cnf.output_dir = adjust_path(cnf.output_dir)
 
     if not cnf.project_name:
         cnf.project_name = basename(cnf.output_dir)

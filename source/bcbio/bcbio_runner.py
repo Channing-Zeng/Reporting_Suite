@@ -444,7 +444,7 @@ class BCBioRunner:
             controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
             seq2c_cmdline += ' -c ' + ':'.join(controls)
         if cnf.seq2c_opts:
-            seq2c_cmdline += ' --seq2c_opts ' + cnf.seq2c_opts
+            seq2c_cmdline += ' --seq2c-opts ' + cnf.seq2c_opts
         if cnf.reannotate:
             seq2c_cmdline += ' --reannotate '
         self.seq2c = Step(cnf, run_id,
