@@ -376,7 +376,7 @@ def do_filtering(cnf, vcf2txt_res_fpath, out_fpath):
             if not SIMULATE_OLD_VARDICT2MUT and not is_specific_mutation:
                 is_lof = fields[lof_col] if lof_col else None
                 if not SIMULATE_OLD_VARDICT2MUT and status != 'known' and gene in genes_with_generic_rules:
-                    status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg, is_lof)
+                    status, reasons = check_by_general_rules(var_type, status, reasons, aa_chg, is_lof, gene)
                 if not SIMULATE_OLD_VARDICT2MUT and status != 'known' and gene in genes_with_spec_types:
                     status, reasons = check_by_mut_type(cdna_chg, status, reasons, region, genes_with_spec_types[gene])
 
@@ -636,7 +636,9 @@ def parse_specific_mutations(specific_mut_fpath):
 
     genes_with_dependent_mutations = defaultdict(set) # other mutation is required
     with open(specific_mut_fpath) as f:
-        for l in f:
+        for i, l in enumerate(f):
+            if i == 0:
+                continue
             l = l.replace('\n', '')
             if not l:
                 continue
@@ -709,15 +711,16 @@ def check_for_specific_mutation(specific_mutations, gene, aa_chg, effect, region
     return status, reasons, False
 
 
-def check_by_general_rules(var_type, status, reasons, aa_chg, is_lof):
+def check_by_general_rules(var_type, status, reasons, aa_chg, is_lof, gene):
     if 'splice_site' in reasons:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
     elif is_loss_of_function(reasons, is_lof):
         status, reasons = update_status(status, reasons, 'known', 'actionable')
     elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
         status, reasons = update_status(status, reasons, 'known', 'actionable')
-    elif status != 'unlikely':
-        status, reasons = update_status(status, reasons, 'unlikely', 'not_alter_protein_function', force=True)
+    elif status != 'unlikely' and status != 'unknown':
+        info(str(gene) + ' ' + str(aa_chg) + ' is in general rules, but not alters proteint function. Keeping status as ' + str(status) + ' (' + str(reasons) + ')')
+    #     status, reasons = update_status(status, reasons, 'unlikely', 'but_not_alter_protein_function', force=True)
     return status, reasons
 
 
