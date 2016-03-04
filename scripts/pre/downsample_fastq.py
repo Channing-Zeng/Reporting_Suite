@@ -43,7 +43,7 @@ def main():
     parser.add_option('--downsample-to', dest='downsample_to', default=5e5, type='int',
         help='Downsample reads to avoid excessive processing times with large files. '
              'Default is 1 million. Set to 0 to turn off downsampling.')
-    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
 

@@ -24,7 +24,7 @@ def main():
 
     description = 'This script generates target QC reports for each BAM provided as an input.'
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
     parser.add_option('--work-dir', dest='work_dir', metavar='DIR')
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--only-summary', dest='only_summary', action='store_true')

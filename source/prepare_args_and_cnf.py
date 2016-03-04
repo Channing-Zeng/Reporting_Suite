@@ -21,12 +21,12 @@ from source.utils import is_china
 from source.utils import is_local
 
 
-def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser):
+def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=defaults['bcbio_postproc_threads']):
     parser.add_option('--sys-cnf', '--sys-info', '--sys-cfg', dest='sys_cnf',
                       help='System configuration yaml with paths to external tools and genome resources (see default one %s)' % defaults['sys_cnf'])
     parser.add_option('--run-cnf', '--run-info', '--run-cfg', dest='run_cnf',
                       help='Run configuration yaml (see default one %s)' % defaults['run_cnf_exome_seq'])
-    parser.add_option('-t', dest='threads', type='int', help='Max number of slots, default is %d' % defaults['threads'])
+    parser.add_option('-t', dest='threads', type='int', default=threads, help='Max number of slots, default is %d' % threads)
     parser.add_option('--reuse', dest='reuse_intermediate', action='store_true', help='Reuse intermediate non-empty files in the work dir from previous run')
     parser.add_option('--no-check', dest='no_check', action='store_true', help=SUPPRESS_HELP)
     parser.add_option('--project-name', '--project', dest='project_name', help='Project name. If not set, it gets parsed from JIRA or from the location path.')

@@ -12,17 +12,21 @@ from source.file_utils import intermediate_fname, iterate_file, splitext_plus, v
 from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
 from source.targetcov.Region import SortableByChrom
-from source.tools_from_cnf import get_system_path, get_script_cmdline
+from source.tools_from_cnf import get_system_path
 from source.utils import md5, get_chr_lengths_from_seq
 
 
-def index_bam(cnf, bam_fpath, sambamba=None):
+def index_bam(cnf, bam_fpath, sambamba=None, samtools=None):
     sambamba = sambamba or get_system_path(cnf, 'sambamba')
     indexed_bam = bam_fpath + '.bai'
     if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
         info('Indexing BAM, writing ' + indexed_bam + '...')
         cmdline = '{sambamba} index -t {cnf.threads} {bam_fpath}'.format(**locals())
-        call(cnf, cmdline)
+        res = call(cnf, cmdline, exit_on_error=False)
+        if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
+            samtools = samtools or get_system_path(cnf, 'samtools')
+            cmdline = '{samtools} index {bam_fpath}'.format(**locals())
+            call(cnf, cmdline)
     else:
         debug('Actutal "bai" index exist.')
 

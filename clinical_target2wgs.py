@@ -23,7 +23,7 @@ def main():
     description = 'This script makes paired WGS-target clincial reports based on 2 bcbio projects.'
 
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
 
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
     parser.add_option('--jira', dest='jira', help='JIRA case path')

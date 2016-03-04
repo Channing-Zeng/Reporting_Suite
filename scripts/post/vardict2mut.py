@@ -33,7 +33,7 @@ def get_args():
         'The program will filter the VarDict output after vcf2txt.pl to '
         'candidate interpretable mutations, somatic or germline.')
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
 
     parser.add_option('-o', dest='output_file')
     parser.add_option('-D', '--min-depth', dest='filt_depth', type='int', help='The minimum total depth')

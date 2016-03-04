@@ -43,7 +43,8 @@ defaults = dict(
 
     default_min_freq = 0.05,
 
-    threads = 25
+    threads = 1,
+    bcbio_postproc_threads = 30
 )
 defaults['sys_cnf'] = defaults['sys_cnfs']['us']
 
