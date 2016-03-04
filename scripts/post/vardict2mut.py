@@ -637,7 +637,7 @@ def parse_specific_mutations(specific_mut_fpath):
     genes_with_dependent_mutations = defaultdict(set) # other mutation is required
     with open(specific_mut_fpath) as f:
         for l in f:
-            l = l.strip()
+            l = l.replace('\n', '')
             if not l:
                 continue
             line = l.split('\t')
