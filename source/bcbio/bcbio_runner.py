@@ -590,7 +590,7 @@ class BCBioRunner:
             if mem_m < 1:
                 mem_opts = ''
             else:
-                mem_opts = '-l h_vmem="' + mem + '" '
+                mem_opts = '-l mem_free="' + mem + '" '
 
         priority = 0
         if self.cnf.qsub_priority:
