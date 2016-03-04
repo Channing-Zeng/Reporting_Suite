@@ -192,7 +192,7 @@ def _filter(cnf, samples, variants_fname):
                 ).format(**locals())
             j = submit_job(cnf, cmdl,
                 job_name='_filt_' + sample.name,
-                output_fpath=output_fpath,
+                output_fpath=pass_output_fpath,
                 stdout_to_outputfile=False,
                 work_dir=work_dir)
             jobs_to_wait.append(j)
