@@ -103,7 +103,7 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
         if normal_samples:
             sample_match_on_hover_js = '<script type="text/javascript">\n'
             for s in bcbio_structure.samples:
-                if s.phenotype != 'normal':
+                if s.phenotype != 'normal' and s.normal_match:
                     sample_match_on_hover_js += ('' +
                         '\tdocument.getElementById("' + s.name + '_match").onmouseover = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "#EEE"; };\n' +
                         '\tdocument.getElementById("' + s.name + '_match").onmouseleave = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "white"; };\n'
