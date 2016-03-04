@@ -21,7 +21,7 @@ def index_bam(cnf, bam_fpath, sambamba=None, samtools=None):
     indexed_bam = bam_fpath + '.bai'
     if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
         info('Indexing BAM, writing ' + indexed_bam + '...')
-        cmdline = '{sambamba} index -t {cnf.threads} {bam_fpath}'.format(**locals())
+        cmdline = '{sambamba} index {bam_fpath}'.format(**locals())
         res = call(cnf, cmdline, exit_on_error=False)
         if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
             samtools = samtools or get_system_path(cnf, 'samtools')
@@ -38,7 +38,7 @@ def index_bam_grid(cnf, bam_fpath, sambamba=None):
         sambamba = sambamba or get_system_path(cnf, 'sambamba')
         if sambamba is None:
             sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
-        cmdline = '{sambamba} index -t {cnf.threads} {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+        cmdline = '{sambamba} index {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
         j = submit_job(cnf, cmdline, basename(bam_fpath) + '_index', output_fpath=indexed_bam, stdout_to_outputfile=False)
         info()
         return j
@@ -504,7 +504,7 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None):
 
 
 def remove_dups(cnf, bam, output_fpath, sambamba=None, use_grid=False):
-    cmdline = 'view --format=bam -F "not duplicate" -t {cnf.threads} {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+    cmdline = 'view --format=bam -F "not duplicate" {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
     sambamba = sambamba or get_system_path(cnf, 'sambamba', is_critical=True)
     if use_grid:
         j = submit_job(cnf, sambamba + ' ' + cmdline,
@@ -679,7 +679,7 @@ def _parse_picard_dup_report(dup_report_fpath):
 
 def number_of_reads(cnf, bam, suf=''):
     output_fpath = join(cnf.work_dir, basename(bam) + '_' + suf + 'num_reads')
-    cmdline = 'view -t {cnf.threads} -c {bam}'.format(**locals())
+    cmdline = 'view -c {bam}'.format(**locals())
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -687,7 +687,7 @@ def number_of_reads(cnf, bam, suf=''):
 
 def number_of_mapped_reads(cnf, bam, suf=''):
     output_fpath = join(cnf.work_dir, basename(bam) + '_' + suf + 'num_mapped_reads')
-    cmdline = 'view -t {cnf.threads} -c -F "not unmapped" {bam}'.format(**locals())
+    cmdline = 'view -c -F "not unmapped" {bam}'.format(**locals())
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -695,7 +695,7 @@ def number_of_mapped_reads(cnf, bam, suf=''):
 
 def number_of_properly_paired_reads(cnf, bam):
     output_fpath = join(cnf.work_dir, basename(bam) + '_num_paired_reads')
-    cmdline = 'view -t {cnf.threads} -c -F "proper_pair" {bam}'.format(**locals())
+    cmdline = 'view -c -F "proper_pair" {bam}'.format(**locals())
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -703,7 +703,7 @@ def number_of_properly_paired_reads(cnf, bam):
 
 def number_of_dup_reads(cnf, bam):
     output_fpath = join(cnf.work_dir, basename(bam) + '_num_dup_reads')
-    cmdline = 'view -t {cnf.threads} -c -F "duplicate" {bam}'.format(**locals())
+    cmdline = 'view -c -F "duplicate" {bam}'.format(**locals())
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -711,7 +711,7 @@ def number_of_dup_reads(cnf, bam):
 
 def number_of_dup_mapped_reads(cnf, bam):
     output_fpath = join(cnf.work_dir, basename(bam) + '_num_dup_unmapped_reads')
-    cmdline = 'view -t {cnf.threads} -c -F "unmapped and duplicate" {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
+    cmdline = 'view -c -F "unmapped and duplicate" {bam}'.format(**locals())  # 1024 (dup) + 4 (unmpapped)
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -719,7 +719,7 @@ def number_of_dup_mapped_reads(cnf, bam):
 
 def number_mapped_reads_on_target(cnf, bed, bam):
     output_fpath = join(cnf.work_dir, basename(bam) + '_' + basename(bed) + '_num_mapped_reads_target')
-    cmdline = 'view -t {cnf.threads} -c -F "not unmapped" -L {bed} {bam}'.format(**locals())
+    cmdline = 'view -c -F "not unmapped" -L {bed} {bam}'.format(**locals())
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     with open(output_fpath) as f:
         return int(f.read().strip())
@@ -727,7 +727,7 @@ def number_mapped_reads_on_target(cnf, bed, bam):
 
 def samtools_flag_stat(cnf, bam):
     output_fpath = join(cnf.work_dir, basename(bam) + '_flag_stats')
-    cmdline = 'flagstat -t {cnf.threads} {bam}'.format(**locals())
+    cmdline = 'flagstat {bam}'.format(**locals())
     call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam)
     stats = dict()
     with open(output_fpath) as f:
