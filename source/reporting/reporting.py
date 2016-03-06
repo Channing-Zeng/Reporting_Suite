@@ -240,9 +240,10 @@ class Metric:
                 if unit == '%':
                     value *= 100
                 precision = 2
-                for i in range(10, 2, -1):
+                for i in range(10, 1, -1):
                     if abs(value) < 1./(10**i):
                         precision = i + 1
+                        break
                 return '{value:.{precision}f}{unit_str}'.format(**locals())
             else:
                 return str(value)
