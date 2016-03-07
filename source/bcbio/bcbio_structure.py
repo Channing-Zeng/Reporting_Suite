@@ -878,6 +878,9 @@ class BCBioStructure(BaseProjectStructure):
 
                 vcf_fpath = self._set_vcf_file(caller_name, batch_name)
 
+                if not vcf_fpath:  # in sample dir?
+                    vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample)
+
                 if vcf_fpath:
                     caller = self.variant_callers.get(caller_name)
                     if not caller:
@@ -885,7 +888,6 @@ class BCBioStructure(BaseProjectStructure):
 
                     self.variant_callers[caller_name].samples.append(sample)
                     sample.vcf_by_callername[caller_name] = vcf_fpath
-
         info()
         return sample
 
@@ -968,6 +970,42 @@ class BCBioStructure(BaseProjectStructure):
 
         warn('Warning: no VCF found for batch ' + batch_name + ', ' + caller_name + ', gzip or '
             'uncompressed version in and outsize the var directory.')
+        return None
+
+    def _set_vcf_file_from_sample_dir(self, caller_name, sample):
+        vcf_fname = sample.name + '-' + caller_name + '.vcf'
+
+        vcf_fpath_gz = adjust_path(join(sample.dirpath, vcf_fname + '.gz'))  # in var
+        var_vcf_fpath_gz = adjust_path(join(sample.var_dirpath, vcf_fname + '.gz'))  # in var
+        vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))
+        var_vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
+
+        if isfile(vcf_fpath_gz):
+            verify_file(vcf_fpath_gz, is_critical=True)
+            info('Found VCF ' + vcf_fpath_gz)
+            return vcf_fpath_gz
+
+        if isfile(var_vcf_fpath_gz):
+            verify_file(var_vcf_fpath_gz, is_critical=True)
+            info('Found VCF in the var/ dir ' + var_vcf_fpath_gz)
+            return var_vcf_fpath_gz
+
+        if isfile(vcf_fpath):
+            verify_file(vcf_fpath, is_critical=True)
+            info('Found uncompressed VCF ' + var_vcf_fpath)
+            return vcf_fpath
+
+        if isfile(var_vcf_fpath):
+            verify_file(var_vcf_fpath, is_critical=True)
+            info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
+            return var_vcf_fpath
+
+        if sample.phenotype != 'normal':
+            warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outsize '
+                'the var directory. Phenotype is ' + str(sample.phenotype))
+        else:
+            info('Notice: no VCF file for ' + sample.name + ', ' + caller_name + ', phenotype ' + str(sample.phenotype))
+
         return None
 
     def clean(self):
