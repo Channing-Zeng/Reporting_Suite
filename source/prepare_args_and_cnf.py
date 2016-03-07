@@ -239,6 +239,7 @@ def set_up_log(cnf, proc_name=None, project_name=None, project_fpath=None, outpu
             except OSError:
                 pass
         info('log_fpath: ' + log_fpath)
+        info()
         logger.log_fpath = cnf.log = log_fpath
 
 

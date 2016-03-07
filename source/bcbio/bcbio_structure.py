@@ -16,7 +16,7 @@ import yaml
 import source
 from source import logger, BaseSample
 from source.logger import info, err, critical, warn
-from source.calling_process import call
+from source.calling_process import call, call_check_output
 from source.config import load_yaml_config, Config, defaults
 from source.file_utils import verify_dir, verify_file, adjust_path, remove_quotes, adjust_system_path, add_suffix
 from source.targetcov.bam_and_bed_utils import verify_bed, verify_bam
@@ -611,6 +611,8 @@ class BCBioStructure(BaseProjectStructure):
             safe_mkdir(self.log_dirpath)
         set_up_log(self.cnf, proc_name, self.project_name, self.final_dirpath)
 
+        info(call_check_output(cnf, 'hostname', silent=True).strip())
+        info(call_check_output(cnf, 'finger $(whoami) | head -n1', silent=True).strip())
         info()
         info(' '.join(sys.argv))
         info()
