@@ -7,9 +7,7 @@ from collections import OrderedDict
 from collections import defaultdict
 
 import source
-from scripts.post.vardict2mut import set_filtering_params
 from source.bcbio.bcbio_structure import BCBioStructure
-from source.config import defaults
 from source.logger import info, step_greetings, warn
 from source.file_utils import verify_file, add_suffix, verify_dir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
@@ -505,16 +503,16 @@ def get_run_info(cnf, bcbio_structure):
             version_text += 'last modified ' + last_modified_datestamp
         run_info_dict['suite_version'] = version_text
 
-    var_filtering_params = []
-    set_filtering_params(cnf, bcbio_structure=bcbio_structure)  # get variant filtering parameters from run_info yaml
-    dfts = defaults['variant_filtering']
-    for parameter in dfts:
-        if dfts[parameter] != cnf.variant_filtering[parameter]:
-            var_filtering_params.append('%s: %s' % (parameter, cnf.variant_filtering[parameter]))
-    if var_filtering_params:
-        run_info_dict["filtering_params"] = ', '.join(var_filtering_params)
-    else:
-        run_info_dict["filtering_params"] = 'default'
+    # var_filtering_params = []
+    # set_filtering_params(cnf, bcbio_structure=bcbio_structure)  # get variant filtering parameters from run_info yaml
+    # dfts = defaults['variant_filtering']
+    # for parameter in dfts:
+    #     if dfts[parameter] != cnf.variant_filtering[parameter]:
+    #         var_filtering_params.append('%s: %s' % (parameter, cnf.variant_filtering[parameter]))
+    # if var_filtering_params:
+    #     run_info_dict["filtering_params"] = ', '.join(var_filtering_params)
+    # else:
+    #     run_info_dict["filtering_params"] = 'default'
     return run_info_dict
 
 def _make_relative_link_record(name, match_name, metric):
