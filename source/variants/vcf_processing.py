@@ -111,9 +111,6 @@ def verify_vcf(vcf_fpath, silent=False, is_critical=False):
         vcf.close()
 
 
-
-
-
 def iterate_vcf(cnf, input_fpath, proc_rec_fun, suffix=None, check_result=True,
                 overwrite=False, reuse_intermediate=True, *args, **kwargs):
     info('iterate_vcf: overwrite=' + str(overwrite))
@@ -543,9 +540,10 @@ def bgzip_and_tabix(cnf, vcf_fpath, **kwargs):
     gzipped_fpath = join(vcf_fpath + '.gz')
     tbi_fpath = gzipped_fpath + '.tbi'
 
-    if file_exists(gzipped_fpath) and \
-            file_exists(tbi_fpath) and getctime(tbi_fpath) >= getctime(gzipped_fpath):
-        info('Actual compressed VCF and index exist.')
+    if cnf.reuse_intermediate and \
+           file_exists(gzipped_fpath) and getctime(gzipped_fpath) >= getctime(vcf_fpath) and \
+           file_exists(tbi_fpath) and getctime(tbi_fpath) >= getctime(gzipped_fpath):
+        info('Actual compressed VCF and index exist, reusing')
         return gzipped_fpath
 
     info('Compressing and tabixing VCF file, writing ' + gzipped_fpath + '(.tbi)')
