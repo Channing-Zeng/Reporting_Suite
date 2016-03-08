@@ -206,7 +206,7 @@ def run_annotators(cnf, vcf_fpath, bam_fpath):
         step_greetings('Annotating using ' + dbname)
         annotations = ','.join('INFO/' + a for a in dbconf.get('annotations'))
         if dbname in ('cosmic', 'dbsnp'):
-            annotations += ',ID'
+            annotations += ',=ID'
         db_fpath = get_db_path(cnf, dbconf, dbname)
         if db_fpath:
             cmdl = '{bcftools} annotate -a ' + db_fpath + ' -c ' + annotations + ' {vcf_fpath}'
