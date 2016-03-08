@@ -300,6 +300,9 @@ def _combine_results(cnf, samples, variants_fpath):
                                     out.write(l)
             info('Saved all mutations to ' + pass_variants_fpath)
 
+    variants_fpath = verify_file(variants_fpath, is_critical=True)
+    pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
+
     if not_existing or not_existing_pass:
         return None, None
 
