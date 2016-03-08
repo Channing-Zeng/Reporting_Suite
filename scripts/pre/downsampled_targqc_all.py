@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+import shutil
+
 import bcbio_postproc
 
 import os
@@ -44,6 +46,7 @@ def proc_opts():
     parser.add_option('--no-expose', dest='expose', action='store_false', default=True, help='Do not expose the reports')
     parser.add_option('-o', dest='output_dir')
     parser.add_option('--bed', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
+    parser.add_option('--downsample-to', dest='downsample_to', type='int')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
@@ -79,8 +82,10 @@ def proc_opts():
             cnf.work_dir = latest_fpath
         else:
             cnf.work_dir = join(all_work_dir, datetime.datetime.now().strftime("%Y-%b-%d_%H-%M"))
-            if exists(latest_fpath):
+            if islink(latest_fpath):
                 os.remove(latest_fpath)
+            if isdir(latest_fpath):
+                shutil.rmtree(latest_fpath)
             if not exists(latest_fpath):
                 os.symlink(basename(cnf.work_dir), latest_fpath)
 
@@ -112,6 +117,10 @@ def proc_opts():
     check_system_resources(cnf, optional=['fastq'])
 
     return cnf, cnf.output_dir, fastq_fpaths
+
+
+# def find_fastq_pairs():
+
 
 
 def main():
@@ -169,9 +178,17 @@ def main():
     #     dirpath=join(targqc_dirpath, s.name),
     #     bed=cnf.bed) for s in fastq_fpaths]
 
-    downsample_to = int(5e5)
-    info('Downsampling the reads to ' + str(downsample_to))
-    lefts, rights = downsample_fastq(cnf, samples, downsample_to)
+    if cnf.downsample_to == 0:
+        lefts = [s.l_fpath for s in samples]
+        rights = [s.r_fpath for s in samples]
+    else:
+        if cnf.downsample_to is None:
+            downsample_to = int(5e5)
+        else:
+            downsample_to = cnf.downsample_to
+
+        info('Downsampling the reads to ' + str(downsample_to))
+        lefts, rights = downsample_fastq(cnf, samples, downsample_to)
 
     bam_by_sample = dict()
     sambamba = get_system_path(cnf, 'sambamba')
@@ -180,7 +197,7 @@ def main():
     bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
     if sambamba and bwa and seqtk and bammarkduplicates:
         info()
-        info('Alignming ' + str(downsample_to) + ' random reads to the reference')
+        info('Alignming reads to the reference')
         bam_fpaths = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
             sambamba,
             bwa,
@@ -199,7 +216,7 @@ def main():
             info()
             cnf.work_dir = join(cnf.work_dir, source.targqc_name)
             safe_mkdir(cnf.work_dir)
-            info('Making TargQC reports for BAMs from ' + str(downsample_to) + ' reads')
+            info('Making TargQC reports for BAMs from reads')
             safe_mkdir(targqc_dirpath)
             run_targqc(cnf, bam_by_sample, cnf.bed, targqc_dirpath)
             cnf.work_dir = dirname(cnf.work_dir)
@@ -223,7 +240,7 @@ def downsample_fastq(cnf, samples, downsample_to=5e5):
     #     rights.append(r)
 
     fastqs = Parallel(n_jobs=len(samples)) \
-        (delayed(downsample)(CallCnf(cnf.__dict__), s.l_fpath, s.r_fpath, N=downsample_to,
+        (delayed(downsample)(CallCnf(cnf.__dict__), s.name, s.l_fpath, s.r_fpath, N=downsample_to,
                              output_dir=cnf.work_dir, suffix='subset') \
             for s in samples)
     lefts = [l for l, r in fastqs]

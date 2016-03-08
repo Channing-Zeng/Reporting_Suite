@@ -12,14 +12,14 @@ from source.logger import critical, debug
 LIMIT = 5*1000*1000
 
 
-def downsample(cnf, fastq_L_fpath, fastq_R_fpath, N, output_dir, suffix=None, quick=False):
+def downsample(cnf, sample_name, fastq_L_fpath, fastq_R_fpath, N, output_dir, suffix=None, quick=False):
     """ get N random headers from a fastq file without reading the
     whole thing into memory
     modified from: http://www.biostars.org/p/6544/
     quick=True will just grab the first N reads rather than do a true
     downsampling
     """
-    sample_name = splitext(''.join(lc if lc == rc else '' for lc, rc in izip(fastq_L_fpath, fastq_R_fpath)))[0]
+    sample_name = sample_name or splitext(''.join(lc if lc == rc else '' for lc, rc in izip(fastq_L_fpath, fastq_R_fpath)))[0]
 
     l_out_fpath = join(output_dir, add_suffix(basename(fastq_L_fpath), suffix or 'subset'))
     r_out_fpath = join(output_dir, add_suffix(basename(fastq_R_fpath), suffix or 'subset'))

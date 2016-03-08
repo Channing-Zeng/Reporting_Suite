@@ -71,7 +71,7 @@ def run_fastq(cnf, sample_name, l_r_fpath, r_r_fpath, output_dirpath, downsample
 
     if downsample_to:
         info('Downsampling to ' + str(downsample_to))
-        l_fpath, r_fpath = downsample(cnf, l_r_fpath, r_r_fpath, downsample_to, output_dir=cnf.work_dir)
+        l_fpath, r_fpath = downsample(cnf, sample_name, l_r_fpath, r_r_fpath, downsample_to, output_dir=cnf.work_dir)
 
     # Joining fastq files to run on a combination
     fastqc_fpath = join(cnf.work_dir, sample_name + '.fq')

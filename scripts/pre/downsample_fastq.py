@@ -57,7 +57,7 @@ def main():
     with workdir(cnf):
         info('Downsampling to ' + str(cnf.downsample_to))
         downsample(
-            cnf, left_reads_fpath, right_reads_fpath, cnf.downsample_to,
+            cnf, cnf.sample_name, left_reads_fpath, right_reads_fpath, cnf.downsample_to,
             output_dir=cnf.output_dir, suffix=cnf.suffix)
 
 
