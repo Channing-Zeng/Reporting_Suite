@@ -1,12 +1,10 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
-from os.path import splitext
-
-import re
-
 import bcbio_postproc
 
 
+from os.path import splitext
+import re
 import gzip
 import os
 import sys

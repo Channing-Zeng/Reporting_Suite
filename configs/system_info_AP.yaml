@@ -44,9 +44,9 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp-146.hg38.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.hg38.vcf.gz
-    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.hg38.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
 
@@ -56,7 +56,7 @@ genomes:
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
-#    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
@@ -68,9 +68,9 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp-146.hg38.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.hg38.vcf.gz
-    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.hg38.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
 
@@ -80,7 +80,7 @@ genomes:
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg38-noalt.bed
 
-#    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
@@ -91,12 +91,11 @@ genomes:
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
-    # chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v144.hg19.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.hg19.vcf.gz
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.hg19.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
     snpeff:

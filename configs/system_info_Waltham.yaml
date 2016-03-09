@@ -68,12 +68,9 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp-146.hg38.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.hg38.vcf.gz
-    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.hg38.vcf.gz
-#    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf
-#    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar.vcf
-#    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicV72CodingMuts.vcf
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
 
@@ -85,7 +82,7 @@ genomes:
 
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
 
-#    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
@@ -95,12 +92,11 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bwa/hg38-noalt.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp-146.hg38.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.hg38.vcf.gz
-    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.hg38.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
-    # the rest is taken from hg19 crossmap
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.bed
@@ -110,7 +106,7 @@ genomes:
 
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
 
-#    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
@@ -128,13 +124,10 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v144.hg19.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.hg19.vcf.gz
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.hg19.vcf.gz
-#    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf
-#    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
-#    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
@@ -171,7 +164,7 @@ genomes:
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/Cosmic-Coding_latest.vcf.gz
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/1000G_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/ClinVar_latest.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/oncomine_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/oncomine/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/dbNSF/dbNSFP_latest.txt.gz
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19-noalt/snpeff/  # data dir path
     snpeff:
