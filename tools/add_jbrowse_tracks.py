@@ -17,9 +17,6 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
     jbrowse_dirpath = join(jbrowse_data_path, 'tracks')
     jbrowse_project_dirpath = join(jbrowse_dirpath, bcbio_structure.project_name)
 
-    if isdir(jbrowse_project_dirpath):
-        warn('Warning: directory exists in JBrowse folder.')
-
     safe_mkdir(jbrowse_project_dirpath)
     jbrowse_tracks_fpath = join(jbrowse_data_path, 'tracks.conf')
 
@@ -89,12 +86,13 @@ def trunc_symlink(link):
         return None
     return 'tracks' + link.split('tracks', 1)[1]
 
+
 def set_folders(genome):
     jbrowse_basepath = '/home/klpf990/public_html/JBrowse-1.11.6'
-    jbrowse_browser_path = 'http://blue.usbod.astrazeneca.net/~klpf990/JBrowse-1.11.6/'
+    jbrowse_browser_path = 'http://blue.usbod.astrazeneca.net/~klpf990/JBrowse-1.11.6'
     if is_uk():
-        jbrowse_basepath = '/ngs/users/vlad/JBrowse'
-        jbrowse_browser_path = 'http://ukapdlnx115.ukapd.astrazeneca.net/~klpf990/JBrowse-1.11.6/'
+        jbrowse_basepath = '/ngs/web_content/reports/JBrowse'
+        jbrowse_browser_path = 'http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/JBrowse'
     data_dirname = 'data_hg19'
     if 'hg38' in genome:
         data_dirname = 'data_hg38'
@@ -102,6 +100,7 @@ def set_folders(genome):
         return None, None, None
     jbrowse_data_path = join(jbrowse_basepath, data_dirname)
     return jbrowse_data_path, data_dirname, jbrowse_browser_path
+
 
 def get_jbrowser_link(genome, sample, bed_fname=None):
     jbrowse_data_path, data_dirname, jbrowse_browser_path = set_folders(genome)
