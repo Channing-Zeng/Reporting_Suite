@@ -57,7 +57,7 @@ function extendClick(switch_id) {
       switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">' + key_or_target + ' genes</a> / <span>all genes</span>')
     }
     else {
-      switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">Known, likely, unlikely</a> / <span>+ unknown</span>')
+      switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely, unlikely</a> / <span>+ unknown</span>')
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_short = table_div.find('.table_short');
@@ -90,7 +90,7 @@ function reduceClick(switch_id) {
       switch_el.html('<span>'  + key_or_target + ' genes</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">all genes</a>')
     }
     else {
-      switch_el.html('<span>Known, likely, unlikely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">>+ unknown</a>')
+      switch_el.html('<span>known, likely, unlikely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a>')
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
