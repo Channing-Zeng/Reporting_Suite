@@ -7,6 +7,7 @@ from collections import OrderedDict
 from collections import defaultdict
 
 import source
+from scripts.post.create_oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.logger import info, step_greetings, warn
 from source.file_utils import verify_file, add_suffix, verify_dir
@@ -425,6 +426,11 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
             common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
     common_dict['run_section'] = get_run_info(cnf, bcbio_structure)
 
+    oncoprints_link = get_oncoprints_link(cnf, bcbio_structure, project_name)
+    if oncoprints_link:
+        common_dict['oncoprints']['oncoprints_link'] = '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
+                                                       '(loading may take 5-10 seconds)'.format(**locals())
+
     main_dict = dict()
     if full_report.sample_reports:
         # individual records
@@ -514,6 +520,12 @@ def get_run_info(cnf, bcbio_structure):
     # else:
     #     run_info_dict["filtering_params"] = 'default'
     return run_info_dict
+
+
+def get_oncoprints_link(cnf, bcbio_structure, project_name):
+    oncoprints_link = create_oncoprints_link(cnf, bcbio_structure, project_name)
+    return oncoprints_link
+
 
 def _make_relative_link_record(name, match_name, metric):
     value = '<a class="dotted-link" href="#{match_name}" id="{name}_match">{match_name}</a>'.format(name=name, match_name=match_name)
