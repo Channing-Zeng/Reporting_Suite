@@ -2,6 +2,8 @@ import getpass
 import os
 import hashlib
 import base64
+import shutil
+import traceback
 from collections import defaultdict
 from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize
 import datetime
@@ -265,6 +267,14 @@ class BCBioRunner:
 
         self.is_wgs = self.cnf.is_wgs or self.bcbio_structure.is_wgs
         target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
+
+        if target_bed:
+            ready_target_bed = join(self.bcbio_structure.date_dirpath, 'target.bed')
+            try:
+                shutil.copy(target_bed, ready_target_bed)
+            except OSError:
+                err(traceback.format_exc())
+            target_bed = ready_target_bed
 
         ##### FILTERING #####
         varfilter_paramline = params_for_one_sample + (' ' +

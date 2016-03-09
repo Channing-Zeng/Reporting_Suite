@@ -691,7 +691,7 @@ def _unique_longest_exons(cnf, exons_bed_fpath):
     return unique_bed_fpath
 
 
-def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_genes_bed, target_bed, bam, gene_by_name_and_chrom):
+def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no_genes_bed, target_bed, bam, gene_by_name_and_chrom):
     depth_thresholds = cnf.coverage_reports.depth_thresholds
     sample_name = sample.name
 
@@ -703,7 +703,7 @@ def _generate_report_from_bam(cnf, sample, output_dir, exons_bed, features_no_ge
     if features_no_genes_bed or target_bed:
         ready_target_bed = join(output_dir, 'target.bed')
         try:
-            shutil.copy(target_bed or exons_bed, ready_target_bed)
+            shutil.copy(target_bed or features_bed, ready_target_bed)
         except OSError:
             err(traceback.format_exc())
 
