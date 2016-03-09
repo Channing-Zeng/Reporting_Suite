@@ -25,7 +25,7 @@ from source.file_utils import safe_mkdir
 from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed, \
     check_md5
-from source.utils import is_us, md5
+from source.utils import is_us, md5, is_uk
 from source.variants import summarize_qc
 from source.variants.filtering import make_vcf2txt_cmdl_params
 from source.variants.vcf_processing import verify_vcf
@@ -938,7 +938,7 @@ class BCBioRunner:
                 self._varqc_summary(BCBioStructure.varqc_after_dir, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name)
                 info()
 
-            if is_us():
+            if is_us() or is_uk():
                 info('Exposing to jBrowse')
                 add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
                 info()
