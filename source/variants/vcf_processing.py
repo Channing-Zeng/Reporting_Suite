@@ -541,7 +541,7 @@ def bgzip_and_tabix(cnf, vcf_fpath, **kwargs):
     tbi_fpath = gzipped_fpath + '.tbi'
 
     if cnf.reuse_intermediate and \
-           file_exists(gzipped_fpath) and getctime(gzipped_fpath) >= getctime(vcf_fpath) and \
+           file_exists(gzipped_fpath) and (getctime(gzipped_fpath) >= getctime(vcf_fpath) if file_exists(vcf_fpath) else True) and \
            file_exists(tbi_fpath) and getctime(tbi_fpath) >= getctime(gzipped_fpath):
         info('Actual compressed VCF and index exist, reusing')
         return gzipped_fpath
