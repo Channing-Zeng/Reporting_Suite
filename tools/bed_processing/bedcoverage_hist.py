@@ -1,14 +1,11 @@
 #!/usr/bin/env python
-import os
-from os.path import basename, join
-
 import bcbio_postproc  # do not remove it: checking for python version and adding site dirs inside
 
 import sys
-from logging import info
-
+import os
+from os.path import basename, join
 from source.file_utils import splitext_plus, verify_file
-from source.logger import err
+from source.logger import err, info
 from source.targetcov.bam_and_bed_utils import bam_to_bed, bedtools_version, bam_to_bed_nocnf
 
 
@@ -31,7 +28,7 @@ def launch_bedcoverage_hist(work_dir, bed, bam, chr_lengths_fpath, bedcov_output
 
     if bam.endswith('bam'):
         bam = bam_to_bed_nocnf(bam, bedtools)
-    verify_file(bam, is_critical=True, description='bam to bed conversion result')
+    verify_file(bam, is_critical=True, description='BAM to BED conversion result')
 
     v = bedtools_version(bedtools)
     if v and v >= 24:

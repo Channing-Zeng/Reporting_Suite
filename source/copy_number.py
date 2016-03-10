@@ -16,14 +16,14 @@ from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
     verify_module, intermediate_fname, splitext_plus
 from source.logger import info, err, step_greetings, critical, warn
-from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed, verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed, verify_bed, index_bam
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version, prepare_beds, remove_dups
 from source.targetcov.coverage_hist import launch_bedcoverage_hist
 from source.tools_from_cnf import get_script_cmdline, get_system_path
-from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths
+from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths, get_ext_tools_dirpath
 from source.utils import median, mean
 import source
 from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
@@ -117,44 +117,44 @@ def run_seq2c(cnf, samples, seq2c_bed, is_wgs):
     step_greetings('Running Seq2C')
     # dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
     # safe_mkdir(dedup_bam_dirpath)
-    dedupped_bam_by_sample = dict()
-    dedup_jobs = []
-    ori_work_dir = cnf.work_dir
+    # dedupped_bam_by_sample = dict()
+    # dedup_jobs = []
+    bams_by_sample = dict()
+    # ori_work_dir = cnf.work_dir
     for s in samples:
         if not s.bam:
             err('No BAM file for ' + s.name)
             continue
-        cnf.work_dir = join(ori_work_dir, source.targqc_name + '_' + s.name)
-        safe_mkdir(cnf.work_dir)
-        s.dedup_bam = intermediate_fname(cnf, s.bam, source.dedup_bam)
-        # s.dedup_bam = add_suffix(s.bam, source.dedup_bam)
-        dedupped_bam_by_sample[s.name] = s.dedup_bam
-        if verify_bam(s.dedup_bam, silent=True):
-            info(s.dedup_bam + ' exists')
-        else:
-            info('Deduplicating bam file ' + s.dedup_bam)
-            dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
+        bams_by_sample[s.name] = s.bam
+        # cnf.work_dir = join(ori_work_dir, source.targqc_name + '_' + s.name)
+        # safe_mkdir(cnf.work_dir)
+        # s.dedup_bam = intermediate_fname(cnf, s.bam, source.dedup_bam)
+        # dedupped_bam_by_sample[s.name] = s.dedup_bam
+        # if verify_bam(s.dedup_bam, silent=True):
+        #     info(s.dedup_bam + ' exists')
+        # else:
+        #     info('Deduplicating bam file ' + s.dedup_bam)
+        #     dedup_jobs.append(remove_dups(cnf, s.bam, s.dedup_bam, use_grid=True))
 
-    cnf.work_dir = ori_work_dir
-    wait_for_jobs(cnf, dedup_jobs)
-
-    ok = True
-    for s in samples:
-        if not dedupped_bam_by_sample.get(s.name) or not verify_bam(dedupped_bam_by_sample[s.name]):
-            err('No BAM file for ' + s.name)
-            ok = False
-    if not ok:
-        err('No BAM files found for any sample, cannot run Seq2C.')
-        return None
+    # cnf.work_dir = ori_work_dir
+    # wait_for_jobs(cnf, dedup_jobs)
+    #
+    # ok = True
+    # for s in samples:
+    #     if not dedupped_bam_by_sample.get(s.name) or not verify_bam(dedupped_bam_by_sample[s.name]):
+    #         err('No BAM file for ' + s.name)
+    #         ok = False
+    # if not ok:
+    #     err('No BAM files found for any sample, cannot run Seq2C.')
+    #     return None
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(cnf.output_dir, 'mapped_reads_by_sample.tsv')
-    __get_mapped_reads(cnf, samples, dedupped_bam_by_sample, mapped_read_fpath)
+    __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
     info()
 
     combined_gene_depths_fpath = join(cnf.output_dir, 'cov.tsv')
-    __simulate_cov2cnv_w_bedtools(cnf, samples,
-              dedupped_bam_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
+    __simulate_cov2cnv_w_bedtools(cnf, samples, bams_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
     info()
 
     seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
@@ -203,7 +203,7 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
 #         seq2c_seq2cov(cnf, seq2cov, samtools, sample, dedupped_bam_by_sample[sample.name], bed_fpath, sample.seq2cov_output_dup_fpath)
 
 
-def __simulate_cov2cnv_w_bedtools(cnf, samples, dedupped_bam_by_sample, bed_fpath, is_wgs, output_fpath):
+def __simulate_cov2cnv_w_bedtools(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpath):
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing')
         return output_fpath
@@ -221,7 +221,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, samples, dedupped_bam_by_sample, bed_fpat
         info('Seq2C bed file is saved in ' + seq2c_exposed_fpath)
 
     jobs_to_wait = []
-    bedcov_output_by_sample = dict()
+    depth_output_by_sample = dict()
     seq2cov_output_by_sample = dict()
     chr_lengths = get_chr_len_fpath(cnf)
     seq2c_work_dirpath = join(cnf.work_dir, source.seq2c_name)
@@ -254,22 +254,28 @@ def __simulate_cov2cnv_w_bedtools(cnf, samples, dedupped_bam_by_sample, bed_fpat
                 info(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C')
 
             info(s.name + ': submitting bedcoverage hist')
-            bam_fpath = dedupped_bam_by_sample[s.name]
+            bam_fpath = bams_by_sample[s.name]
             # Need to convert BAM to BED to make bedtools histogram
-            bedcov_output = join(seq2c_work_dirpath, s.name + '_bedcov' + '.txt')
-            bedcov_output_by_sample[s.name] = bedcov_output
-            if cnf.reuse_intermediate and verify_file(bedcov_output, silent=True):
-                info(bedcov_output + ' exists, reusing')
+            depth_output = join(seq2c_work_dirpath, s.name + '_bedcov' + '.txt')
+            depth_output_by_sample[s.name] = depth_output
+            if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
+                info(depth_output + ' exists, reusing')
             else:
-                bedcov_hist = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'bedcoverage_hist.py'))
-                chr_lengths_fpath = get_chr_len_fpath(cnf)
-                bedtools = get_system_path(cnf, 'bedtools')
-                cmdl = '{bedcov_hist} {cnf.work_dir} {seq2c_bed} {bam_fpath} {chr_lengths_fpath} ' \
-                       '{bedcov_output} {bedtools}'.format(**locals())
-                job_name = splitext_plus(basename(seq2c_bed))[0] + '__' + \
-                           splitext_plus(basename(bam_fpath))[0] + '_bedcov'
-                j = submit_job(cnf, cmdl, job_name, output_fpath=bedcov_output,
-                               stdout_to_outputfile=False, sample=s)
+                sambamba = get_system_path(cnf, join(get_ext_tools_dirpath(), 'sambamba'), is_critical=True)
+                thresholds = ' -T'.join([str(d) for d in cnf.coverage_reports.depth_thresholds])
+                cmdline = '{sambamba} depth region -F \'not duplicate and not failed_quality_control\' -L {bed} ' \
+                          '-T {thresholds} -t {cnf.threads} {bam}'.format(**locals())
+                job_name = 'sambabma_depth_' + splitext_plus(basename(bam_fpath))[0]
+                j = submit_job(cnf, cmdline, job_name, output_fpath=depth_output, stdout_to_outputfile=False, sample=s)
+                # bedcov_hist = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'bedcoverage_hist.py'))
+                # chr_lengths_fpath = get_chr_len_fpath(cnf)
+                # bedtools = get_system_path(cnf, 'bedtools')
+                # cmdl = '{bedcov_hist} {cnf.work_dir} {seq2c_bed} {bam_fpath} {chr_lengths_fpath} ' \
+                #        '{bedcov_output} {bedtools}'.format(**locals())
+                # job_name = splitext_plus(basename(seq2c_bed))[0] + '__' + \
+                #            splitext_plus(basename(bam_fpath))[0] + '_bedcov'
+                # j = submit_job(cnf, cmdl, job_name, output_fpath=bedcov_output,
+                #                stdout_to_outputfile=False, sample=s)
                 jobs_to_wait.append(j)
         info()
     info('*' * 50)
@@ -281,11 +287,11 @@ def __simulate_cov2cnv_w_bedtools(cnf, samples, dedupped_bam_by_sample, bed_fpat
     for j in jobs_to_wait:
         s = j.sample
         if not verify_file(seq2cov_output_by_sample[s.name], silent=True):
-            info(s.name + ': summarizing bedcoverage output ' + bedcov_output_by_sample[s.name])
+            info(s.name + ': summarizing bedcoverage output ' + depth_output_by_sample[s.name])
 
             script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
                                         is_critical=True)
-            bedcov_hist_fpath = bedcov_output_by_sample[s.name]
+            bedcov_hist_fpath = depth_output_by_sample[s.name]
             bed_col_num = count_bed_cols(seq2c_bed)
             cmdline = '{script} {bedcov_hist_fpath} {s.name} {bed_col_num}'.format(**locals())
             j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s,
@@ -481,7 +487,7 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
     # return read_stats_fpath, combined_gene_depths_fpath
 
 
-def __get_mapped_reads(cnf, samples, dedupped_bam_by_sample, output_fpath):
+def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing')
         return output_fpath
@@ -489,6 +495,11 @@ def __get_mapped_reads(cnf, samples, dedupped_bam_by_sample, output_fpath):
     mapped_reads_by_sample = OrderedDict()
 
     jobs_to_wait = []
+
+    sambamba = get_system_path(cnf, 'sambamba')
+    Parallel(n_jobs=cnf.threads or 1)(delayed(index_bam)
+        (CallCnf(cnf.__dict__), bam_by_sample[s.name], sambamba) for s in samples)
+
     for s in samples:
         if verify_file(s.targetcov_json_fpath, silent=True):
             info('Parsing targetSeq output ' + s.targetcov_json_fpath)
@@ -501,10 +512,11 @@ def __get_mapped_reads(cnf, samples, dedupped_bam_by_sample, output_fpath):
             mapped_reads_by_sample[s.name] = mapped_reads
 
         else:
-            info('targetSeq output for ' + s.name + ' was not found; submitting a flagstat job')
+            info('targetSeq output for ' + s.name + ' was not found; submitting a sambamba job')
             samtools = get_system_path(cnf, 'samtools')
-            flagstat_fpath = join(cnf.work_dir, basename(dedupped_bam_by_sample[s.name]) + '_flag_stats')
-            bam_fpath = dedupped_bam_by_sample[s.name]
+            flagstat_fpath = join(cnf.work_dir, basename(bam_by_sample[s.name]) + '_flag_stats')
+            bam_fpath = bam_by_sample[s.name]
+            # number_of_mapped_reads()
             cmdline = '{samtools} flagstat {bam_fpath}'.format(**locals())
             j = submit_job(cnf, cmdline, 'flagstat_' + s.name, sample=s, output_fpath=flagstat_fpath)
             jobs_to_wait.append(j)

@@ -16,7 +16,7 @@ from source.tools_from_cnf import get_system_path
 from source.utils import md5, get_chr_lengths_from_seq
 
 
-def index_bam(cnf, bam_fpath, sambamba=None, samtools=None):
+def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
     sambamba = sambamba or get_system_path(cnf, 'sambamba')
     indexed_bam = bam_fpath + '.bai'
     if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
@@ -493,11 +493,12 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None):
     cmdl = sambamba + ' ' + cmdl
     stderr_dump = []
     res = call(cnf, cmdl, output_fpath=output_fpath, exit_on_error=False, stderr_dump=stderr_dump)
-    if not res and bam_fpath + '.bai':
+    if not res:
         for l in stderr_dump:
             if 'sambamba-view: BAM index file (.bai) must be provided' in l:
-                info('Remving .bai and re-indexing...')
-                os.remove(bam_fpath + '.bai')
+                if isfile(isfile(bam_fpath + '.bai')):
+                    info('Removing .bai and re-indexing...')
+                    os.remove(bam_fpath + '.bai')
                 index_bam(cnf, bam_fpath, sambamba)
                 res = call(cnf, cmdl, output_fpath=output_fpath)
     return res
@@ -513,9 +514,7 @@ def remove_dups(cnf, bam, output_fpath, sambamba=None, use_grid=False):
         info()
         return j
     else:
-        res = call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam, sambamba=sambamba)
-        return None
-    # TODO: index bams (not sure how to do it given GRID)
+        return call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam, sambamba=sambamba)
 
 
 def remove_dups_picard(cnf, bam_fpath):
