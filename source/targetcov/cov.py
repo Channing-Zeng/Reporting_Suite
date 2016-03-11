@@ -19,8 +19,9 @@ from source.reporting.reporting import Metric, SampleReport, MetricStorage, Repo
 from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list, Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
-    remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
-    intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads, call_sambamba, count_bed_cols
+    remove_dups, get_padded_bed_file, number_mapped_reads_on_target, flag_stat, calc_region_number, \
+    intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads, call_sambamba, count_bed_cols, \
+    sambamba_depth
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath, get_ext_tools_dirpath
@@ -134,7 +135,7 @@ class TargetInfo:
 
 def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None, pcr=False):
     safe_mkdir(dirname(sample.qualimap_dirpath))
-    
+
     bed = ''
     if bed_fpath:
         qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')
@@ -165,7 +166,7 @@ def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None, pcr=False):
 
 
 def _dedup_and_flag_stat(cnf, bam_fpath):
-    bam_stats = samtools_flag_stat(cnf, bam_fpath)
+    bam_stats = flag_stat(cnf, bam_fpath)
     info('Total reads: ' + Metric.format_value(bam_stats['total']))
     info('Total mapped reads: ' + Metric.format_value(bam_stats['mapped']))
     info('Total dup reads: ' + Metric.format_value(bam_stats['duplicates']))
@@ -305,10 +306,10 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
     if target_bed:
         target_info.regions_num = calc_region_number(target_bed)
 
-    if not cnf.no_dedup:
-        sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
-        remove_dups(cnf, bam_fpath, sample.dedup_bam)
-        index_bam(cnf, sample.dedup_bam)
+    # if not cnf.no_dedup:
+    #     sample.dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
+    #     remove_dups(cnf, bam_fpath, sample.dedup_bam)
+    #     index_bam(cnf, sample.dedup_bam)
 
     _run_qualimap(cnf, sample, bam_fpath, target_bed)
 
@@ -333,19 +334,19 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
     else:
         target_info.bases_num = target_stats['reference_size']
 
-    if sample.dedup_bam:
-        bam_fpath = sample.dedup_bam
-    reads_stats['mapped_dedup'] = number_of_mapped_reads(cnf, bam_fpath)
+    # if sample.dedup_bam:
+    #     bam_fpath = sample.dedup_bam
+    reads_stats['mapped_dedup'] = number_of_mapped_reads(cnf, bam_fpath, dedup=True)
 
     if target_info.bed:
-        reads_stats['mapped_dedup_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath) or 0
+        reads_stats['mapped_dedup_on_target'] = number_mapped_reads_on_target(cnf, target_bed, bam_fpath, dedup=True) or 0
 
     if target_info.bed:
         padded_bed = get_padded_bed_file(cnf, target_info.bed, get_chr_len_fpath(cnf), cnf.coverage_reports.padding)
-        reads_stats['mapped_dedup_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath) or 0
+        reads_stats['mapped_dedup_on_padded_target'] = number_mapped_reads_on_target(cnf, padded_bed, bam_fpath, dedup=True) or 0
     elif cnf.genome.cds:
         info('Using the CDS reference BED ' + cnf.genome.cds + ' to calc "reads on CDS"')
-        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, cnf.genome.cds, bam_fpath) or 0
+        reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, cnf.genome.cds, bam_fpath, dedup=True) or 0
     # elif features_no_genes_bed:
     #     info('Using ensemble ' + features_no_genes_bed + ' to calc reads on exome')
     #     reads_stats['mapped_dedup_on_exome'] = number_mapped_reads_on_target(cnf, features_no_genes_bed, bam_fpath) or 0
@@ -354,7 +355,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
 
     info()
     per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed,
-                                           features_no_genes_bed, output_dir, gene_by_name_and_chrom)
+               features_no_genes_bed, output_dir, gene_by_name_and_chrom)
 
     # key_genes_report = make_key_genes_reports(cnf, sample, gene_by_name, depth_stats['ave_depth'])
 
@@ -724,7 +725,7 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
         if feature == 'amplicons':
             info()
             info('Calculation of coverage statistics for the regions in the target BED file...')
-        bedcov_output_fpath = launch_sambamba_depth(cnf, bed, bam)
+        bedcov_output_fpath = sambamba_depth(cnf, bed, bam)
         if not bedcov_output_fpath:
             continue
         read_count_col = None
@@ -852,31 +853,6 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
     info('Regions (total ' + str(len(report.rows)) + ') saved into:')
     info('  ' + report.txt_fpath)
     return report
-
-
-def launch_sambamba_depth(cnf, bed, bam, bedcov_output_fpath=None, qsub=False, **kwargs):
-    if not bedcov_output_fpath:
-        bedcov_output_fpath = join(cnf.work_dir,
-            splitext_plus(basename(bed))[0] + '__' +
-            splitext_plus(basename(bam))[0] + '_bedcov_output.txt')
-
-    if cnf.reuse_intermediate and verify_file(bedcov_output_fpath, silent=True):
-        info(bedcov_output_fpath + ' exists, reusing.')
-        if qsub:
-            return None
-        else:
-            return bedcov_output_fpath
-    sambamba = get_system_path(cnf, join(get_ext_tools_dirpath(), 'sambamba'), is_critical=True)
-    thresholds = ' -T'.join([str(d) for d in cnf.coverage_reports.depth_thresholds])
-    cmdline = 'depth region -F \'not duplicate and not failed_quality_control\' -L {bed} ' \
-              '-T {thresholds} -t {cnf.threads} {bam}'.format(**locals())
-
-    if qsub:
-        job_name = splitext_plus(basename(bed))[0] + '__' +\
-                   splitext_plus(basename(bam))[0] + '_bedcov'
-        return submit_job(cnf, sambamba + ' ' + cmdline, job_name, output_fpath=bedcov_output_fpath, **kwargs)
-    else:
-        return call_sambamba(cnf, cmdline, output_fpath=bedcov_output_fpath, bam_fpath=bam, sambamba=sambamba)
 
 
 def process_gene(gene, depth_thresholds):

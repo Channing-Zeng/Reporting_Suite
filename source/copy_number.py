@@ -16,7 +16,8 @@ from source.config import CallCnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
     verify_module, intermediate_fname, splitext_plus
 from source.logger import info, err, step_greetings, critical, warn
-from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed, verify_bed, index_bam
+from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed, verify_bed, index_bam, number_of_mapped_reads, \
+    sambamba_depth
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
@@ -110,10 +111,6 @@ def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2
 
 
 def run_seq2c(cnf, samples, seq2c_bed, is_wgs):
-    """
-    Normalize the coverage from targeted sequencing to CNV log2 ratio. The algorithm assumes the medium
-    is diploid, thus not suitable for homogeneous samples (e.g. parent-child).
-    """
     step_greetings('Running Seq2C')
     # dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
     # safe_mkdir(dedup_bam_dirpath)
@@ -154,16 +151,16 @@ def run_seq2c(cnf, samples, seq2c_bed, is_wgs):
     info()
 
     combined_gene_depths_fpath = join(cnf.output_dir, 'cov.tsv')
-    __simulate_cov2cnv_w_bedtools(cnf, samples, bams_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
+    __seq2c_coverage(cnf, samples, bams_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
     info()
 
     seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
-    __new_seq2c(cnf, mapped_read_fpath, combined_gene_depths_fpath, seq2c_report_fpath)
+    __final_seq2c_scripts(cnf, mapped_read_fpath, combined_gene_depths_fpath, seq2c_report_fpath)
 
     return seq2c_report_fpath
 
 
-def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
+def __final_seq2c_scripts(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath):
     cov2lr = get_script_cmdline(cnf, 'perl', join('Seq2C', 'cov2lr.pl'), is_critical=True)
     cov2lr_output = join(cnf.work_dir, splitext(basename(output_fpath))[0] + '.cov2lr.tsv')
 
@@ -203,7 +200,7 @@ def __new_seq2c(cnf, read_stats_fpath, combined_gene_depths_fpath, output_fpath)
 #         seq2c_seq2cov(cnf, seq2cov, samtools, sample, dedupped_bam_by_sample[sample.name], bed_fpath, sample.seq2cov_output_dup_fpath)
 
 
-def __simulate_cov2cnv_w_bedtools(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpath):
+def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpath):
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing')
         return output_fpath
@@ -220,7 +217,7 @@ def __simulate_cov2cnv_w_bedtools(cnf, samples, bams_by_sample, bed_fpath, is_wg
     else:
         info('Seq2C bed file is saved in ' + seq2c_exposed_fpath)
 
-    jobs_to_wait = []
+    jobs_by_sample = dict()
     depth_output_by_sample = dict()
     seq2cov_output_by_sample = dict()
     chr_lengths = get_chr_len_fpath(cnf)
@@ -255,50 +252,33 @@ def __simulate_cov2cnv_w_bedtools(cnf, samples, bams_by_sample, bed_fpath, is_wg
 
             info(s.name + ': submitting bedcoverage hist')
             bam_fpath = bams_by_sample[s.name]
-            # Need to convert BAM to BED to make bedtools histogram
-            depth_output = join(seq2c_work_dirpath, s.name + '_bedcov' + '.txt')
+            depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
             depth_output_by_sample[s.name] = depth_output
             if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
                 info(depth_output + ' exists, reusing')
             else:
-                sambamba = get_system_path(cnf, join(get_ext_tools_dirpath(), 'sambamba'), is_critical=True)
-                thresholds = ' -T'.join([str(d) for d in cnf.coverage_reports.depth_thresholds])
-                cmdline = '{sambamba} depth region -F \'not duplicate and not failed_quality_control\' -L {bed} ' \
-                          '-T {thresholds} -t {cnf.threads} {bam}'.format(**locals())
-                job_name = 'sambabma_depth_' + splitext_plus(basename(bam_fpath))[0]
-                j = submit_job(cnf, cmdline, job_name, output_fpath=depth_output, stdout_to_outputfile=False, sample=s)
-                # bedcov_hist = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'bedcoverage_hist.py'))
-                # chr_lengths_fpath = get_chr_len_fpath(cnf)
-                # bedtools = get_system_path(cnf, 'bedtools')
-                # cmdl = '{bedcov_hist} {cnf.work_dir} {seq2c_bed} {bam_fpath} {chr_lengths_fpath} ' \
-                #        '{bedcov_output} {bedtools}'.format(**locals())
-                # job_name = splitext_plus(basename(seq2c_bed))[0] + '__' + \
-                #            splitext_plus(basename(bam_fpath))[0] + '_bedcov'
-                # j = submit_job(cnf, cmdl, job_name, output_fpath=bedcov_output,
-                #                stdout_to_outputfile=False, sample=s)
-                jobs_to_wait.append(j)
+                j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True)
+                jobs_by_sample[s.name] = j
         info()
     info('*' * 50)
 
-    jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+    wait_for_jobs(cnf, jobs_by_sample.values())
 
-    sum_jobs_to_wait = []
+    sum_jobs_by_sample = dict()
     info('* Submitting seq2cov output *')
-    for j in jobs_to_wait:
-        s = j.sample
-        if not verify_file(seq2cov_output_by_sample[s.name], silent=True):
-            info(s.name + ': summarizing bedcoverage output ' + depth_output_by_sample[s.name])
+    for s_name, j in jobs_by_sample.items():
+        if not verify_file(seq2cov_output_by_sample[s_name], silent=True):
+            info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
 
             script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
                                         is_critical=True)
-            bedcov_hist_fpath = depth_output_by_sample[s.name]
+            bedcov_hist_fpath = depth_output_by_sample[s_name]
             bed_col_num = count_bed_cols(seq2c_bed)
-            cmdline = '{script} {bedcov_hist_fpath} {s.name} {bed_col_num}'.format(**locals())
-            j = submit_job(cnf, cmdline, s.name + '_bedcov_2_seq2cov', sample=s,
-                           output_fpath=seq2cov_output_by_sample[s.name])
-            sum_jobs_to_wait.append(j)
+            cmdline = '{script} {bedcov_hist_fpath} {s_name} {bed_col_num}'.format(**locals())
+            j = submit_job(cnf, cmdline, s_name + '_bedcov_2_seq2cov', output_fpath=seq2cov_output_by_sample[s_name])
+            sum_jobs_by_sample[s_name] = j
 
-    sum_jobs_to_wait = wait_for_jobs(cnf, sum_jobs_to_wait)
+    wait_for_jobs(cnf, sum_jobs_by_sample.values())
 
     info()
     info('Done')
@@ -494,11 +474,7 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
 
     mapped_reads_by_sample = OrderedDict()
 
-    jobs_to_wait = []
-
-    sambamba = get_system_path(cnf, 'sambamba')
-    Parallel(n_jobs=cnf.threads or 1)(delayed(index_bam)
-        (CallCnf(cnf.__dict__), bam_by_sample[s.name], sambamba) for s in samples)
+    job_by_sample = dict()
 
     for s in samples:
         if verify_file(s.targetcov_json_fpath, silent=True):
@@ -512,24 +488,19 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
             mapped_reads_by_sample[s.name] = mapped_reads
 
         else:
-            info('targetSeq output for ' + s.name + ' was not found; submitting a sambamba job')
-            samtools = get_system_path(cnf, 'samtools')
-            flagstat_fpath = join(cnf.work_dir, basename(bam_by_sample[s.name]) + '_flag_stats')
+            info('Submitting a sambamba job to get mapped read numbers')
             bam_fpath = bam_by_sample[s.name]
-            # number_of_mapped_reads()
-            cmdline = '{samtools} flagstat {bam_fpath}'.format(**locals())
-            j = submit_job(cnf, cmdline, 'flagstat_' + s.name, sample=s, output_fpath=flagstat_fpath)
-            jobs_to_wait.append(j)
+            j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True)
+            job_by_sample[s.name] = j
 
     # if running falgstat ourselves, finally parse its output
-    jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
-    for j in jobs_to_wait:
+    jobs_to_wait = wait_for_jobs(cnf, job_by_sample.values())
+    for s_name, j in job_by_sample.items():
         with open(j.output_fpath) as f:
-            lines = f.readlines()
-            mapped_reads = int(next(l.split()[0] for l in lines if 'mapped' in l))
-            info(j.sample.name + ': ')
+            mapped_reads = int(f.read().strip())
+            info(s_name + ': ')
             info('  Mapped reads: ' + str(mapped_reads))
-            mapped_reads_by_sample[j.sample.name] = mapped_reads
+            mapped_reads_by_sample[s_name] = mapped_reads
 
     with open(output_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():
