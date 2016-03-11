@@ -96,16 +96,17 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
     samples = sorted(bcbio_structure.samples)
     cnf.project_name = project_name or bcbio_structure.project_name or basename(cnf.output_dir)
+    study_name = re.sub('[\.\-:&]', '_', cnf.project_name)
 
     check_genome_resources(cnf)
 
-    data_fpath = join(data_query_dirpath, cnf.project_name + '.data.txt')
-    info_fpath = join(data_query_dirpath, cnf.project_name + '.info.txt')
+    data_fpath = join(data_query_dirpath, study_name + '.data.txt')
+    info_fpath = join(data_query_dirpath, study_name + '.info.txt')
 
     altered_genes = print_data_txt(cnf, cnf.mutations_fpath, cnf.seq2c_tsv_fpath, samples, data_fpath)
     print_info_txt(cnf, samples, info_fpath)
 
-    data_query_link = create_data_query_link(cnf, data_query_dirpath, data_fpath, info_fpath, altered_genes)
+    data_query_link = create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info_fpath, altered_genes)
 
     info()
     info('Information about study was added in Data Query Tool')
@@ -319,11 +320,10 @@ def print_info_txt(cnf, samples, info_fpath):
             out_f.write(sample.name + '\n')
 
 
-def create_data_query_link(cnf, data_query_dirpath, data_fpath, info_fpath, altered_genes):
+def create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info_fpath, altered_genes):
     # modify properties
     properties_fpath = join(data_query_dirpath, 'DataQuery.properties')
     properties_lines = []
-    study_name = cnf.project_name
     data_fname = basename(data_fpath)
     info_fname = basename(info_fpath)
     text_to_add = None
