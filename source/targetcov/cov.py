@@ -20,7 +20,7 @@ from source.targetcov.Region import calc_bases_within_threshs, \
     calc_rate_within_normal, build_gene_objects_list, Region, GeneInfo
 from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_bed, fix_bed_for_qualimap, \
     remove_dups, get_padded_bed_file, number_mapped_reads_on_target, samtools_flag_stat, calc_region_number, \
-    intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads, call_sambamba
+    intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads, call_sambamba, count_bed_cols
 from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath, get_ext_tools_dirpath
@@ -408,7 +408,8 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         info('* Target coverage statistics *')
         if target_info.original_target_bed:
             report.add_record('Target', target_info.original_target_bed)
-            # report.add_record('Ready target', target_info.fpath)
+            if count_bed_cols(target_info.original_target_bed) == 3:
+                report.add_record('Ready target (sorted and annotated)', target_info.fpath)
         else:
             report.add_record('Target', target_info.fpath)
         report.add_record('Bases in target', target_info.bases_num)

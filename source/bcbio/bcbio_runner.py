@@ -335,6 +335,8 @@ class BCBioRunner:
             targetcov_params += '--exons-no-genes ' + exons_no_genes_bed + ' '
         if target_bed:
             targetcov_params += '--bed ' + target_bed + ' '
+        if self.bcbio_structure.bed:
+            targetcov_params += '--original-bed ' + self.bcbio_structure.bed + ' '
         if genes_fpath:
             targetcov_params += '--genes ' + genes_fpath + ' '
         if cnf.no_dedup:

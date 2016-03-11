@@ -47,7 +47,7 @@ def main(args):
              ),
             (['--original-bed'], dict(
                 dest='original_target_bed',
-                help='original bed file path (just for reporting)')
+                help=SUPPRESS_HELP)
              ),
             (['--original-exons', '--original-features'], dict(
                 dest='original_features_bed',
@@ -151,8 +151,6 @@ def process_one(cnf, output_dir, features_bed, features_no_genes_bed):
 
     bam_fpath = cnf.bam
     target_bed = cnf.bed
-    cnf.original_features_bed = cnf.original_features_bed or features_no_genes_bed or features_bed
-    cnf.original_target_bed = cnf.original_target_bed or cnf.bed
 
     bam_fpath = bam_fpath
     if not bam_fpath:
