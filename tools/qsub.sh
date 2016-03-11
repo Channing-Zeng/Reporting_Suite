@@ -1,16 +1,16 @@
 #!/bin/bash
 #set -x
 
+out=${13}
+err=${15}
 runner=${20}
 done_marker=${21}
 err_marker=${22}
-params=${23}
-out=${13}
-err=${15}
-cmdline="${runner} ${done_marker} ${err_marker} \"${params}\""
-echo "${params}"
+final_cmdline=${@:23}
+runner_cmdline="${runner} ${done_marker} ${err_marker} ${final_cmdline}"
+echo "${final_cmdline}"
 echo "${out}"
-eval "${cmdline}" 2>&1 | tee ${out}
+eval "${runner_cmdline}" 2>&1 | tee ${out}
 status=$?
 
 if [ "${status}" -ne 0 ]; then

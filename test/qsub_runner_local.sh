@@ -1,16 +1,16 @@
 #!/bin/bash
-set -x
+#set -x
 
 DONE_MARKER_FILE=$1
 ERROR_MARKER_FILE=$2
-CMDLINE=$3
+CMDLINE="${@:3}"
 
-date
-hostname
-echo
-echo "${CMDLINE}"
-echo
-echo
+date >&2
+hostname >&2
+echo >&2
+echo "${CMDLINE}" >&2
+echo >&2
+echo >&2
 eval "${CMDLINE}"
 status=$?
 if [ "${status}" -ne 0 ]; then
@@ -20,7 +20,7 @@ if [ "${status}" -ne 0 ]; then
 else
     echo "${status}">${DONE_MARKER_FILE}
 fi
-echo
-date
+echo >&2
+date >&2
 
-set +x
+#set +x
