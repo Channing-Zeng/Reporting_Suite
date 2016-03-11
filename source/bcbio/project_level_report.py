@@ -428,8 +428,8 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
 
     oncoprints_link = get_oncoprints_link(cnf, bcbio_structure, project_name)
     if oncoprints_link:
-        common_dict['oncoprints']['oncoprints_link'] = '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
-                                                       '(loading may take 5-10 seconds)'.format(**locals())
+        common_dict['oncoprints'] = {'oncoprints_link': '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
+                                                       '(loading may take 5-10 seconds)'.format(**locals())}
 
     main_dict = dict()
     if full_report.sample_reports:
