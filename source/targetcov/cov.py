@@ -255,7 +255,7 @@ MALE_GENES_BED_FPATH = join(dirname(abspath(__file__)), 'chrY.bed')
 MALE_READS_THRES = 100
 MALE_TARGET_REGIONS_FACTOR = 0.5
 
-def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
+def _determine_gender(cnf, sample, bam_fpath, ave_depth, target_bed=None):
     chry = sort_bed(cnf, MALE_GENES_BED_FPATH)
     if not chry:
         return None
@@ -264,8 +264,8 @@ def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
     info('Male region total size: ' + str(male_area_size))
 
     if target_bed:
-        target_male_regions_bed = intersect_bed(cnf, target_bed, male_genes_bed)
-        target_male_area_size = calc_sum_of_regions(target_male_regions_bed)
+        male_genes_bed = intersect_bed(cnf, target_bed, male_genes_bed)
+        target_male_area_size = calc_sum_of_regions(male_genes_bed)
         if target_male_area_size < male_area_size * MALE_TARGET_REGIONS_FACTOR:
             info('Target male region total size is ' + str(target_male_area_size) + ', which is less than the ' +
                  'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
@@ -279,19 +279,40 @@ def _determine_gender(cnf, sample, bam_fpath, target_bed=None):
     else:
         info('WGS, determining gender based on chrY key regions coverage.')
 
-    info('Detecting gender by chrY key regions coverage. The read number threshold mapped on the '
-         'regions is ' + str(MALE_READS_THRES))
+    info('Detecting gender by comparing chrY key regions coverage and average coverage depth.')
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
     index_bam(cnf, bam_fpath)
 
-    reads_mapped_on_male_genes = number_mapped_reads_on_target(cnf, MALE_GENES_BED_FPATH, bam_fpath)
-    info('Number of reads mapped on chrY key genes is ' + str(reads_mapped_on_male_genes))
-    gender = 'F'
-    if reads_mapped_on_male_genes > MALE_READS_THRES:
-        gender = 'M'
+    chry_cov_output_fpath = sambamba_depth(cnf, male_genes_bed, bam_fpath)
+    chry_mean_coverage = get_mean_cov(chry_cov_output_fpath)
+    ave_depth = float(ave_depth)
+    if ave_depth < 1 and chry_mean_coverage < 1:
+        info('Coverage is too low - cannot determine gender')
+        return None
+    gender = 'M'
+    if ave_depth / 10.0 > chry_mean_coverage:  # if mean target coverage much higher than chrY coverage
+        gender = 'F'
     info('Gender is ' + gender)
     return gender
+
+
+def get_mean_cov(bedcov_output_fpath):
+    mean_cov = []
+    mean_cov_col = None
+    total_len = 0
+    with open(bedcov_output_fpath) as bedcov_file:
+        for line in bedcov_file:
+            if line.startswith('#'):
+                mean_cov_col = line.split('\t').index('meanCoverage')
+                continue
+            line_tokens = line.replace('\n', '').split()
+            start, end = map(int, line_tokens[1:3])
+            size = end - start
+            mean_cov.append(float(line_tokens[mean_cov_col]) * size)
+            total_len += size
+    mean_cov = sum(mean_cov) / total_len if total_len > 0 else 0
+    return mean_cov
 
 
 def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list):
@@ -315,7 +336,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
-    reads_stats['gender'] = _determine_gender(cnf, sample, cnf.bam, target_bed)
+    reads_stats['gender'] = _determine_gender(cnf, sample, cnf.bam, depth_stats['ave_depth'], target_bed)
 
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
