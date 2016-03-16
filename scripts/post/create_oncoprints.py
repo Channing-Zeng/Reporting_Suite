@@ -115,7 +115,7 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
 
 def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
-    bed_fpath = verify_file(cnf.bed_fpath, is_critical=False) if cnf.bed_fpath else None
+    bed_fpath = verify_file(cnf.bed, is_critical=False) if cnf.bed else None
     key_gene_by_name_chrom, _ = get_key_or_target_bed_genes(bed_fpath, cnf.key_genes)
     key_genes = [g for (g, c) in key_gene_by_name_chrom]
 

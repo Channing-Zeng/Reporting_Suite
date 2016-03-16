@@ -272,6 +272,7 @@ class BCBioRunner:
             except OSError:
                 err(traceback.format_exc())
             target_bed = ready_target_bed
+            cnf.bed = target_bed
 
         ##### FILTERING #####
         varfilter_paramline = params_for_one_sample + (' ' +
