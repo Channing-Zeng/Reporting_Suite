@@ -39,7 +39,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
             Metric('Read min length', short_name='min len', description='Read minimum length'),
             Metric('Read max length', short_name='max len', description='Read maximum length'),
             Metric('Read mean length', short_name='avg len', description='Read average length'),
-            Metric('Gender', is_hidden=True),
+            Metric('Sex', short_name='sex', is_hidden=True),
         ]),
     ]
     if not is_wgs:
@@ -413,7 +413,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
         cnf.coverage_reports.depth_thresholds, is_wgs=target_info.bed is None, padding=cnf.coverage_reports.padding))
     report.add_record('Qualimap', value='Qualimap', url=relpath(sample.qualimap_html_fpath, output_dir), silent=True)
     if reads_stats.get('gender') is not None:
-        report.add_record('Gender', reads_stats['gender'], silent=True)
+        report.add_record('Sex', reads_stats['gender'], silent=True)
 
     info('* General coverage statistics *')
     report.add_record('Reads', reads_stats['total'])

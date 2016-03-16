@@ -754,7 +754,7 @@ def get_gender(sample, targqc_json_fpath):
     with open(targqc_json_fpath) as f:
         data = load(f, object_pairs_hook=OrderedDict)
     sr = SampleReport.load(data, sample, None)
-    r = sr.find_record(sr.records, 'Gender')
+    r = sr.find_record(sr.records, 'Sex') or sr.find_record(sr.records, 'Gender')
 
     if r:
         if r.value:
