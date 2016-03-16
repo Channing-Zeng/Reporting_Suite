@@ -370,7 +370,7 @@ def create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info
     genes = '%0D%0A'.join(altered_genes)
 
     data_query_link = 'http://luna899.usbod.astrazeneca.net/~kdld047/cgi-bin/TS/DataQuery.pl?analysis=oncoprint&study={study_name}' \
-                      '&gene={genes}&order=on&freq=50&submit=Submit'.format(**locals())
+                      '&gene={genes}&order=on&freq=50&nocheckgenes=true&submit=Submit'.format(**locals())
 
     return data_query_link
 
