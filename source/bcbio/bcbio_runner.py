@@ -16,7 +16,7 @@ from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
-from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path
 from source.bcbio.project_level_report import make_project_level_report, get_run_info
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -262,6 +262,8 @@ class BCBioRunner:
         #             '--proc-name ' + BCBioStructure.varqc_after_name
         # )
 
+        info()
+        info('Checking BED files')
         self.is_wgs = self.cnf.is_wgs or self.bcbio_structure.is_wgs
         target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
 
@@ -507,11 +509,11 @@ class BCBioRunner:
 
         reuse = self.cnf.reuse_intermediate
         if reuse and target_bed:
-            reuse = check_md5(self.cnf.work_dir, target_bed, 'bed')
+            reuse = check_md5(self.cnf.work_dir, adjust_path(target_bed), 'target')
             if reuse:
                 info('Target ' + target_bed + ' didn\'t change')
                 if exons_bed:
-                    reuse = check_md5(self.cnf.work_dir, exons_bed, 'bed')
+                    reuse = check_md5(self.cnf.work_dir, exons_bed, 'features')
                     if reuse:
                         info('Features ' + exons_bed + ' didn\'t change')
 

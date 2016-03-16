@@ -833,25 +833,29 @@ def verify_bed(fpath, description='', is_critical=False, silent=False):
     return fpath
 
 
-def check_md5(work_dir, fpath, file_ext, silent=False):
-    md5_fpath = join(work_dir, file_ext + '_md5.txt')
+def check_md5(work_dir, fpath, file_type, silent=False):
+    md5_fpath = join(work_dir, file_type + '_md5.txt')
     new_md5 = md5(fpath)
+    info('md5 of ' + fpath + ' is ' + str(new_md5))
     prev_md5 = None
     if isfile(md5_fpath):
         with open(md5_fpath) as f:
             prev_md5 = f.read()
+    else:
+        info('Previous md5 file ' + md5_fpath + ' does not exist')
+    info('Checking previous md5 from ' + md5_fpath + ': ' + str(prev_md5))
 
     if prev_md5 == new_md5:
         if not silent:
-            info('Reusing previous ' + file_ext.upper() + ' files.')
+            info('Reusing previous ' + file_type.upper() + ' files.')
         return True
     else:
         if not silent:
-            info('Pre-processing input ' + file_ext.upper() + ' file')
+            info('Pre-processing input ' + file_type.upper() + ' file')
         if prev_md5:
             if not silent:
-                info('Prev ' + file_ext.upper() + ' md5: ' + str(prev_md5))
-                info('New ' + file_ext.upper() + ' md5: ' + str(new_md5))
+                info('Prev ' + file_type.upper() + ' md5: ' + str(prev_md5))
+                info('New ' + file_type.upper() + ' md5: ' + str(new_md5))
 
         with open(md5_fpath, 'w') as f:
             f.write(str(new_md5))
