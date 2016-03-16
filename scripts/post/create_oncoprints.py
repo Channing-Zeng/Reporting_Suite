@@ -145,7 +145,7 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
                     count_reads = sum(int(r) for r in event.split_read_support) + sum(int(r) for r in event.paired_end_support)
                     out_f.write('\t'.join([sample, '', 'rearrangement', event.known_gene, 'known' if ann.known else 'unknown',
                                            '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
-                                           'fusion', event.chrom + ':' + str(event.start) + (str(event.end) if event.end else ''),
+                                           'fusion', event.chrom + ':' + str(event.start), str(event.end) if event.end else '',
                                            '-', str(count_reads), 'Rearrangement']) + '\n')
 
     return altered_genes
@@ -288,6 +288,7 @@ def parse_sv_files(samples, altered_genes, key_genes):
     for sv_fpath in sv_fpaths:
         info('Parsing prioritized SV from ' + sv_fpath)
         sample_col = None
+        known_col = None
         with open(sv_fpath) as f:
             header_rows = []
             for i, l in enumerate(f):
@@ -295,6 +296,7 @@ def parse_sv_files(samples, altered_genes, key_genes):
                 if i == 0:
                     header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
                     sample_col = header_rows.index('sample')
+                    known_col = header_rows.index('known')
                 else:
                     event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
                     sample = fs[sample_col]
@@ -306,10 +308,24 @@ def parse_sv_files(samples, altered_genes, key_genes):
                                 key_altered_genes = [g for g in annotation.genes if g in key_genes]
                                 if annotation.effect == 'FUSION' and key_altered_genes:
                                     event.key_annotations.add(annotation)
+                                    event.supplementary = '-with-' in fs[known_col]
                                     sv_events_by_samples[sample].add(event)
                                     for g in key_altered_genes:
                                         altered_genes.add(g)
-                                        
+
+    for sample, events in sv_events_by_samples.iteritems():  # combine two annotations of fusion in one
+        suppl_events = {e.mate_id: e for e in events if e.supplementary}
+        main_events = [e for e in events if not e.supplementary]
+        for event in main_events:
+            if event.id not in suppl_events:
+                continue
+            suppl_event = suppl_events[event.id]
+            event.end = suppl_event.chrom + ':' + str(suppl_event.start)
+            for ann in event.key_annotations:
+                if ann.genes[0] != event.known_gene:
+                    ann.genes[0], ann.genes[1] = ann.genes[1], ann.genes[0]
+        sv_events_by_samples[sample] = main_events
+
     return sv_events_by_samples, altered_genes
 
 
