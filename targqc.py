@@ -7,7 +7,6 @@ import os
 from os.path import relpath, join, exists, abspath, pardir, basename, splitext
 from optparse import OptionParser
 
-from source import logger
 import source
 from source.config import Config, defaults
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_genome_resources, determine_run_cnf, \
@@ -15,12 +14,13 @@ from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workd
 from source import logger
 from source.logger import info, err, warn, critical, send_email
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, remove_quotes, \
-    file_exists, isfile
+    file_exists, isfile, splitext_plus
 from source.main import set_up_dirs
 from source.targetcov.bam_and_bed_utils import prepare_beds, extract_gene_names_and_filter_exons
 from source.targetcov.submit_jobs import run_targqc
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
+from source.tools_from_cnf import get_system_path
 
 
 def proc_args(argv):
@@ -41,14 +41,17 @@ def proc_args(argv):
     parser.add_option('--no-qualimap', dest='qualimap', action='store_false', default=True, help='do not run qualimap')
     parser.add_option('--bed', dest='bed', help='BED file to run detailed coverage analysis.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
+    parser.add_option('--downsample-to', dest='downsample_to', type='int')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
 
     if len(args) == 0:
-        critical('No BAMs provided to input.')
+        critical('No input BAMs/FastQ provided. Usage:\n'
+                 '1. ' + sys.argv[0] + ' *.fq.gz -o output_dir -g hg19 [--bed target.bed]\n'
+                 '2. ' + sys.argv[0] + ' *.bam -o output_dir [--bed target.bed]\n')
 
-    sample_names, bam_fpaths = read_samples(args)
+    fastqs_by_sample, bam_by_sample = read_samples(args)
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'), is_targetseq=opts.deep_seq)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
@@ -64,11 +67,6 @@ def proc_args(argv):
     # cnf.name = 'TargQC_' + cnf.project_name
     info(' '.join(sys.argv))
 
-    samples = [
-        source.TargQC_Sample(s_name, join(cnf.output_dir, s_name), bam=bam_fpath)
-            for s_name, bam_fpath in zip(sample_names, bam_fpaths)]
-    samples.sort(key=lambda _s: _s.key_to_sort())
-
     check_genome_resources(cnf)
 
     target_bed, features_bed, genes_fpath = get_bed_targqc_inputs(cnf, cnf.bed)
@@ -80,37 +78,113 @@ def proc_args(argv):
         if not cnf.qsub_runner: critical('Error: qsub-runner is not provided is sys-config.')
         verify_file(cnf.qsub_runner, is_critical=True)
 
-    return cnf, samples, target_bed, features_bed, genes_fpath
+    return cnf, fastqs_by_sample, bam_by_sample, target_bed, features_bed, genes_fpath
 
 
 def main():
-    cnf, samples, target_bed, exons_bed, genes_fpath = proc_args(sys.argv)
+    cnf, fastqs_by_sample, bam_by_sample, target_bed, exons_bed, genes_fpath = proc_args(sys.argv)
 
-    targqc_html_fpath = run_targqc(cnf, cnf.output_dir, samples, basename(__file__), target_bed, exons_bed, genes_fpath)
+    samples = []
+    for sname, (l, r) in fastqs_by_sample.items():
+        s = source.TargQC_Sample(sname, join(cnf.output_dir, sname))
+        s.l_fpath = l
+        s.r_fpath = r
+        samples.append(s)
+    for sname, bam_fpath in bam_by_sample.items():
+        s = source.TargQC_Sample(sname, join(cnf.output_dir, sname), bam=bam_fpath)
+        samples.append(s)
+    samples.sort(key=lambda _s: _s.key_to_sort())
 
-    # if targqc_html_fpath:
-    #     send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
+    targqc_html_fpath = run_targqc(cnf, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
+
+    if targqc_html_fpath:
+        send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
 
 
 def read_samples(args):
-    bam_fpaths = []
-    sample_names = []
+    input_fpaths = [verify_file(fpath) for fpath in args]
+    input_fpaths = [fpath for fpath in input_fpaths if fpath]
+    if not input_fpaths:
+        critical('No correct input files')
+
+    info(str(len(input_fpaths)) + ' correct input files')
+    fastqs_by_sample = find_fastq_pairs(input_fpaths)
+    if fastqs_by_sample:
+        info('Found FastQ pairs: ' + str(len(fastqs_by_sample)))
+    bam_by_sample = find_bams(input_fpaths)
+    if bam_by_sample:
+        info('Found ' + str(len(bam_by_sample)) + ' BAMs')
+
+    intersection = set(fastqs_by_sample.keys()) & set(bam_by_sample.keys())
+    if intersection:
+        critical('The following samples both had input BAMs and FastQ: ' + ', '.join(list(intersection)))
+
+    return fastqs_by_sample, bam_by_sample
+
+
+def find_bams(fpaths):
+    bam_by_sample = dict()
     bad_bam_fpaths = []
 
-    for arg in args or [os.getcwd()]:
+    for fpath in fpaths:
         # /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0159_AHK2KTADXX/bcbio,Kudos159 /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0160_BHKWMNADXX/bcbio,Kudos160
-        bam_fpath = verify_bam(arg.split(',')[0])
-        if not verify_bam(bam_fpath):
-            bad_bam_fpaths.append(bam_fpath)
-        bam_fpaths.append(bam_fpath)
-        if len(arg.split(',')) > 1:
-            sample_names.append(arg.split(',')[1])
-        else:
-            sample_names.append(basename(splitext(bam_fpath)[0]))
+        fpath = fpath.split(',')[0]
+        fname, ext = splitext(fpath)
+        if ext == '.bam':
+            bam_fpath = verify_bam(fpath)
+            if not bam_fpath:
+                bad_bam_fpaths.append(bam_fpath)
+            else:
+                if len(fpath.split(',')) > 1:
+                    sname = fpath.split(',')[1]
+                else:
+                    sname = basename(splitext(bam_fpath)[0])
+                bam_by_sample[sname] = bam_fpath
     if bad_bam_fpaths:
         critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
 
-    return sample_names, bam_fpaths
+    return bam_by_sample
+
+
+def find_fastq_pairs(fpaths):
+    info('Finding fastq pairs.')
+    fastqs_by_sample_name = dict()
+    for fpath in fpaths:
+        fn, ext = splitext_plus(basename(fpath))
+        if ext in ['.fq', '.fq.gz', '.fastq', '.fastq.gz']:
+            sname, l_fpath, r_fpath = None, None, None
+            if fn.endswith('_1'):
+                sname = fn[:-2]
+                l_fpath = fpath
+            if fn.endswith('_R1'):
+                sname = fn[:-3]
+                l_fpath = fpath
+            if fn.endswith('_2'):
+                sname = fn[:-2]
+                r_fpath = fpath
+            if fn.endswith('_R2'):
+                sname = fn[:-3]
+                r_fpath = fpath
+            if not sname:
+                sname = fn
+                info('Cannot detect file for ' + sname)
+
+            l, r = fastqs_by_sample_name.get(sname, (None, None))
+            if l and l_fpath:
+                critical('Duplicated left FastQ files for ' + sname + ': ' + l + ' and ' + l_fpath)
+            if r and r_fpath:
+                critical('Duplicated right FastQ files for ' + sname + ': ' + r + ' and ' + r_fpath)
+            fastqs_by_sample_name[sname] = l or l_fpath, r or r_fpath
+
+    fixed_fastqs_by_sample_name = dict()
+    for sname, (l, r) in fastqs_by_sample_name.items():
+        if not l:
+            err('ERROR: for sample ' + sname + ', left reads not found')
+        if not r:
+            err('ERROR: for sample ' + sname + ', left reads not found')
+        fixed_fastqs_by_sample_name[sname] = l, r
+
+    return fixed_fastqs_by_sample_name
 
 
 if __name__ == '__main__':

@@ -11,11 +11,7 @@ from source.targetcov.summarize_targetcov import summarize_targqc
 from source.tools_from_cnf import get_system_path
 
 
-def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, features_bed, genes_fpath=None):
-    # if not target_bed:
-    #     target_bed = exons_bed
-    #     info('No target_bed, using exons_bed instead')
-
+def run_targqc(cnf, output_dir, samples, target_bed, features_bed, genes_fpath=None):
     max_threads = cnf.threads
     threads_per_sample = 1  # max(max_threads / len(samples), 1)
     summary_threads = min(len(samples), max_threads)
@@ -23,6 +19,7 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, features_
 
     jobs_to_wait = []
     if not cnf.only_summary:
+        original_target_bed = target_bed
         features_bed, features_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, features_bed, target_bed)
         gene_keys_set, gene_keys_list, target_bed, features_bed, features_no_genes_bed = \
             extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_no_genes_bed)
@@ -34,44 +31,32 @@ def run_targqc(cnf, output_dir, samples, main_script_name, target_bed, features_
         info('*' * 70)
         info()
 
-        targetcov_step, ngscat_step, qualimap_step = \
-            _prep_steps(cnf, threads_per_sample, summary_threads,
-                        samples, target_bed, features_bed, features_no_genes_bed, genes_fpath, main_script_name)
+        step = _prep_steps(cnf, threads_per_sample, summary_threads, samples, target_bed, original_target_bed, features_bed, features_no_genes_bed, genes_fpath)
 
         summary_wait_for_steps = []
 
         for sample in samples:
-            info('Processing ' + basename(sample.bam))
+            info('Processing ' + basename(sample.name))
+            input_params = ''
+            if sample.bam:
+                input_params = ' --bam ' + sample.bam
+            elif sample.l_fpath and sample.r_fpath:
+                input_params = ' -1 ' + sample.l_fpath + ' -2 ' + sample.r_fpath
 
-            info('TargetSeq for "' + basename(sample.bam) + '"')
-            j = _submit_job(cnf, targetcov_step, sample.name, threads=threads_per_sample, bam=sample.bam,
-                            targqc_dirpath=sample.targqc_dirpath)
+            j = _submit_job(cnf, step, sample.name, threads=threads_per_sample, input_params=input_params, targqc_dirpath=sample.targqc_dirpath)
             jobs_to_wait.append(j)
-            summary_wait_for_steps.append(targetcov_step.job_name(sample.name))
+            summary_wait_for_steps.append(step.job_name(sample.name))
 
-            # if not cnf.reuse_intermediate or not sample.ngscat_done():
-            #     info('NgsCat for "' + basename(sample.bam) + '"')
-            #     _submit_job(cnf, ngscat_step, sample, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
-            #     summary_wait_for_steps.append(ngscat_step.job_name(sample.name))
-
-            # if qualimap_step and (not cnf.reuse_intermediate or not sample.qualimap_done()):
-            #     info('Qualimap "' + basename(sample.bam) + '"')
-            #     j = _submit_job(cnf, qualimap_step, sample, threads=threads_per_sample, bam=sample.bam, sample=sample.name, is_critical=False)
-            #     jobs_to_wait.append(j)
-            #     summary_wait_for_steps.append(qualimap_step.job_name(sample.name))
-
-            info('Done ' + basename(sample.bam))
+            info('Done ' + basename(sample.name))
             info()
 
     wait_for_jobs(cnf, jobs_to_wait)
 
     info('Making targqc summary')
-    return summarize_targqc(cnf, summary_threads, output_dir, samples,
-                            bed_fpath=target_bed, features_fpath=features_bed)
+    return summarize_targqc(cnf, summary_threads, output_dir, samples, bed_fpath=target_bed, features_fpath=features_bed)
 
 
-def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
-                bed_fpath, exons_fpath, exons_no_genes_bed, genes_fpath, main_script_name):
+def _prep_steps(cnf, threads_per_sample, summary_threads, samples, bed_fpath, original_bed_fpath, exons_fpath, exons_no_genes_bed, genes_fpath):
     hasher = hashlib.sha1(cnf.output_dir)
     path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
     run_id = path_hash + '_' + cnf.project_name
@@ -91,14 +76,14 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
         ' -s {sample_name}' + \
         ' -o ' + join('{targqc_dirpath}') + \
         ' --work-dir ' + join(cnf.work_dir, '{sample_name}') + \
-        ' --bam {bam}' + \
        (' --bed ' + bed_fpath if bed_fpath else '') + \
+       (' --original-bed ' + original_bed_fpath if original_bed_fpath else '') + \
        (' --exons ' + exons_fpath if exons_fpath else '') + \
        (' --exons-no-genes ' + exons_no_genes_bed if exons_no_genes_bed else '') + \
        (' --genes ' + genes_fpath if genes_fpath else '') + \
        (' --reannotate ' if cnf.reannotate else '') + \
-        ' --no-prep-bed'
-       # (' --dedup ' if cnf.dedup else '') + \
+        ' --no-prep-bed' + \
+        ' {input_params}'
 
     targetcov_step = Step(cnf, run_id,
         name=source.targetseq_name, short_name='tc',
@@ -107,43 +92,7 @@ def _prep_steps(cnf, threads_per_sample, summary_threads, samples,
         paramln=targetcov_params
     )
 
-    # ngscat_step = None
-    # if bed_fpath or exons_no_genes_bed:
-    #     ngscat_params = params_for_one_sample + \
-    #         ' -s {sample_name} ' + \
-    #         ' -o {ngscat_dirpath}' + \
-    #         ' --work-dir ' + join(cnf.work_dir, source.ngscat_name + '_{sample_name}') + \
-    #         ' --bam {bam}' + \
-    #         ' --bed ' + (bed_fpath or exons_no_genes_bed) + \
-    #         ' --saturation y '
-    #
-    #     ngscat_step = Step(cnf, run_id,
-    #         name=source.ngscat_name, short_name='nc',
-    #         interpreter='python',
-    #         script=join('scripts', 'post', 'ngscat.py'),
-    #         paramln=ngscat_params
-    #     )
-
-    # qualimap_bed_fpath = join(cnf.work_dir, 'tmp_qualimap.bed')
-    # if bed_fpath:
-    #     fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath)
-    #
-    # qualimap_params = \
-    #     params_for_one_sample + \
-    #     ' --bam {bam}' + \
-    #    (' --bed ' + qualimap_bed_fpath if bed_fpath else '') + \
-    #     ' -o ' + join(cnf.output_dir, '{sample.qualimap_dirpath}')
-    #
-    # qualimap_step = None
-    # if cnf.qualimap:
-    #     qualimap_step = Step(cnf, run_id,
-    #         name=source.qualimap_name, short_name='qm',
-    #         interpreter='python',
-    #         script=join('scripts', 'post', 'qualimap.py'),
-    #         paramln=qualimap_params,
-    #     )
-
-    return targetcov_step, None, None
+    return targetcov_step
 
 
 def _submit_job(cnf, step, sample_name='', wait_for_steps=None, threads=1, is_critical=True, **kwargs):

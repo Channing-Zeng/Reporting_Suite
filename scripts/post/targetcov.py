@@ -10,14 +10,17 @@ import sys
 from traceback import format_exc
 import shutil
 from optparse import SUPPRESS_HELP
+
+from preproc import align
 from source import BaseSample, TargQC_Sample
 from source.calling_process import call
+from source.fastqc.fastq_utils import downsample
 from source.logger import critical
 from source.logger import err
 from source.main import read_opts_and_cnfs
 from source.config import defaults
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
-from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, extract_gene_names_and_filter_exons
+from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bam
 from source.targetcov.cov import make_targetseq_reports
 from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
@@ -32,6 +35,12 @@ def main(args):
             (['--bam'], dict(
                 dest='bam',
                 help='a path to the BAM file to study')
+             ),
+            (['-1'], dict(
+                dest='l_fpath')
+             ),
+            (['-2'], dict(
+                dest='r_fpath')
              ),
             (['--bed', '--capture', '--amplicons'], dict(
                 dest='bed',
@@ -86,9 +95,13 @@ def main(args):
                 action='store_true',
                 help=SUPPRESS_HELP)
              ),
+            (['--downsample-to'], dict(
+                dest='downsample_to',
+                type='int',
+                help=SUPPRESS_HELP)
+             ),
         ],
-        required_keys=['bam'],
-        file_keys=['bam', 'bed'],
+        file_keys=['bam', 'l_fpath', 'r_fpath', 'bed'],
         key_for_sample_name='bam')
 
     if cnf.padding:
@@ -114,19 +127,67 @@ def main(args):
     else:
         genes_fpath = None
 
-    info('Using alignment ' + cnf['bam'])
-
     if cnf.bed:
         cnf.bed = verify_file(cnf.bed, is_critical=True)
         info('Using amplicons/capture panel ' + cnf.bed)
     elif features_bed:
         info('WGS, taking CDS as target')
 
-    run_one(cnf, process_one, finalize_one, output_dir=cnf.output_dir,
-            features_bed=features_bed, features_no_genes_bed=cnf.features_no_genes)
+    reports = process_one(cnf, cnf.output_dir, cnf.bam,
+        features_bed=features_bed, features_no_genes_bed=cnf.features_no_genes)
+    summary_report, gene_report = reports[:2]
+
+    info('')
+    info('*' * 70)
+    if summary_report.txt_fpath:
+        info('Summary report: ' + summary_report.txt_fpath)
+    if gene_report:
+        if gene_report.txt_fpath:
+            info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.rows)) + ' regions)')
+
+    if len(reports) > 2:
+        selected_regions_report = reports[2]
+        if selected_regions_report.txt_fpath:
+            info('Flagged regions: ' + selected_regions_report.txt_fpath +
+                 ' (' + str(len(selected_regions_report.rows)) + ' regions)')
+
+    for fpaths in reports:
+        if fpaths:
+            ok = True
+            info('Checking expected results...')
+            if not isinstance(fpaths, list):
+                fpaths = [fpaths]
+            for fpath in fpaths:
+                if isinstance(fpath, basestring):
+                    if not verify_file(fpath):
+                        ok = False
+            if ok:
+                info('The results are good.')
 
     if not cnf['keep_intermediate']:
         shutil.rmtree(cnf['work_dir'])
+
+
+def proc_fastq(cnf, sample, l_fpath, r_fpath):
+    if cnf.downsample_to:
+        info('Downsampling the reads to ' + str(cnf.downsample_to))
+        l_fpath, r_fpath = downsample(cnf, sample.nname, l_fpath, r_fpath, cnf.downsample_to, output_dir=cnf.work_dir, suffix='subset')
+
+    sambamba = get_system_path(cnf, 'sambamba')
+    bwa = get_system_path(cnf, 'bwa')
+    seqtk = get_system_path(cnf, 'seqtk')
+    bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
+    if not (sambamba and bwa and seqtk and bammarkduplicates):
+        critical('sambamba, BWA, seqtk and bammarkduplicates are required to align BAM')
+    info()
+    info('Alignming reads to the reference')
+    bam_fpath = align(cnf, sample, l_fpath, r_fpath,
+        sambamba, bwa, seqtk, bammarkduplicates,
+        cnf.genome.bwa, cnf.is_pcr)
+    bam_fpath = verify_bam(bam_fpath)
+    if not bam_fpath:
+        critical('Sample ' + sample + ' was not aligned successfully.')
+    return bam_fpath
 
 
 def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
@@ -146,8 +207,15 @@ def picard_ins_size_hist(cnf, sample, bam_fpath, output_dir):
              stdout_to_outputfile=False, exit_on_error=False)
 
 
-def process_one(cnf, output_dir, features_bed, features_no_genes_bed):
-    sample = TargQC_Sample(cnf.sample, output_dir, bam=cnf.bam, bed=cnf.bed)
+def process_one(cnf, output_dir, bam_fpath, features_bed, features_no_genes_bed):
+    sample = TargQC_Sample(cnf.sample, output_dir, bed=cnf.bed, bam=cnf.bam)
+    sample.l_fpath = cnf.l_fpath
+    sample.r_fpath = cnf.r_fpath
+
+    if not sample.bam and sample.l_fpath and sample.r_fpath:
+        sample.bam = proc_fastq(cnf, sample, verify_file(cnf.l_fpath), verify_file(cnf.r_fpath))
+
+    info('Using alignment ' + sample.bam)
 
     bam_fpath = cnf.bam
     target_bed = cnf.bed
@@ -185,26 +253,6 @@ def process_one(cnf, output_dir, features_bed, features_no_genes_bed):
         err(format_exc())
 
     return reports
-
-
-def finalize_one(cnf, *args):
-    summary_report, gene_report = args[:2]
-
-    if summary_report.txt_fpath:
-        info('Summary report: ' + summary_report.txt_fpath)
-
-    if gene_report:
-        if gene_report.txt_fpath:
-            info('All regions: ' + gene_report.txt_fpath + ' (' + str(len(gene_report.rows)) + ' regions)')
-
-    if len(args) > 2:
-        # key_genes_report = args[2]
-        # if key_genes_report:
-        #     info('Key genes: ' + key_genes_report.tsv_fpath)
-        selected_regions_report = args[2]
-        if selected_regions_report.txt_fpath:
-            info('Flagged regions: ' + selected_regions_report.txt_fpath +
-                 ' (' + str(len(selected_regions_report.rows)) + ' regions)')
 
 
 if __name__ == '__main__':

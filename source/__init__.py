@@ -226,6 +226,8 @@ class TargQC_Sample(BaseSample):
         self.bed = bed
         self.vcf = vcf
         self.genome = genome
+        self.l_fpath = None
+        self.r_fpath = None
 
     def targetcov_done(self):
         if verify_file(self.targetcov_json_fpath) \

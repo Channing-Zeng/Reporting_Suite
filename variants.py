@@ -78,7 +78,7 @@ def proc_args(argv):
 def main():
     cnf, samples = proc_args(sys.argv)
 
-    run_variants(cnf, samples, basename(__file__))
+    run_variants(cnf, samples)
 
 
 def read_samples(args, caller_name=None):

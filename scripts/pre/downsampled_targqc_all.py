@@ -33,6 +33,7 @@ from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workd
 from source.file_utils import safe_mkdir, verify_dir, verify_file, adjust_path, \
     add_suffix, file_transaction, splitext_plus
 from source.webserver.exposing import sync_with_ngs_server
+from targqc import find_fastq_pairs
 
 NGS_WEBSERVER_PREPROC_DIR = '/opt/lampp/htdocs/reports'
 if is_local():
@@ -119,52 +120,17 @@ def proc_opts():
     return cnf, cnf.output_dir, fastq_fpaths
 
 
-# def find_fastq_pairs():
-
-
-
 def main():
     cnf, output_dir, fastq_fpaths = proc_opts()
 
     targqc_dirpath = output_dir
 
-    info('Finding fastq pairs.')
-    sample_by_name = dict()
-    for fastq_fpath in fastq_fpaths:
-        fn = splitext_plus(basename(fastq_fpath))[0]
-        sname, l_fpath, r_fpath = None, None, None
-        if fn.endswith('_1'):
-            sname = fn[:-2]
-            l_fpath = fastq_fpath
-        if fn.endswith('_R1'):
-            sname = fn[:-3]
-            l_fpath = fastq_fpath
-        if fn.endswith('_2'):
-            sname = fn[:-2]
-            r_fpath = fastq_fpath
-        if fn.endswith('_R2'):
-            sname = fn[:-3]
-            r_fpath = fastq_fpath
-        if not sname:
-            sname = fn
-            info('Cannot detect file for ' + sname)
-
-        if sname in sample_by_name:
-            s = sample_by_name[sname]
-        else:
-            s = DatasetSample(sname)
-            sample_by_name[sname] = s
-        if l_fpath:
-            s.l_fpath = l_fpath
-        if r_fpath:
-            s.r_fpath = r_fpath
-
+    fastqs_by_sample = find_fastq_pairs(fastq_fpaths)
     samples = []
-    for s in sample_by_name.values():
-        if not s.l_fpath:
-            err('ERROR: for sample ' + s.name + ', left reads not found')
-        if not s.r_fpath:
-            err('ERROR: for sample ' + s.name + ', left reads not found')
+    for sname, (l, r) in fastqs_by_sample.items():
+        s = source.TargQC_Sample(sname, join(cnf.output_dir, sname))
+        s.l_fpath = l
+        s.r_fpath = r
         samples.append(s)
 
     threads = len(samples)

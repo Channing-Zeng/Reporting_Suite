@@ -11,7 +11,7 @@ from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transact
 from source.variants.vcf_processing import verify_vcf
 
 
-def run_variants(cnf, samples, main_script_name=None, variants_fpath=None):
+def run_variants(cnf, samples, variants_fpath=None):
     info('Annotating...')
     _annotate(cnf, samples)
     info()
