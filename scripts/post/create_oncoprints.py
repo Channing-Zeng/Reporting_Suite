@@ -278,6 +278,7 @@ def parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes):
 def parse_sv_files(samples, altered_genes, key_genes):
     sv_events_by_samples = defaultdict(set)
     sv_fpaths = [sample.find_sv_fpath() for sample in samples]
+    sv_fpaths = [f for f in sv_fpaths if f]
 
     if not sv_fpaths:
         return sv_events_by_samples, altered_genes
