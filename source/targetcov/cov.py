@@ -252,10 +252,13 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
 
 
 MALE_GENES_BED_FPATH = join(dirname(abspath(__file__)), 'chrY.bed')
-MALE_READS_THRES = 100
-MALE_TARGET_REGIONS_FACTOR = 0.5
+MALE_TARGET_REGIONS_FACTOR = 0.7
+AVE_DEPTH_THRESHOLD_TO_DETERMINE_SEX = 5
+FEMALE_Y_COVERAGE_FACTOR = 10.0
 
-def _determine_gender(cnf, sample, bam_fpath, ave_depth, target_bed=None):
+def _determine_sex(cnf, sample, bam_fpath, ave_depth, target_bed=None):
+    info()
+    info('Determining sex')
     chry = sort_bed(cnf, MALE_GENES_BED_FPATH)
     if not chry:
         return None
@@ -269,32 +272,42 @@ def _determine_gender(cnf, sample, bam_fpath, ave_depth, target_bed=None):
         if target_male_area_size < male_area_size * MALE_TARGET_REGIONS_FACTOR:
             info('Target male region total size is ' + str(target_male_area_size) + ', which is less than the ' +
                  'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
-                 ' (' + str(male_area_size * MALE_TARGET_REGIONS_FACTOR) + ') - cannot determine gender')
+                 ' (' + str(male_area_size * MALE_TARGET_REGIONS_FACTOR) + ') - cannot determine sex')
             return None
         else:
             info('Target male region total size is ' + str(target_male_area_size) + ', which is higher than the ' +
                  'checked male regions size * ' + str(MALE_TARGET_REGIONS_FACTOR) +
                  ' (' + str(male_area_size * MALE_TARGET_REGIONS_FACTOR) + '). ' +
-                 'Determining gender based on coverage in those regions.')
+                 'Determining sex based on coverage in those regions.')
     else:
-        info('WGS, determining gender based on chrY key regions coverage.')
+        info('WGS, determining sex based on chrY key regions coverage.')
 
-    info('Detecting gender by comparing chrY key regions coverage and average coverage depth.')
+    info('Detecting sex by comparing the Y chromosome key regions coverage and average coverage depth.')
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
     index_bam(cnf, bam_fpath)
 
     chry_cov_output_fpath = sambamba_depth(cnf, male_genes_bed, bam_fpath)
     chry_mean_coverage = get_mean_cov(chry_cov_output_fpath)
+    info('Y key regions average depth: ' + str(ave_depth))
     ave_depth = float(ave_depth)
-    if ave_depth < 1 and chry_mean_coverage < 1:
-        info('Coverage is too low - cannot determine gender')
+    info('Sample average depth: ' + str(ave_depth))
+    if ave_depth < AVE_DEPTH_THRESHOLD_TO_DETERMINE_SEX:
+        info('Sample average depth is too low (less then ' + str(AVE_DEPTH_THRESHOLD_TO_DETERMINE_SEX) +
+             ') - cannot determine sex')
         return None
-    gender = 'M'
-    if ave_depth / 10.0 > chry_mean_coverage:  # if mean target coverage much higher than chrY coverage
-        gender = 'F'
-    info('Gender is ' + gender)
-    return gender
+
+    factor = ave_depth / chry_mean_coverage
+    info('Sample depth / Y depth = ' + str(factor))
+    if factor > FEMALE_Y_COVERAGE_FACTOR:  # if mean target coverage much higher than chrY coverage
+        info('Sample depth is more than ' + str(FEMALE_Y_COVERAGE_FACTOR) + ' times higher than Y depth - it\s female')
+        sex = 'F'
+    else:
+        info('Sample depth is not more than ' + str(FEMALE_Y_COVERAGE_FACTOR) + ' times higher than Y depth - it\s male')
+        sex = 'M'
+    info('Sex is ' + sex)
+    info()
+    return sex
 
 
 def get_mean_cov(bedcov_output_fpath):
@@ -336,7 +349,8 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
 
     depth_stats, reads_stats, mm_indels_stats, target_stats = _parse_qualimap_results(
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
-    reads_stats['gender'] = _determine_gender(cnf, sample, cnf.bam, depth_stats['ave_depth'], target_bed)
+
+    reads_stats['gender'] = _determine_sex(cnf, sample, cnf.bam, depth_stats['ave_depth'], target_bed)
 
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
