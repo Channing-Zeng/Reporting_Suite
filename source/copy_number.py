@@ -26,6 +26,7 @@ from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths, get_ext_tools_dirpath
 from source.utils import median, mean
 import source
+from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
 
 
 def run_seq2c_bcbio_structure(cnf, bcbio_structure):
