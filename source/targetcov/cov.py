@@ -251,7 +251,11 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
     return depth_stats, reads_stats, mm_indels_stats, target_stats
 
 
-MALE_GENES_BED_FPATH = join(dirname(abspath(__file__)), 'chrY.bed')
+chry_key_regions_by_genome = {
+    'hg19': join(dirname(abspath(__file__)), 'chrY.hg19.bed'),
+    'hg19-chr21': join(dirname(abspath(__file__)), 'chrY.hg19.bed'),
+    'hg38': join(dirname(abspath(__file__)), 'chrY.hg38.bed'),
+}
 MALE_TARGET_REGIONS_FACTOR = 0.7
 AVE_DEPTH_THRESHOLD_TO_DETERMINE_SEX = 5
 FEMALE_Y_COVERAGE_FACTOR = 10.0
@@ -259,10 +263,12 @@ FEMALE_Y_COVERAGE_FACTOR = 10.0
 def _determine_sex(cnf, sample, bam_fpath, ave_depth, target_bed=None):
     info()
     info('Determining sex')
-    chry = sort_bed(cnf, MALE_GENES_BED_FPATH)
-    if not chry:
+
+    male_genes_bed = chry_key_regions_by_genome.get(cnf.genome.name)
+    if not male_genes_bed:
+        warn('Warning: no male key regions for ' + cnf.genome.name + ', cannot identify sex')
         return None
-    male_genes_bed = total_merge_bed(cnf, chry)
+
     male_area_size = calc_sum_of_regions(male_genes_bed)
     info('Male region total size: ' + str(male_area_size))
 
@@ -289,7 +295,7 @@ def _determine_sex(cnf, sample, bam_fpath, ave_depth, target_bed=None):
 
     chry_cov_output_fpath = sambamba_depth(cnf, male_genes_bed, bam_fpath)
     chry_mean_coverage = get_mean_cov(chry_cov_output_fpath)
-    info('Y key regions average depth: ' + str(ave_depth))
+    info('Y key regions average depth: ' + str(chry_mean_coverage))
     ave_depth = float(ave_depth)
     info('Sample average depth: ' + str(ave_depth))
     if ave_depth < AVE_DEPTH_THRESHOLD_TO_DETERMINE_SEX:
@@ -351,6 +357,7 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
         sample.qualimap_html_fpath, sample.qualimap_cov_hist_fpath, cnf.coverage_reports.depth_thresholds)
 
     reads_stats['gender'] = _determine_sex(cnf, sample, cnf.bam, depth_stats['ave_depth'], target_bed)
+    info()
 
     if 'bases_by_depth' in depth_stats:
         depth_stats['bases_within_threshs'], depth_stats['rates_within_threshs'] = calc_bases_within_threshs(
