@@ -19,7 +19,7 @@ def main():
     bam = args[0]
     sambamba = args[1]
     args = args[2:]
-    args = [a.replace('__QUOTE__', '"') for a in args]
+    args = [a.replace('__QUOTE__', '"').replace('""', '"') for a in args]
     err(str(args))
 
     index_bam(bam, sambamba)

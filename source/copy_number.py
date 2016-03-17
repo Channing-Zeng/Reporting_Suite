@@ -22,12 +22,10 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version, prepare_beds, remove_dups
-from source.targetcov.coverage_hist import launch_bedcoverage_hist
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths, get_ext_tools_dirpath
 from source.utils import median, mean
 import source
-from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
 
 
 def run_seq2c_bcbio_structure(cnf, bcbio_structure):
@@ -78,7 +76,7 @@ def run_seq2c_bcbio_structure(cnf, bcbio_structure):
 #         self.ave_depth = ave_depth
 
 
-def _read_amplicons_from_targetcov_report(detailed_gene_report_fpath, is_wgs=False):
+def _read_seq2c_regions_from_targetcov_report(detailed_gene_report_fpath, is_wgs=False):
     amplicons = []
 
     info('Parsing amplicons from from ' + detailed_gene_report_fpath)
@@ -235,50 +233,47 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
         if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif not cnf.is_wgs and verify_file(s.targetcov_detailed_tsv, silent=True):  # is_wgs is temporary!
+        elif verify_file(s.targetcov_detailed_tsv, silent=True):
+            regions = None
             info('Using bedcoverage output for Seq2C coverage.')
             # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
-            amplicons = _read_amplicons_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=is_wgs)
-            amplicons = (a for a in amplicons if a.gene_name and a.gene_name != '.')
-            save_regions_to_seq2cov_output(cnf, s.name, amplicons, seq2cov_output_by_sample[s.name])
+            regions = _read_seq2c_regions_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=is_wgs)
+            regions = (a for a in regions if a.gene_name and a.gene_name != '.')
+            save_regions_to_seq2cov_output(cnf, s.name, regions, seq2cov_output_by_sample[s.name])
 
         else:
-            # if target_bed != seq2c_bed:
-            #     info('target_bed ' + target_bed + ' != seq2c_bed ' + seq2c_bed + ', cannot reuse ' +
-            #          s.targetcov_detailed_tsv + ' for Seq2C')
-            if not verify_file(s.targetcov_detailed_tsv, silent=True):
-                info(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C')
+            critical(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C. Please, run TargQC first.')
 
-            info(s.name + ': submitting bedcoverage hist')
-            bam_fpath = bams_by_sample[s.name]
-            depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
-            depth_output_by_sample[s.name] = depth_output
-            if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
-                info(depth_output + ' exists, reusing')
-            else:
-                j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True)
-                jobs_by_sample[s.name] = j
+            # info(s.name + ': submitting bedcoverage hist')
+            # bam_fpath = bams_by_sample[s.name]
+            # depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
+            # depth_output_by_sample[s.name] = depth_output
+            # if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
+            #     info(depth_output + ' exists, reusing')
+            # else:
+            #     j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True)
+            #     jobs_by_sample[s.name] = j
         info()
     info('*' * 50)
 
     wait_for_jobs(cnf, jobs_by_sample.values())
 
-    sum_jobs_by_sample = dict()
-    info('* Submitting seq2cov output *')
-    for s_name, j in jobs_by_sample.items():
-        if not verify_file(seq2cov_output_by_sample[s_name], silent=True):
-            info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
-
-            script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
-                                        is_critical=True)
-            bedcov_hist_fpath = depth_output_by_sample[s_name]
-            bed_col_num = count_bed_cols(seq2c_bed)
-            cmdline = '{script} {bedcov_hist_fpath} {s_name} {bed_col_num}'.format(**locals())
-            j = submit_job(cnf, cmdline, s_name + '_bedcov_2_seq2cov', output_fpath=seq2cov_output_by_sample[s_name])
-            sum_jobs_by_sample[s_name] = j
-
-    wait_for_jobs(cnf, sum_jobs_by_sample.values())
+    # sum_jobs_by_sample = dict()
+    # info('* Submitting seq2cov output *')
+    # for s_name, j in jobs_by_sample.items():
+    #     if not verify_file(seq2cov_output_by_sample[s_name], silent=True):
+    #         info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
+    #
+    #         script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
+    #                                     is_critical=True)
+    #         bedcov_hist_fpath = depth_output_by_sample[s_name]
+    #         bed_col_num = count_bed_cols(seq2c_bed)
+    #         cmdline = '{script} {bedcov_hist_fpath} {s_name} {bed_col_num}'.format(**locals())
+    #         j = submit_job(cnf, cmdline, s_name + '_bedcov_2_seq2cov', output_fpath=seq2cov_output_by_sample[s_name])
+    #         sum_jobs_by_sample[s_name] = j
+    #
+    # wait_for_jobs(cnf, sum_jobs_by_sample.values())
 
     info()
     info('Done')

@@ -744,10 +744,10 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
     report.txt_fpath = sample.targetcov_detailed_txt
     report.tsv_fpath = sample.targetcov_detailed_tsv
 
-    if features_no_genes_bed or target_bed:
+    if target_bed:
         ready_target_bed = join(output_dir, 'target.bed')
         try:
-            shutil.copy(target_bed or features_bed, ready_target_bed)
+            shutil.copy(target_bed, ready_target_bed)
         except OSError:
             err(traceback.format_exc())
 
@@ -758,7 +758,7 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
     col_widths = get_col_widths(first_txt_rows)
     col_widths[6] = len('Gene-Exon')
 
-    for (bed, feature) in zip([target_bed, features_no_genes_bed], ['amplicons', 'exons']):
+    for (bed, feature) in zip([target_bed, features_no_genes_bed], ['amplicons', 'exons']):  # features are canonical
         if not bed:
             continue
         if feature == 'exons':
