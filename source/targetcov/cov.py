@@ -22,7 +22,6 @@ from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_
     remove_dups, get_padded_bed_file, number_mapped_reads_on_target, flag_stat, calc_region_number, \
     intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads, call_sambamba, count_bed_cols, \
     sambamba_depth
-from source.targetcov.coverage_hist import bedcoverage_hist_stats
 from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_len_fpath, get_ext_tools_dirpath
 

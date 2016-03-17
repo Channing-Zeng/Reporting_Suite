@@ -124,7 +124,7 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v146.vcf.gz
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
     oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
@@ -160,7 +160,7 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/seq/hg19-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bwa/hg19-noalt.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_v146.vcf.gz
     cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/Cosmic-Coding_latest.vcf.gz
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/1000G_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/ClinVar_latest.vcf.gz
