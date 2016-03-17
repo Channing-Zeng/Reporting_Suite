@@ -28,7 +28,7 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
     cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq}'.format(**locals())
     for s_name, vcf_fpath in vcf_fpath_by_sname.items():
         cmdl += ' --variant:' + s_name + ' ' + vcf_fpath
-    if isfile(combined_vcf_fpath + '.gz') and verify_vcf(combined_vcf_fpath + '.gz'):
+    if cnf.reuse_intermediate and isfile(combined_vcf_fpath + '.gz') and verify_vcf(combined_vcf_fpath + '.gz'):
         info(combined_vcf_fpath + '.gz exists, reusing')
         return combined_vcf_fpath
 
