@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from genericpath import isfile
 from os.path import join, basename, splitext
 from random import random
@@ -156,81 +157,88 @@ def split_bed_by_chrom(cnf, bed_fpath):
 #         return call(cnf, cmdline, bedcov_output_fpath, exit_on_error=False)
 
 
-# def summarize_bedcoverage_hist_stats(bedcov_output_fpath, sample_name, bed_col_num):
-#     """
-#     :param bedcov_output_fpath: file path
-#     :param sample_name: sting
-#     :param bed_col_num: int
-#     :return: regions, total_region, max_depth
-#         regions: [Region(
-#             sample_name: string
-#             chrom: string
-#             start: int
-#             end: int
-#             size: int
-#             gene_name: string
-#             bases_by_depth: dict(depth:int->bases:int)
-#             extra_fields: [string])]
-#         total_region: Region(--|--)
-#         max_depth: int
-#     """
-#
-#     _total_regions_count = 0
-#     regions, max_depth, total_bed_size = [], 0, 0
-#
-#     # for next_line in bedcov:
-#     with open(bedcov_output_fpath) as f:
-#         for next_line in f:
-#             if not next_line.strip() or next_line.startswith('#'):
-#                 continue
-#
-#             line_tokens = next_line.strip().split()
-#             chrom = line_tokens[0]
-#             start, end, gene_name = None, None, None
-#             try:
-#                 depth, bases, region_size = map(int, line_tokens[-4:-1])
-#             except:
-#                 critical('Undexpected error: incorrect line in the coverageBed output:\n' + next_line)
-#                 return
-#
-#             if next_line.startswith('all'):
-#                 max_depth = max(max_depth, depth)
-#                 total_bed_size += bases
-#                 extra_fields = ()
-#             else:
-#                 start, end = map(int, line_tokens[1:3])
-#                 gene_name = line_tokens[3] if bed_col_num > 3 else None
-#                 extra_fields = tuple(line_tokens[4:-4])
-#
-#             line_region_key_tokens = (sample_name, chrom, start, end, gene_name, extra_fields)
-#
-#             if regions == [] or hash(line_region_key_tokens) != \
-#                     hash((regions[-1].sample_name, regions[-1].chrom,
-#                           regions[-1].start, regions[-1].end,
-#                           regions[-1].gene_name, regions[-1].extra_fields)):
-#                 region = Region(
-#                     sample_name=sample_name, chrom=chrom,
-#                     start=start, end=end, size=region_size,
-#                     gene_name=gene_name, extra_fields=extra_fields)
-#                 if region.gene_name == '.':
-#                     pass
-#                 regions.append(region)
-#
-#                 _total_regions_count += 1
-#
-#                 # if _total_regions_count > 0 and _total_regions_count % 100000 == 0:
-#                 #     info('  Processed {0:,} regions'.format(_total_regions_count))
-#
-#             region.add_bases_for_depth(depth, bases)
-#
-#             if region.min_depth is None:
-#                 region.min_depth = depth  # depth values go from lowest to highest, so if we are meeting the first record for this region, the depth would be the lowest
-#
-#     # if _total_regions_count % 100000 != 0:
-#     #     info('  Processed {0:,} regions'.format(_total_regions_count))
-#
-#     regions = regions[:-1]
-#     # info('Sorting genes...')
-#     # regions = sorted(regions[:-1], key=Region.get_order_key)
-#
-#     return regions  #, total_region, max_depth
+
+
+
+def summarize_bedcoverage_hist_stats(sambamba_depth_output_fpath, sample_name, bed_col_num):
+    """
+    :param sambamba_depth_fpath: file path
+    :param sample_name: sting
+    :param bed_col_num: int
+    :return: regions, total_region, max_depth
+        regions: [Region(
+            sample_name: string
+            chrom: string
+            start: int
+            end: int
+            size: int
+            gene_name: string
+            bases_by_depth: dict(depth:int->bases:int)
+            extra_fields: [string])]
+        total_region: Region(--|--)
+        max_depth: int
+    """
+    read_count_col = None
+    mean_cov_col = None
+    min_depth_col = None
+    std_dev_col = None
+    total_regions_count = 0
+
+    cur_unannotated_gene = None
+    info('Reading coverage statistics...')
+
+    with open(sambamba_depth_output_fpath) as sambabma_depth_file:
+        for line in sambabma_depth_file:
+            if line.startswith('#'):
+                read_count_col = line.split('\t').index('readCount')
+                mean_cov_col = line.split('\t').index('meanCoverage')
+                min_depth_col = line.split('\t').index('minDepth')
+                std_dev_col = line.split('\t').index('stdDev')
+                continue
+            line_tokens = line.replace('\n', '').split()
+            chrom = line_tokens[0]
+            start, end = map(int, line_tokens[1:3])
+            region_size = end - start
+            gene_name = line_tokens[3] if read_count_col != 3 else None
+            ave_depth = float(line_tokens[mean_cov_col])
+            min_depth = int(line_tokens[min_depth_col])
+            std_dev = float(line_tokens[std_dev_col])
+            rates_within_threshs = line_tokens[std_dev_col + 1:-1]
+
+            extra_fields = tuple(line_tokens[4:read_count_col]) if read_count_col > 4 else ()
+
+            region = Region(
+                sample_name=sample_name, chrom=chrom,
+                start=start, end=end, size=region_size,
+                avg_depth=ave_depth,
+                gene_name=gene_name, extra_fields=extra_fields)
+
+            region.rates_within_threshs = OrderedDict((depth, float(rate) / 100.0) for (depth, rate) in zip(depth_thresholds, rates_within_threshs))
+            region.min_depth = min_depth
+            region.std_dev = std_dev
+
+            region.feature = 'Amplicon'
+            if gene_name != '.':
+                cur_unannotated_gene = None
+                gene = gene_by_name_and_chrom[(gene_name, chrom)]
+                if (gene.gene_name, gene.chrom) not in ready_to_report_set:
+                    ready_to_report_genes.append(gene)
+                    ready_to_report_set.add((gene.gene_name, gene.chrom))
+                gene.add_amplicon(region)
+            else:
+                if cur_unannotated_gene is None:
+                    cur_unannotated_gene = GeneInfo(sample_name=sample_name, gene_name=gene_name, chrom=chrom, feature='NotAnnotatedSummary')
+                    ready_to_report_genes.append(cur_unannotated_gene)
+                cur_unannotated_gene.add_amplicon(region)
+
+            row = [region.chrom, region.start, region.end, region.get_size(), region.gene_name, region.strand,
+                   region.feature, region.biotype, region.transcript_id, region.min_depth, region.avg_depth, region.std_dev,
+                   region.rate_within_normal]
+            row = [Metric.format_value(val, human_readable=True) for val in row]
+            rates = [Metric.format_value(val, unit='%', human_readable=True) for val in region.rates_within_threshs.values()]
+            row.extend(rates)
+            col_widths = [max(len(v), w) for v, w in izip(row, col_widths)]
+
+            total_regions_count += 1
+            if total_regions_count > 0 and total_regions_count % 10000 == 0:
+                 info('  Processed {0:,} regions'.format(total_regions_count))

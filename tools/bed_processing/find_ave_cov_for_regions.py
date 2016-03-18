@@ -12,7 +12,7 @@ def main():
     args = sys.argv[1:]
 
     if len(args) < 2:
-        sys.exit('Usage: ' + __file__ + ' bedcov_hist_fpath sample_name bed_col_num')
+        sys.exit('Usage: ' + __file__ + ' sambamba_depth_report sample_name bed_col_num')
 
     bedcov_hist_fpath, sample_name, bed_col_num = args
 

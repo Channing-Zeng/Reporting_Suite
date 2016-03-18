@@ -235,7 +235,6 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
         elif verify_file(s.targetcov_detailed_tsv, silent=True):
-            regions = None
             info('Using bedcoverage output for Seq2C coverage.')
             # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
@@ -244,17 +243,15 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
             save_regions_to_seq2cov_output(cnf, s.name, regions, seq2cov_output_by_sample[s.name])
 
         else:
-            critical(s.targetcov_detailed_tsv + ' does not exist, regenerating hist for Seq2C. Please, run TargQC first.')
-
-            # info(s.name + ': submitting bedcoverage hist')
-            # bam_fpath = bams_by_sample[s.name]
-            # depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
-            # depth_output_by_sample[s.name] = depth_output
-            # if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
-            #     info(depth_output + ' exists, reusing')
-            # else:
-            #     j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True)
-            #     jobs_by_sample[s.name] = j
+            info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
+            bam_fpath = bams_by_sample[s.name]
+            depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
+            depth_output_by_sample[s.name] = depth_output
+            if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
+                info(depth_output + ' exists, reusing')
+            else:
+                j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True)
+                jobs_by_sample[s.name] = j
         info()
     info('*' * 50)
 
@@ -292,6 +289,37 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     info('Saved combined seq2cov output to ' + output_fpath)
     info()
     return output_fpath
+
+
+''' sambamba_depth_output_fpath:
+# chrom chromStart  chromEnd  F3       readCount  minDepth  meanCoverage  stdDev   percentage1  percentage5  percentage10  ...  sampleName
+chr20   68345       68413     DEFB125  56         28        32.5          1.66716  100          100          100           ...  chr20_tumor
+chr20   76640       77301     DEFB125  279        24        36.9213       5.74231  100          100          100           ...  chr20_tumor
+'''
+''' seq2cov:
+chr20_tumor_1   DEFB125   chr20   68346   68413   Amplicon    68   28.0
+chr20_tumor_1   DEFB125   chr20   76641   77301   Amplicon    661  24.0
+chr20_tumor_1   DEFB125   chr20   68346   77301   Whole-Gene  729  24.3731138546
+chr20_tumor_1   DEFB126   chr20   123247  123332  Amplicon    86   40.0
+'''
+def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name, bed_col_num):
+    info('Converting sambamba depth output to seq2cov output: ' + sambamba_depth_output_fpath + ' -> ' + output_fpath)
+    assert bed_col_num >= 4, bed_col_num
+    with open(sambamba_depth_output_fpath) as f, open(output_fpath, 'w') as out:
+        for l in f:
+            if l.startswith('#'):
+                continue
+            fs = l.replace('\n', '').split('\t')
+            chrom = fs[0]
+            start = int(fs[1])
+            end = int(fs[2])
+            gene_name = fs[4]
+            ave_depth = float(fs[bed_col_num + 2])
+
+
+            feature = 'Amplicon'
+            fs = [sample_name, gene_name, chrom, str(start + 1), str(end), feature, end - start, str(ave_depth)]
+    pass
 
 
 def save_regions_to_seq2cov_output(cnf, sample_name, regions, output_fpath):
@@ -504,228 +532,4 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
 
     verify_file(output_fpath, is_critical=True)
     return output_fpath
-
-
-# def save_results_separate_for_samples(results):
-#     header = results[0]
-#
-#     results_per_sample = OrderedDict()
-#
-#     for fields in results[1:]:
-#         sample_name = fields[0]
-#         if sample_name not in results_per_sample:
-#             results_per_sample[sample_name] = [header]
-#
-#         results_per_sample[sample_name].append(fields)
-#
-#     for sample_name, fields in results_per_sample.items():
-
-
-def __proc_sample(sample, norm_depths_by_sample, factors_by_gene, med_depth, median_depth_by_sample):
-    info('  Processing ' + sample + '...')
-    norm_depths_by_gene = OrderedDefaultDict(dict)
-    norm2 = OrderedDefaultDict(dict)
-    norm3 = OrderedDefaultDict(dict)
-
-    i = 0
-    for gene, norm_depth_by_sample in norm_depths_by_sample.items():
-        if i % 1000 == 0:
-            info('    ' + sample + ': processing gene #{0:,}: {1}'.format(i, str(gene)))
-        i += 1
-
-        if sample not in norm_depth_by_sample:
-            continue
-
-        gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1  # norm1b
-
-        norm_depths_by_gene[gene][sample] = gene_norm_depth
-
-        norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
-
-        norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if \
-            median_depth_by_sample[sample] else 0
-
-    info('  ' + sample + ': Done. Processed {0:,} genes.'.format(i))
-
-    return norm_depths_by_gene, norm2, norm3
-
-
-def my_copy_number(mapped_reads_by_sample, gene_depth):
-    mapped_reads_by_sample = {k: v for k, v in mapped_reads_by_sample.items() if 'Undetermined' not in k}
-
-    info('Parsing rows...')
-    records = _report_row_to_objects(gene_depth)
-
-    info('Calculating depths normalized by samples...')
-    norm_depths_by_sample = _get_norm_depths_by_sample(mapped_reads_by_sample, records)
-
-    med_depth = median([depth for gn, vs in norm_depths_by_sample.items() for sn, depth in vs.items()])
-
-    info('Getting factors by genes...')
-    factors_by_gene = _get_factors_by_gene(norm_depths_by_sample, med_depth)
-
-    info('Getting median norm...')
-    median_depth_by_sample = _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample)
-
-    info()
-    info('Norm depth by gene, norm2, norm3...')
-
-    samples = set(rec.sample_name for rec in records)
-
-    norm_depths_by_gene = OrderedDefaultDict(dict)
-    norm2 = OrderedDefaultDict(dict)
-    norm3 = OrderedDefaultDict(dict)
-    for sample in samples:
-        info('  Processing ' + sample + '...')
-        i = 0
-        for gene, norm_depth_by_sample in norm_depths_by_sample.items():
-            if i % 1000 == 0:
-                info('    ' + sample + ': processing gene #{0:,}: {1}'.format(i, str(gene)))
-            i += 1
-
-            if sample not in norm_depth_by_sample:
-                continue
-
-            gene_norm_depth = norm_depth_by_sample[sample] * factors_by_gene[gene] + 0.1  # norm1b
-            norm_depths_by_gene[gene][sample] = gene_norm_depth
-
-            norm2[gene][sample] = math.log(gene_norm_depth / med_depth, 2) if med_depth else 0
-            norm3[gene][sample] = math.log(gene_norm_depth / median_depth_by_sample[sample], 2) if median_depth_by_sample[sample] else 0
-
-        info('  ' + sample + ': Done. Processed {0:,} genes.'.format(i))
-
-    return _make_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_sample)
-
-
-def _get_med_norm_depths(mapped_reads_by_sample, norm_depths_by_sample):
-    mean_depths_by_sample = defaultdict(list)
-
-    for sample_name in mapped_reads_by_sample:
-        for gn, v_by_sample in norm_depths_by_sample.items():
-            if sample_name not in v_by_sample:
-                info(sample_name + ' - no ' + gn)
-            mean_depths_by_sample[sample_name].append(v_by_sample.get(sample_name) or 0)
-
-    median_depth_by_sample = OrderedDict()
-    for sample_name in mapped_reads_by_sample:
-        median_depth_by_sample[sample_name] = median(mean_depths_by_sample[sample_name])
-
-    return median_depth_by_sample
-
-
-# mean_reads =  mean for all the samples mapped reads
-# return factor_by_sample = sample mapped read/mean for all the samples mapped reads
-def _get_factors_by_sample(mapped_reads_by_sample):
-    factor_by_sample = dict()
-
-    mean_reads = mean(mapped_reads_by_sample.values())
-    for sample, mapped_reads in mapped_reads_by_sample.items():
-        factor_by_sample[sample] = mean_reads / mapped_reads if mapped_reads else 0
-
-    return factor_by_sample
-
-
-#med_depth = median for all gene
-#return factor_by_gene = median gene for all samples/ med_depth
-def _get_factors_by_gene(norm_depths_1, med_depth):
-    # mean_depth_by_genes = defaultdict(list)
-    # for gene_name, values in norm_depths_by_gene:
-    #     mean_depth_by_genes[gene_name].append(rec.mean_depth)
-
-    factors_by_gene = dict()
-    for gene_name, values in norm_depths_1.items():
-        med = median(values.values())
-        factors_by_gene[gene_name] = med_depth / med if med else 0
-
-    return factors_by_gene
-
-
-#MeanDepth_Norm1
-# gene -> { sample -> [] }
-def _get_norm_depths_by_sample(mapped_reads_by_sample, records):
-    norm_depths = defaultdict(dict)
-
-    factor_by_sample = _get_factors_by_sample(mapped_reads_by_sample)
-
-    # Initialization
-    for sample, factor in factor_by_sample.items():
-        for rec in records:
-            norm_depths[rec.gene_name][sample] = 0
-
-    # Filling the dict with available balues
-    for sample, factor in factor_by_sample.items():
-        info('  ' + sample)
-
-        for rec in [rec for rec in records if rec.sample_name == sample]:
-            norm_depths[rec.gene_name][sample] = rec.mean_depth * factor
-
-    return norm_depths
-
-
-def _make_report_data(records, norm2, norm3, norm_depths_by_gene, norm_depths_by_seq_distr):
-    header = ["Sample", "Gene", "Chr", "Start", "Stop", "Length", "MeanDepth", "MeanDepth_Norm1",
-              "MeanDepth_Norm2", "log2Ratio_norm1", "log2Ratio_norm2"]
-    report_data = []
-
-    for rec in records:
-        gene_name = rec.gene_name
-        sample = rec.sample_name
-        report_data.append(map(str,
-           (sample, gene_name, rec.chrom, rec.start_position,
-            rec.end_position, rec.size,
-            '{0:.3f}'.format(rec.mean_depth, norm_depths_by_seq_distr[gene_name][sample]),
-            '{0:.3f}'.format(norm_depths_by_gene[gene_name][sample]),
-            '{0:.3f}'.format(norm2[gene_name][sample]),
-            '{0:.3f}'.format(norm3[gene_name][sample]))))
-
-    # report_data = sorted(report_data, key=itemgetter(2, 1))
-    report_data = [header] + report_data
-
-    return report_data
-
-
-# sample_order = '''PC9_IRLR PC9_9291-L0B_1 PC9_IR-GM PC9_9291_6 PC9_9291-5 PC9_IR-4
-# PC9_IR-6 PC9_9291-2 PC9 PC9_9291-3 gDNA'''.split()
-#
-# gene_order = 'PIK3CA KRAS NRAS HRAS BRAF EGFR'.split()
-
-def _report_row_to_objects(gene_depth):
-    inputs = OrderedDefaultDict(OrderedDict)
-    # for gene_name in gene_order:
-    #     for sample_name in sample_order:
-    #         inputs[gene_name][sample_name] = None
-
-    for read in gene_depth:
-        rec = CovRec(*read)
-        if 'Undetermined' not in rec.sample_name:
-            inputs[rec.gene_name][rec.sample_name] = rec
-
-    details_list = []
-    for gene_dict in inputs.values():
-        for rec in gene_dict.values():
-            details_list.append(rec)
-
-    return details_list
-
-
-class CovRec:
-    def __init__(self, sample_name=None, chrom=None, start_position=None, end_position=None, gene_name=None,
-                 type="Gene-Capture", size=None, mean_depth=None):
-        self.sample_name = sample_name
-        self.chrom = chrom
-        self.start_position = int(start_position)
-        self.end_position = int(end_position)
-        self.gene_name = gene_name
-        self.type = type
-        self.size = int(size)
-        self.mean_depth = float(mean_depth)
-
-    def __str__(self):
-        values = [self.sample_name, self.chrom, self.start_position, self.end_position, self.gene_name, self.type, self.size,
-                  self.mean_depth]
-        return '"' + '\t'.join(map(str, values)) + '"'
-
-    def __repr__(self):
-        return repr(
-            (self.gene_name, self.sample_name))
 

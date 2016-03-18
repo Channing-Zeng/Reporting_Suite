@@ -8,12 +8,11 @@ import traceback
 import math
 
 import source
-from source.qsub_utils import submit_job
 from source.qualimap.report_parser import parse_qualimap_sample_report
 import source.targetcov
 from source.calling_process import call
 from source.file_utils import intermediate_fname, verify_file, safe_mkdir, splitext_plus
-from source.logger import critical, info, err, warn
+from source.logger import critical, info, err, warn, debug
 from source.reporting.reporting import Metric, SampleReport, MetricStorage, ReportSection, PerRegionSampleReport, Row, \
     BaseReport, write_txt_rows, write_tsv_rows, get_col_widths
 from source.targetcov.Region import calc_bases_within_threshs, \
@@ -149,19 +148,6 @@ def _run_qualimap(cnf, sample, bam_fpath, bed_fpath=None, pcr=False):
         cmdl += ' --pcr'
     call(cnf, cmdl, sample.qualimap_html_fpath, stdout_to_outputfile=False)
     return sample.qualimap_dirpath
-
-    # join(self.qualimap, sample_name, bam=sample.bam, sample=sample.name,
-    #     genome=sample.genome, bed=qualimap_gff_cmdl, threads=self.threads_per_sample)
- # hist = qualimap_cov_hist_fpath
- #
- #
- #                self.qualimap = Step(cnf, run_id,
- #            name=BCBioStructure.qualimap_name, short_name='qm',
- #            interpreter='python',
- #            script=join('scripts', 'post', 'qualimap.py'),
- #            dir_name=BCBioStructure.qualimap_dir,
- #            paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
- #        )
 
 
 def _dedup_and_flag_stat(cnf, bam_fpath):
@@ -766,8 +752,8 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
         if feature == 'amplicons':
             info()
             info('Calculation of coverage statistics for the regions in the target BED file...')
-        bedcov_output_fpath = sambamba_depth(cnf, bed, bam)
-        if not bedcov_output_fpath:
+        sambamba_depth_output_fpath = sambamba_depth(cnf, bed, bam)
+        if not sambamba_depth_output_fpath:
             continue
         read_count_col = None
         mean_cov_col = None
@@ -776,9 +762,9 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
         total_regions_count = 0
 
         cur_unannotated_gene = None
-        info('Summarizing coverage statistiscs...')
-        with open(bedcov_output_fpath) as bedcov_file:
-            for line in bedcov_file:
+        info('Reading coverage statistics...')
+        with open(sambamba_depth_output_fpath) as sambabma_depth_file:
+            for line in sambabma_depth_file:
                 if line.startswith('#'):
                     read_count_col = line.split('\t').index('readCount')
                     mean_cov_col = line.split('\t').index('meanCoverage')
@@ -868,7 +854,7 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
     fpaths_to_write = [report.tsv_fpath, report.txt_fpath]
 
     for g in ready_to_report_genes:
-        info(g.gene_name, ending=', ', print_date=False)
+        debug(g.gene_name, ending=', ', print_date=False)
         for a in g.get_amplicons():
             add_region_to_report(report, a, depth_thresholds, fpaths_to_write, col_widths=col_widths)
         for e in g.get_exons():
