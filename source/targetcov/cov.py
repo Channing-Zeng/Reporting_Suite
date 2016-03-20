@@ -288,14 +288,18 @@ def _determine_sex(cnf, sample, bam_fpath, ave_depth, target_bed=None):
              ') - cannot determine sex')
         return None
 
-    factor = ave_depth / chry_mean_coverage
-    info('Sample depth / Y depth = ' + str(factor))
-    if factor > FEMALE_Y_COVERAGE_FACTOR:  # if mean target coverage much higher than chrY coverage
-        info('Sample depth is more than ' + str(FEMALE_Y_COVERAGE_FACTOR) + ' times higher than Y depth - it\s female')
+    if chry_mean_coverage == 0:
+        info('Y depth is 0 - it\s female')
         sex = 'F'
     else:
-        info('Sample depth is not more than ' + str(FEMALE_Y_COVERAGE_FACTOR) + ' times higher than Y depth - it\s male')
-        sex = 'M'
+        factor = ave_depth / chry_mean_coverage
+        info('Sample depth / Y depth = ' + str(factor))
+        if factor > FEMALE_Y_COVERAGE_FACTOR:  # if mean target coverage much higher than chrY coverage
+            info('Sample depth is more than ' + str(FEMALE_Y_COVERAGE_FACTOR) + ' times higher than Y depth - it\s female')
+            sex = 'F'
+        else:
+            info('Sample depth is not more than ' + str(FEMALE_Y_COVERAGE_FACTOR) + ' times higher than Y depth - it\s male')
+            sex = 'M'
     info('Sex is ' + sex)
     info()
     return sex
