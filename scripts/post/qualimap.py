@@ -13,7 +13,7 @@ from source.main import read_opts_and_cnfs
 
 
 def get_qualimap_max_mem(bam):
-    mem_m = getsize(bam) / 4 / 1024 / 1024
+    mem_m = getsize(bam) / 3 / 1024 / 1024
     mem_m = min(max(mem_m, 1200), 16000)
     return mem_m
 
