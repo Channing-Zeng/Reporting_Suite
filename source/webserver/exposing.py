@@ -16,11 +16,12 @@ ngs_server_username = 'ngsall'
 ngs_server_password = 'astra123'
 
 class Location:
-    def __init__(self, loc_id, report_url_base, website_url_base, csv_fpath, reports_dirpath, proper_path_should_contain):
+    def __init__(self, loc_id, report_url_base, website_url_base, csv_fpath, dirpath, reports_dirpath, proper_path_should_contain):
         self.loc_id = loc_id
         self.report_url_base = report_url_base
         self.website_url_base = website_url_base
         self.csv_fpath = csv_fpath
+        self.dirpath = dirpath
         self.reports_dirpath = reports_dirpath
         self.proper_path_should_contain = proper_path_should_contain
 
@@ -28,20 +29,23 @@ us = Location('US',
     report_url_base='http://ngs.usbod.astrazeneca.net/reports/',
     website_url_base='http://ngs.usbod.astrazeneca.net/',
     csv_fpath='/ngs/oncology/NGS.Project.csv',
+    dirpath='/opt/lampp/htdocs',
     reports_dirpath='/opt/lampp/htdocs/reports',
     proper_path_should_contain=['/gpfs/ngs/oncology/Analysis/', '/gpfs/ngs/oncology/Datasets/']
 )
 uk = Location('UK',
     report_url_base='http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/',
     website_url_base='http://ngs.usbod.astrazeneca.net/',
-    csv_fpath='/ngs/oncology/reports/NGS.Project.csv',
-    reports_dirpath='/ngs/oncology/reports',
+    csv_fpath='/ngs/web_content/reports/NGS.Project.csv',
+    dirpath='/ngs/web_content',
+    reports_dirpath='/ngs/web_content/reports',
     proper_path_should_contain=['/ngs/oncology/analysis/', '/ngs/oncology/datasets/']
 )
 local = Location('Local',
     report_url_base='http://localhost/reports/',
     website_url_base='http://localhost/ngs_website/',
     csv_fpath='/Users/vlad/Sites/reports/NGS.Project.csv',
+    dirpath='/Users/vlad/Sites',
     reports_dirpath='/Users/vlad/Sites/reports',
     proper_path_should_contain=['/Dropbox/az/analysis/', '/Dropbox/az/datasets/']
 )
@@ -58,7 +62,6 @@ def sync_with_ngs_server(
         bcbio_final_dirpath=None,
         jira_case=None):
 
-    loc = None
     if is_us(): loc = us
     elif is_uk(): loc = uk
     elif is_local(): loc = local

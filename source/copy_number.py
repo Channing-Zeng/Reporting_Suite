@@ -1,31 +1,28 @@
 #!/usr/bin/env python
 import math
-from collections import defaultdict, OrderedDict
 import os
+from collections import defaultdict, OrderedDict
 from os.path import join, splitext, basename, dirname, abspath, isfile
 from shutil import copyfile
 from time import sleep
 from traceback import format_exc
 
 from ext_modules.simplejson import load
-
 from joblib import Parallel, delayed
+
+import source
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.config import CallCnf
-from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction, \
-    verify_module, intermediate_fname, splitext_plus
-from source.logger import info, err, step_greetings, critical, warn
-from source.targetcov.bam_and_bed_utils import verify_bam, bam_to_bed, verify_bed, index_bam, number_of_mapped_reads, \
-    sambamba_depth
+from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction
+from source.logger import info, err, step_greetings, critical
+from source.targetcov.bam_and_bed_utils import verify_bed, number_of_mapped_reads, sambamba_depth
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
-from source.targetcov.bam_and_bed_utils import count_bed_cols, bedtools_version, prepare_beds, remove_dups
+from source.targetcov.bam_and_bed_utils import count_bed_cols, prepare_beds
 from source.tools_from_cnf import get_script_cmdline, get_system_path
-from source.utils import OrderedDefaultDict, get_chr_len_fpath, get_chr_lengths, get_ext_tools_dirpath
+from source.utils import OrderedDefaultDict, get_chr_len_fpath
 from source.utils import median, mean
-import source
 from tools.bed_processing.find_ave_cov_for_regions import save_regions_to_seq2cov_output__nocnf
 
 

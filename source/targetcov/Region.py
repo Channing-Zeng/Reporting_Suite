@@ -1,6 +1,5 @@
 from collections import defaultdict, OrderedDict
 import math
-import re
 import os
 from os.path import isfile
 from source.file_utils import file_transaction, verify_file

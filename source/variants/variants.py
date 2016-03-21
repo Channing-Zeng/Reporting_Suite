@@ -303,12 +303,18 @@ def _combine_results(cnf, samples, variants_fpath):
     variants_fpath = verify_file(variants_fpath, is_critical=True)
     pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
 
+    _cohort_filtering(cnf, pass_variants_fpath)
+
     if not_existing or not_existing_pass:
         return None, None
 
     _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
     return variants_fpath, pass_variants_fpath
+
+
+# def _cohort_filtering(cnf, variants_fpath):
+#     pass
 
 
 def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):

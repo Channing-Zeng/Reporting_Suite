@@ -15,6 +15,10 @@ from source.clinical_reporting.clinical_parser import get_key_or_target_bed_gene
 from source.logger import critical, warn
 from source.prepare_args_and_cnf import check_genome_resources
 from source.clinical_reporting.known_sv import fusions as known_fusions
+from source.utils import is_uk
+from source.utils import is_us
+from source.webserver import exposing
+from source.webserver.exposing import symlink_to_ngs, local_symlink
 
 
 class OncoprintMutation:
@@ -76,11 +80,16 @@ def main():
 
 
 def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
+    if is_us(): loc = exposing.us
+    # elif is_uk(): loc = exposing.uk
+    else:
+        return None
+
     info()
     info('Creating Oncoprints link')
-    data_query_dirpath = '/home/kdld047/public_html/cgi-bin/TS'
-    if not isdir(data_query_dirpath):
-        warn('Data Query directory ' + data_query_dirpath + ' does not exists.')
+    zhongwu_data_query_dirpath = '/home/kdld047/public_html/cgi-bin/TS'
+    if not isdir(zhongwu_data_query_dirpath):
+        warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
         return None
 
     clinical_report_caller = \
@@ -100,18 +109,34 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
     check_genome_resources(cnf)
 
-    data_fpath = join(data_query_dirpath, study_name + '.data.txt')
-    info_fpath = join(data_query_dirpath, study_name + '.info.txt')
+    data_query_dirpath = join(loc.dirpath, 'DataQueryTool')
 
+    data_fpath = join(zhongwu_data_query_dirpath, study_name + '.data.txt')
+    info_fpath = join(zhongwu_data_query_dirpath, study_name + '.info.txt')
     altered_genes = print_data_txt(cnf, cnf.mutations_fpath, cnf.seq2c_tsv_fpath, samples, data_fpath)
     print_info_txt(cnf, samples, info_fpath)
+    data_symlink = join(data_query_dirpath, study_name + '.data.txt')
+    info_symlink = join(data_query_dirpath, study_name + '.info.txt')
+    (symlink_to_ngs if is_us() else local_symlink)(data_fpath, data_symlink)
+    (symlink_to_ngs if is_us() else local_symlink)(info_fpath, info_symlink)
 
-    data_query_link = create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info_fpath, altered_genes)
+    properties_fpath = join(zhongwu_data_query_dirpath, 'DataQuery.properties')
+    add_data_query_properties(cnf, study_name, properties_fpath, data_fpath, info_fpath)
+
+    genes = '%0D%0A'.join(altered_genes)
+    data_query_url = join(loc.website_url_base, 'DataQueryTool', 'DataQuery.pl?'
+        'analysis=oncoprint&'
+        'study={study_name}&'
+        'gene={genes}&'
+        'order=on&'
+        'freq=50&'
+        'nocheckgenes=true&'
+        'submit=Submit'
+        .format(**locals()))
 
     info()
-    info('Information about study was added in Data Query Tool')
-
-    return data_query_link
+    info('Information about study was added in Data Query Tool, URL is ' + data_query_url)
+    return data_query_url
 
 
 def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
@@ -337,12 +362,11 @@ def print_info_txt(cnf, samples, info_fpath):
             out_f.write(sample.name + '\n')
 
 
-def create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info_fpath, altered_genes):
+# DATA_QUERY_LINK = 'http://ngs.usbod.astrazeneca.net/DataQueryTool/DataQuery.pl'
+
+def add_data_query_properties(cnf, study_name, properties_fpath, data_fpath, info_fpath):
     # modify properties
-    properties_fpath = join(data_query_dirpath, 'DataQuery.properties')
     properties_lines = []
-    data_fname = basename(data_fpath)
-    info_fname = basename(info_fpath)
     text_to_add = None
 
     lines = open(properties_fpath).read().split('\n')
@@ -355,9 +379,9 @@ def create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info
         if 'study2desc' in l:
             text_to_add = '{study_name} => "{study_name}", \\'.format(**locals())
         if 'study2data' in l:
-            text_to_add = '{study_name} => "{data_fname}", \\'.format(**locals())
+            text_to_add = '{study_name} => "{data_fpath}", \\'.format(**locals())
         if 'study2info' in l:
-            text_to_add = '{study_name} => "{info_fname}", \\'.format(**locals())
+            text_to_add = '{study_name} => "{info_fpath}", \\'.format(**locals())
         if l == '}' and text_to_add and text_to_add not in properties_lines:
             properties_lines.append(text_to_add)
             text_to_add = None
@@ -366,13 +390,6 @@ def create_data_query_link(cnf, study_name, data_query_dirpath, data_fpath, info
     with open(properties_fpath, 'w') as out:
         for l in properties_lines:
             out.write(l + '\n')
-
-    genes = '%0D%0A'.join(altered_genes)
-
-    data_query_link = 'http://luna899.usbod.astrazeneca.net/~kdld047/cgi-bin/TS/DataQuery.pl?analysis=oncoprint&study={study_name}' \
-                      '&gene={genes}&order=on&freq=50&nocheckgenes=true&submit=Submit'.format(**locals())
-
-    return data_query_link
 
 
 if __name__ == '__main__':
