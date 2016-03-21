@@ -150,13 +150,19 @@ def run_seq2c(cnf, output_dirpath, samples, seq2c_bed, is_wgs):
     mapped_read_fpath = join(output_dirpath, 'mapped_reads_by_sample.tsv')
     __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
     info()
+    if not mapped_read_fpath:
+        return None
 
     combined_gene_depths_fpath = join(output_dirpath, 'cov.tsv')
-    __seq2c_coverage(cnf, samples, bams_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
+    combined_gene_depths_fpath = __seq2c_coverage(cnf, samples, bams_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
     info()
+    if not combined_gene_depths_fpath:
+        return None
 
     seq2c_report_fpath = join(output_dirpath, source.seq2c_name + '.tsv')
-    __final_seq2c_scripts(cnf, mapped_read_fpath, combined_gene_depths_fpath, seq2c_report_fpath)
+    seq2c_report_fpath = __final_seq2c_scripts(cnf, mapped_read_fpath, combined_gene_depths_fpath, seq2c_report_fpath)
+    if not seq2c_report_fpath:
+        return None
 
     info('Done. The results is ' + seq2c_report_fpath)
     return seq2c_report_fpath
@@ -358,7 +364,8 @@ def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_
                     assert end == gene_end_by_gene[gene_name], (end, gene_end_by_gene[gene_name])
                     start = gene_start_by_gene[gene_name]
                     ave_depth = total_cov_by_gene[gene_name] / total_size_by_gene[gene_name]
-                    fs = [sample_name, gene_name, chrom, str(start + 1), str(end), 'Whole-Gene', str(end - start), str(ave_depth)]
+                    size = total_size_by_gene[gene_name]
+                    fs = [sample_name, gene_name, chrom, str(start + 1), str(end), 'Whole-Gene', str(size), str(ave_depth)]
                     out.write('\t'.join(fs) + '\n')
     info('Done, saved to ' + output_fpath)
     return output_fpath

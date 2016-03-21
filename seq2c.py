@@ -64,8 +64,6 @@ def proc_args(argv):
     cnf.proc_name = 'Seq2C'
     set_up_dirs(cnf)
 
-    check_genome_resources(cnf)
-
     samples = [
         source.TargQC_Sample(s_name, join(cnf.output_dir, s_name), bam=bam_fpath)
             for s_name, bam_fpath in zip(sample_names, bam_fpaths)]
@@ -125,6 +123,7 @@ def main():
     bed_fpath = verify_bed(bed_fpath)
     bed_cols = count_bed_cols(bed_fpath)
     if bed_cols < 4:
+        check_genome_resources(cnf)
         _, _, _, bed_fpath = prepare_beds(cnf, None, None, bed_fpath)
 
     run_seq2c(cnf, output_dir, samples, bed_fpath, cnf.is_wgs)
