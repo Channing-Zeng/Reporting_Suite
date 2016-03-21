@@ -42,7 +42,8 @@ def run_seq2c_bcbio_structure(cnf, bcbio_structure):
         seq2c_bed = verify_bed(cnf.bed)
 
     info('Calculating normalized coverages for CNV...')
-    cnv_report_fpath = run_seq2c(cnf, bcbio_structure.cnv_dir, bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
+    cnv_report_fpath = run_seq2c(cnf, join(bcbio_structure.date_dirpath, BCBioStructure.cnv_dir),
+                                 bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
 
     # if not verify_module('matplotlib'):
     #     warn('No matplotlib, skipping plotting Seq2C')
@@ -216,7 +217,6 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     jobs_by_sample = dict()
     depth_output_by_sample = dict()
     seq2cov_output_by_sample = dict()
-    chr_lengths = get_chr_len_fpath(cnf)
     seq2c_work_dirpath = join(cnf.work_dir, source.seq2c_name)
     safe_mkdir(seq2c_work_dirpath)
     info()
@@ -232,12 +232,9 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
         elif verify_file(s.targetcov_detailed_tsv, silent=True):
-            info('Using targetcov output for Seq2C coverage.')
-            # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
-            info(s.name + ': parsing targetseq output')
-            # regions = _read_seq2c_regions_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=is_wgs)
-            # regions = (a for a in regions if a.gene_name and a.gene_name != '.')
-            # save_regions_to_seq2cov_output(cnf, s.name, regions, seq2cov_output_by_sample[s.name])
+            info('Using targetcov detailed output for Seq2C coverage.')
+            info(s.name + ': using targetseq output')
+            targetcov_details_to_seq2cov(s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
 
         else:
             info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
@@ -301,6 +298,27 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     return output_fpath
 
 
+def targetcov_details_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_name, is_wgs=False):
+    info('Parsing coverage from targetcov per-regions: ' + targetcov_detials_fpath + ' -> ' + output_fpath)
+    convert_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_name,
+                       chrom_col=0, start_col=1, end_col=2, gene_col=4, ave_depth_col=10,
+                       keep_only=lambda l: (not is_wgs and 'Capture' in l) or (is_wgs and ('CDS' in l)))
+
+''' chr20_normal.targetSeq.details.gene.tsv:
+#Chr    Start   End     Size   Gene    Strand  Feature    Biotype         Transcript   Min depth  Ave depth      Std dev W/n 20% of ave depth    1x      5x      10x     25x     50x     100x    500x    1000x   5000x   10000x  50000x
+chr20   68345   68413   68     DEFB125 .       Capture    .               .            28         32.5           1.66716 .       1.0     1.0     1.0     1.0     0       0       0       0       0       0       0
+chr20   76640   77301   661    DEFB125 .       Capture    .               .            24         36.9213        5.74231 .       1.0     1.0     1.0     0.995461        0.00302572      0       0       0       0       0       0
+chr20   68350   68408   58     DEFB125 +       CDS        protein_coding  NM_153325    28         32.5           1.75431 .       1.0     1.0     1.0     1.0     0       0       0       0       0       0       0
+chr20   76645   77214   569    DEFB125 +       CDS        protein_coding  NM_153325    24         36.819         6.13761 .       1.0     1.0     1.0     0.994728        0.00351494      0       0       0       0       0       0
+chr20   68312   77214   627    DEFB125 .       Gene-Exon  protein_coding  NM_153325    24         36.4194752791   6.00301802873   .       1.0     1.0     1.0     0.995215681021  0.00318979403509        0       0       0       0       0       0
+'''
+
+def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name, bed_col_num):
+    info('Converting sambamba depth output to seq2cov output: ' + sambamba_depth_output_fpath + ' -> ' + output_fpath)
+    assert bed_col_num >= 4, bed_col_num
+    convert_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name,
+                       chrom_col=0, start_col=1, end_col=2, gene_col=3, ave_depth_col=bed_col_num + 2)
+
 ''' sambamba_depth_output_fpath:
 # chrom chromStart  chromEnd  F3       readCount  minDepth  meanCoverage  stdDev   percentage1  percentage5  percentage10  ...  sampleName
 chr20   68345       68413     DEFB125  56         28        32.5          1.66716  100          100          100           ...  chr20_tumor
@@ -312,21 +330,19 @@ chr20_tumor_1   DEFB125   chr20   76641   77301   Amplicon    661  24.0
 chr20_tumor_1   DEFB125   chr20   68346   77301   Whole-Gene  729  24.3731138546
 chr20_tumor_1   DEFB126   chr20   123247  123332  Amplicon    86   40.0
 '''
-def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name, bed_col_num):
-    info('Converting sambamba depth output to seq2cov output: ' + sambamba_depth_output_fpath + ' -> ' + output_fpath)
-    assert bed_col_num >= 4, bed_col_num
-
+def convert_to_seq2cov(input_fpath, output_fpath, sample_name,
+                       chrom_col, start_col, end_col, gene_col, ave_depth_col,
+                       keep_only=None):
     info('First round: collecting gene ends')
     gene_end_by_gene = defaultdict(lambda: -1)
-    with open(sambamba_depth_output_fpath) as f:
+    with open(input_fpath) as f:
         for l in f:
-            if l.startswith('#'):
-                continue
+            if l.startswith('#'): continue
+            if keep_only and not keep_only(l): continue
             fs = l.replace('\n', '').split('\t')
-            if any(f == '.' for f in fs[:4]):
-                continue
-            end = int(fs[2])
-            gene_name = fs[3]
+            if any(fs[i] == '.' for i in [chrom_col, start_col, end_col, gene_col, ave_depth_col]): continue
+            end = int(fs[end_col])
+            gene_name = fs[gene_col]
             gene_end_by_gene[gene_name] = max(gene_end_by_gene[gene_name], end)
 
     info('Second round: calculating coverage')
@@ -334,19 +350,18 @@ def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_
     gene_start_by_gene = dict()
     total_size_by_gene = dict()
     with file_transaction(None, output_fpath) as tx:
-        with open(sambamba_depth_output_fpath) as f, open(tx, 'w') as out:
+        with open(input_fpath) as f, open(tx, 'w') as out:
             for l in f:
-                if l.startswith('#'):
-                    continue
+                if l.startswith('#'): continue
+                if keep_only and not keep_only(l): continue
                 fs = l.replace('\n', '').split('\t')
-                ave_depth_col_num = bed_col_num + 2
-                if any(f == '.' for f in fs[:4]) or fs[ave_depth_col_num] == '.':
-                    continue
-                chrom = fs[0]
-                start = int(fs[1])
-                end = int(fs[2])
-                gene_name = fs[3]
-                ave_depth = float(fs[ave_depth_col_num])
+                if any(fs[i] == '.' for i in [chrom_col, start_col, end_col, gene_col, ave_depth_col]): continue
+
+                chrom = fs[chrom_col]
+                start = int(fs[start_col])
+                end = int(fs[end_col])
+                gene_name = fs[gene_col]
+                ave_depth = float(fs[ave_depth_col])
 
                 if gene_name not in gene_start_by_gene:
                     gene_start_by_gene[gene_name] = start

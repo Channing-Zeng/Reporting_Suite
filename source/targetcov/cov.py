@@ -731,13 +731,6 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
     report.txt_fpath = sample.targetcov_detailed_txt
     report.tsv_fpath = sample.targetcov_detailed_tsv
 
-    if target_bed:
-        ready_target_bed = join(output_dir, 'target.bed')
-        try:
-            shutil.copy(target_bed, ready_target_bed)
-        except OSError:
-            err(traceback.format_exc())
-
     ready_to_report_genes = []
     ready_to_report_set = set()
 
