@@ -189,7 +189,7 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
         cols = count_bed_cols(seq2c_bed)
         if cols < 4:
             info()
-            info('Number columns in SV bed is ' + str(cols) + '. Annotating amplicons with gene names from Ensembl...')
+            info('Number columns in SV bed is ' + str(cols) + '. Annotating amplicons with gene names...')
             seq2c_bed = annotate_amplicons(cnf, seq2c_bed)
         elif 8 > cols > 4:
             seq2c_bed = cut(cnf, seq2c_bed, 4)
@@ -515,23 +515,24 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_gr
         return res
 
 
-def sambamba_depth(cnf, bed, bam, bedcov_output_fpath=None, use_grid=False):
-    if not bedcov_output_fpath:
-        bedcov_output_fpath = join(cnf.work_dir,
+def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None):
+    if not output_fpath:
+        output_fpath = join(cnf.work_dir,
             splitext_plus(basename(bed))[0] + '_' +
             splitext_plus(basename(bam))[0] + '_sambamba_depth.txt')
 
-    if cnf.reuse_intermediate and verify_file(bedcov_output_fpath, silent=True):
-        info(bedcov_output_fpath + ' exists, reusing.')
+    if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+        info(output_fpath + ' exists, reusing.')
         if use_grid:
             return None
         else:
-            return bedcov_output_fpath
+            return output_fpath
     sambamba = get_system_path(cnf, join(get_ext_tools_dirpath(), 'sambamba'), is_critical=True)
-    thresholds = ' -T'.join([str(d) for d in cnf.coverage_reports.depth_thresholds])
-    cmdline = 'depth region -F "not duplicate and not failed_quality_control" -L {bed} -T {thresholds} {bam}'.format(**locals())
+    depth_thresholds = depth_thresholds or cnf.coverage_reports.depth_thresholds
+    thresholds_str = ' -T'.join([str(d) for d in depth_thresholds])
+    cmdline = 'depth region -F "not duplicate and not failed_quality_control" -L {bed} -T {thresholds_str} {bam}'.format(**locals())
 
-    return call_sambamba(cnf, cmdline, output_fpath=bedcov_output_fpath, bam_fpath=bam,
+    return call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam,
         sambamba=sambamba, use_grid=use_grid, command_name='depth_' + splitext_plus(basename(bed))[0])
 
 

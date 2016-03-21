@@ -42,7 +42,7 @@ def run_seq2c_bcbio_structure(cnf, bcbio_structure):
         seq2c_bed = verify_bed(cnf.bed)
 
     info('Calculating normalized coverages for CNV...')
-    cnv_report_fpath = run_seq2c(cnf, bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
+    cnv_report_fpath = run_seq2c(cnf, bcbio_structure.cnv_dir, bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
 
     # if not verify_module('matplotlib'):
     #     warn('No matplotlib, skipping plotting Seq2C')
@@ -74,26 +74,26 @@ def run_seq2c_bcbio_structure(cnf, bcbio_structure):
 #         self.ave_depth = ave_depth
 
 
-def _read_seq2c_regions_from_targetcov_report(detailed_gene_report_fpath, is_wgs=False):
-    amplicons = []
-
-    info('Parsing amplicons from from ' + detailed_gene_report_fpath)
-
-    with open(detailed_gene_report_fpath, 'r') as f:
-        for i, line in enumerate(f):
-            if (not is_wgs and 'Capture' in line) or (is_wgs and ('CDS' in line)):
-                ts = line.split('\t')
-                # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave  ...
-                chrom, s, e, size, symbol, strand, feature, biotype, min_depth, ave_depth = ts[:10]
-                ampl = Region(
-                    gene_name=symbol, chrom=chrom, strand=strand, feature=feature,
-                    start=int(s), end=int(e), size=int(size), avg_depth=float(ave_depth))
-                amplicons.append(ampl)
-
-    if not amplicons:
-        critical('No ' + ('"Capture"' if not is_wgs else '"CDS"') + ' record was found in ' + detailed_gene_report_fpath)
-
-    return amplicons
+# def _read_seq2c_regions_from_targetcov_report(detailed_gene_report_fpath, is_wgs=False):
+#     amplicons = []
+#
+#     info('Parsing amplicons from from ' + detailed_gene_report_fpath)
+#
+#     with open(detailed_gene_report_fpath, 'r') as f:
+#         for i, line in enumerate(f):
+#             if (not is_wgs and 'Capture' in line) or (is_wgs and ('CDS' in line)):
+#                 ts = line.split('\t')
+#                 # Chr  Start  End  Size  Gene  Strand  Feature  Biotype  Min depth  Ave depth  Std dev.  W/n 20% of ave  ...
+#                 chrom, s, e, size, symbol, strand, feature, biotype, min_depth, ave_depth = ts[:10]
+#                 ampl = Region(
+#                     gene_name=symbol, chrom=chrom, strand=strand, feature=feature,
+#                     start=int(s), end=int(e), size=int(size), avg_depth=float(ave_depth))
+#                 amplicons.append(ampl)
+#
+#     if not amplicons:
+#         critical('No ' + ('"Capture"' if not is_wgs else '"CDS"') + ' record was found in ' + detailed_gene_report_fpath)
+#
+#     return amplicons
 
 
 def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2c_output):
@@ -106,14 +106,19 @@ def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2
         return None
 
 
-def run_seq2c(cnf, samples, seq2c_bed, is_wgs):
+def run_seq2c(cnf, output_dirpath, samples, seq2c_bed, is_wgs):
     step_greetings('Running Seq2C')
-    # dedup_bam_dirpath = join(cnf.work_dir, source.dedup_bam)
-    # safe_mkdir(dedup_bam_dirpath)
-    # dedupped_bam_by_sample = dict()
-    # dedup_jobs = []
+
+    seq2c_exposed_fpath = join(output_dirpath, 'seq2c_target.bed')
+    try:
+        copyfile(seq2c_bed, seq2c_exposed_fpath)
+    except OSError:
+        err(format_exc())
+        info()
+    else:
+        info('Seq2C bed file is saved in ' + seq2c_exposed_fpath)
+
     bams_by_sample = dict()
-    # ori_work_dir = cnf.work_dir
     for s in samples:
         if not s.bam:
             err('No BAM file for ' + s.name)
@@ -142,17 +147,18 @@ def run_seq2c(cnf, samples, seq2c_bed, is_wgs):
     #     return None
 
     info('Getting reads and cov stats')
-    mapped_read_fpath = join(cnf.output_dir, 'mapped_reads_by_sample.tsv')
+    mapped_read_fpath = join(output_dirpath, 'mapped_reads_by_sample.tsv')
     __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
     info()
 
-    combined_gene_depths_fpath = join(cnf.output_dir, 'cov.tsv')
+    combined_gene_depths_fpath = join(output_dirpath, 'cov.tsv')
     __seq2c_coverage(cnf, samples, bams_by_sample, seq2c_bed, is_wgs, combined_gene_depths_fpath)
     info()
 
-    seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
+    seq2c_report_fpath = join(output_dirpath, source.seq2c_name + '.tsv')
     __final_seq2c_scripts(cnf, mapped_read_fpath, combined_gene_depths_fpath, seq2c_report_fpath)
 
+    info('Done. The results is ' + seq2c_report_fpath)
     return seq2c_report_fpath
 
 
@@ -201,18 +207,6 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
         info(output_fpath + ' exists, reusing')
         return output_fpath
 
-    seq2c_bed = verify_bed(bed_fpath)
-
-    output_dirpath = dirname(output_fpath)
-    seq2c_exposed_fpath = join(output_dirpath, 'seq2c_target.bed')
-    try:
-        copyfile(seq2c_bed, seq2c_exposed_fpath)
-    except OSError:
-        err(format_exc())
-        info()
-    else:
-        info('Seq2C bed file is saved in ' + seq2c_exposed_fpath)
-
     jobs_by_sample = dict()
     depth_output_by_sample = dict()
     seq2cov_output_by_sample = dict()
@@ -232,12 +226,12 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
             info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
         elif verify_file(s.targetcov_detailed_tsv, silent=True):
-            info('Using bedcoverage output for Seq2C coverage.')
+            info('Using targetcov output for Seq2C coverage.')
             # info('Target and Seq2C bed are the same after correction. Using bedcoverage output for Seq2C coverage.')
             info(s.name + ': parsing targetseq output')
-            regions = _read_seq2c_regions_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=is_wgs)
-            regions = (a for a in regions if a.gene_name and a.gene_name != '.')
-            save_regions_to_seq2cov_output(cnf, s.name, regions, seq2cov_output_by_sample[s.name])
+            # regions = _read_seq2c_regions_from_targetcov_report(s.targetcov_detailed_tsv, is_wgs=is_wgs)
+            # regions = (a for a in regions if a.gene_name and a.gene_name != '.')
+            # save_regions_to_seq2cov_output(cnf, s.name, regions, seq2cov_output_by_sample[s.name])
 
         else:
             info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
@@ -253,6 +247,19 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     info('*' * 50)
 
     wait_for_jobs(cnf, jobs_by_sample.values())
+    for s_name, j in jobs_by_sample.items():
+        if not verify_file(seq2cov_output_by_sample[s_name], silent=True):
+            info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
+            bed_col_num = count_bed_cols(bed_fpath)
+            sambamba_depth_to_seq2cov(j.output_fpath, seq2cov_output_by_sample[s_name], s_name, bed_col_num)
+
+            # script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
+            #                             is_critical=True)
+            # bedcov_hist_fpath = depth_output_by_sample[s_name]
+            # cmdline = '{script} {bedcov_hist_fpath} {s_name} {bed_col_num}'.format(**locals())
+            # j = submit_job(cnf, cmdline, s_name + '_bedcov_2_seq2cov', output_fpath=seq2cov_output_by_sample[s_name])
+            # sum_jobs_by_sample[s_name] = j
+
 
     # sum_jobs_by_sample = dict()
     # info('* Submitting seq2cov output *')
@@ -302,21 +309,59 @@ chr20_tumor_1   DEFB126   chr20   123247  123332  Amplicon    86   40.0
 def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name, bed_col_num):
     info('Converting sambamba depth output to seq2cov output: ' + sambamba_depth_output_fpath + ' -> ' + output_fpath)
     assert bed_col_num >= 4, bed_col_num
-    with open(sambamba_depth_output_fpath) as f, open(output_fpath, 'w') as out:
+
+    info('First round: collecting gene ends')
+    gene_end_by_gene = defaultdict(lambda: -1)
+    with open(sambamba_depth_output_fpath) as f:
         for l in f:
             if l.startswith('#'):
                 continue
             fs = l.replace('\n', '').split('\t')
-            chrom = fs[0]
-            start = int(fs[1])
+            if any(f == '.' for f in fs[:4]):
+                continue
             end = int(fs[2])
-            gene_name = fs[4]
-            ave_depth = float(fs[bed_col_num + 2])
+            gene_name = fs[3]
+            gene_end_by_gene[gene_name] = max(gene_end_by_gene[gene_name], end)
 
+    info('Second round: calculating coverage')
+    total_cov_by_gene = dict()
+    gene_start_by_gene = dict()
+    total_size_by_gene = dict()
+    with file_transaction(None, output_fpath) as tx:
+        with open(sambamba_depth_output_fpath) as f, open(tx, 'w') as out:
+            for l in f:
+                if l.startswith('#'):
+                    continue
+                fs = l.replace('\n', '').split('\t')
+                ave_depth_col_num = bed_col_num + 2
+                if any(f == '.' for f in fs[:4]) or fs[ave_depth_col_num] == '.':
+                    continue
+                chrom = fs[0]
+                start = int(fs[1])
+                end = int(fs[2])
+                gene_name = fs[3]
+                ave_depth = float(fs[ave_depth_col_num])
 
-            feature = 'Amplicon'
-            fs = [sample_name, gene_name, chrom, str(start + 1), str(end), feature, end - start, str(ave_depth)]
-    pass
+                if gene_name not in gene_start_by_gene:
+                    gene_start_by_gene[gene_name] = start
+                    total_cov_by_gene[gene_name] = 0
+                    total_size_by_gene[gene_name] = 0
+                else:
+                    gene_start_by_gene[gene_name] = min(start, gene_start_by_gene[gene_name])
+                total_cov_by_gene[gene_name] += ave_depth * (end - start)
+                total_size_by_gene[gene_name] += end - start
+
+                fs = [sample_name, gene_name, chrom, str(start + 1), str(end), 'Amplicon', str(end - start), str(ave_depth)]
+                out.write('\t'.join(fs) + '\n')
+
+                if end >= gene_end_by_gene[gene_name]:
+                    assert end == gene_end_by_gene[gene_name], (end, gene_end_by_gene[gene_name])
+                    start = gene_start_by_gene[gene_name]
+                    ave_depth = total_cov_by_gene[gene_name] / total_size_by_gene[gene_name]
+                    fs = [sample_name, gene_name, chrom, str(start + 1), str(end), 'Whole-Gene', str(end - start), str(ave_depth)]
+                    out.write('\t'.join(fs) + '\n')
+    info('Done, saved to ' + output_fpath)
+    return output_fpath
 
 
 def save_regions_to_seq2cov_output(cnf, sample_name, regions, output_fpath):

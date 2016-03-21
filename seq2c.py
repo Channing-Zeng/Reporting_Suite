@@ -17,7 +17,7 @@ from source.file_utils import verify_dir, adjust_system_path, verify_file, adjus
 from source.logger import info, critical
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, determine_run_cnf, \
     determine_sys_cnf, set_up_dirs, check_genome_resources
-from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
+from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed, count_bed_cols, prepare_beds
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
 
@@ -120,9 +120,14 @@ def read_samples(sample2bam_fpath):
 
 
 def main():
-    cnf, samples, target_bed, output_dir = proc_args(sys.argv)
+    cnf, samples, bed_fpath, output_dir = proc_args(sys.argv)
 
-    run_seq2c(cnf, samples, target_bed, cnf.is_wgs)
+    bed_fpath = verify_bed(bed_fpath)
+    bed_cols = count_bed_cols(bed_fpath)
+    if bed_cols < 4:
+        _, _, _, bed_fpath = prepare_beds(cnf, None, None, bed_fpath)
+
+    run_seq2c(cnf, output_dir, samples, bed_fpath, cnf.is_wgs)
 
 
 def standalone_cnv(cnf, samples, target_bed):
