@@ -88,7 +88,8 @@ def _annotate(cnf, samples):
                 stdout_to_outputfile=False,
                 work_dir=work_dir
             )
-            jobs_to_wait.append(j)
+            if not j.is_done:
+                jobs_to_wait.append(j)
             submitted_samples.append(sample)
             if len(jobs_to_wait) >= cnf.threads:
                 not_submitted_samples = [s for s in not_submitted_samples if
@@ -195,6 +196,8 @@ def _filter(cnf, samples, variants_fname):
                 output_fpath=pass_output_fpath,
                 stdout_to_outputfile=False,
                 work_dir=work_dir)
+            if not j.is_done:
+                jobs_to_wait.append(j)
             jobs_to_wait.append(j)
             submitted_samples.append(sample)
             if len(jobs_to_wait) >= cnf.threads:

@@ -300,9 +300,16 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
 
 def targetcov_details_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_name, is_wgs=False):
     info('Parsing coverage from targetcov per-regions: ' + targetcov_detials_fpath + ' -> ' + output_fpath)
+    if not is_wgs:
+        info('Filtering by "Capture" tag')
+        fn_keep_only = lambda l: 'Capture' in l
+    else:
+        info('Filtering by "CDS" tag')
+        fn_keep_only = lambda l: 'CDS' in l
+
     convert_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_name,
                        chrom_col=0, start_col=1, end_col=2, gene_col=4, ave_depth_col=10,
-                       keep_only=lambda l: (not is_wgs and 'Capture' in l) or (is_wgs and ('CDS' in l)))
+                       keep_only=fn_keep_only)
 
 ''' chr20_normal.targetSeq.details.gene.tsv:
 #Chr    Start   End     Size   Gene    Strand  Feature    Biotype         Transcript   Min depth  Ave depth      Std dev W/n 20% of ave depth    1x      5x      10x     25x     50x     100x    500x    1000x   5000x   10000x  50000x
@@ -582,13 +589,14 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
             job_by_sample[s.name] = j
 
     # if running falgstat ourselves, finally parse its output
-    jobs_to_wait = wait_for_jobs(cnf, job_by_sample.values())
+    wait_for_jobs(cnf, job_by_sample.values())
     for s_name, j in job_by_sample.items():
-        with open(j.output_fpath) as f:
-            mapped_reads = int(f.read().strip())
-            info(s_name + ': ')
-            info('  Mapped reads: ' + str(mapped_reads))
-            mapped_reads_by_sample[s_name] = mapped_reads
+        if j:
+            with open(j.output_fpath) as f:
+                mapped_reads = int(f.read().strip())
+                info(s_name + ': ')
+                info('  Mapped reads: ' + str(mapped_reads))
+                mapped_reads_by_sample[s_name] = mapped_reads
 
     with open(output_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():

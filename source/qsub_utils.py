@@ -35,11 +35,23 @@ class JobRunning:
 
 def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
                output_fpath=None, stdout_to_outputfile=True, run_on_chara=False, **kwargs):
+
+    prefix = str(cnf.project_name) + '_'
+    if job_name: prefix += job_name + '_'
+    prefix += datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + '_'
+    f, done_marker_fpath = make_tmpfile(cnf, prefix=prefix, suffix='.done')
+    f, error_marker_fpath = make_tmpfile(cnf, prefix=prefix, suffix='.error')
+    if isfile(done_marker_fpath): os.remove(done_marker_fpath)
+    if isfile(error_marker_fpath): os.remove(error_marker_fpath)
+    job_id = basename(splitext(done_marker_fpath)[0])
+
     tx_output_fpath = None
     if output_fpath:
         if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
             info(output_fpath + ' exists, reusing')
-            return None
+            j = JobRunning(None, None, None, None, None, output_fpath=output_fpath, **kwargs)
+            j.is_done = True
+            return j
         if stdout_to_outputfile:
             tx_output_fpath = output_fpath + '.tx'
             if isfile(tx_output_fpath):
@@ -52,15 +64,6 @@ def submit_job(cnf, cmdline, job_name, wait_for_steps=None, threads=1,
     qsub = get_system_path(cnf, 'qsub', is_critical=True)
     bash = get_system_path(cnf, 'bash', is_critical=True)
 
-    prefix = str(cnf.project_name) + '_'
-    if job_name:
-        prefix += job_name + '_'
-    prefix += datetime.now().strftime("%Y_%m_%d_%H_%M_%S") + '_'
-    f, done_marker_fpath = make_tmpfile(cnf, prefix=prefix, suffix='.done')
-    f, error_marker_fpath = make_tmpfile(cnf, prefix=prefix, suffix='.error')
-    if isfile(done_marker_fpath): os.remove(done_marker_fpath)
-    if isfile(error_marker_fpath): os.remove(error_marker_fpath)
-    job_id = basename(splitext(done_marker_fpath)[0])
     if cnf.log_dir:
         err_fpath = log_fpath = join(cnf.log_dir, job_id + '.log')
     else:
