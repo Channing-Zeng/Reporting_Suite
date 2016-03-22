@@ -570,7 +570,7 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
 def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing')
-        return output_fpath
+        return output_fpath, samples
 
     mapped_reads_by_sample = OrderedDict()
 
