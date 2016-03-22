@@ -14,7 +14,7 @@ from source import verify_file
 from source.config import Config, defaults
 from source import logger
 from source.file_utils import adjust_path, verify_dir
-from source.logger import info, critical
+from source.logger import info, critical, err
 from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resources, \
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.prepare_args_and_cnf import determine_sys_cnf
@@ -89,6 +89,28 @@ def main():
 
 class Filtration:
     def __init__(self, cnf):
+        cnf.genome.compendia_ms7_hotspot    = verify_file(cnf.genome.compendia_ms7_hotspot)
+        cnf.genome.actionable               = verify_file(cnf.genome.actionable)
+        cnf.genome.filter_common_snp        = verify_file(cnf.genome.filter_common_snp)
+        cnf.genome.filter_common_artifacts  = verify_file(cnf.genome.filter_common_artifacts)
+        cnf.suppressors                     = verify_file(cnf.suppressors)
+        cnf.oncogenes                       = verify_file(cnf.oncogenes)
+        cnf.ruledir                         = verify_dir(cnf.ruledir)
+        cnf.snpeffect_export_polymorphic    = verify_file(cnf.snpeffect_export_polymorphic)
+        cnf.actionable_hotspot              = verify_file(cnf.actionable_hotspot)
+        cnf.specific_mutations              = verify_file(cnf.specific_mutations)
+        if not all([cnf.genome.compendia_ms7_hotspot,
+                    cnf.genome.actionable,
+                    cnf.genome.filter_common_snp,
+                    cnf.genome.filter_common_artifacts,
+                    cnf.suppressors,
+                    cnf.oncogenes,
+                    cnf.ruledir,
+                    cnf.snpeffect_export_polymorphic,
+                    cnf.actionable_hotspot,
+                    cnf.specific_mutations]):
+            critical('Critical: some of the required files are not found or empty (see above)')
+
         self.suppressors = parse_genes_list(adjust_path(cnf.suppressors))
         self.oncogenes = parse_genes_list(adjust_path(cnf.oncogenes))
 
@@ -105,70 +127,64 @@ class Filtration:
 
         self.tp53_positions = []
         self.tp53_groups = dict()
-        if cnf.ruledir:
-            cnf.ruledir = verify_dir(cnf.ruledir, is_critical=True)
-            self.tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'DNE.txt')),
-                           'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
-                           'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
-            if cnf.genome.name.startswith('hg38'):
-                self.tp53_positions = (
-                    '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
-                    '7674180 7674291 7674292 7674857 7674858 7674972 7674973 7675051 7675052 7675237 7675238 '
-                    '7675992 7675993 7676273 7676274 7676380 7676381 7676404 7676405 7676519 7676520 7670715 '
-                    '7673608 7673837 7674290 7674971 7675236 7676272 7676403 7673535 7673701 7674181 7674859 '
-                    '7675053 7675994 7676382 7676521').split()
-            elif cnf.genome.name.startswith('hg19') or cnf.genome.name.startswith('GRCh37'):
-                self.tp53_positions = (
-                    '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
-                    '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
-                    '7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 '
-                    '7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 '
-                    '7578371 7579312 7579700 7579839').split()
+        self.tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'DNE.txt')),
+                            'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
+                            'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
+        if cnf.genome.name.startswith('hg38'):
+            self.tp53_positions = (
+                '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
+                '7674180 7674291 7674292 7674857 7674858 7674972 7674973 7675051 7675052 7675237 7675238 '
+                '7675992 7675993 7676273 7676274 7676380 7676381 7676404 7676405 7676519 7676520 7670715 '
+                '7673608 7673837 7674290 7674971 7675236 7676272 7676403 7673535 7673701 7674181 7674859 '
+                '7675053 7675994 7676382 7676521').split()
+        elif cnf.genome.name.startswith('hg19') or cnf.genome.name.startswith('GRCh37'):
+            self.tp53_positions = (
+                '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
+                '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
+                '7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 '
+                '7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 '
+                '7578371 7579312 7579700 7579839').split()
 
         # Set up common SNP filter
         self.filter_snp = set()
-        if cnf.genome.filter_common_snp:
-            with open(adjust_path(cnf.genome.filter_common_snp)) as f:
-                for l in f:
-                    l = l.strip()
-                    if not l:
-                        continue
-                    fields = l.split('\t')
-                    self.filter_snp.add('-'.join(fields[1:5]))
+        with open(cnf.genome.filter_common_snp) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                fields = l.split('\t')
+                self.filter_snp.add('-'.join(fields[1:5]))
 
         self.snpeff_snp = set()
         self.snpeff_snp_ids = set()
-        if cnf.snpeffect_export_polymorphic:
-            with open(adjust_path(cnf.snpeffect_export_polymorphic)) as f:
-                for l in f:
-                    l = l.strip()
-                    if not l:
-                        continue
-                    fields = l.split('\t')
-                    if len(fields) > 11 and fields[11]:
-                        self.snpeff_snp.add('-'.join([fields[11], fields[2]]))
-                    elif fields[5] != '-':
-                        self.snpeff_snp_ids.add(fields[5])
+        with open(cnf.snpeffect_export_polymorphic) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                fields = l.split('\t')
+                if len(fields) > 11 and fields[11]:
+                    self.snpeff_snp.add('-'.join([fields[11], fields[2]]))
+                elif fields[5] != '-':
+                    self.snpeff_snp_ids.add(fields[5])
 
         self.filter_artifacts = set()
-        if cnf.genome.filter_common_artifacts:
-            with open(adjust_path(cnf.genome.filter_common_artifacts)) as f:
-                for l in f:
-                    l = l.strip()
-                    if not l:
-                        continue
-                    fields = l.split('\t')
-                    self.filter_artifacts.add('-'.join(fields[1:5]))
+        with open(cnf.genome.filter_common_artifacts) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                fields = l.split('\t')
+                self.filter_artifacts.add('-'.join(fields[1:5]))
 
         self.actionable_hotspots = defaultdict(set)
-        if cnf.actionable_hotspot:
-            with open(adjust_path(cnf.actionable_hotspot)) as f:
-                for l in f:
-                    l = l.strip()
-                    if not l:
-                        continue
-                    fields = l.split('\t')
-                    self.actionable_hotspots[fields[0]].add(fields[1])
+        with open(cnf.actionable_hotspot) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                fields = l.split('\t')
+                self.actionable_hotspots[fields[0]].add(fields[1])
 
         self.act_somatic = set()
         self.act_germline = set()
@@ -178,45 +194,57 @@ class Filtration:
         inframe_ins = 'inframe-ins'
         self.rules[inframe_del] = {}
         self.rules[inframe_ins] = {}
-        if cnf.genome.actionable:
-            with open(adjust_path(cnf.genome.actionable)) as f:
-                for l in f:
-                    l = l.strip()
-                    if not l:
-                        continue
-                    fields = l.split('\t')
-                    if fields[7] == 'germline':
-                        key = '-'.join(fields[1:5])
-                        self.act_germline.add(key)
-                    elif fields[7] == 'somatic':
-                        if fields[6] == 'rule':
-                            if fields[4] == '*' and len(fields[3]) == 1:
-                                key = '-'.join(fields[1:4])
-                                self.act_somatic.add(key)
-                            elif fields[5] == inframe_del:
-                                self.rules[inframe_del].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
-                            elif fields[5] == inframe_ins:
-                                self.rules[inframe_ins].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
-                        else:
-                            key = '-'.join(fields[1:5])
+        with open(cnf.genome.actionable) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                fields = l.split('\t')
+                if fields[7] == 'germline':
+                    key = '-'.join(fields[1:5])
+                    self.act_germline.add(key)
+                elif fields[7] == 'somatic':
+                    if fields[6] == 'rule':
+                        if fields[4] == '*' and len(fields[3]) == 1:
+                            key = '-'.join(fields[1:4])
                             self.act_somatic.add(key)
+                        elif fields[5] == inframe_del:
+                            self.rules[inframe_del].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
+                        elif fields[5] == inframe_ins:
+                            self.rules[inframe_ins].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
+                    else:
+                        key = '-'.join(fields[1:5])
+                        self.act_somatic.add(key)
         self.hotspot_nucleotides = set()
         self.hotspot_proteins = set()
-        if cnf.genome.compendia_ms7_hotspot:
-            with open(adjust_path(cnf.genome.compendia_ms7_hotspot)) as f:
-                for l in f:
-                    l = l.strip()
-                    if not l:
-                        continue
-                    fields = l.split('\t')
-                    self.hotspot_nucleotides.add('-'.join(fields[1:5]))
-                    self.hotspot_proteins.add('-'.join([fields[0], fields[6]]))
+        with open(cnf.genome.compendia_ms7_hotspot) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                fields = l.split('\t')
+                self.hotspot_nucleotides.add('-'.join(fields[1:5]))
+                self.hotspot_proteins.add('-'.join([fields[0], fields[6]]))
 
-        self.specific_mutations, \
+        self.tier_by_specific_mutations, \
         self.genes_with_generic_rules, \
-        self.genes_with_spec_types, \
-        self.genes_with_dependent_mutations, \
-        self.specific_transcripts = parse_specific_mutations(adjust_path(cnf.specific_mutations))
+        self.tier_by_type_by_region_by_gene, \
+        self.dependent_mutations_by_gene, \
+        self.spec_transcripts_by_aachg = parse_specific_mutations(cnf.specific_mutations)
+
+        if not all([self.rules, self.tp53_positions, self.tp53_groups, self.act_somatic, self.act_germline, self.actionable_hotspots]):
+            if not self.rules:
+                err('No rules, cannot proceed')
+            if not self.tp53_groups:
+                err('No tp53_groups, cannot proceed')
+            if not self.tp53_positions:
+                err('No tp53_positions, cannot proceed')
+            if not self.act_somatic:
+                err('No act_somatic, cannot proceed')
+            if not self.act_germline:
+                err('No act_germline, cannot proceed')
+            if not self.actionable_hotspots:
+                err('No actionable_hotspots, cannot proceed')
 
     def update_status(self, cur_status, reasons, new_status, new_reason, force=False):
         if not force and statuses.index(new_status) > statuses.index(cur_status):
@@ -298,50 +326,50 @@ class Filtration:
     def check_for_specific_mutation(self, gene, aa_chg, effect, region, status, reasons, transcript):
         if aa_chg:
             gene_aachg = '-'.join([gene, aa_chg])
-            if transcript and gene_aachg in self.specific_transcripts:
-                if self.specific_transcripts[gene_aachg] != transcript:
+            if transcript and gene_aachg in self.spec_transcripts_by_aachg:
+                if self.spec_transcripts_by_aachg[gene_aachg] != transcript:
                     return status, reasons, False
-            if gene_aachg in self.specific_mutations:
-                tier = self.specific_mutations[gene_aachg]
-                status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated')
+            if gene_aachg in self.tier_by_specific_mutations:
+                tier = self.tier_by_specific_mutations[gene_aachg]
+                status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated_AA_chg')
                 return status, reasons, True
         if region and effect in ['HIGH', 'MODERATE']:
             codon = re.sub('[^0-9]', '', aa_chg)
             gene_codon_chg = '-'.join([gene, region, codon])
-            if gene_codon_chg in self.specific_mutations:
-                tier = self.specific_mutations[gene_codon_chg]
-                status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated')
+            if gene_codon_chg in self.tier_by_specific_mutations:
+                tier = self.tier_by_specific_mutations[gene_codon_chg]
+                status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated_codon_' + codon + '_in_exon_' + region)
                 return status, reasons, True
 
         return status, reasons, False
 
     def check_by_general_rules(self, var_type, status, reasons, aa_chg, is_lof, gene):
-        if 'splice_site' in reasons:
-            status, reasons = self.update_status(status, reasons, 'known', 'actionable')
-        elif is_loss_of_function(reasons, is_lof):
-            status, reasons = self.update_status(status, reasons, 'known', 'actionable')
+        # if 'splice_site' in reasons:
+        #     status, reasons = self.update_status(status, reasons, 'known', ['general_rules'] + reasons)
+        if is_lof:
+            status, reasons = self.update_status(status, reasons, 'known', ['lof_in_gene_' + gene])
         elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
-            status, reasons = self.update_status(status, reasons, 'known', 'actionable')
+            status, reasons = self.update_status(status, reasons, 'known', ['exon_loss_in_gene_' + gene])
         elif status != 'unlikely' and status != 'unknown':
-            info(str(gene) + ' ' + str(aa_chg) + ' is in general rules, but not alters proteint function. Keeping status as ' + str(status) + ' (' + str(reasons) + ')')
+            info(str(gene) + ' ' + str(aa_chg) + ' is in general rules, but does not alter protein function. Keeping status as ' + str(status) + ' (' + str(reasons) + ')')
         #     status, reasons = update_status(status, reasons, 'unlikely', 'but_not_alter_protein_function', force=True)
         return status, reasons
 
-    def check_by_mut_type(self, cdna_chg, status, reasons, region, types_by_region):
+    def check_by_mut_type(self, cdna_chg, status, reasons, region, types_by_region, gene):
         if region in types_by_region:
             for type_ in types_by_region[region]:
                 if type_ in cdna_chg:
                     tier = types_by_region[type_]
-                    status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated')
+                    status, reasons = self.update_status(status, reasons, statuses[tier], type_ + '_in_gene_' + gene)
         return status, reasons
 
     def print_mutations_for_one_gene(self, out_f, cur_gene_mutations, gene, sensitizations):
         for line in cur_gene_mutations:
             fields, status, reasons, gene_aachg, fm_data = line
-            for sens_mut in self.genes_with_dependent_mutations[gene]:
+            for sens_mut in self.dependent_mutations_by_gene[gene]:
                 aa_chg = sensitization_aa_changes.keys()[sensitization_aa_changes.values().index(sens_mut)]
                 if sens_mut not in sensitizations and status == 'known':
-                    status, reasons = self.update_status(status, reasons, 'likely', reasons, force=True)
+                    status, reasons = self.update_status(status, reasons, 'likely', reasons + [aa_chg + '_required'], force=True)
                 elif sens_mut not in sensitizations and status == 'likely':
                     status, reasons = self.update_status(status, reasons, 'unlikely', aa_chg + '_required', force=True)
             self.print_mutation(out_f, status, reasons, fields, fm_data)
@@ -460,19 +488,17 @@ class Filtration:
                 if status_col:
                     fields = fields[:-1]
 
-                sample, chr, pos, ref, alt, aa_chg, gene, depth = \
+                sample, chrom, pos, ref, alt, aa_chg, gene, depth = \
                     fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
                     fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
 
                 gene_aachg = '-'.join([gene, aa_chg])
-                if 'chr' not in chr:
-                    chr = 'chr' + chr
-                key = '-'.join([chr, pos, ref, alt])
+                if 'chr' not in chrom:
+                    chrom = 'chr' + chrom
+                key = '-'.join([chrom, pos, ref, alt])
                 allele_freq = float(fields[allele_freq_col])
 
-                is_act = False
-                if all([self.rules, self.act_somatic, self.act_germline, self.actionable_hotspots, self.tp53_positions, self.tp53_groups]):
-                    is_act = self.is_actionable(chr, pos, ref, alt, gene, aa_chg)
+                is_act = self.is_actionable(chrom, pos, ref, alt, gene, aa_chg)
                 if not is_act:
                     if key in self.filter_snp:
                         self.filter_reject_counter['not act and in filter_common_snp'] += 1
@@ -506,7 +532,8 @@ class Filtration:
                 status = 'unknown'
                 reasons = []
                 var_class, var_type, fclass, gene_coding, effect, cdna_chg, transcript = \
-                    fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
+                    fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], \
+                    fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
                 var_type = var_type.upper()
 
                 if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
@@ -516,7 +543,7 @@ class Filtration:
                 status, reasons = self.check_by_var_class(var_class, status, reasons, fields, header)
                 status, reasons = self.check_by_type(var_type, status, reasons, aa_chg, effect)
 
-                if is_hotspot_nt(chr, pos, ref, alt, self.hotspot_nucleotides):
+                if is_hotspot_nt(chrom, pos, ref, alt, self.hotspot_nucleotides):
                     status, reasons = self.update_status(status, reasons, 'likely', 'hotspot_nucl_change')
                 elif is_hotspot_prot(gene, aa_chg, self.hotspot_proteins):
                     status, reasons = self.update_status(status, reasons, 'likely', 'hotspot_AA_change')
@@ -535,14 +562,17 @@ class Filtration:
 
                 status, reasons, is_specific_mutation = self.check_for_specific_mutation(
                         gene, aa_chg, effect, region, status, reasons, transcript)
-                if not is_specific_mutation:
-                    is_lof = fields[lof_col] if lof_col else None
+                if is_specific_mutation:
+                    is_act = True
+                else:
+                    is_lof = is_loss_of_function(reasons, fields[lof_col] if lof_col else None)
+
                     if status != 'known' and gene in self.genes_with_generic_rules:
                         status, reasons = self.check_by_general_rules(var_type, status, reasons, aa_chg, is_lof, gene)
-                    if status != 'known' and gene in self.genes_with_spec_types:
-                        status, reasons = self.check_by_mut_type(cdna_chg, status, reasons, region, self.genes_with_spec_types[gene])
+                    if status != 'known' and gene in self.tier_by_type_by_region_by_gene:
+                        status, reasons = self.check_by_mut_type(cdna_chg, status, reasons, region, self.tier_by_type_by_region_by_gene[gene], gene)
 
-                    if is_loss_of_function(reasons, is_lof):
+                    if is_lof:
                         if gene in self.oncogenes:
                             info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
                             status, reasons = self.update_status(status, reasons, 'unlikely', reasons + ['oncogene_lof'], force=True)
@@ -551,29 +581,29 @@ class Filtration:
                             info('gene ' + gene + ' is a suppressor, and mutation is LOF. Updating status from ' + status + ' to known')
                             status, reasons = self.update_status(status, reasons, 'known', 'lof_in_suppressor')
 
-                    if is_act:
-                        if allele_freq < self.min_hotspot_freq:
-                            self.filter_reject_counter['act and AF < ' + str(self.min_hotspot_freq) + ' (min_hotspot_freq)'] += 1
-                            continue
-                        if allele_freq < 0.2 and key in self.act_germline:
-                            self.filter_reject_counter['act and AF < 0.2 and is act_germline'] += 1
-                            continue
-                    else:
-                        if self.min_freq and allele_freq < self.min_freq:
-                            self.filter_reject_counter['not act and AF < ' + str(self.min_freq) + ' (min_freq)'] += 1
-                            continue
-                        if var_type.startswith('INTRON'):
-                            self.filter_reject_counter['not act and in INTRON'] += 1
-                            continue
-                        if var_type.startswith('SYNONYMOUS'):
-                            self.filter_reject_counter['not act and SYNONYMOUS'] += 1
-                            continue
-                        if fclass.upper() == 'SILENT':
-                            self.filter_reject_counter['not act and SILENT'] += 1
-                            continue
-                        if var_type == 'SPLICE_REGION_VARIANT' and not aa_chg:
-                            self.filter_reject_counter['not act and SPLICE_REGION_VARIANT'] += 1
-                            continue
+                if is_act:
+                    if allele_freq < self.min_hotspot_freq:
+                        self.filter_reject_counter['act and AF < ' + str(self.min_hotspot_freq) + ' (min_hotspot_freq)'] += 1
+                        continue
+                    if allele_freq < 0.2 and key in self.act_germline:
+                        self.filter_reject_counter['act and AF < 0.2 and is act_germline'] += 1
+                        continue
+                else:
+                    if self.min_freq and allele_freq < self.min_freq:
+                        self.filter_reject_counter['not act and AF < ' + str(self.min_freq) + ' (min_freq)'] += 1
+                        continue
+                    if var_type.startswith('INTRON'):
+                        self.filter_reject_counter['not act and in INTRON'] += 1
+                        continue
+                    if var_type.startswith('SYNONYMOUS'):
+                        self.filter_reject_counter['not act and SYNONYMOUS'] += 1
+                        continue
+                    if fclass.upper() == 'SILENT':
+                        self.filter_reject_counter['not act and SILENT'] += 1
+                        continue
+                    if var_type == 'SPLICE_REGION_VARIANT' and not aa_chg:
+                        self.filter_reject_counter['not act and SPLICE_REGION_VARIANT'] += 1
+                        continue
 
                     if status != 'known':
                         if var_type.startswith('UPSTREAM'):
@@ -604,7 +634,7 @@ class Filtration:
                             self.filter_reject_counter['not known and Pcnt_sample > variant_filtering (' + str(self.max_ratio) + ')'] += 1
                             continue
 
-                if gene in self.genes_with_dependent_mutations and (prev_gene == gene or not cur_gene_mutations):
+                if gene in self.dependent_mutations_by_gene and (prev_gene == gene or not cur_gene_mutations):
                     if gene_aachg in sensitization_aa_changes:
                         sens_mut = sensitization_aa_changes[gene_aachg]
                         sensitizations.append(sens_mut)
@@ -617,7 +647,7 @@ class Filtration:
                         sensitizations = []
                 prev_gene = gene
 
-                if gene not in self.genes_with_dependent_mutations:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
+                if gene not in self.dependent_mutations_by_gene:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
                     self.print_mutation(out_f, status, reasons, fields,
                         fm_data=[sample, platform, gene, pos, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq])
 
@@ -707,12 +737,12 @@ def classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups):
 
 
 def parse_specific_mutations(specific_mut_fpath):
-    specific_mutations = {}
     genes_with_generic_rules = set()
-    genes_with_spec_types = defaultdict(dict)
-    specific_transcripts = defaultdict()
+    tier_by_specific_mutations = dict()
+    tier_by_type_by_region_by_gene = defaultdict(dict)
+    spec_transcripts_by_aachg = defaultdict()
+    dependent_mutations_by_gene = defaultdict(set)  # when other mutation is required
 
-    genes_with_dependent_mutations = defaultdict(set) # other mutation is required
     with open(specific_mut_fpath) as f:
         for i, l in enumerate(f):
             if i == 0:
@@ -737,9 +767,9 @@ def parse_specific_mutations(specific_mut_fpath):
                     elif 'types' in mut:
                         types = mut.split(':')[1].split(',')
                         for region in regions:
-                            genes_with_spec_types[gene][region] = {}
+                            tier_by_type_by_region_by_gene[gene][region] = dict()
                             for type in types:
-                                genes_with_spec_types[gene][region][type] = tier
+                                tier_by_type_by_region_by_gene[gene][region][type] = tier
                     else:
                         mutations = []
                         if 'codon' in mut:
@@ -748,24 +778,25 @@ def parse_specific_mutations(specific_mut_fpath):
                                 codons = range(int(codons[0]), int(codons[1]) + 1)
                             for region in regions:
                                 for codon in codons:
-                                    specific_mutations['-'.join([gene, region, str(codon)])] = tier
+                                    tier_by_specific_mutations['-'.join([gene, region, str(codon)])] = tier
                                     mutations.append('-'.join([gene, region, str(codon)]))
                         elif 'sens' in mut or 'res' in mut:
                             pattern = re.compile('\((\D+)\s+\D+\)')
                             dependent_mutation = re.findall(pattern, mut)[0]
                             prot_chg = mut.split()[0].strip().replace('p.', '')
                             mutations = ['-'.join([gene, prot_chg])]
-                            specific_mutations['-'.join([gene, prot_chg])] = tier
-                            genes_with_dependent_mutations[gene].add(dependent_mutation)
+                            tier_by_specific_mutations['-'.join([gene, prot_chg])] = tier
+                            dependent_mutations_by_gene[gene].add(dependent_mutation)
                         else:
                             prot_chg = line[index].replace('p.', '').strip()
                             mutations = ['-'.join([gene, prot_chg])]
-                            specific_mutations['-'.join([gene, mut])] = tier
+                            tier_by_specific_mutations['-'.join([gene, mut])] = tier
                         if 'NM' in line[-1] and mutations:
                             for mut in mutations:
-                                specific_transcripts[mut] = line[-1].strip()
+                                spec_transcripts_by_aachg[mut] = line[-1].strip()
 
-    return specific_mutations, genes_with_generic_rules,  genes_with_spec_types, genes_with_dependent_mutations, specific_transcripts
+    return tier_by_specific_mutations, genes_with_generic_rules, \
+           tier_by_type_by_region_by_gene, dependent_mutations_by_gene, spec_transcripts_by_aachg
 
 
 def is_loss_of_function(reasons, is_lof=None):
