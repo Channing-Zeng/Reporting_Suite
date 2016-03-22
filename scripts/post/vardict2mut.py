@@ -117,12 +117,12 @@ class Filtration:
         self.reg_exp_sample = cnf.reg_exp_sample
         self.is_output_fm = cnf.is_output_fm
 
-        self.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut or cnf.variant_filtering.min_freq
+        self.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut
         self.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
         if self.min_hotspot_freq is None or self.min_hotspot_freq == 'default':
             self.min_hotspot_freq = min(0.01, self.min_freq / 2)
         self.filt_depth = cnf.variant_filtering.filt_depth
-        self.max_ratio = cnf.variant_filtering.max_ratio_vardict2mut or cnf.variant_filtering.max_ratio
+        self.max_ratio = cnf.variant_filtering.max_ratio_vardict2mut
         self.min_vd = cnf.variant_filtering.min_vd
 
         self.tp53_positions = []

@@ -406,7 +406,7 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=Non
     cmdline = vcf2txt + ' ' + \
         make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=sample_min_freq)
 
-    res = __run_vcf2txt(cnf, cmdline, vcf2txt_out_fpath)
+    res = run_vcf2txt_with_retries(cnf, cmdline, vcf2txt_out_fpath)
     return res
 
 
@@ -437,7 +437,7 @@ def join_vcf2txt_results(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath):
         return None
 
 
-def __run_vcf2txt(cnf, cmdline, output_fpath):
+def run_vcf2txt_with_retries(cnf, cmdline, output_fpath):
     res = None
     tries = 0
     MAX_TRIES = 1

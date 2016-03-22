@@ -8,6 +8,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transaction
+from source.variants.filtering import make_vcf2txt_cmdl_params, run_vcf2txt_with_retries
 from source.variants.vcf_processing import verify_vcf
 
 
@@ -23,10 +24,8 @@ def run_variants(cnf, samples, variants_fpath=None):
         variants_fname = basename(variants_fpath)
 
     info('Filtering...')
-    _filter(cnf, samples, variants_fname)
-    info()
-    info('Combining results...')
-    variants_fpath, pass_variants_fpath = _combine_results(cnf, samples, variants_fpath or join(cnf.output_dir, variants_fname))
+    variants_fpath = variants_fpath or join(cnf.output_dir, variants_fname)
+    variants_fpath, pass_variants_fpath = _filter(cnf, samples, variants_fpath, variants_fname)
 
     if variants_fpath and pass_variants_fpath:
         info()
@@ -150,7 +149,20 @@ def _annotate(cnf, samples):
     info()
 
 
-def _filter(cnf, samples, variants_fname):
+def _filter(cnf, samples, variants_fpath, variants_fname):
+    cohort_mode = cnf.variant_filtering.max_ratio < 1.0 or \
+        cnf.variant_filtering.max_ratio_vardict2mut < 1.0 or \
+        cnf.fraction < 1.0
+
+    if cohort_mode:
+        info('Running vcf2txt.pl in cohort mode')
+        vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
+        vcf_fpath_by_sample = {s.name: s.sample.anno_vcf_fpath for s in samples}
+        cmdline = vcf2txt + ' ' + make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample)
+        res = run_vcf2txt_with_retries(cnf, cmdline, variants_fpath)
+        if not res:
+            critical('Error: vcf2txt.pl crashed')
+
     total_reused = 0
     total_processed = 0
     total_success = 0
@@ -191,6 +203,8 @@ def _filter(cnf, samples, variants_fname):
                     ' --qc' +
                    (' --no-tsv' if not cnf.tsv else '')
                 ).format(**locals())
+            if cnf.cohort_mode:
+                cmdl += ' --vcf2txt ' + variants_fpath
             j = submit_job(cnf, cmdl,
                 job_name='_filt_' + sample.name,
                 output_fpath=pass_output_fpath,
@@ -256,28 +270,33 @@ def _filter(cnf, samples, variants_fname):
     info('Total failed: ' + str(total_failed))
     info()
 
+    info('Combining results...')
+    variants_fpath, pass_variants_fpath = _combine_results(cnf, samples, variants_fpath, cohort_mode)
+    return variants_fpath, pass_variants_fpath
 
-def _combine_results(cnf, samples, variants_fpath):
+
+def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
     not_existing = []
-    if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
-        info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
-    else:
-        for i, s in enumerate(samples):
-            if not verify_file(s.variants_fpath, description='variants file'):
-                not_existing.append(s)
-        if not_existing:
-            err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
+    if not cohort_mode:
+        if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
+            info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
         else:
-            with file_transaction(cnf.work_dir, variants_fpath) as tx:
-                with open(tx, 'w') as out:
-                    for i, s in enumerate(samples):
-                        with open(s.variants_fpath) as f:
-                            for j, l in enumerate(f):
-                                if j == 0 and i == 0:
-                                    out.write(l)
-                                if j > 0:
-                                    out.write(l)
-            verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
+            for i, s in enumerate(samples):
+                if not verify_file(s.variants_fpath, description='variants file'):
+                    not_existing.append(s)
+            if not_existing:
+                err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
+            else:
+                with file_transaction(cnf.work_dir, variants_fpath) as tx:
+                    with open(tx, 'w') as out:
+                        for i, s in enumerate(samples):
+                            with open(s.variants_fpath) as f:
+                                for j, l in enumerate(f):
+                                    if j == 0 and i == 0:
+                                        out.write(l)
+                                    if j > 0:
+                                        out.write(l)
+                verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
 
     pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
     not_existing_pass = []
@@ -306,18 +325,12 @@ def _combine_results(cnf, samples, variants_fpath):
     variants_fpath = verify_file(variants_fpath, is_critical=True)
     pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
 
-    _cohort_filtering(cnf, pass_variants_fpath)
-
     if not_existing or not_existing_pass:
         return None, None
 
     _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
     return variants_fpath, pass_variants_fpath
-
-
-# def _cohort_filtering(cnf, variants_fpath):
-#     pass
 
 
 def _summarize_varqc(cnf, output_dir, samples, caption, post_filter=False):

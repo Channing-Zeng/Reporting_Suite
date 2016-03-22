@@ -277,6 +277,10 @@ class BCBioRunner:
             cnf.bed = target_bed
 
         ##### FILTERING #####
+        self.cohort_mode = cnf.variant_filtering.max_ratio < 1.0 or \
+                    cnf.variant_filtering.max_ratio_vardict2mut < 1.0 or \
+                    cnf.fraction < 1.0
+
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
@@ -682,8 +686,8 @@ class BCBioRunner:
 
             if self.varfilter in self.steps:
                 info('Filtering')
-                if not self.is_wgs:
-                    info('Not WGS, thus processing cohorts')
+                if self.cohort_mode:
+                    info('Cohort mode set, running vcf2txt in cohort mode')
                     for c in self.bcbio_structure.variant_callers.values():
                         if self.varannotate not in self.steps:
                             is_err = False
@@ -727,7 +731,7 @@ class BCBioRunner:
                         if sample.vcf_by_callername.get(caller.name):
                             anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
                             vcf2txt_cmdl = ''
-                            if not self.is_wgs:
+                            if self.cohort_mode:
                                 if sample.normal_match:
                                     vcf2txt_fpath = caller.paired_vcf2txt_res_fpath
                                 else:
@@ -739,7 +743,7 @@ class BCBioRunner:
                                         critical('Error: VarAnnotate is not in steps, and annotated VCF does not exist: ' + anno_vcf_fpath)
 
                             wait_for_steps = []
-                            if not self.is_wgs:
+                            if self.cohort_mode:
                                 if caller.paired_anno_vcf_by_sample:
                                     wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
                                 if caller.single_anno_vcf_by_sample:
