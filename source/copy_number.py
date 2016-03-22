@@ -149,7 +149,7 @@ def run_seq2c(cnf, output_dirpath, samples, seq2c_bed, is_wgs):
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(output_dirpath, 'mapped_reads_by_sample.tsv')
-    __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
+    output_fpath, samples = __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
     info()
     if not mapped_read_fpath:
         return None
@@ -234,7 +234,7 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
         elif verify_file(s.targetcov_detailed_tsv, silent=True):
             info('Using targetcov detailed output for Seq2C coverage.')
             info(s.name + ': using targetseq output')
-            targetcov_details_to_seq2cov(s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
+            targetcov_details_to_seq2cov(cnf, s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
 
         else:
             info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
@@ -251,10 +251,12 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
 
     wait_for_jobs(cnf, jobs_by_sample.values())
     for s_name, j in jobs_by_sample.items():
-        if not verify_file(seq2cov_output_by_sample[s_name], silent=True):
+        if j.is_done and not j.is_failed:
             info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
             bed_col_num = count_bed_cols(bed_fpath)
-            sambamba_depth_to_seq2cov(j.output_fpath, seq2cov_output_by_sample[s_name], s_name, bed_col_num)
+            sambamba_depth_to_seq2cov(cnf, j.output_fpath, seq2cov_output_by_sample[s_name], s_name, bed_col_num)
+        else:
+            err('ERROR: ' + s_name + ' could not get coverage stats, log saved to ' + j.log_fpath)
 
             # script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
             #                             is_critical=True)
@@ -262,7 +264,6 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
             # cmdline = '{script} {bedcov_hist_fpath} {s_name} {bed_col_num}'.format(**locals())
             # j = submit_job(cnf, cmdline, s_name + '_bedcov_2_seq2cov', output_fpath=seq2cov_output_by_sample[s_name])
             # sum_jobs_by_sample[s_name] = j
-
 
     # sum_jobs_by_sample = dict()
     # info('* Submitting seq2cov output *')
@@ -298,7 +299,7 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     return output_fpath
 
 
-def targetcov_details_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_name, is_wgs=False):
+def targetcov_details_to_seq2cov(cnf, targetcov_detials_fpath, output_fpath, sample_name, is_wgs=False):
     info('Parsing coverage from targetcov per-regions: ' + targetcov_detials_fpath + ' -> ' + output_fpath)
     if not is_wgs:
         info('Filtering by "Capture" tag')
@@ -307,7 +308,7 @@ def targetcov_details_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_n
         info('Filtering by "CDS" tag')
         fn_keep_only = lambda l: 'CDS' in l
 
-    convert_to_seq2cov(targetcov_detials_fpath, output_fpath, sample_name,
+    convert_to_seq2cov(cnf, targetcov_detials_fpath, output_fpath, sample_name,
                        chrom_col=0, start_col=1, end_col=2, gene_col=4, ave_depth_col=10,
                        keep_only=fn_keep_only)
 
@@ -320,10 +321,10 @@ chr20   76645   77214   569    DEFB125 +       CDS        protein_coding  NM_153
 chr20   68312   77214   627    DEFB125 .       Gene-Exon  protein_coding  NM_153325    24         36.4194752791   6.00301802873   .       1.0     1.0     1.0     0.995215681021  0.00318979403509        0       0       0       0       0       0
 '''
 
-def sambamba_depth_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name, bed_col_num):
+def sambamba_depth_to_seq2cov(cnf, sambamba_depth_output_fpath, output_fpath, sample_name, bed_col_num):
     info('Converting sambamba depth output to seq2cov output: ' + sambamba_depth_output_fpath + ' -> ' + output_fpath)
     assert bed_col_num >= 4, bed_col_num
-    convert_to_seq2cov(sambamba_depth_output_fpath, output_fpath, sample_name,
+    convert_to_seq2cov(cnf, sambamba_depth_output_fpath, output_fpath, sample_name,
                        chrom_col=0, start_col=1, end_col=2, gene_col=3, ave_depth_col=bed_col_num + 2)
 
 ''' sambamba_depth_output_fpath:
@@ -337,9 +338,13 @@ chr20_tumor_1   DEFB125   chr20   76641   77301   Amplicon    661  24.0
 chr20_tumor_1   DEFB125   chr20   68346   77301   Whole-Gene  729  24.3731138546
 chr20_tumor_1   DEFB126   chr20   123247  123332  Amplicon    86   40.0
 '''
-def convert_to_seq2cov(input_fpath, output_fpath, sample_name,
+def convert_to_seq2cov(cnf, input_fpath, output_fpath, sample_name,
                        chrom_col, start_col, end_col, gene_col, ave_depth_col,
                        keep_only=None):
+    if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath):
+        info(output_fpath  + ' exists, reusing')
+        return output_fpath
+
     info('First round: collecting gene ends')
     gene_end_by_gene = defaultdict(lambda: -1)
     with open(input_fpath) as f:
@@ -588,20 +593,23 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
             j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True)
             job_by_sample[s.name] = j
 
-    # if running falgstat ourselves, finally parse its output
     wait_for_jobs(cnf, job_by_sample.values())
     for s_name, j in job_by_sample.items():
-        if j:
+        if j and j.is_done and not j.is_failed:
             with open(j.output_fpath) as f:
                 mapped_reads = int(f.read().strip())
                 info(s_name + ': ')
                 info('  Mapped reads: ' + str(mapped_reads))
                 mapped_reads_by_sample[s_name] = mapped_reads
+        else:
+            err('ERROR: ' + s_name + ' could not get mapped reads, log saved to ' + j.log_fpath)
 
     with open(output_fpath, 'w') as f:
         for sample_name, mapped_reads in mapped_reads_by_sample.items():
             f.write(sample_name + '\t' + str(mapped_reads) + '\n')
 
     verify_file(output_fpath, is_critical=True)
-    return output_fpath
+    successful_samples = [s for s in samples if s.name in mapped_reads_by_sample]
+    info('Samples processed: ' + str(len(samples)) + ', successfully: ' + str(len(successful_samples)))
+    return output_fpath, successful_samples
 
