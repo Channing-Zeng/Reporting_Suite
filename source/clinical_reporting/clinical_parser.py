@@ -401,6 +401,7 @@ class ClinicalExperimentInfo:
             self.genes_collection_type = 'key'
             self.genes_description = 'genes that have been previously implicated in various cancers'
             info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
+        info()
 
         for gene_name, chrom in key_gene_names_chroms:
             self.key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)
@@ -418,6 +419,7 @@ class ClinicalExperimentInfo:
                 self.parse_targetseq_detailed_report()
         else:
             warn('No targetcov_json_fpath provided, skipping key genes coverage stats.')
+        info()
 
         info('Parsing actionable genes...')
         self.actionable_genes_dict = parse_broad_actionable()
@@ -433,18 +435,20 @@ class ClinicalExperimentInfo:
             # self.get_mut_info_from_solvebio()
         else:
             warn('No mutations_fpath provided, skipping mutation stats.')
+        info()
 
         if sv_fpath and verify_file(sv_fpath):
             info('Parsing prioritized SV from ' + str(sv_fpath))
             self.sv_events = self.parse_sv(sv_fpath, self.key_gene_by_name_chrom)
+        info()
 
         if seq2c_tsv_fpath and verify_file(seq2c_tsv_fpath):
             info('Parsing Seq2C from ' + str(seq2c_tsv_fpath))
             self.seq2c_events_by_gene = self.parse_seq2c_report(seq2c_tsv_fpath, self.key_gene_by_name_chrom, self.genes_collection_type)
         else:
             warn('No Seq2C results provided by option --seq2c, skipping plotting Seq2C')
-
         info()
+        info('------')
         info('Done parsing data.')
 
     def __hash__(self):
@@ -523,7 +527,7 @@ class ClinicalExperimentInfo:
         return seq2c_events_by_gene
 
     def parse_targetseq_detailed_report(self):
-        info('Preparing coverage stats for the ' + self.genes_collection_type + ' genes')
+        info('Preparing coverage stats for ' + str(len(self.key_gene_by_name_chrom)) + ' ' + self.genes_collection_type + ' genes')
         if not verify_file(self.sample.targetcov_detailed_tsv):
             return None
 
@@ -534,12 +538,8 @@ class ClinicalExperimentInfo:
                     continue
 
                 fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
-                chrom, start, end, size, symbol, strand, feature, biotype, min_depth, ave_depth, std_dev, wn20pcnt = fs[:12]
-                pcnt_val_by_thresh = fs[12:]
-                transcript_id = None
-                if min_depth.startswith('N'):
-                    chrom, start, end, size, symbol, strand, feature, biotype, transcript_id, min_depth, ave_depth, std_dev, wn20pcnt = fs[:13]
-                    pcnt_val_by_thresh = fs[13:]
+                chrom, start, end, size, symbol, strand, feature, biotype, transcript_id, min_depth, ave_depth, std_dev, wn20pcnt = fs[:13]
+                pcnt_val_by_thresh = fs[13:]
 
                 symbol = get_val(symbol)
                 if (symbol, chrom) not in self.key_gene_by_name_chrom:
@@ -588,7 +588,7 @@ class ClinicalExperimentInfo:
                 del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
             if not gene.start or not gene.end:
                 del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
-
+        info('Keeping ' + str(len(self.key_gene_by_name_chrom)) + ' ' + self.genes_collection_type + ' genes based on targQC reports')
 
 def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type, for_flagged_report=False):
     mutations = []
