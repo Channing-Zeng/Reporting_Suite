@@ -9,10 +9,10 @@ from os.path import join, basename, isdir
 
 import source
 from source import info
-from source.file_utils import verify_file, add_suffix
+from source.file_utils import verify_file, add_suffix, file_transaction
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes, SVEvent
-from source.logger import critical, warn
+from source.logger import critical, warn, err
 from source.prepare_args_and_cnf import check_genome_resources
 from source.clinical_reporting.known_sv import fusions as known_fusions
 from source.utils import is_uk
@@ -83,14 +83,15 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
     if is_us(): loc = exposing.us
     # elif is_uk(): loc = exposing.uk
     else:
-        return None
+        loc = exposing.local
+        # return None
 
     info()
     info('Creating Oncoprints link')
     zhongwu_data_query_dirpath = '/home/kdld047/public_html/cgi-bin/TS'
-    if not isdir(zhongwu_data_query_dirpath):
-        warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
-        return None
+    # if not isdir(zhongwu_data_query_dirpath):
+    #     warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
+    #     return None
 
     clinical_report_caller = \
         bcbio_structure.variant_callers.get('vardict') or \
@@ -114,14 +115,20 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
     data_fpath = join(zhongwu_data_query_dirpath, study_name + '.data.txt')
     info_fpath = join(zhongwu_data_query_dirpath, study_name + '.info.txt')
     altered_genes = print_data_txt(cnf, cnf.mutations_fpath, cnf.seq2c_tsv_fpath, samples, data_fpath)
+    if not altered_genes:
+        err('No altered genes!')
+        return None
+
     print_info_txt(cnf, samples, info_fpath)
+
+    # optional:
     data_symlink = join(data_query_dirpath, study_name + '.data.txt')
     info_symlink = join(data_query_dirpath, study_name + '.info.txt')
     (symlink_to_ngs if is_us() else local_symlink)(data_fpath, data_symlink)
     (symlink_to_ngs if is_us() else local_symlink)(info_fpath, info_symlink)
 
     properties_fpath = join(zhongwu_data_query_dirpath, 'DataQuery.properties')
-    add_data_query_properties(cnf, study_name, properties_fpath, data_fpath, info_fpath)
+    add_data_query_properties(cnf, study_name, properties_fpath, basename(data_fpath), basename(info_fpath))
 
     genes = '%0D%0A'.join(altered_genes)
     data_query_url = join(loc.website_url_base, 'DataQueryTool', 'DataQuery.pl?'
@@ -150,28 +157,29 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
     seq2c_events_by_sample, altered_genes = parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes)
     sv_events_by_samples, altered_genes = parse_sv_files(samples, altered_genes, key_genes)
 
-    with open(data_fpath, 'w') as out_f:
-        out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\t'
-                    'SV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\t'
-                    'CNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
-        for sample, muts in mut_by_samples.iteritems():
-            for mut in muts:
-                out_f.write('\t'.join([sample, '', 'short-variant', mut.gene, mut.signif, mut.aa_change, mut.cdna_change,
-                                       mut.chrom + ':' + mut.pos, str(mut.depth), str(mut.freq * 100),
-                                       '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', mut.type]) + '\n')
-        for sample, events in seq2c_events_by_sample.iteritems():
-            for event in events:
-                out_f.write('\t'.join([sample, '', 'copy-number-alteration', event.gene, 'NA', '-', '-',
-                                       '-', '-', '-', str(event.copy_number), event.exons, str(event.ratio), event.cnv_type,
-                                       '-', '-', '-', '-', '-', '-', '-', 'Deletion' if event.cnv_type == 'loss' else 'Amplification']) + '\n')
-        for sample, events in sv_events_by_samples.iteritems():
-            for event in events:
-                for ann in event.key_annotations:
-                    count_reads = sum(int(r) for r in event.split_read_support) + sum(int(r) for r in event.paired_end_support)
-                    out_f.write('\t'.join([sample, '', 'rearrangement', event.known_gene, 'known' if ann.known else 'unknown',
-                                           '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
-                                           'fusion', event.chrom + ':' + str(event.start), str(event.end) if event.end else '',
-                                           '-', str(count_reads), 'Rearrangement']) + '\n')
+    with file_transaction(cnf.work_dir, data_fpath) as tx:
+        with open(tx, 'w') as out_f:
+            out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\t'
+                        'SV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\t'
+                        'CNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
+            for sample, muts in mut_by_samples.iteritems():
+                for mut in muts:
+                    out_f.write('\t'.join([sample, '', 'short-variant', mut.gene, mut.signif, mut.aa_change, mut.cdna_change,
+                                           mut.chrom + ':' + mut.pos, str(mut.depth), str(mut.freq * 100),
+                                           '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', mut.type]) + '\n')
+            for sample, events in seq2c_events_by_sample.iteritems():
+                for event in events:
+                    out_f.write('\t'.join([sample, '', 'copy-number-alteration', event.gene, 'NA', '-', '-',
+                                           '-', '-', '-', str(event.copy_number), event.exons, str(event.ratio), event.cnv_type,
+                                           '-', '-', '-', '-', '-', '-', '-', 'Deletion' if event.cnv_type == 'loss' else 'Amplification']) + '\n')
+            for sample, events in sv_events_by_samples.iteritems():
+                for event in events:
+                    for ann in event.key_annotations:
+                        count_reads = sum(int(r) for r in event.split_read_support) + sum(int(r) for r in event.paired_end_support)
+                        out_f.write('\t'.join([sample, '', 'rearrangement', event.known_gene, 'known' if ann.known else 'unknown',
+                                               '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
+                                               'fusion', event.chrom + ':' + str(event.start), str(event.end) if event.end else '',
+                                               '-', str(count_reads), 'Rearrangement']) + '\n')
 
     return altered_genes
 
@@ -355,11 +363,12 @@ def parse_sv_files(samples, altered_genes, key_genes):
 
 
 def print_info_txt(cnf, samples, info_fpath):
-    with open(info_fpath, 'w') as out_f:
-        out_f.write('Sample\n')
-        out_f.write('Type\n')
-        for sample in samples:
-            out_f.write(sample.name + '\n')
+    with file_transaction(cnf.work_dir, info_fpath) as tx:
+        with open(tx, 'w') as out_f:
+            out_f.write('Sample\n')
+            out_f.write('Type\n')
+            for sample in samples:
+                out_f.write(sample.name + '\n')
 
 
 # DATA_QUERY_LINK = 'http://ngs.usbod.astrazeneca.net/DataQueryTool/DataQuery.pl'
@@ -387,9 +396,10 @@ def add_data_query_properties(cnf, study_name, properties_fpath, data_fpath, inf
             text_to_add = None
         properties_lines.append(l)
 
-    with open(properties_fpath, 'w') as out:
-        for l in properties_lines:
-            out.write(l + '\n')
+    with file_transaction(cnf.work_dir, properties_fpath) as tx:
+        with open(tx, 'w') as out:
+            for l in properties_lines:
+                out.write(l + '\n')
 
 
 if __name__ == '__main__':
