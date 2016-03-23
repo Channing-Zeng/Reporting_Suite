@@ -42,6 +42,8 @@ $(function() {
       }
     }
 
+    $('#variants_table_controls').width($('#report_table_mutations').width() - 5);
+    $('#download_mut_table').show();
     //if (msieversion() == 0) {
     //    $('table.tableSorter.table_short').tableSort();
     //}
@@ -148,7 +150,7 @@ function write_to_excel(table) {
     var data_type = 'data:application/csv;charset=utf-8,';
     $("#download_mut_table").
     attr("href", data_type + encodeURIComponent(csv)).
-    attr("download", "mutations.tsv");
+    attr("download", "mutations.xls");
 }
 
 //function extendedClick() {

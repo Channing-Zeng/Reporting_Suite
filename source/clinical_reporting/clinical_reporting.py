@@ -78,7 +78,7 @@ class BaseClinicalReporting:
                            td_style='background-color: white'),              # 658
                 ])
 
-        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms)])
+        clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
         report = PerRegionSampleReport(sample=mutations_by_experiment.keys()[0].sample,
             metric_storage=clinical_mut_metric_storage, expandable=True)
 

@@ -137,16 +137,22 @@
                     <li><b>False positive mutations</b> – advance algorithms were employed to generate the highest quality variant calls, but false positive will still occur and are likely present in the candidate mutation output below. False positive variants are more found in homopolymer tracts, in genes with repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes residing in repetitive or unstable regions of the genome.
                     </ol>
                 </p>
-                <p>
-                    <a class="dotted-link" id="download_mut_table">Export to TSV format</a>
-                </p>
-
-                <p id="variants_switch">
-                    <span>known, likely, unlikely</span>
-                    /
-                    <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
-                        + unknown</a>
-                </p>
+                <div id="variants_table_controls">
+                    <div style="float: left">
+                        <p id="variants_switch">
+                            <span>known, likely, unlikely</span>
+                            /
+                            <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
+                                + unknown</a>
+                        </p>
+                    </div>
+                    <div style="float: right; margin-top: -20px; margin-bottom: 0;">
+                        <p>
+                            <a class="btn" id="download_mut_table" style="display: none;">Download for Excel</a>
+                        </p>
+                    </div>
+                    <div style="clear: both"></div>
+                </div>
                 <div id="variants_table_div">
                     {table}
                 </div>
