@@ -839,21 +839,22 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
         total_regions_count = 0
         for region in regions:
             if region.feature == 'Capture':
-                if gene_name != '.':
+                if region.gene_name != '.':
                     cur_unannotated_gene = None
-                    gene = gene_by_name_and_chrom[(gene_name, chrom)]
+                    gene = gene_by_name_and_chrom[(region.gene_name, region.chrom)]
                     if (gene.gene_name, gene.chrom) not in ready_to_report_set:
                         ready_to_report_genes.append(gene)
                         ready_to_report_set.add((gene.gene_name, gene.chrom))
                     gene.add_amplicon(region)
                 else:
                     if cur_unannotated_gene is None:
-                        cur_unannotated_gene = GeneInfo(sample_name=sample_name, gene_name=gene_name, chrom=chrom, feature='NotAnnotatedSummary')
+                        cur_unannotated_gene = GeneInfo(sample_name=region.sample_name,
+                            gene_name=region.gene_name, chrom=region.chrom, feature='NotAnnotatedSummary')
                         ready_to_report_genes.append(cur_unannotated_gene)
                     cur_unannotated_gene.add_amplicon(region)
 
             else:
-                gene = gene_by_name_and_chrom[(gene_name, chrom)]
+                gene = gene_by_name_and_chrom[(region.gene_name, region.chrom)]
                 gene.add_exon(region)
                 if not target_bed:  # in case if only reporting based on features_bed
                     if (gene.gene_name, gene.chrom) not in ready_to_report_set:

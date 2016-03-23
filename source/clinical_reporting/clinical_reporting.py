@@ -316,7 +316,7 @@ class BaseClinicalReporting:
 
             for gene, se in e.seq2c_events_by_gene.items():
                 if gene.chrom not in chr_cum_len_by_chrom:
-                   warn('Gene ' + gene.name + ' chromosome ' + gene.chrom + ' not found in ' + str(chr_cum_len_by_chrom))
+                   warn('Gene ' + gene.name + ' chromosome ' + gene.chrom + ' not found')
                 else:
                     d['events'].append(dict(
                         x=chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2,
@@ -372,7 +372,6 @@ class BaseClinicalReporting:
             return reports[0]
         else:
             return reports
-
 
     def make_key_genes_cov_json(self, experiment_by_key):
         chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
