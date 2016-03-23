@@ -157,7 +157,7 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
     if cohort_mode:
         info('Running vcf2txt.pl in cohort mode')
         vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
-        vcf_fpath_by_sample = {s.name: s.sample.anno_vcf_fpath for s in samples}
+        vcf_fpath_by_sample = {s.name: s.anno_vcf_fpath for s in samples}
         cmdline = vcf2txt + ' ' + make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample)
         res = run_vcf2txt_with_retries(cnf, cmdline, variants_fpath)
         if not res:
