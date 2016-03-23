@@ -12,7 +12,7 @@ from source import info
 from source.file_utils import verify_file, add_suffix, file_transaction
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes, SVEvent
-from source.logger import critical, warn, err
+from source.logger import critical, warn, err, step_greetings
 from source.prepare_args_and_cnf import check_genome_resources
 from source.clinical_reporting.known_sv import fusions as known_fusions
 from source.utils import is_uk
@@ -84,14 +84,13 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
     # elif is_uk(): loc = exposing.uk
     else:
         loc = exposing.local
-        # return None
+        return None
 
-    info()
-    info('Creating Oncoprints link')
+    step_greetings('Creating Oncoprints link')
     zhongwu_data_query_dirpath = '/home/kdld047/public_html/cgi-bin/TS'
-    # if not isdir(zhongwu_data_query_dirpath):
-    #     warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
-    #     return None
+    if not isdir(zhongwu_data_query_dirpath):
+        warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
+        return None
 
     clinical_report_caller = \
         bcbio_structure.variant_callers.get('vardict') or \
@@ -121,14 +120,17 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
     print_info_txt(cnf, samples, info_fpath)
 
+    data_ext_fpath = data_fpath.replace('/home/', '/users/')
+    info_ext_fpath = info_fpath.replace('/home/', '/users/')
+
     # optional:
     data_symlink = join(data_query_dirpath, study_name + '.data.txt')
     info_symlink = join(data_query_dirpath, study_name + '.info.txt')
-    (symlink_to_ngs if is_us() else local_symlink)(data_fpath, data_symlink)
-    (symlink_to_ngs if is_us() else local_symlink)(info_fpath, info_symlink)
+    (symlink_to_ngs if is_us() else local_symlink)(data_ext_fpath, data_symlink)
+    (symlink_to_ngs if is_us() else local_symlink)(info_ext_fpath, info_symlink)
 
     properties_fpath = join(zhongwu_data_query_dirpath, 'DataQuery.properties')
-    add_data_query_properties(cnf, study_name, properties_fpath, basename(data_fpath), basename(info_fpath))
+    add_data_query_properties(cnf, study_name, properties_fpath, data_ext_fpath, info_ext_fpath)
 
     genes = '%0D%0A'.join(altered_genes)
     data_query_url = join(loc.website_url_base, 'DataQueryTool', 'DataQuery.pl?'
@@ -391,6 +393,9 @@ def add_data_query_properties(cnf, study_name, properties_fpath, data_fpath, inf
             text_to_add = '{study_name} => "{data_fpath}", \\'.format(**locals())
         if 'study2info' in l:
             text_to_add = '{study_name} => "{info_fpath}", \\'.format(**locals())
+        if study_name + ' => ' in l:
+            info(l.strip() + ' already present in properties, removing it.')
+            continue
         if l == '}' and text_to_add and text_to_add not in properties_lines:
             properties_lines.append(text_to_add)
             text_to_add = None
