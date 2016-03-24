@@ -94,7 +94,7 @@ def run_vcf2txt_vardict2mut_for_samples(
     if not vardict2mut_py:
         critical('vardict2mut_py not found')
 
-    info('Running python version ' + vardict2mut_py)
+    info('Running vardict2mut')
     res = run_vardict2mut(cnf, vcf2txt_out_fpath,
         add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
         sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_py)

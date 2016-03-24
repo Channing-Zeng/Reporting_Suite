@@ -16,12 +16,13 @@ from source import VarSample
 from source.file_utils import iterate_file, open_gzipsafe, safe_mkdir, add_suffix, file_transaction, verify_file
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
+from source.tools_from_cnf import get_script_cmdline
 from source.variants import qc
 from source.variants.filtering import run_vcf2txt, run_vardict2mut, write_vcfs, write_vcf, index_vcf
 from source.variants.vcf_processing import remove_rejected, get_sample_column_index, bgzip_and_tabix, verify_vcf
 from source.runner import run_one
 from source.variants.anno import run_annotators, finialize_annotate_file
-from source.utils import info
+from source.utils import info, is_local
 from source.logger import err, warn, critical
 
 
@@ -90,6 +91,15 @@ def main(args):
                             if l.split('\t')[0] == cnf.sample:
                                 out.write(l)
         info('Using vcf2txt from ' + vcf2txt_res_fpath)
+
+    if is_local():
+        vardict2mut_pl = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'))
+        info('Running vardict2mut perl')
+        res = run_vardict2mut(cnf, vcf2txt_res_fpath,
+            add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix + '_perl'),
+            vardict2mut_executable=vardict2mut_pl)
+        if not res:
+            critical('vardict2mut.pl run returned non-0')
 
     mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
     if not mut_fpath:
