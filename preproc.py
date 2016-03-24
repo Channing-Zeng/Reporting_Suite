@@ -66,6 +66,7 @@ def proc_opts():
     parser.add_option('--fastqc', dest='fastqc', action='store_true', default=True, help='')
     parser.add_option('--no-fastqc', dest='fastqc', action='store_false', default=True, help='')
     parser.add_option('--pcr', dest='is_pcr', action='store_true', default=False, help='')
+    parser.add_option('--downsample-to', dest='downsample_to', type='int')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
@@ -205,7 +206,9 @@ def main():
 
         if cnf.targqc or cnf.metamapping:
             info()
-            downsample_to = int(1e5)
+            downsample_to = cnf.downsample_to
+            if downsample_to is None:
+                downsample_to = int(1e5)
             info('Downsampling the reads to ' + str(downsample_to))
             lefts, rights = downsample_fastq(cnf, samples, downsample_to)
 
