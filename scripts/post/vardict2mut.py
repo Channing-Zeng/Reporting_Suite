@@ -48,7 +48,16 @@ def get_args():
                             '[default: 1.0, or no filtering].\n'
                             'Use with caution.  It\'ll filter even if it\'s in COSMIC, unless if actionable.'
                             'Don\'t use it if the sample is homogeneous. Use only in heterogeneous samples.'))
+    parser.add_option('-N', '--keep-utr-intronic', dest='keep_utr_intronic', action='store_true',
+                      help='Keep all intronic and UTR in the output, but will be set as "unknown".')
+    parser.add_option('-r', '--keep-max-rate', dest='keep_max_rate', action='store_true',
+                      help='Keep only those variants satisfying -R option. The option is meant to find '
+                           're-occuring variants or artifacts.')
+
     parser.add_option('-M', '--fm', dest='is_output_fm', action='store_true', help='Output in FM\'s format')
+    parser.add_option('-p', '--platform', dest='platform',
+                      help='The platform, such as WXS, WGS, RNA-Seq, VALIDATION, etc. No Default. '
+                           'Used when output is in FM\'s format (-M option)')
 
     parser.set_usage('Usage: ' + __file__ + ' vcf2txt_res_fpath [opts] -o output_fpath')
 
@@ -89,16 +98,16 @@ def main():
 
 class Filtration:
     def __init__(self, cnf):
-        cnf.genome.compendia_ms7_hotspot    = verify_file(cnf.genome.compendia_ms7_hotspot)
-        cnf.genome.actionable               = verify_file(cnf.genome.actionable)
-        cnf.genome.filter_common_snp        = verify_file(cnf.genome.filter_common_snp)
-        cnf.genome.filter_common_artifacts  = verify_file(cnf.genome.filter_common_artifacts)
-        cnf.suppressors                     = verify_file(cnf.suppressors)
-        cnf.oncogenes                       = verify_file(cnf.oncogenes)
-        cnf.ruledir                         = verify_dir(cnf.ruledir)
-        cnf.snpeffect_export_polymorphic    = verify_file(cnf.snpeffect_export_polymorphic)
-        cnf.actionable_hotspot              = verify_file(cnf.actionable_hotspot)
-        cnf.specific_mutations              = verify_file(cnf.specific_mutations)
+        cnf.genome.compendia_ms7_hotspot    = verify_file(cnf.genome.compendia_ms7_hotspot, 'compendia_ms7_hotspot')
+        cnf.genome.actionable               = verify_file(cnf.genome.actionable, 'actionable')
+        cnf.genome.filter_common_snp        = verify_file(cnf.genome.filter_common_snp, 'filter_common_snp')
+        cnf.genome.filter_common_artifacts  = verify_file(cnf.genome.filter_common_artifacts, 'filter_common_artifacts')
+        cnf.suppressors                     = verify_file(cnf.suppressors, 'suppressors')
+        cnf.oncogenes                       = verify_file(cnf.oncogenes, 'oncogenes')
+        cnf.ruledir                         = verify_dir(cnf.ruledir, 'ruledir')
+        cnf.snpeffect_export_polymorphic    = verify_file(cnf.snpeffect_export_polymorphic, 'snpeffect_export_polymorphic')
+        cnf.actionable_hotspot              = verify_file(cnf.actionable_hotspot, 'actionable_hotspot')
+        cnf.specific_mutations              = verify_file(cnf.specific_mutations, 'specific_mutations')
         if not all([cnf.genome.compendia_ms7_hotspot,
                     cnf.genome.actionable,
                     cnf.genome.filter_common_snp,
@@ -292,14 +301,14 @@ class Filtration:
             status, reasons = self.update_status(status, reasons, 'likely', 'splice_site')
         return status, reasons
 
-    def is_actionable(self, chr, pos, ref, alt, gene, aa_chg):
-        key = '-'.join([chr, pos, ref, alt])
+    def is_actionable(self, chrom, pos, ref, alt, gene, aa_chg):
+        key = '-'.join([chrom, pos, ref, alt])
         if key in self.act_somatic:
             return True
         if key in self.act_germline:
             return 'germline'
         if len(ref) == 1 and len(ref) == len(alt):
-            key = '-'.join([chr, pos, ref])
+            key = '-'.join([chrom, pos, ref])
             if key in self.act_somatic:
                 return True
         if aa_chg_pattern.match(aa_chg) and gene in self.actionable_hotspots:
@@ -315,11 +324,11 @@ class Filtration:
                 return 'somatic'
         if gene in self.rules['inframe-del'] and len(ref) > len(alt) and (len(ref) - len(alt)) % 3 == 0:
             for r in self.rules['inframe-del'][gene]:
-                if r[0] == chr and r[1] <= int(pos) <= r[2] and len(ref) - len(alt) >= r[3]:
+                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(ref) - len(alt) >= r[3]:
                     return 'somatic'
         elif gene in self.rules['inframe-ins'] and len(ref) < len(alt) and (len(alt) - len(ref)) % 3 == 0:
             for r in self.rules['inframe-ins'][gene]:
-                if r[0] == chr and r[1] <= int(pos) <= r[2] and len(alt) - len(ref) >= r[3]:
+                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(alt) - len(ref) >= r[3]:
                     return 'somatic'
         return False
 
@@ -359,7 +368,7 @@ class Filtration:
         if region in types_by_region:
             for type_ in types_by_region[region]:
                 if type_ in cdna_chg:
-                    tier = types_by_region[type_]
+                    tier = types_by_region[region][type_]
                     status, reasons = self.update_status(status, reasons, statuses[tier], type_ + '_in_gene_' + gene)
         return status, reasons
 
