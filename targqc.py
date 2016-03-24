@@ -102,18 +102,18 @@ def main():
 
 
 def read_samples(args):
-    input_fpaths = [verify_file(fpath) for fpath in args]
-    input_fpaths = [fpath for fpath in input_fpaths if fpath]
-    if not input_fpaths:
-        critical('No correct input files')
-
-    info(str(len(input_fpaths)) + ' correct input files')
-    fastqs_by_sample = find_fastq_pairs(input_fpaths)
-    if fastqs_by_sample:
-        info('Found FastQ pairs: ' + str(len(fastqs_by_sample)))
-    bam_by_sample = find_bams(input_fpaths)
+    bam_by_sample = find_bams(args)
     if bam_by_sample:
         info('Found ' + str(len(bam_by_sample)) + ' BAMs')
+
+    input_not_bam = [verify_file(fpath) for fpath in args if adjust_path(fpath) not in bam_by_sample]
+    input_not_bam = [fpath for fpath in input_not_bam if fpath]
+    if not input_not_bam and not bam_by_sample:
+        critical('No correct input files')
+    info(str(len(input_not_bam)) + ' correct input not-bam files')
+    fastqs_by_sample = find_fastq_pairs(input_not_bam)
+    if fastqs_by_sample:
+        info('Found FastQ pairs: ' + str(len(fastqs_by_sample)))
 
     intersection = set(fastqs_by_sample.keys()) & set(bam_by_sample.keys())
     if intersection:
