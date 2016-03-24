@@ -304,6 +304,10 @@ class BaseClinicalReporting:
         data = dict()
 
         for k, e in experiment_by_key.items():
+            # if len(e.seq2c_events_by_gene.values()) == 0:
+            #     data[k.lower()] = None
+            #     continue
+
             chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
             chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))
 
@@ -331,12 +335,14 @@ class BaseClinicalReporting:
             d['maxY'] = max([e['logRatio'] for e in d['events']] + [2])  # max(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [2]))
             d['minY'] = min([e['logRatio'] for e in d['events']] + [-2])  # min(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [-2]))
 
+            if all(e['ampDel'] is None for e in d['events']):
+                d = None
             data[k.lower()] = d
 
         if len(experiment_by_key.keys()) == 1:
-            return json.dumps(data.values()[0])
+            return json.dumps(data.values()[0]) if data.values()[0] else None
         else:
-            return json.dumps(data)
+            return json.dumps(data) if all(d is not None for d in data.values()) else None
 
     def make_seq2c_report(self, seq2c_by_experiment):
         ms = [
@@ -351,21 +357,23 @@ class BaseClinicalReporting:
 
         # Writing records
         for e, seq2c in seq2c_by_experiment.items():
-            metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
-            report = PerRegionSampleReport(sample=seq2c_by_experiment.keys()[0].sample,
-                                           metric_storage=metric_storage, expandable=True)
-            seq2c_events = seq2c.values()
-            is_whole_genomic_profile = len(e.seq2c_events_by_gene.values()) > len(e.key_gene_by_name_chrom.values())
-            for event in sorted(seq2c_events, key=lambda e: e.gene.name):
-                if event.is_amp() or event.is_del():
-                    row = report.add_row()
-                    row.add_record('Gene', event.gene.name)
-                    row.add_record('Chr', event.gene.chrom.replace('chr', ''))
-                    row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
-                    row.add_record('Amp/Del', event.amp_del)
-                    row.add_record('BP/Whole', event.fragment)
-                    if is_whole_genomic_profile and event.gene.key not in e.key_gene_by_name_chrom:
-                        row.hidden = True
+            report = None
+            if len(e.seq2c_events_by_gene.values()) > 0:
+                metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
+                report = PerRegionSampleReport(sample=seq2c_by_experiment.keys()[0].sample,
+                                               metric_storage=metric_storage, expandable=True)
+                seq2c_events = seq2c.values()
+                is_whole_genomic_profile = len(e.seq2c_events_by_gene.values()) > len(e.key_gene_by_name_chrom.values())
+                for event in sorted(seq2c_events, key=lambda e: e.gene.name):
+                    if event.is_amp() or event.is_del():
+                        row = report.add_row()
+                        row.add_record('Gene', event.gene.name)
+                        row.add_record('Chr', event.gene.chrom.replace('chr', ''))
+                        row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
+                        row.add_record('Amp/Del', event.amp_del)
+                        row.add_record('BP/Whole', event.fragment)
+                        if is_whole_genomic_profile and event.gene.key not in e.key_gene_by_name_chrom:
+                            row.hidden = True
             reports.append(report)
 
         if len(seq2c_by_experiment.keys()) == 1:
@@ -619,7 +627,8 @@ class ClinicalReporting(BaseClinicalReporting):
             self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
         if self.experiment.seq2c_events_by_gene:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
-            self.seq2c_report = self.make_seq2c_report({self.experiment: self.experiment.seq2c_events_by_gene})
+            if self.seq2c_plot_data:
+                self.seq2c_report = self.make_seq2c_report({self.experiment: self.experiment.seq2c_events_by_gene})
         if self.experiment.actionable_genes_dict and \
                 (self.experiment.mutations or self.experiment.seq2c_events_by_gene or self.experiment.sv_events):
             self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)

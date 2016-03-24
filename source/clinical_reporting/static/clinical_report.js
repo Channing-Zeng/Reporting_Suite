@@ -21,25 +21,28 @@ $(function() {
     var tables_short = $('.table_short');
     var tables_full = $('.table_full');
     for (var t = 0; t < tables_short.length; t++){
-      var table_short = $(tables_short[t]);
-      var table_full = $(tables_full[t]);
-      var switch_id = table_full.parent()[0].id.split('_')[0];
-      var switch_el = $('#' + switch_id + '_switch');
-      if (switch_id == 'seq2c' && switch_el[0]) key_or_target = switch_el.html().indexOf('target') != -1 ? 'target' : 'key';
-      else if (switch_id == 'variants') write_to_excel(table_full);
+        var table_short = $(tables_short[t]);
+        var table_full = $(tables_full[t]);
+        full_table_parent = table_full.parent();
+        if (full_table_parent.length > 0) {
+            var switch_id = full_table_parent[0].id.split('_')[0];
+            var switch_el = $('#' + switch_id + '_switch');
+            if (switch_id == 'seq2c' && switch_el[0]) key_or_target = switch_el.html().indexOf('target') != -1 ? 'target' : 'key';
+            else if (switch_id == 'variants') write_to_excel(table_full);
 
-      table_short_clones.push({'id_': switch_id, 'table': $(table_short).clone()});
-      table_full_clones.push({'id_': switch_id, 'table': $(table_full).clone()});
+            table_short_clones.push({'id_': switch_id, 'table': $(table_short).clone()});
+            table_full_clones.push({'id_': switch_id, 'table': $(table_full).clone()});
 
-      table_short.remove();
-      table_full.remove();
+            table_short.remove();
+            table_full.remove();
 
-      if (table_short.find('tr').length > 1 &&
-          table_full.find('tr').length > 15) {
-          reduceClick('extend_link_' + switch_id);
-      } else {
-          extendClick('extend_link_' + switch_id);
-      }
+            if (table_short.find('tr').length > 1 &&
+                table_full.find('tr').length > 15) {
+                reduceClick('extend_link_' + switch_id);
+            } else {
+                extendClick('extend_link_' + switch_id);
+            }
+        }
     }
 
     $('#variants_table_controls').width($('#report_table_mutations').width() - 5);
