@@ -189,6 +189,42 @@ genomes:
       rptmk: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/tracks/rptmk.bed              ## Repeats
       RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
 
+  hg19-chr20:
+    seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
+
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v146.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
+    dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
+    # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
+    snpeff:
+      reference: hg19
+
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-chr20.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-chr20.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19-chr20.bed
+
+    az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
+
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
+    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
+    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
+    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
+    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+
+    tracks:
+      cpgIslandExt: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
+      dgvMerged: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed          ## Copy Number Variants
+      genomicSuperDups: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed   ## Segmental Duplications
+      rptmk: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
+      RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
+
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+
 #  GRCh37:
 #    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
 #    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
