@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import os
+import traceback
 from genericpath import isfile
 from os.path import join, basename, splitext, isdir
 
@@ -123,5 +124,18 @@ def create_jbrowse_symlink(genome, project_name, sample, file_fpath):
     if not verify_dir(jbrowse_project_dirpath):
         safe_mkdir(jbrowse_project_dirpath)
     if isfile(file_fpath) and not isfile(sym_link):
-        os.symlink(file_fpath, sym_link)
+        try:
+            os.symlink(file_fpath, sym_link)
+        except OSError:
+            warn(traceback.format_exc())
+    if isfile(sym_link):
+        change_permissions(sym_link)
     return sym_link
+
+
+
+def change_permissions(path):
+    try:
+        os.system('chmod -R g+w ' + path)
+    except:
+        pass
