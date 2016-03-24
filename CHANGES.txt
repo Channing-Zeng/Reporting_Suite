@@ -1,3 +1,18 @@
+v1.1.0, 24 Mar 2016
+Features
+- Oncoptints integration
+- jBrowse integration with UK
+- New sex determining functionality
+- targqc.py can be fed with fastqc, and accepts --downsample-to option
+
+Optimization
+- Seq2C optimized, more time memory efficient. Using sambamba to call coverage
+
+Other
+- More clear Download button in NGS oncology report
+- Vardict2mut filtering updated, reporting more comprehensive rationale
+
+
 v1.0.1, 2 Mar 2016
 
 - Stanalone variants.py - handling incorrect input
