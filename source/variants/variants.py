@@ -8,7 +8,7 @@ from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transaction
-from source.variants.filtering import make_vcf2txt_cmdl_params, run_vcf2txt_with_retries
+from source.variants.filtering import make_vcf2txt_cmdl_params, run_vcf2txt_with_retries, count_cohort_freqs
 from source.variants.vcf_processing import verify_vcf
 
 
@@ -150,23 +150,25 @@ def _annotate(cnf, samples):
 
 
 def _filter(cnf, samples, variants_fpath, variants_fname):
-    cohort_mode = cnf.variant_filtering.max_ratio < 1.0 or \
-        cnf.variant_filtering.max_ratio_vardict2mut < 1.0 or \
-        cnf.fraction < 1.0
-
-    if cohort_mode:
-        info('Running vcf2txt.pl in cohort mode')
-        vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
-        vcf_fpath_by_sample = {s.name: s.anno_vcf_fpath for s in samples}
-        cmdline = vcf2txt + ' ' + make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample)
-        res = run_vcf2txt_with_retries(cnf, cmdline, variants_fpath)
-        if not res:
-            critical('Error: vcf2txt.pl crashed')
+    # if cohort_mode:
+    #     info('Running vcf2txt.pl in cohort mode')
+    #     vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
+    #     vcf_fpath_by_sample = {s.name: s.anno_vcf_fpath for s in samples}
+    #     cmdline = vcf2txt + ' ' + make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample)
+    #     res = run_vcf2txt_with_retries(cnf, cmdline, variants_fpath)
+    #     if not res:
+    #         critical('Error: vcf2txt.pl crashed')
 
     total_reused = 0
     total_processed = 0
     total_success = 0
     total_failed = 0
+
+    cohort_freqs_fpath = join(cnf.work_dir, 'cohort_freqs.tsv')
+    if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+        # cnf.variant_filtering.max_ratio < 1.0 or \
+        # cnf.fraction < 1.0
+        cohort_freqs_fpath = count_cohort_freqs(cnf, samples, cohort_freqs_fpath)
 
     not_submitted_samples = samples
     while not_submitted_samples:
@@ -198,13 +200,12 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                     ' --project-name ' + cnf.project_name +
                     ' --genome {cnf.genome.name}' +
                     ' --work-dir {work_dir}' +
+                    ' --cohort-freqs {cohort_freqs_fpath}' +
                    (' --reuse ' if cnf.reuse_intermediate else '') +
                   ((' --caller ' + cnf.caller) if cnf.caller else '') +
                     ' --qc' +
                    (' --no-tsv' if not cnf.tsv else '')
                 ).format(**locals())
-            if cnf.cohort_mode:
-                cmdl += ' --vcf2txt ' + variants_fpath
             j = submit_job(cnf, cmdl,
                 job_name='_filt_' + sample.name,
                 output_fpath=pass_output_fpath,

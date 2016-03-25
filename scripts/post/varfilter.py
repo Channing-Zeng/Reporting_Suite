@@ -37,6 +37,10 @@ def main(args):
                 dest='vcf2txt',
                 help='variants in vcf2txt to filter')
              ),
+            (['--cohort-freqs'], dict(
+                dest='cohort_freqs_fpath',
+                help='frequencies of variants in a cohort')
+             ),
             (['--qc'], dict(
                 dest='qc',
                 action='store_true',

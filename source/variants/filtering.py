@@ -150,6 +150,8 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
         cmdline += (' --reuse ' if cnf.reuse_intermediate else '')
         cmdline += ' --genome ' + cnf.genome.name
         cmdline += ' -o ' + vardict2mut_res_fpath
+        if cnf.cohort_freqs_fpath:
+            cmdline += ' --cohort-freqs ' + cnf.cohort_freqs_fpath
         cmdline = cmdline.format(**locals())
         res = call(cnf, cmdline, output_fpath=vardict2mut_res_fpath,
                    stdout_to_outputfile=False, exit_on_error=False)
@@ -468,3 +470,30 @@ def run_vcf2txt_with_retries(cnf, cmdline, output_fpath):
                 info('Output was created while sleeping: ' + output_fpath)
                 break
     return res
+
+
+def count_cohort_freqs(cnf, samples, cohort_freqs_fpath):
+    if cnf.reuse_intermediate and isfile(cohort_freqs_fpath) and verify_file(cohort_freqs_fpath):
+        info(cohort_freqs_fpath + ' exists, reusing')
+        return cohort_freqs_fpath
+
+    freq_in_sample_by_vark = defaultdict(int)
+    Parallel(n_jobs=len(samples))(delayed(get_counts)(freq_in_sample_by_vark, s.anno_vcf_fpath) for s in samples)
+
+    with file_transaction(cohort_freqs_fpath) as tx:
+        with open(tx, 'w') as out:
+            for vark, count in freq_in_sample_by_vark.items():
+                out.write(vark + '\t' + str(float(count) / len(samples)) + '\n')
+    return cohort_freqs_fpath
+
+
+def get_counts(counts_by_vark, vcf_fpath):
+    with open(vcf_fpath) as f:
+        for l in f:
+            if l.startswith('#'):
+                continue
+            fs = l.split()
+            if len(fs) < 5:
+                continue
+            vark = ':'.join([f[0], f[1], f[3], f[4]])
+            counts_by_vark[vark] += 1

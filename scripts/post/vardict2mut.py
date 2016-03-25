@@ -33,6 +33,7 @@ def get_args():
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
 
     parser.add_option('-o', dest='output_file')
+    parser.add_option('--cohort-freqs', dest='cohort_freqs_fpath')
     parser.add_option('-D', '--min-depth', dest='filt_depth', type='int', help='The minimum total depth')
     parser.add_option('-V', '--min-vd', dest='min_vd', type='int', help='The minimum reads supporting variant')
     parser.add_option('-f', '--min-freq', dest='min_freq', type='float',
@@ -40,14 +41,15 @@ def get_args():
     parser.add_option('-F', '--min-freq-hs', dest='min_hotspot_freq', type='float',
                       help='The minimum allele frequency hotspot somatic mutations, typically lower then -f. '
                            'Default: 0.01 or half -f, whichever is less')
-    parser.add_option('-R', '--max-rate', dest='max_rate', type='float',
-                      help=('If a variant is present in > [double] fraction of samples, it\'s deemed not a mutation.\n' +
+    parser.add_option('-R', '--max-rate', dest='max_ratio', type='float',
+                      help=('If a variant is present in > [max_ratio] fraction of samples, it\'s deemed not a mutation.\n' +
                             '[default: 1.0, or no filtering].\n'
-                            'Use with caution.  It\'ll filter even if it\'s in COSMIC, unless if actionable.'
+                            'Use with caution. '
+                            'It\'ll filter even if it\'s in COSMIC, unless if actionable.'
                             'Don\'t use it if the sample is homogeneous. Use only in heterogeneous samples.'))
     parser.add_option('-N', '--keep-utr-intronic', dest='keep_utr_intronic', action='store_true',
                       help='Keep all intronic and UTR in the output, but will be set as "unknown".')
-    parser.add_option('-r', '--keep-max-rate', dest='keep_max_rate', action='store_true',
+    parser.add_option('-r', '--keep-max-rate', dest='keep_max_ratio', action='store_true',
                       help='Keep only those variants satisfying -R option. The option is meant to find '
                            're-occuring variants or artifacts.')
 
@@ -132,8 +134,16 @@ class Filtration:
         if self.min_hotspot_freq is None or self.min_hotspot_freq == 'default':
             self.min_hotspot_freq = min(0.01, self.min_freq / 2)
         self.filt_depth = cnf.variant_filtering.filt_depth
-        self.max_ratio = cnf.variant_filtering.max_ratio_vardict2mut
+        self.max_ratio = cnf.max_ratio or cnf.variant_filtering.max_ratio_vardict2mut
         self.min_vd = cnf.variant_filtering.min_vd
+
+        self.freq_in_sample_by_vark = dict()
+        if cnf.cohort_freqs_fpath:
+            cohort_freqs_fpath = verify_file(cnf.cohort_freqs_fpath, is_critical=True)
+            with open(cohort_freqs_fpath) as f:
+                for l in f:
+                    fs = l.replace('\n', '').split()
+                    self.freq_in_sample_by_vark[fs[0]] = float(fs[1])
 
         self.tp53_positions = []
         self.tp53_groups = dict()
@@ -748,9 +758,14 @@ class Filtration:
                         if var_class == 'dbSNP':
                             self.filter_reject_counter['not known and dbSNP'] += 1
                             continue
-                        if float(fields[pcnt_sample_col]) > self.max_ratio:
-                            self.filter_reject_counter['not known and Pcnt_sample > variant_filtering (' + str(self.max_ratio) + ')'] += 1
-                            continue
+                        # if float(fields[pcnt_sample_col]) > self.max_ratio:
+                        if self.freq_in_sample_by_vark:
+                            vark = ':'.join([chrom, pos, ref, alt])
+                            assert vark in self.freq_in_sample_by_vark
+                            cohort_freq = self.freq_in_sample_by_vark[vark]
+                            if cohort_freq > self.max_ratio:
+                                self.filter_reject_counter['not known and Pcnt_sample > variant_filtering (' + str(self.max_ratio) + ')'] += 1
+                                continue
 
                 # if gene in self.sensitizations_by_gene and (prev_gene == gene or not cur_gene_mutations):
                 #     if gene_aachg in Filtration.sensitization_aa_changes:
