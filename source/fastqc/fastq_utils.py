@@ -9,7 +9,7 @@ from source.file_utils import open_gzipsafe, file_transaction, file_exists, inte
 from source.logger import critical, debug
 
 
-LIMIT = 5*1000*1000
+LIMIT = 500*1000*1000
 
 
 def downsample(cnf, sample_name, fastq_L_fpath, fastq_R_fpath, N, output_dir, suffix=None, quick=False):
