@@ -108,40 +108,45 @@ def read_samples(args):
 
     input_not_bam = [verify_file(fpath) for fpath in args if adjust_path(fpath) not in bam_by_sample]
     input_not_bam = [fpath for fpath in input_not_bam if fpath]
+    fastqs_by_sample = dict()
     if not input_not_bam and not bam_by_sample:
         critical('No correct input files')
-    info(str(len(input_not_bam)) + ' correct input not-bam files')
-    fastqs_by_sample = find_fastq_pairs(input_not_bam)
-    if fastqs_by_sample:
-        info('Found FastQ pairs: ' + str(len(fastqs_by_sample)))
-
-    intersection = set(fastqs_by_sample.keys()) & set(bam_by_sample.keys())
-    if intersection:
-        critical('The following samples both had input BAMs and FastQ: ' + ', '.join(list(intersection)))
+    if input_not_bam:
+        info(str(len(input_not_bam)) + ' correct input not-bam files')
+        fastqs_by_sample = find_fastq_pairs(input_not_bam)
+        if fastqs_by_sample:
+            info('Found FastQ pairs: ' + str(len(fastqs_by_sample)))
+        intersection = set(fastqs_by_sample.keys()) & set(bam_by_sample.keys())
+        if intersection:
+            critical('The following samples both had input BAMs and FastQ: ' + ', '.join(list(intersection)))
 
     return fastqs_by_sample, bam_by_sample
 
 
-def find_bams(fpaths):
+def find_bams(args):
     bam_by_sample = dict()
     bad_bam_fpaths = []
 
-    for fpath in fpaths:
+    good_args = []
+    for arg in args:
         # /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0159_AHK2KTADXX/bcbio,Kudos159 /ngs/oncology/Analysis/bioscience/Bio_0038_KudosCellLinesExomes/Bio_0038_150521_D00443_0160_BHKWMNADXX/bcbio,Kudos160
-        fpath = fpath.split(',')[0]
+        fpath = arg.split(',')[0]
         fname, ext = splitext(fpath)
         if ext == '.bam':
             bam_fpath = verify_bam(fpath)
             if not bam_fpath:
                 bad_bam_fpaths.append(bam_fpath)
             else:
-                if len(fpath.split(',')) > 1:
-                    sname = fpath.split(',')[1]
+                if len(arg.split(',')) > 1:
+                    sname = arg.split(',')[1]
                 else:
                     sname = basename(splitext(bam_fpath)[0])
                 bam_by_sample[sname] = bam_fpath
+                good_args.append(arg)
     if bad_bam_fpaths:
         critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
+    for arg in good_args:
+        args.remove(arg)
 
     return bam_by_sample
 
