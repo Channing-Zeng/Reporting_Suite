@@ -44,7 +44,7 @@ def _annotate(cnf, samples):
         ' --log-dir -' +
         ' --genome ' + cnf.genome.name +
        (' --no-check ' if cnf.no_check else '') +
-        ' --qc ' +
+       (' --qc ' if cnf.qc else '') +
       ((' --caller ' + cnf.caller) if cnf.caller else '')
     )
 
@@ -164,11 +164,16 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
     total_success = 0
     total_failed = 0
 
-    cohort_freqs_fpath = join(cnf.work_dir, 'cohort_freqs.tsv')
+    cohort_freqs_fpath = None
     if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+        cohort_freqs_fpath = join(cnf.work_dir, 'cohort_freqs.tsv')
+        info('*' * 70)
+        info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
         # cnf.variant_filtering.max_ratio < 1.0 or \
         # cnf.fraction < 1.0
         cohort_freqs_fpath = count_cohort_freqs(cnf, samples, cohort_freqs_fpath)
+        info('*' * 70)
+    info()
 
     not_submitted_samples = samples
     while not_submitted_samples:
@@ -200,10 +205,10 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                     ' --project-name ' + cnf.project_name +
                     ' --genome {cnf.genome.name}' +
                     ' --work-dir {work_dir}' +
-                    ' --cohort-freqs {cohort_freqs_fpath}' +
+                   (' --cohort-freqs {cohort_freqs_fpath}' if cohort_freqs_fpath else '') +
                    (' --reuse ' if cnf.reuse_intermediate else '') +
                   ((' --caller ' + cnf.caller) if cnf.caller else '') +
-                    ' --qc' +
+                   (' --qc' if cnf.qc else '') +
                    (' --no-tsv' if not cnf.tsv else '')
                 ).format(**locals())
             j = submit_job(cnf, cmdl,
@@ -272,32 +277,31 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
     info()
 
     info('Combining results...')
-    variants_fpath, pass_variants_fpath = _combine_results(cnf, samples, variants_fpath, cohort_mode)
+    variants_fpath, pass_variants_fpath = _combine_results(cnf, samples, variants_fpath)
     return variants_fpath, pass_variants_fpath
 
 
 def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
     not_existing = []
-    if not cohort_mode:
-        if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
-            info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
+    if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
+        info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
+    else:
+        for i, s in enumerate(samples):
+            if not verify_file(s.variants_fpath, description='variants file'):
+                not_existing.append(s)
+        if not_existing:
+            err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
         else:
-            for i, s in enumerate(samples):
-                if not verify_file(s.variants_fpath, description='variants file'):
-                    not_existing.append(s)
-            if not_existing:
-                err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
-            else:
-                with file_transaction(cnf.work_dir, variants_fpath) as tx:
-                    with open(tx, 'w') as out:
-                        for i, s in enumerate(samples):
-                            with open(s.variants_fpath) as f:
-                                for j, l in enumerate(f):
-                                    if j == 0 and i == 0:
-                                        out.write(l)
-                                    if j > 0:
-                                        out.write(l)
-                verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
+            with file_transaction(cnf.work_dir, variants_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for i, s in enumerate(samples):
+                        with open(s.variants_fpath) as f:
+                            for j, l in enumerate(f):
+                                if j == 0 and i == 0:
+                                    out.write(l)
+                                if j > 0:
+                                    out.write(l)
+            verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
 
     pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
     not_existing_pass = []

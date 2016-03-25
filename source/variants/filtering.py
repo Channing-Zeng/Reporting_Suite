@@ -473,27 +473,38 @@ def run_vcf2txt_with_retries(cnf, cmdline, output_fpath):
 
 
 def count_cohort_freqs(cnf, samples, cohort_freqs_fpath):
-    if cnf.reuse_intermediate and isfile(cohort_freqs_fpath) and verify_file(cohort_freqs_fpath):
+    info('Calculating frequences of varaints in the cohort')
+    if cnf.reuse_intermediate and verify_file(cohort_freqs_fpath):
         info(cohort_freqs_fpath + ' exists, reusing')
         return cohort_freqs_fpath
 
     freq_in_sample_by_vark = defaultdict(int)
-    Parallel(n_jobs=len(samples))(delayed(get_counts)(freq_in_sample_by_vark, s.anno_vcf_fpath) for s in samples)
+    for varks in Parallel(n_jobs=len(samples))(delayed(get_counts)(s.anno_vcf_fpath) for s in samples):
+        for vark in varks:
+            freq_in_sample_by_vark[vark] += 1
 
-    with file_transaction(cohort_freqs_fpath) as tx:
+    info('Counted ' + str(len(freq_in_sample_by_vark)) + ' variants in ' + str(len(samples)) + ' samples')
+
+    with file_transaction(cnf.work_dir, cohort_freqs_fpath) as tx:
         with open(tx, 'w') as out:
             for vark, count in freq_in_sample_by_vark.items():
                 out.write(vark + '\t' + str(float(count) / len(samples)) + '\n')
-    return cohort_freqs_fpath
+    info('Done, saved to ' + cohort_freqs_fpath)
+    return verify_file(cohort_freqs_fpath)
 
 
-def get_counts(counts_by_vark, vcf_fpath):
-    with open(vcf_fpath) as f:
+
+def get_counts(vcf_fpath):
+    varks = []
+
+    with open_gzipsafe(vcf_fpath) as f:
         for l in f:
             if l.startswith('#'):
                 continue
             fs = l.split()
             if len(fs) < 5:
                 continue
-            vark = ':'.join([f[0], f[1], f[3], f[4]])
-            counts_by_vark[vark] += 1
+            vark = ':'.join([fs[0], fs[1], fs[3], fs[4]])
+            varks.append(vark)
+    info('Counted ' + str(len(varks)) + ' variants in ' + vcf_fpath)
+    return varks

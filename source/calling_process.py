@@ -74,6 +74,9 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
         if verify_obj_by_path(output_fpath, silent=True):
             info(output_fpath + ' exists, reusing')
             return output_fpath
+        if not output_fpath.endswith('.gz') and verify_obj_by_path(output_fpath + '.gz', silent=True):
+            info(output_fpath + '.gz exists, reusing')
+            return output_fpath
     if output_fpath and isfile(output_fpath):
         if output_is_dir:
             shutil.rmtree(output_fpath)

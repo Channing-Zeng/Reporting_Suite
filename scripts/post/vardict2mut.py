@@ -764,7 +764,7 @@ class Filtration:
                             assert vark in self.freq_in_sample_by_vark
                             cohort_freq = self.freq_in_sample_by_vark[vark]
                             if cohort_freq > self.max_ratio:
-                                self.filter_reject_counter['not known and Pcnt_sample > variant_filtering (' + str(self.max_ratio) + ')'] += 1
+                                self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
                                 continue
 
                 # if gene in self.sensitizations_by_gene and (prev_gene == gene or not cur_gene_mutations):
