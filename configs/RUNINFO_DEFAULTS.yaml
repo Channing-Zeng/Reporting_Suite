@@ -5,14 +5,15 @@ steps:
 
 
 variant_filtering:
-  fraction:              0.4  # -r
-                              # When a variant is present in more than [max_ratio] of samples,
-                              #  and mean allele frequency is less than -f (mean_freq),
+  fraction:              1.0  # -r
+                              # When a novel variant is present in more than [max_ratio] of samples and at least -n samples,
+                              #  and average allele frequency is less than -F ($AVEFREQ),
                               #  it's considered as likely false positive, even if it's in COSMIC.
 
   max_ratio:             1.0  # -R
-                              # When a passing variant is present in more than [max_ratio] of samples and at least -n samples,
-                              #   it's considered as dbSNP, even if it's in COSMIC or apparent deleterious.
+                              # When a passing variant is present in more than [max_ratio] of samples and at least -n samples:
+                              #   if af > 0.35, it's considered as dbSNP, even if it's in COSMIC or apparent deleterious;
+                              #   if af < 0.35, it's rejected
                               #   Use with caution. Don't use it for homogeneous samples.
 
   max_ratio_vardict2mut: 1.0  # -R in vardict2mut
