@@ -137,13 +137,13 @@ class Filtration:
         self.max_ratio = cnf.max_ratio or cnf.variant_filtering.max_ratio_vardict2mut
         self.min_vd = cnf.variant_filtering.min_vd
 
-        self.freq_in_sample_by_vark = dict()
-        if cnf.cohort_freqs_fpath:
-            cohort_freqs_fpath = verify_file(cnf.cohort_freqs_fpath, is_critical=True)
-            with open(cohort_freqs_fpath) as f:
-                for l in f:
-                    fs = l.replace('\n', '').split()
-                    self.freq_in_sample_by_vark[fs[0]] = float(fs[1])
+        # self.freq_in_sample_by_vark = dict()
+        # if cnf.cohort_freqs_fpath:
+        #     cohort_freqs_fpath = verify_file(cnf.cohort_freqs_fpath, is_critical=True)
+        #     with open(cohort_freqs_fpath) as f:
+        #         for l in f:
+        #             fs = l.replace('\n', '').split()
+        #             self.freq_in_sample_by_vark[fs[0]] = float(fs[1])
 
         self.tp53_positions = []
         self.tp53_groups = dict()
@@ -758,14 +758,14 @@ class Filtration:
                         if var_class == 'dbSNP':
                             self.filter_reject_counter['not known and dbSNP'] += 1
                             continue
-                        # if float(fields[pcnt_sample_col]) > self.max_ratio:
-                        if self.freq_in_sample_by_vark:
-                            vark = ':'.join([chrom, pos, ref, alt])
-                            if vark in self.freq_in_sample_by_vark:
-                                cohort_freq = self.freq_in_sample_by_vark[vark]
-                                if cohort_freq > self.max_ratio:
-                                    self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
-                                    continue
+                        if float(fields[pcnt_sample_col]) > self.max_ratio:
+                        # if self.freq_in_sample_by_vark:
+                        #     vark = ':'.join([chrom, pos, ref, alt])
+                        #     if vark in self.freq_in_sample_by_vark:
+                        #         cohort_freq = self.freq_in_sample_by_vark[vark]
+                        #         if cohort_freq > self.max_ratio:
+                            self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
+                            continue
 
                 # if gene in self.sensitizations_by_gene and (prev_gene == gene or not cur_gene_mutations):
                 #     if gene_aachg in Filtration.sensitization_aa_changes:

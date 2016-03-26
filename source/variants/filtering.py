@@ -510,9 +510,11 @@ def get_counts(vcf_fpath):
             if l.startswith('#'):
                 continue
             fs = l.split()
-            if len(fs) < 5:
+            if len(fs) < 7:
                 continue
-            vark = (fs[0].replace('chr', ''), int(fs[1]), fs[3], fs[4])
-            varks.append(vark)
+            pass_ = fs[6]
+            if pass_ == 'PASS':
+                vark = (fs[0].replace('chr', ''), int(fs[1]), fs[3], fs[4])
+                varks.append(vark)
     info('Counted ' + str(len(varks)) + ' variants in ' + vcf_fpath)
     return varks

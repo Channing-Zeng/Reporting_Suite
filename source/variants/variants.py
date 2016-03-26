@@ -1,4 +1,5 @@
 import os
+from collections import defaultdict
 from genericpath import isfile, isdir
 from os.path import basename, join
 
@@ -16,7 +17,8 @@ def run_variants(cnf, samples, variants_fpath=None):
     info('Annotating...')
     _annotate(cnf, samples)
     info()
-    _summarize_varqc(cnf, output_dir=cnf.output_dir, samples=samples, caption=cnf.qc_caption)
+    if cnf.qc:
+        _summarize_varqc(cnf, output_dir=cnf.output_dir, samples=samples, caption=cnf.qc_caption)
     info('')
 
     variants_fname = (cnf.caller or 'variants') + '.txt'
@@ -165,15 +167,15 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
     total_failed = 0
 
     cohort_freqs_fpath = None
-    if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
-        cohort_freqs_fpath = join(cnf.work_dir, 'cohort_freqs.tsv')
-        info('*' * 70)
-        info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
-        # cnf.variant_filtering.max_ratio < 1.0 or \
-        # cnf.fraction < 1.0
-        cohort_freqs_fpath = count_cohort_freqs(cnf, samples, cohort_freqs_fpath, max_ratio=cnf.variant_filtering.max_ratio_vardict2mut)
-        info('*' * 70)
-    info()
+    # if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+    #     cohort_freqs_fpath = join(cnf.work_dir, 'cohort_freqs.tsv')
+    #     info('*' * 70)
+    #     info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
+    #     # cnf.variant_filtering.max_ratio < 1.0 or \
+    #     # cnf.fraction < 1.0
+    #     cohort_freqs_fpath = count_cohort_freqs(cnf, samples, cohort_freqs_fpath, max_ratio=cnf.variant_filtering.max_ratio_vardict2mut)
+    #     info('*' * 70)
+    # info()
 
     not_submitted_samples = samples
     while not_submitted_samples:
@@ -283,49 +285,85 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
 
 def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
     not_existing = []
-    if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
-        info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
+    for i, s in enumerate(samples):
+        if not verify_file(s.variants_fpath, description='variants file'):
+            not_existing.append(s)
+    if not_existing:
+        err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
     else:
-        for i, s in enumerate(samples):
-            if not verify_file(s.variants_fpath, description='variants file'):
-                not_existing.append(s)
-        if not_existing:
-            err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
-        else:
-            with file_transaction(cnf.work_dir, variants_fpath) as tx:
-                with open(tx, 'w') as out:
-                    for i, s in enumerate(samples):
-                        with open(s.variants_fpath) as f:
-                            for j, l in enumerate(f):
-                                if j == 0 and i == 0:
-                                    out.write(l)
-                                if j > 0:
-                                    out.write(l)
-            verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
+        with file_transaction(cnf.work_dir, variants_fpath) as tx:
+            with open(tx, 'w') as out:
+                for i, s in enumerate(samples):
+                    with open(s.variants_fpath) as f:
+                        for j, l in enumerate(f):
+                            if j == 0 and i == 0:
+                                out.write(l)
+                            if j > 0:
+                                out.write(l)
+        verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
 
     pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
     not_existing_pass = []
-    if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
-        info('Combined filtered results ' + pass_variants_fpath + ' exist, reusing.')
+    for i, s in enumerate(samples):
+        if not verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), description='PASS variants file'):
+            not_existing_pass.append(s)
+    if not_existing_pass:
+        err('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing_pass))
     else:
+        # if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+        info('*' * 70)
+        info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
+        info('Calculating frequences of varaints in the cohort')
+        info('*' * 70)
+        count_in_sample_by_vark = defaultdict(int)
+        total_varks = 0
         for i, s in enumerate(samples):
-            if not verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), description='PASS variants file'):
-                not_existing_pass.append(s)
-        if not_existing_pass:
-            err('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing_pass))
-        else:
-            if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
-                info('Combined filtered results ' + pass_variants_fpath + ' exist, reusing.')
-            with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
-                with open(tx, 'w') as out:
-                    for i, s in enumerate(samples):
-                        with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
-                            for j, l in enumerate(f):
-                                if j == 0 and i == 0:
-                                    out.write(l)
-                                if j > 0:
-                                    out.write(l)
-            info('Saved all mutations to ' + pass_variants_fpath)
+            with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
+                for j, l in enumerate(f):
+                    if j > 0:
+                        fs = l.replace('\n', '').split()
+                        vark = fs[1], fs[2], fs[4], fs[5]
+                        count_in_sample_by_vark[vark] += 1
+                        total_varks += 1
+        info('Counted ' + str(len(count_in_sample_by_vark)) + ' different variants '
+             'in ' + str(len(samples)) + ' with total ' + str(total_varks) + ' records')
+        if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+            info('Saving passing threshold if cohort freq > ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+                 ' to ' + pass_variants_fpath)
+
+        freq_in_sample_by_vark = dict()
+        for vark, count in count_in_sample_by_vark.items():
+            freq_in_sample_by_vark[vark] = float(count) / len(samples)
+
+        skipped_variants = 0
+        written_lines = 0
+        status_col, reason_col = None, None
+        with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
+            with open(tx, 'w') as out:
+                for i, s in enumerate(samples):
+                    with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
+                        for j, l in enumerate(f):
+                            fs = l.replace('\n', '').split('\t')
+                            if j == 0 and i == 0:
+                                out.write(l)
+                                status_col = fs.index('Significance')
+                                reason_col = status_col + 1
+                            if j > 0:
+                                if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+                                    fs = l.replace('\n', '').split('\t')
+                                    vark = fs[1], fs[2], fs[4], fs[5]
+                                    if len(fs) < reason_col:
+                                        print l
+                                    if fs[status_col] != 'known' and 'act_' not in fs[reason_col] and 'actionable' not in fs[reason_col] \
+                                            and count_in_sample_by_vark[vark] >= cnf.variant_filtering.max_ratio_vardict2mut:
+                                        skipped_variants += 1
+                                        continue
+                                out.write(l)
+                                written_lines += 1
+        if skipped_variants:
+            info('Skipped variants with cohort freq > ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+                 ': ' + str(skipped_variants))
+        info('Saved ' + str(written_lines) + ' mutations to ' + pass_variants_fpath)
 
     variants_fpath = verify_file(variants_fpath, is_critical=True)
     pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
@@ -333,7 +371,8 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
     if not_existing or not_existing_pass:
         return None, None
 
-    _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
+    if cnf.qc:
+        _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
 
     return variants_fpath, pass_variants_fpath
 
