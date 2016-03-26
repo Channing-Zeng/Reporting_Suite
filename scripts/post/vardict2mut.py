@@ -129,6 +129,9 @@ class Filtration:
         self.is_output_fm = cnf.is_output_fm
         self.platform = cnf.platform
 
+        with open(verify_file(cnf.canonical_transcripts or cnf.snpeff_transcripts)) as f:
+            self.canonical_transcripts = [tr.strip() for tr in f]
+
         self.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut
         self.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
         if self.min_hotspot_freq is None or self.min_hotspot_freq == 'default':
@@ -576,9 +579,14 @@ class Filtration:
                 fields = l.split('\t')
                 if len(fields) < len(header):
                     critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(header)) + ')')
+
                 if fields[pass_col] != 'TRUE':
                     self.filter_reject_counter['PASS=False'] += 1
                     continue
+                if fields[transcript_col] not in self.canonical_transcripts:
+                    self.filter_reject_counter['non-canonical transcript'] += 1
+                    continue
+
                 if reason_col:
                     fields = fields[:-1]
                 if status_col:
@@ -589,8 +597,7 @@ class Filtration:
                     fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
 
                 # gene_aachg = '-'.join([gene, aa_chg])
-                if 'chr' not in chrom:
-                    chrom = 'chr' + chrom
+                if 'chr' not in chrom: chrom = 'chr' + chrom
                 key = '-'.join([chrom, pos, ref, alt])
                 allele_freq = float(fields[allele_freq_col])
 
