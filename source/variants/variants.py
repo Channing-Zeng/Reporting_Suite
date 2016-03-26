@@ -141,7 +141,7 @@ def _annotate(cnf, samples):
                                  s not in reused_samples]
 
     info('-' * 70)
-    info('Done with all ' + str(len(samples)) + 'samples.')
+    info('Done with all ' + str(len(samples)) + ' samples.')
     info('Total reused: ' + str(total_reused))
     info('Total processed: ' + str(total_processed))
     info('Total success: ' + str(total_success))
@@ -171,7 +171,7 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
         info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
         # cnf.variant_filtering.max_ratio < 1.0 or \
         # cnf.fraction < 1.0
-        cohort_freqs_fpath = count_cohort_freqs(cnf, samples, cohort_freqs_fpath)
+        cohort_freqs_fpath = count_cohort_freqs(cnf, samples, cohort_freqs_fpath, max_ratio=cnf.variant_filtering.max_ratio_vardict2mut)
         info('*' * 70)
     info()
 
@@ -269,7 +269,7 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                                  s not in submitted_samples and
                                  s not in reused_samples]
     info('-' * 70)
-    info('Done with all ' + str(len(samples)) + 'samples.')
+    info('Done with all ' + str(len(samples)) + ' samples.')
     info('Total reused: ' + str(total_reused))
     info('Total processed: ' + str(total_processed))
     info('Total success: ' + str(total_success))

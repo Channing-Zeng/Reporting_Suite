@@ -472,9 +472,9 @@ def run_vcf2txt_with_retries(cnf, cmdline, output_fpath):
     return res
 
 
-def count_cohort_freqs(cnf, samples, cohort_freqs_fpath):
+def count_cohort_freqs(cnf, samples, cohort_freqs_fpath, max_ratio):
     info('Calculating frequences of varaints in the cohort')
-    if cnf.reuse_intermediate and verify_file(cohort_freqs_fpath):
+    if cnf.reuse_intermediate and verify_file(cohort_freqs_fpath, silent=True):
         info(cohort_freqs_fpath + ' exists, reusing')
         return cohort_freqs_fpath
 
@@ -483,15 +483,23 @@ def count_cohort_freqs(cnf, samples, cohort_freqs_fpath):
         for vark in varks:
             freq_in_sample_by_vark[vark] += 1
 
-    info('Counted ' + str(len(freq_in_sample_by_vark)) + ' variants in ' + str(len(samples)) + ' samples')
+    info('Counted ' + str(len(freq_in_sample_by_vark)) + ' variants in ' + str(len(samples)) + ' samples, '
+       'writing to ' + cohort_freqs_fpath)
 
     with file_transaction(cnf.work_dir, cohort_freqs_fpath) as tx:
         with open(tx, 'w') as out:
+            lines_written = 0
             for vark, count in freq_in_sample_by_vark.items():
-                out.write(vark + '\t' + str(float(count) / len(samples)) + '\n')
-    info('Done, saved to ' + cohort_freqs_fpath)
+                freq = float(count) / len(samples)
+                if freq > max_ratio:
+                    chrom, pos, ref, alt = vark
+                    out.write('chr' + chrom + ':' + str(pos) + ':' + ref + ':' + alt +
+                              '\t' + str(freq) + '\n')
+                    lines_written += 1
+    freq_in_sample_by_vark = None
+    info('Done, written ' + str(lines_written) + ' varks with freq > '
+         + str(max_ratio) + ' to ' + cohort_freqs_fpath)
     return verify_file(cohort_freqs_fpath)
-
 
 
 def get_counts(vcf_fpath):
@@ -504,7 +512,7 @@ def get_counts(vcf_fpath):
             fs = l.split()
             if len(fs) < 5:
                 continue
-            vark = ':'.join([fs[0], fs[1], fs[3], fs[4]])
+            vark = (fs[0].replace('chr', ''), int(fs[1]), fs[3], fs[4])
             varks.append(vark)
     info('Counted ' + str(len(varks)) + ' variants in ' + vcf_fpath)
     return varks
