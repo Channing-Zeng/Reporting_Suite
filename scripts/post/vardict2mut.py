@@ -765,14 +765,14 @@ class Filtration:
                         if var_class == 'dbSNP':
                             self.filter_reject_counter['not known and dbSNP'] += 1
                             continue
-                        if float(fields[pcnt_sample_col]) > self.max_ratio:
+                        # if float(fields[pcnt_sample_col]) > self.max_ratio:
                         # if self.freq_in_sample_by_vark:
                         #     vark = ':'.join([chrom, pos, ref, alt])
                         #     if vark in self.freq_in_sample_by_vark:
                         #         cohort_freq = self.freq_in_sample_by_vark[vark]
                         #         if cohort_freq > self.max_ratio:
-                            self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
-                            continue
+                        #     self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
+                        #     continue
 
                 # if gene in self.sensitizations_by_gene and (prev_gene == gene or not cur_gene_mutations):
                 #     if gene_aachg in Filtration.sensitization_aa_changes:

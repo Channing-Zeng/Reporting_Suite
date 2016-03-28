@@ -4,7 +4,7 @@ from genericpath import isfile, isdir
 from os.path import basename, join
 
 import source
-from source.logger import info, err, debug, critical
+from source.logger import info, err, debug, critical, warn
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -316,6 +316,8 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
         info('*' * 70)
         count_in_cohort_by_vark = defaultdict(int)
         total_varks = 0
+        total_duplicated_count = 0
+        total_records_count = 0
         for i, s in enumerate(samples):
             met_in_this_sample = set()
             with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
@@ -324,13 +326,16 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
                         fs = l.replace('\n', '').split()
                         vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
                         if vark in met_in_this_sample:
-                            err(vark + ' already met for sample ' + s.name)
+                            warn(vark + ' already met for sample ' + s.name)
+                            total_duplicated_count += 1
                         else:
                             met_in_this_sample.add(vark)
                             count_in_cohort_by_vark[vark] += 1
                             total_varks += 1
+                        total_records_count += 1
         info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
              'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
+        info('Duplicated variants: ' + str(total_duplicated_count) + ' out of total ' + str(total_records_count) + ' records')
         if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
             info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
                  ' to ' + pass_variants_fpath)
@@ -345,9 +350,13 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
                 max_freq = f
                 max_freq_vark = vark
         info('Maximum frequency in cohort is ' + str(max_freq) + ' of ' + max_freq_vark)
+        info()
 
-        skipped_variants = 0
-        written_lines = 0
+        known_variants_count = 0
+        act_variants_count = 0
+        good_freq_variants_count = 0
+        skipped_variants_count = 0
+        written_lines_count = 0
         status_col, reason_col, pcnt_sample_col = None, None, None
         with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
             with open(tx, 'w') as out:
@@ -367,18 +376,26 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
                                     if len(fs) < reason_col:
                                         print l
                                     freq = freq_in_cohort_by_vark[vark]
-                                    if fs[status_col] != 'known' and 'act_' not in fs[reason_col] and 'actionable' not in fs[reason_col] \
-                                            and freq >= cnf.variant_filtering.max_ratio_vardict2mut:
-                                        skipped_variants += 1
+
+                                    if fs[status_col] == 'known':
+                                        known_variants_count += 1
+                                    elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
+                                        act_variants_count += 1
+                                    elif freq < cnf.variant_filtering.max_ratio_vardict2mut:
+                                        good_freq_variants_count += 1
+                                    else:
+                                        skipped_variants_count += 1
                                         continue
                                     fs[pcnt_sample_col] = str(freq)
                                     l = '\t'.join(fs) + '\n'
                                 out.write(l)
-                                written_lines += 1
-        if skipped_variants:
-            info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
-                 ': ' + str(skipped_variants))
-        info('Written ' + str(written_lines) + ' records to ' + pass_variants_fpath)
+                                written_lines_count += 1
+        info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+             ': ' + str(skipped_variants_count))
+        info('Actionable records: ' + str(act_variants_count))
+        info('Not actionable, but known records: ' + str(known_variants_count))
+        info('Unknown and not actionable records with freq < ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ': ' + str(good_freq_variants_count))
+        info('Written ' + str(written_lines_count) + ' records to ' + pass_variants_fpath)
 
     variants_fpath = verify_file(variants_fpath, is_critical=True)
     pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
