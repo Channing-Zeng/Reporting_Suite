@@ -81,7 +81,7 @@ circos.genomicTrackPlotRegion(track.height=.2, sample.seq2c.bed, numeric.column 
     circos.genomicPoints(subset(region, ampdel == 1 & keygene == 1), subset(value, ampdel == 1 & keygene == 1), pch = 16, cex = 0.5, col = "red")
     circos.genomicPoints(subset(region, ampdel == 1 & keygene == 0), subset(value, ampdel == 1 & keygene == 0), pch = 16, cex = 0.3, col = "#FF8080")
     circos.genomicPoints(subset(region, ampdel == -1 & keygene == 1), subset(value, ampdel == -1 & keygene == 1), pch = 16, cex = 0.5, col = "blue")
-    circos.genomicPoints(subset(region, ampdel == -1 & keygene == 0), subset(value, ampdel == -1 & keygene == 0), pch = 16, cex = 0.3, col = "#00bfff")
+    circos.genomicPoints(subset(region, ampdel == -1 & keygene == 0), subset(value, ampdel == -1 & keygene == 0), pch = 16, cex = 0.3, col = "#67ddff")
     circos.genomicPoints(subset(region, ampdel == 0 & keygene == 1), subset(value, ampdel == 0 & keygene == 1), pch = 16, cex = 0.4, col = "black")
     circos.genomicPoints(subset(region, ampdel == 0 & keygene == 0), subset(value, ampdel == 0 & keygene == 0), pch = 16, cex = 0.2, col = "gray")
 }}
