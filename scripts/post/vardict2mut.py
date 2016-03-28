@@ -429,10 +429,10 @@ class Filtration:
         # if 'splice_site' in reasons:
         #     status, reasons = self.update_status(status, reasons, 'known', ['general_rules'] + reasons)
         if is_lof:
-            self.update_status('known', 'lof_of_gene_' + gene)
+            self.update_status('known', 'act_lof' + '_of_gene_' + gene)
             # status, reasons = self.update_status(status, reasons, 'known', ['lof_in_gene_' + gene])
         elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
-            self.update_status('known', 'exon_loss_in_gene_' + gene)
+            self.update_status('known', 'act_exon_loss' + '_in_gene_' + gene)
             # status, reasons = self.update_status(status, reasons, 'known', ['exon_loss_in_gene_' + gene])
         elif self.status != 'unlikely' and self.status != 'unknown':
             info(str(gene) + ' ' + str(aa_chg) + ' is in general rules, but does not alter protein function.'
@@ -444,7 +444,7 @@ class Filtration:
             for type_ in types_by_region[region]:
                 if type_ in cdna_chg:
                     tier = types_by_region[region][type_]
-                    self.update_status(Filtration.statuses[tier], type_ + '_in_gene_' + gene)
+                    self.update_status(Filtration.statuses[tier], 'act_' + type_ + '_in_gene_' + gene)
 
     def print_mutations_for_one_gene(self, out_f, cur_gene_mutations, gene, sensitizations):
         for cur_gene_mut_info in cur_gene_mutations:

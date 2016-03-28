@@ -10,55 +10,186 @@ from source.file_utils import safe_mkdir, add_suffix, verify_file, symlink_plus,
 from source.logger import info
 
 
-def combine_muts(cnf, bcbio_structure, callers):
-    for c in callers:
-        for (samples, mut_fpath) in ((c.get_single_samples(), c.single_mut_res_fpath), (c.get_paired_samples(), c.paired_mut_res_fpath)):
-            if samples and mut_fpath:
-                if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
-                    info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
-                with file_transaction(cnf.work_dir, mut_fpath) as tx:
-                    with open(tx, 'w') as out:
-                        for i, s in enumerate(samples):
-                            verify_file(s.get_mut_by_callername(c.name), is_critical=True, description=c.name + ' mutations file')
-                            with open(s.get_mut_by_callername(c.name)) as f:
-                                for j, l in enumerate(f):
-                                    if j == 0 and i == 0:
-                                        out.write(l)
-                                    if j > 0:
-                                        out.write(l)
-                verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
-                info('Saved ' + c.name + ' mutations to ' + mut_fpath)
+def combine_results(cnf, samples, variants_fpath):
+    not_existing = []
+    if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
+        info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
+    else:
+        for i, s in enumerate(samples):
+            if not verify_file(s.variants_fpath, description='variants file'):
+                not_existing.append(s)
+        if not_existing:
+            err('For some samples do not exist, variants file was not found: ' + ', '.join(s.name for s in not_existing))
+        else:
+            with file_transaction(cnf.work_dir, variants_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for i, s in enumerate(samples):
+                        with open(s.variants_fpath) as f:
+                            for j, l in enumerate(f):
+                                if j == 0 and i == 0:
+                                    out.write(l)
+                                if j > 0:
+                                    out.write(l)
+            verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
+            info('Saved mutations to ' + variants_fpath)
+
+    pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+    not_existing_pass = []
+    for i, s in enumerate(samples):
+        if not verify_file(add_suffix(s.variants_fpath, source.mut_pass_suffix), description='PASS variants file'):
+            not_existing_pass.append(s)
+    if not_existing_pass:
+        err('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing_pass))
+    else:
+        # if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+        info('*' * 70)
+        info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
+        info('Calculating frequences of varaints in the cohort')
+        info('*' * 70)
+        count_in_cohort_by_vark = defaultdict(int)
+        total_varks = 0
+        total_duplicated_count = 0
+        total_records_count = 0
+        for i, s in enumerate(samples):
+            met_in_this_sample = set()
+            with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
+                for j, l in enumerate(f):
+                    if j > 0:
+                        fs = l.replace('\n', '').split()
+                        vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
+                        if vark in met_in_this_sample:
+                            warn(vark + ' already met for sample ' + s.name)
+                            total_duplicated_count += 1
+                        else:
+                            met_in_this_sample.add(vark)
+                            count_in_cohort_by_vark[vark] += 1
+                            total_varks += 1
+                        total_records_count += 1
+        info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
+             'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
+        info('Duplicated variants: ' + str(total_duplicated_count) + ' out of total ' + str(total_records_count) + ' records')
+        if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+            info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+                 ' to ' + pass_variants_fpath)
+
+        freq_in_cohort_by_vark = dict()
+        max_freq = 0
+        max_freq_vark = 0
+        for vark, count in count_in_cohort_by_vark.items():
+            f = float(count) / len(samples)
+            freq_in_cohort_by_vark[vark] = f
+            if f > max_freq:
+                max_freq = f
+                max_freq_vark = vark
+        info('Maximum frequency in cohort is ' + str(max_freq) + ' of ' + max_freq_vark)
+        info()
+
+        known_variants_count = 0
+        act_variants_count = 0
+        good_freq_variants_count = 0
+        skipped_variants_count = 0
+        written_lines_count = 0
+        status_col, reason_col, pcnt_sample_col = None, None, None
+        with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
+            with open(tx, 'w') as out:
+                for i, s in enumerate(samples):
+                    with open(add_suffix(s.variants_fpath, source.mut_pass_suffix)) as f:
+                        for j, l in enumerate(f):
+                            fs = l.replace('\n', '').split('\t')
+                            if j == 0 and i == 0:
+                                out.write(l)
+                                status_col = fs.index('Significance')
+                                reason_col = status_col + 1
+                                pcnt_sample_col = fs.index('Pcnt_sample')
+                            if j > 0:
+                                if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+                                    fs = l.replace('\n', '').split('\t')
+                                    vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
+                                    if len(fs) < reason_col:
+                                        print l
+                                    freq = freq_in_cohort_by_vark[vark]
+
+                                    if fs[status_col] == 'known':
+                                        known_variants_count += 1
+                                    elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
+                                        act_variants_count += 1
+                                    elif freq < cnf.variant_filtering.max_ratio_vardict2mut:
+                                        good_freq_variants_count += 1
+                                    else:
+                                        skipped_variants_count += 1
+                                        continue
+                                    fs[pcnt_sample_col] = str(freq)
+                                    l = '\t'.join(fs) + '\n'
+                                out.write(l)
+                                written_lines_count += 1
+        info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+             ': ' + str(skipped_variants_count))
+        info('Actionable records: ' + str(act_variants_count))
+        info('Not actionable, but known records: ' + str(known_variants_count))
+        info('Unknown and not actionable records with freq < ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ': ' + str(good_freq_variants_count))
+        verify_file(pass_variants_fpath, 'PASS variants file', is_critical=True)
+        info('Written ' + str(written_lines_count) + ' records to ' + pass_variants_fpath)
+
+    variants_fpath = verify_file(variants_fpath, is_critical=True)
+    pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
+
+    if not_existing or not_existing_pass:
+        return None, None
+
+    return variants_fpath, pass_variants_fpath
 
 
-def combine_vcf2txt(cnf, bcbio_structure, callers):
-    for c in callers:
-        for (samples, mut_fpath) in ((c.get_single_samples(), c.single_vcf2txt_res_fpath), (c.get_paired_samples(), c.paired_vcf2txt_res_fpath)):
-            if samples and mut_fpath:
-                if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
-                    info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
-                with file_transaction(cnf.work_dir, mut_fpath) as tx:
-                    with open(tx, 'w') as out:
-                        for i, s in enumerate(samples):
-                            verify_file(s.get_vcf2txt_by_callername(c.name), is_critical=True, description=c.name + ' vcf2txt file')
-                            with open(s.get_vcf2txt_by_callername(c.name)) as f:
-                                for j, l in enumerate(f):
-                                    if j == 0 and i == 0:
-                                        out.write(l)
-                                    if j > 0:
-                                        out.write(l)
-                verify_file(mut_fpath, is_critical=True, description='final combined vcf2txt calls')
-                info('Saved ' + c.name + ' vcf2txt to ' + mut_fpath)
+# def combine_muts(cnf, bcbio_structure, callers):
+#     for c in callers:
+#         for (samples, mut_fpath) in ((c.get_single_samples(), c.single_mut_res_fpath), (c.get_paired_samples(), c.paired_mut_res_fpath)):
+#             if samples and mut_fpath:
+#                 if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
+#                     info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
+#                 with file_transaction(cnf.work_dir, mut_fpath) as tx:
+#                     with open(tx, 'w') as out:
+#                         for i, s in enumerate(samples):
+#                             verify_file(s.get_mut_by_callername(c.name), is_critical=True, description=c.name + ' mutations file')
+#                             with open(s.get_mut_by_callername(c.name)) as f:
+#                                 for j, l in enumerate(f):
+#                                     if j == 0 and i == 0:
+#                                         out.write(l)
+#                                     if j > 0:
+#                                         out.write(l)
+#                 verify_file(mut_fpath, is_critical=True, description='final combined mutation calls')
+#                 info('Saved ' + c.name + ' mutations to ' + mut_fpath)
+#
+#
+# def combine_vcf2txt(cnf, bcbio_structure, callers):
+#     for c in callers:
+#         for (samples, mut_fpath) in ((c.get_single_samples(), c.single_vcf2txt_res_fpath), (c.get_paired_samples(), c.paired_vcf2txt_res_fpath)):
+#             if samples and mut_fpath:
+#                 if cnf.reuse_intermediate and isfile(mut_fpath) and verify_file(mut_fpath):
+#                     info('Combined filtered results ' + mut_fpath + ' exist, reusing.')
+#                 with file_transaction(cnf.work_dir, mut_fpath) as tx:
+#                     with open(tx, 'w') as out:
+#                         for i, s in enumerate(samples):
+#                             verify_file(s.get_vcf2txt_by_callername(c.name), is_critical=True, description=c.name + ' vcf2txt file')
+#                             with open(s.get_vcf2txt_by_callername(c.name)) as f:
+#                                 for j, l in enumerate(f):
+#                                     if j == 0 and i == 0:
+#                                         out.write(l)
+#                                     if j > 0:
+#                                         out.write(l)
+#                 verify_file(mut_fpath, is_critical=True, description='final combined vcf2txt calls')
+#                 info('Saved ' + c.name + ' vcf2txt to ' + mut_fpath)
 
 
 def finish_filtering_for_bcbio(cnf, bcbio_structure, callers, is_wgs):
     email_msg = ['Variant filtering finished.']
 
     info('')
-    if is_wgs:
-        info('Combining resulting vcf2txt results')
-        combine_vcf2txt(cnf, bcbio_structure, callers)
+
     info('Combining resulting mutations')
-    combine_muts(cnf, bcbio_structure, callers)
+    for c in callers:
+        if c.get_single_samples():
+            combine_results(cnf, c.get_single_samples(), c.single_vcf2txt_res_fpath)
+        if c.get_paired_samples():
+            combine_results(cnf, c.get_paired_samples(), c.paired_vcf2txt_res_fpath)
 
     info()
     info('Symlinking final VCFs:')
