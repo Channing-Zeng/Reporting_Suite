@@ -951,7 +951,7 @@ class BCBioRunner:
                 info()
 
             if self.varfilter in self.steps:
-                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values(), self.is_wgs)
+                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
                 info('Making varQC-post-filtering summary reports')
                 self._varqc_summary(BCBioStructure.varqc_after_dir, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name)
                 info()
