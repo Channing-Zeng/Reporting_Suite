@@ -220,7 +220,6 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                 work_dir=work_dir)
             if not j.is_done:
                 jobs_to_wait.append(j)
-            jobs_to_wait.append(j)
             submitted_samples.append(sample)
             if len(jobs_to_wait) >= cnf.threads:
                 not_submitted_samples = [s for s in not_submitted_samples if
@@ -333,7 +332,7 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
         info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
              'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
         if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
-            info('Saving passing threshold if cohort freq > ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+            info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
                  ' to ' + pass_variants_fpath)
 
         freq_in_cohort_by_vark = dict()
@@ -349,7 +348,7 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
 
         skipped_variants = 0
         written_lines = 0
-        status_col, reason_col = None, None
+        status_col, reason_col, pcnt_sample_col = None, None, None
         with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
             with open(tx, 'w') as out:
                 for i, s in enumerate(samples):
@@ -360,20 +359,24 @@ def _combine_results(cnf, samples, variants_fpath, cohort_mode=False):
                                 out.write(l)
                                 status_col = fs.index('Significance')
                                 reason_col = status_col + 1
+                                pcnt_sample_col = fs.index('Pcnt_sample')
                             if j > 0:
                                 if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
                                     fs = l.replace('\n', '').split('\t')
                                     vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
                                     if len(fs) < reason_col:
                                         print l
+                                    freq = freq_in_cohort_by_vark[vark]
                                     if fs[status_col] != 'known' and 'act_' not in fs[reason_col] and 'actionable' not in fs[reason_col] \
-                                            and count_in_cohort_by_vark[vark] >= cnf.variant_filtering.max_ratio_vardict2mut:
+                                            and freq >= cnf.variant_filtering.max_ratio_vardict2mut:
                                         skipped_variants += 1
                                         continue
+                                    fs[pcnt_sample_col] = str(freq)
+                                    l = '\t'.join(fs) + '\n'
                                 out.write(l)
                                 written_lines += 1
         if skipped_variants:
-            info('Skipped variants with cohort freq > ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+            info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
                  ': ' + str(skipped_variants))
         info('Written ' + str(written_lines) + ' records to ' + pass_variants_fpath)
 
