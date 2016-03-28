@@ -570,7 +570,6 @@ class ClinicalExperimentInfo:
                         gene.ave_depth = ave_depth
                         gene.cov_by_threshs = cov_by_threshs
                         gene.transcript_id = transcript_id
-                        gene.strand = strand
                         self.key_gene_by_name_chrom[(symbol, chrom)] = gene
 
                 elif feature in ['CDS', 'Exon']:
@@ -582,6 +581,7 @@ class ClinicalExperimentInfo:
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))
                     if gene:
                         gene.cdss.append(cds)
+                        gene.strand = strand
 
         # Cleaning up records that are not found in the target gene panel,
         # so we don't know about them and don't even want to report them
