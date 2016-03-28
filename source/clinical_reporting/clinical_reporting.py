@@ -1,13 +1,17 @@
 from collections import OrderedDict, defaultdict
 import json
+from genericpath import exists
 from os.path import join, dirname, abspath, relpath, basename
 
 import re
 
+import source
 from ext_modules.genologics import lims
-from source import info
+from source import info, verify_file
+from source.calling_process import call
 from source.logger import warn
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
+from source.tools_from_cnf import get_script_cmdline
 from source.utils import get_chr_lengths, OrderedDefaultDict
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
@@ -578,6 +582,12 @@ class BaseClinicalReporting:
         return dict(value=chg)
 
     @staticmethod
+    def _hotspot_recargs(mut):
+        p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
+        chg = mut.ref + '>' + mut.alt
+        return dict(value=gray(p + ':') + chg)
+
+    @staticmethod
     def _signif_field(mut):
         signif = mut.signif
         if mut.reason:
@@ -660,15 +670,22 @@ class ClinicalReporting(BaseClinicalReporting):
                 if len(self.experiment.seq2c_events_by_gene.values()) > len(self.experiment.key_gene_by_name_chrom.values()):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
+        circos_plot_fpath = make_circos_plot(self.cnf, output_fpath)
+        image_by_key = None
+        if circos_plot_fpath:
+            data['circos'] = {'circos_img': basename(circos_plot_fpath)}
+            image_by_key = {'circos': circos_plot_fpath}
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
+                            join(dirname(abspath(__file__)), 'static', 'easyzoom.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_mutations_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_substitutions_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_seq2c_plot.js')],
            extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
-                             join(dirname(abspath(__file__)), 'static', 'header_picture.css')])
+                             join(dirname(abspath(__file__)), 'static', 'header_picture.css')],
+           image_by_key=image_by_key)
 
         info('Saved clinical report to ' + output_fpath)
         info('-' * 70)
@@ -853,6 +870,38 @@ class ClinicalReporting(BaseClinicalReporting):
             reg.add_record('Freq', '\n'.join(frequencies))
 
         return report
+
+
+def make_circos_plot(cnf, output_fpath):
+    circos_py_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'circos.py'))
+    cmdline = '{circos_py_executable} '
+
+    required_files = [cnf.mutations_fpath, cnf.seq2c_tsv_fpath, cnf.sv_vcf_fpath]
+    for file, desc in zip(required_files, ['Vardict results', 'Seq2C results', 'SV calling results']):
+        if not file or not verify_file(file):
+            warn('File with ' + desc + ' is not found. Circos plot cannot be created.')
+            return None
+
+    vardict2mut_raw_fpath = cnf.mutations_fpath.replace(source.mut_pass_suffix + '.', '')
+    output_dir = dirname(output_fpath)
+
+    if cnf.bed_fpath:
+        cmdline += ' --bed ' + cnf.bed_fpath
+    cmdline += ' --mutations ' + vardict2mut_raw_fpath
+    cmdline += ' --seq2c ' + cnf.seq2c_tsv_fpath
+    cmdline += ' --sv ' + cnf.sv_vcf_fpath
+
+    cmdline += ' --sample ' + cnf.sample
+    cmdline += ' --genome ' + cnf.genome.name
+    cmdline += ' -o ' + output_dir
+
+    cmdline = cmdline.format(**locals())
+    res = call(cnf, cmdline, stdout_to_outputfile=False, exit_on_error=False)
+    circos_plot_fpath = join(output_dir, cnf.sample + '.png')
+    if not exists(circos_plot_fpath):
+        return None
+
+    return circos_plot_fpath
 
     # def make_seq2c_plot_json(self):
     #     chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)

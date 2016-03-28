@@ -88,6 +88,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
+    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
+
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bwa/hg38-noalt.fa
@@ -111,6 +113,8 @@ genomes:
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+
+    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
   mm10:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa

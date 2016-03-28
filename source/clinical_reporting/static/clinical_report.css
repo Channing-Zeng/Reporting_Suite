@@ -45,4 +45,20 @@ p {
 ol {
   max-width: 600px; }
 
+#easy_zoom {
+  width: 550px;
+  height: 550px;
+  border: 5px solid #eee;
+  background: #fff;
+  color: #333;
+  position: absolute;
+  left: 650px;
+  overflow: hidden;
+  -moz-box-shadow: 0 0 10px #777;
+  -webkit-box-shadow: 0 0 10px #777;
+  box-shadow: 0 0 10px #777;
+  /* vertical and horizontal alignment used for preloader text */
+  line-height: 400px;
+  text-align: center; }
+
 /*# sourceMappingURL=clinical_report.css.map */

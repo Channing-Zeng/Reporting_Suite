@@ -23,6 +23,9 @@ def main():
             (['--sv'], dict(
                 dest='sv_fpath',
             )),
+            (['--sv-vcf'], dict(
+                dest='sv_vcf_fpath',
+            )),
             (['--varqc'], dict(
                 dest='varqc_json_fpath',
             )),
@@ -61,6 +64,7 @@ def main():
                    'bed_fpath',
                    'seq2c_tsv_fpath',
                    'sv_fpath',
+                   'sv_vcf_fpath',
                    #'project_report_path',  # DO NOT UNCOMMENT! Project level report might not yet exist
                    ],
             # do not check mutations_fpath! could be either of:

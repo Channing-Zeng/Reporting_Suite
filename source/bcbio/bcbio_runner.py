@@ -5,6 +5,7 @@ import base64
 import shutil
 import traceback
 from collections import defaultdict
+from genericpath import exists
 from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize
 import datetime
 from time import sleep
@@ -419,6 +420,7 @@ class BCBioRunner:
            ' {match_cmdl}' +
            ' {seq2c_cmdl}' +
            ' {sv_cmdl}' +
+           ' {sv_vcf_cmdl}' +
            ' {targqc_summary_cmdl}' +
            ' --target-type ' + self.bcbio_structure.target_type +
           (' --bed ' + target_bed if target_bed else '') +
@@ -843,6 +845,7 @@ class BCBioRunner:
                     targqc_cmdl = ''
                     targqc_summary_cmdl = ''
                     sv_cmdl = ''
+                    sv_vcf_cmdl = ''
 
                     wait_for_steps = []
                     wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
@@ -871,13 +874,21 @@ class BCBioRunner:
                     if sv_fpath:
                         sv_cmdl = ' --sv ' + sv_fpath
 
+                    sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
+                    sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
+
+                    if exists(sample_cnv_dirpath):
+                        for fname in os.listdir(sample_cnv_dirpath):
+                            if '-manta' in fname and fname.endswith('.vcf.gz'):
+                                sv_vcf_cmdl = ' --sv-vcf ' + join(sample_cnv_dirpath, fname)
+
                     self._submit_job(
                         self.clin_report,
                         sample.name,
                         sample=sample.name, genome=sample.genome,
                         match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
                         varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
-                        seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
+                        seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl, sv_vcf_cmdl=sv_vcf_cmdl,
                         targqc_summary_cmdl=targqc_summary_cmdl,
                         project_report_path=self.bcbio_structure.project_report_html_fpath,
                         wait_for_steps=wait_for_steps,

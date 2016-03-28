@@ -35,6 +35,7 @@
     <script type="text/javascript" src="draw_substitutions_plot.js"></script>
     <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
     <script type="text/javascript" src="draw_seq2c_plot.js"></script>
+    <script type="text/javascript" src="easyzoom.js"></script>
 </head>
 
 <body>
@@ -115,6 +116,7 @@
             <a class="dotted-link" href="#variants">Mutations</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#actionable">Alterations in actionable genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             {.section sv}<a class="dotted-link" href="#sv">Structural variants</a><span>&nbsp;&nbsp;&nbsp;</span>{.or}{.end}
+            {.section circos}<a class="dotted-link" href="#circos">Circos plot</a><span>&nbsp;&nbsp;&nbsp;</span>{.or}{.end}
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#coverage">Coverage analysis</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
@@ -225,6 +227,24 @@
             {.or}
                 <p>No whole exon deletion or known fusions detected in {total_key_genes} {key_or_target} regions.</p>
             {.end}
+        {.or}
+        {.end}
+
+        {.section circos}
+        <a name="seq2c"></a>
+            <a name="circos"></a>
+            <h1>Circos plot</h1>
+            <p>Circos plot displays the following genomic data: CNVs, SNPs and structural variants.
+                The outer ring indicates the chromosome ideograms and distances in Mb.
+                The next ring indicates the copy number information. Color scheme correspond to Seq2C plot colors.
+                The innermost ring represents the allele frequency of the SNPs (from 0 to 100%).
+                Colored links represent chromosomal rearrangements.
+                <a href="{circos_img}" target="_blank">Click</a> to open the image in a new tab.</p>
+            <div id="circos_plot_div">
+                <a href="{circos_img}" class="zoom" id="circos_zoom">
+                    <img src="circos" style="width: 500px; height: 500px">
+                </a>
+            </div>
         {.or}
         {.end}
 

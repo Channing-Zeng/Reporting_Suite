@@ -64,6 +64,8 @@ genomes:
 
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
 
+    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
+
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
@@ -87,6 +89,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
 
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
+
+    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa

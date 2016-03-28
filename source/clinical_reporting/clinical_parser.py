@@ -306,6 +306,7 @@ def clinical_sample_info_from_cnf(cnf):
         bed_fpath=verify_file(cnf.bed_fpath, is_critical=False) if cnf.bed_fpath else None,
         mutations_fpath=verify_file(cnf.mutations_fpath, is_critical=False) if cnf.mutations_fpath else None,
         sv_fpath=verify_file(cnf.sv_fpath, is_critical=False) if cnf.sv_fpath else None,
+        sv_vcf_fpath=verify_file(cnf.sv_vcf_fpath, is_critical=False) if cnf.sv_vcf_fpath else None,
         varqc_json_fpath=verify_file(cnf.varqc_json_fpath, is_critical=False) if cnf.varqc_json_fpath else None,
         seq2c_tsv_fpath=verify_file(cnf.seq2c_tsv_fpath, is_critical=False) if cnf.seq2c_tsv_fpath else None,
         project_name=cnf.project_name,
@@ -360,7 +361,7 @@ class GeneDict(dict):  # supports genes without specified chromosome
 
 class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes, target_type,
-                 bed_fpath, mutations_fpath, sv_fpath, varqc_json_fpath,
+                 bed_fpath, mutations_fpath, sv_fpath, sv_vcf_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None, targqc_report_path=None,
                  is_target2wgs_comparison=False):
         self.cnf = cnf
@@ -382,6 +383,7 @@ class ClinicalExperimentInfo:
         self.sv_events = None
         self.seq2c_events_by_gene = None
         self.sv_fpath = sv_fpath
+        self.sv_vcf_fpath = sv_vcf_fpath
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
