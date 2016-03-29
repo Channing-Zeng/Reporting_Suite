@@ -277,11 +277,6 @@ class BCBioRunner:
             target_bed = ready_target_bed
             cnf.bed = target_bed
 
-        ##### FILTERING #####
-        self.cohort_mode = cnf.variant_filtering.max_ratio < 1.0 or \
-                    cnf.variant_filtering.max_ratio_vardict2mut < 1.0 or \
-                    cnf.fraction < 1.0
-
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
@@ -688,44 +683,43 @@ class BCBioRunner:
 
             if self.varfilter in self.steps:
                 info('Filtering')
-                if self.cohort_mode:
-                    info('Cohort mode set, running vcf2txt in cohort mode')
-                    for c in self.bcbio_structure.variant_callers.values():
-                        if self.varannotate not in self.steps:
-                            is_err = False
-                            for anno_vcf_fpath in c.single_anno_vcf_by_sample.values() + c.paired_anno_vcf_by_sample.values():
-                                if not verify_vcf(anno_vcf_fpath):
-                                    is_err = True
-                            if is_err:
-                                critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exist.')
-
-                        if c.single_anno_vcf_by_sample:
-                            self._submit_job(
-                                self.vcf2txt_single,
-                                paramln=make_vcf2txt_cmdl_params(self.cnf, c.single_anno_vcf_by_sample, sample.min_af) +
-                                    ' > ' + c.single_vcf2txt_res_fpath,
-                                caller_suf=c.name,
-                                caller=c.name,
-                                wait_for_steps=[
-                                    self.varannotate.job_name(s.name, v.name)
-                                    for v in self.bcbio_structure.variant_callers.values()
-                                    for s in v.samples
-                                    if self.varannotate in self.steps])
-                                # mem_m=sum(getsize(c.single_anno_vcf_by_sample.values())) / 1024 / 1024 * 10 + 500)
-
-                        if c.paired_anno_vcf_by_sample:
-                            self._submit_job(
-                                self.vcf2txt_paired,
-                                paramln=make_vcf2txt_cmdl_params(self.cnf, c.paired_anno_vcf_by_sample, sample.min_af) +
-                                    ' > ' + c.paired_vcf2txt_res_fpath,
-                                caller_suf=c.name,
-                                caller=c.name,
-                                wait_for_steps=[
-                                    self.varannotate.job_name(s.name, v.name)
-                                    for v in self.bcbio_structure.variant_callers.values()
-                                    for s in v.samples
-                                    if self.varannotate in self.steps])
-                                # mem_m=sum([getsize(v) for v in c.paired_anno_vcf_by_sample.values() if v]) / 1024 / 1024 * 10 + 500)
+                    # info('Cohort mode set, running vcf2txt in cohort mode')
+                    # for c in self.bcbio_structure.variant_callers.values():
+                    #     if self.varannotate not in self.steps:
+                    #         is_err = False
+                    #         for anno_vcf_fpath in c.single_anno_vcf_by_sample.values() + c.paired_anno_vcf_by_sample.values():
+                    #             if not verify_vcf(anno_vcf_fpath):
+                    #                 is_err = True
+                    #         if is_err:
+                    #             critical('Error: VarAnnotate is not in steps, and some annotated VCFs do not exist.')
+                    #
+                    #     if c.single_anno_vcf_by_sample:
+                    #         self._submit_job(
+                    #             self.vcf2txt_single,
+                    #             paramln=make_vcf2txt_cmdl_params(self.cnf, c.single_anno_vcf_by_sample, sample.min_af) +
+                    #                 ' > ' + c.single_vcf2txt_res_fpath,
+                    #             caller_suf=c.name,
+                    #             caller=c.name,
+                    #             wait_for_steps=[
+                    #                 self.varannotate.job_name(s.name, v.name)
+                    #                 for v in self.bcbio_structure.variant_callers.values()
+                    #                 for s in v.samples
+                    #                 if self.varannotate in self.steps])
+                    #             # mem_m=sum(getsize(c.single_anno_vcf_by_sample.values())) / 1024 / 1024 * 10 + 500)
+                    #
+                    #     if c.paired_anno_vcf_by_sample:
+                    #         self._submit_job(
+                    #             self.vcf2txt_paired,
+                    #             paramln=make_vcf2txt_cmdl_params(self.cnf, c.paired_anno_vcf_by_sample, sample.min_af) +
+                    #                 ' > ' + c.paired_vcf2txt_res_fpath,
+                    #             caller_suf=c.name,
+                    #             caller=c.name,
+                    #             wait_for_steps=[
+                    #                 self.varannotate.job_name(s.name, v.name)
+                    #                 for v in self.bcbio_structure.variant_callers.values()
+                    #                 for s in v.samples
+                    #                 if self.varannotate in self.steps])
+                    #             # mem_m=sum([getsize(v) for v in c.paired_anno_vcf_by_sample.values() if v]) / 1024 / 1024 * 10 + 500)
 
                 info('Per-sample variant filtering')
                 for sample in self.bcbio_structure.samples:
@@ -733,25 +727,25 @@ class BCBioRunner:
                         if sample.vcf_by_callername.get(caller.name):
                             anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
                             vcf2txt_cmdl = ''
-                            if self.cohort_mode:
-                                if sample.normal_match:
-                                    vcf2txt_fpath = caller.paired_vcf2txt_res_fpath
-                                else:
-                                    vcf2txt_fpath = caller.single_vcf2txt_res_fpath
-                                vcf2txt_cmdl = ' --vcf2txt ' + vcf2txt_fpath  #sample.get_vcf2txt_by_callername(caller_name)
-                            else:
-                                if self.varannotate not in self.steps:
-                                    if not verify_vcf(anno_vcf_fpath):
-                                        critical('Error: VarAnnotate is not in steps, and annotated VCF does not exist: ' + anno_vcf_fpath)
+                            # if self.cohort_mode:
+                            #     if sample.normal_match:
+                            #         vcf2txt_fpath = caller.paired_vcf2txt_res_fpath
+                            #     else:
+                            #         vcf2txt_fpath = caller.single_vcf2txt_res_fpath
+                            #     vcf2txt_cmdl = ' --vcf2txt ' + vcf2txt_fpath  #sample.get_vcf2txt_by_callername(caller_name)
+                            # else:
+                            if self.varannotate not in self.steps:
+                                if not verify_vcf(anno_vcf_fpath):
+                                    critical('Error: VarAnnotate is not in steps, and annotated VCF does not exist: ' + anno_vcf_fpath)
 
                             wait_for_steps = []
-                            if self.cohort_mode:
-                                if caller.paired_anno_vcf_by_sample:
-                                    wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
-                                if caller.single_anno_vcf_by_sample:
-                                    wait_for_steps.append(self.vcf2txt_single.job_name(caller=caller.name))
-                            else:
-                                wait_for_steps.append(self.varannotate.job_name(sample=sample.name, caller=caller.name))
+                            # if self.cohort_mode:
+                            #     if caller.paired_anno_vcf_by_sample:
+                            #         wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
+                            #     if caller.single_anno_vcf_by_sample:
+                            #         wait_for_steps.append(self.vcf2txt_single.job_name(caller=caller.name))
+                            # else:
+                            wait_for_steps.append(self.varannotate.job_name(sample=sample.name, caller=caller.name))
 
                             self._submit_job(
                                 self.varfilter, sample.name, caller_suf=caller.name,
