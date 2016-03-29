@@ -904,9 +904,9 @@ def make_circos_plot(cnf, output_fpath):
     cmdline = '{circos_py_executable} '
 
     required_files = [cnf.mutations_fpath, cnf.seq2c_tsv_fpath, cnf.sv_vcf_fpath]
-    for file, desc in zip(required_files, ['Vardict results', 'Seq2C results', 'SV calling results']):
-        if not file or not verify_file(file):
-            warn('File with ' + desc + ' is not found. Circos plot cannot be created.')
+    for fpath, desc in zip(required_files, ['Vardict results', 'Seq2C results', 'SV calling results']):
+        if not fpath or not verify_file(fpath):
+            warn('File with ' + desc + ' is not found (' + str(fpath) + '). Circos plot cannot be created.')
             return None
 
     vardict2mut_raw_fpath = cnf.mutations_fpath.replace(source.mut_pass_suffix + '.', '')

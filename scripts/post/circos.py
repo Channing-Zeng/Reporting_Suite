@@ -154,7 +154,6 @@ def modify_seq2c(cnf, key_genes_chrom, seq2c_file, out_seq2c_fpath):
                                          str(is_amp_del), str(is_key_gene)]) + '\n')
 
 
-
 def parse_svs(cnf, sv_file, out_bed_fpath):
     """
     Parse sv vcf into a bed file
