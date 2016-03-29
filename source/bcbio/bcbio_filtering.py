@@ -106,26 +106,27 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
                                 reason_col = status_col + 1
                                 pcnt_sample_col = fs.index('Pcnt_sample')
                             if j > 0:
-                                if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
-                                    fs = l.replace('\n', '').split('\t')
-                                    vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
-                                    if len(fs) < reason_col:
-                                        print l
-                                    freq = freq_in_cohort_by_vark[vark]
+                                fs = l.replace('\n', '').split('\t')
+                                vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
+                                if len(fs) < reason_col:
+                                    print l
+                                freq = freq_in_cohort_by_vark[vark]
 
-                                    if fs[status_col] == 'known':
-                                        known_variants_count += 1
-                                    elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
-                                        act_variants_count += 1
-                                    elif freq <= cnf.variant_filtering.max_ratio_vardict2mut:
-                                        good_freq_variants_count += 1
-                                    else:
-                                        skipped_variants_count += 1
-                                        continue
-                                    fs[pcnt_sample_col] = str(freq)
-                                    l = '\t'.join(fs) + '\n'
+                                if fs[status_col] == 'known':
+                                    known_variants_count += 1
+                                elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
+                                    act_variants_count += 1
+                                elif freq <= cnf.variant_filtering.max_ratio_vardict2mut:
+                                    good_freq_variants_count += 1
+                                else:
+                                    skipped_variants_count += 1
+                                    continue
+
+                                fs[pcnt_sample_col] = str(freq)
+                                l = '\t'.join(fs) + '\n'
                                 out.write(l)
                                 written_lines_count += 1
+
         info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
              ': ' + str(skipped_variants_count))
         info('Actionable records: ' + str(act_variants_count))

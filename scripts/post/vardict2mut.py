@@ -620,6 +620,10 @@ class Filtration:
                 if pos == '46924425':
                     pass
 
+                if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
+                    self.filter_reject_counter['PROTEIN_PROTEIN_CONTACT'] += 1
+                    continue
+
                 #################################
                 # Checking actionable mutations #
                 #################################
@@ -686,10 +690,6 @@ class Filtration:
                     else:
                         self.filter_reject_counter['sample not matching ' + self.reg_exp_sample] += 1
                         continue
-
-                if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
-                    self.filter_reject_counter['PROTEIN_PROTEIN_CONTACT'] += 1
-                    continue
 
                 # Filter low AF MSI
                 if abs(len(ref) - len(alt)) == 1:

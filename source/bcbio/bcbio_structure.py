@@ -649,7 +649,7 @@ class BCBioStructure(BaseProjectStructure):
 
         info()
         info('-' * 70)
-        
+
         # reading sampels
         for sample in [self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']]:
             if sample.dirpath is None:
@@ -943,33 +943,45 @@ class BCBioStructure(BaseProjectStructure):
     def _set_vcf_file(self, caller_name, batch_name):
         vcf_fname = batch_name + '-' + caller_name + '.vcf'
 
-        vcf_fpath_gz = adjust_path(join(self.date_dirpath, vcf_fname + '.gz'))  # in var
-        var_vcf_fpath_gz = adjust_path(join(self.raw_var_dirpath, vcf_fname + '.gz'))  # in var
-        vcf_fpath = adjust_path(join(self.date_dirpath, vcf_fname))
-        var_vcf_fpath = adjust_path(join(self.raw_var_dirpath, vcf_fname))  # in var
+        vcf_fpath_gz = adjust_path(join(self.date_dirpath, vcf_fname + '.gz'))  # in datestamp
+        var_vcf_fpath_gz = adjust_path(join(self.var_dirpath, vcf_fname + '.gz'))  # in datestamp/var/raw
+        var_raw_vcf_fpath_gz = adjust_path(join(self.raw_var_dirpath, vcf_fname + '.gz'))  # in datestamp/var/raw
+        vcf_fpath = adjust_path(join(self.date_dirpath, vcf_fname))  # in datestamp
+        var_vcf_fpath = adjust_path(join(self.var_dirpath, vcf_fname))  # in datestamp/var
+        var_raw_vcf_fpath = adjust_path(join(self.raw_var_dirpath, vcf_fname + '.gz'))  # in datestamp/var/raw
 
         if isfile(vcf_fpath_gz):
             verify_file(vcf_fpath_gz, is_critical=True)
-            info('Found VCF ' + vcf_fpath_gz)
+            info('Found VCF in the datestamp dir ' + vcf_fpath_gz)
             return vcf_fpath_gz
 
-        if isfile(var_vcf_fpath_gz):
-            verify_file(var_vcf_fpath_gz, is_critical=True)
-            info('Found VCF in the var/ dir ' + var_vcf_fpath_gz)
-            return var_vcf_fpath_gz
+        if isfile(var_raw_vcf_fpath_gz):
+            verify_file(var_raw_vcf_fpath_gz, is_critical=True)
+            info('Found VCF in the datestamp/var/raw dir ' + var_raw_vcf_fpath_gz)
+            return var_raw_vcf_fpath_gz
 
         if isfile(vcf_fpath):
             verify_file(vcf_fpath, is_critical=True)
-            info('Found uncompressed VCF ' + var_vcf_fpath)
+            info('Found uncompressed VCF in the datestamp dir ' + vcf_fpath)
             return vcf_fpath
+
+        if isfile(var_raw_vcf_fpath):
+            verify_file(var_raw_vcf_fpath, is_critical=True)
+            info('Found uncompressed VCF in the datestamp/var/raw dir ' + var_raw_vcf_fpath)
+            return var_raw_vcf_fpath
+
+        if isfile(var_vcf_fpath_gz):
+            verify_file(var_vcf_fpath_gz, is_critical=True)
+            info('Found VCF in the datestamp/var dir ' + var_vcf_fpath_gz)
+            return var_vcf_fpath_gz
 
         if isfile(var_vcf_fpath):
             verify_file(var_vcf_fpath, is_critical=True)
-            info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
+            info('Found uncompressed VCF in the datestamp/var dir ' + var_vcf_fpath)
             return var_vcf_fpath
 
         warn('Warning: no VCF found for batch ' + batch_name + ', ' + caller_name + ', gzip or '
-            'uncompressed version in and outsize the var directory.')
+            'uncompressed version in the datestamp directory.')
         return None
 
     def _set_vcf_file_from_sample_dir(self, caller_name, sample):
