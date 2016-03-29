@@ -93,7 +93,8 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
         good_freq_variants_count = 0
         skipped_variants_count = 0
         written_lines_count = 0
-        status_col, reason_col, pcnt_sample_col = None, None, None
+        status_col, reason_col, n_samples_col, n_var_col, pcnt_sample_col, ave_af_col \
+            = None, None, None, None, None, None
         with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
             with open(tx, 'w') as out:
                 for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
@@ -104,7 +105,10 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                 out.write(l)
                                 status_col = fs.index('Significance')
                                 reason_col = status_col + 1
+                                n_samples_col = fs.index('N_samples')
+                                n_var_col = fs.index('N_Var')
                                 pcnt_sample_col = fs.index('Pcnt_sample')
+                                ave_af_col = fs.index('Ave_AF')
                             if j > 0:
                                 fs = l.replace('\n', '').split('\t')
                                 vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
@@ -122,7 +126,10 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                     skipped_variants_count += 1
                                     continue
 
+                                fs[n_samples_col] = len(samples)
+                                fs[n_var_col] = str(count_in_cohort_by_vark[vark])
                                 fs[pcnt_sample_col] = str(freq)
+                                fs[ave_af_col] = ''
                                 l = '\t'.join(fs) + '\n'
                                 out.write(l)
                                 written_lines_count += 1
