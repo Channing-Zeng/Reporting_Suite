@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+from collections import OrderedDict
+
 import bcbio_postproc
 
 
@@ -20,7 +22,7 @@ from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workd
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed, count_bed_cols, prepare_beds
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
-
+from targqc import find_bams
 
 '''
 cd /Users/vlad/Dropbox/az/analysis/Seq2C
@@ -47,11 +49,17 @@ def proc_args(argv):
     if len(args) == 0:
         parser.print_usage()
         sys.exit(1)
-
-    sample_names, bam_fpaths = read_samples(verify_file(args[0], is_critical=True, description='Input sample2bam.tsv'))
+    if len(args) == 1 and not args[0].endswith('.bam'):
+        sample_names, bam_fpaths = read_samples(verify_file(args[0], is_critical=True, description='Input sample2bam.tsv'))
+        bam_by_sample = OrderedDict()
+        for s, b in zip(sample_names, bam_fpaths):
+            bam_by_sample[s] = b
+    else:
+        bam_by_sample = find_bams(args)
 
     run_cnf = determine_run_cnf(opts, is_wgs=not opts.__dict__.get('bed'))
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
+    check_genome_resources(cnf)
 
     cnf.output_dir = adjust_path(cnf.output_dir)
     verify_dir(dirname(cnf.output_dir), is_critical=True)
@@ -66,7 +74,7 @@ def proc_args(argv):
 
     samples = [
         source.TargQC_Sample(s_name, join(cnf.output_dir, s_name), bam=bam_fpath)
-            for s_name, bam_fpath in zip(sample_names, bam_fpaths)]
+            for s_name, bam_fpath in bam_by_sample.items()]
     samples.sort(key=lambda _s: _s.key_to_sort())
 
     target_bed, _, _ = get_bed_targqc_inputs(cnf, cnf.bed)
@@ -100,9 +108,9 @@ def read_samples(sample2bam_fpath):
                 sample_name, bam_fpath = l.split('\t')
             else:
                 sample_name, bam_fpath = None, l
-            bam_fpath = verify_bam(bam_fpath)
             if not verify_bam(bam_fpath):
                 bad_bam_fpaths.append(bam_fpath)
+            bam_fpath = verify_bam(bam_fpath)
             bam_fpaths.append(bam_fpath)
 
             if not sample_name:

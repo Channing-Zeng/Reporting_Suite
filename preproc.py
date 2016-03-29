@@ -212,7 +212,7 @@ def main():
             info('Downsampling the reads to ' + str(downsample_to))
             lefts, rights = downsample_fastq(cnf, samples, downsample_to)
 
-            bam_by_sample = dict()
+            bam_by_sample = OrderedDict()
             sambamba = get_system_path(cnf, 'sambamba')
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')

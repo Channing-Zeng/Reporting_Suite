@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+from collections import OrderedDict
+
 import bcbio_postproc
 
 import sys
@@ -124,7 +126,7 @@ def read_samples(args):
 
 
 def find_bams(args):
-    bam_by_sample = dict()
+    bam_by_sample = OrderedDict()
     bad_bam_fpaths = []
 
     good_args = []
