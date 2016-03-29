@@ -1,12 +1,26 @@
+v1.2.0, 28 Mar 2016
+Features
+- Circus plots integrated with all mutations visualized by frequency accorss the genome
+- SV in NGS oncology reports: more consise, highlighting known fusion, linking to jBrowse.
+
+Optimization
+- New filtration features (vardict2mut):
+-- more effective cohort filtering
+-- cohort filtering performed only in the final step, so known and actionable mutations are not affected
+-- filtering by MSI
+-- more comprehensive splice site mutation detection
+-- filter_artifacts hits AF threshold reduced 50% -> 20%
+
+
 v1.1.0, 24 Mar 2016
 Features
 - Oncoptints integration
 - jBrowse integration with UK
 - New sex determining functionality
-- targqc.py can be fed with fastqc, and accepts --downsample-to option
+- TargQC.py can be fed with fastqc files, and accepts the --downsample-to option
 
 Optimization
-- Seq2C optimized, more time memory efficient. Using sambamba to call coverage
+- Seq2C optimized, more time and memory efficient. Using "sambamba depth" to call coverage
 
 Other
 - More clear Download button in NGS oncology report
