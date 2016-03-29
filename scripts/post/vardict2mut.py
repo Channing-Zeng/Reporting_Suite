@@ -510,6 +510,7 @@ class Filtration:
         cosmcnt_col = None
         msicol = None
         cdna_chg_col = None
+        gene_coding_col = None
         transcript_col = None
         effect_col = None
         exon_col = None
@@ -558,6 +559,7 @@ class Filtration:
                     cosmcnt_col = header.index('COSMIC_Cnt') if 'COSMIC_Cnt' in header else None
                     msicol = header.index('MSI')
                     cdna_chg_col = header.index('cDNA_Change')
+                    gene_coding_col = header.index('Gene_Coding')
                     transcript_col = header.index('Transcript')
                     exon_col = header.index('Exon')
                     pcnt_sample_col = header.index('Pcnt_sample')
@@ -583,7 +585,8 @@ class Filtration:
                 if fields[pass_col] != 'TRUE':
                     self.filter_reject_counter['PASS=False'] += 1
                     continue
-                if fields[transcript_col] not in self.canonical_transcripts:
+                if fields[transcript_col] and fields[gene_coding_col] == 'transcript' \
+                        and fields[transcript_col] not in self.canonical_transcripts:
                     self.filter_reject_counter['non-canonical transcript'] += 1
                     continue
 
