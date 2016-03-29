@@ -114,7 +114,7 @@ class Seq2CEvent:
     def get_key(self):
         return self.gene, self.amp_del, self.log2r
 
-class SVEvent:
+class SVEvent(SortableByChrom):
     class Annotation:
         def __init__(self):
             self.type = None
@@ -150,10 +150,9 @@ class SVEvent:
             return a
 
     @staticmethod
-    def parse_sv_event(**kwargs):  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
-        e = SVEvent()
+    def parse_sv_event(chr_order, **kwargs):  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
+        e = SVEvent(chrom=kwargs.get('chrom'), chrom_ref_order=chr_order.get(kwargs.get('chrom')))
         e.caller = kwargs.get('caller')
-        e.chrom = kwargs.get('chrom')
         e.start = int(kwargs.get('start'))
         e.sample = kwargs.get('sample')
         e.end = int(kwargs.get('end')) if kwargs.get('end') else None
@@ -199,9 +198,9 @@ class SVEvent:
         # with open(adjust_path('~/t.tsv'), 'a') as f:
         #     f.write(str(self.type) + '\t' + kwargs.get('known') + '\t' + kwargs.get('end_gene') + '\t' + ', '.join(lof_genes) + '\n')
 
-    def __init__(self):
+    def __init__(self, chrom, chrom_ref_order):
+        SortableByChrom.__init__(self, chrom, chrom_ref_order)
         self.caller = None
-        self.chrom = None
         self.start = None
         self.sample = None
         self.end = None
@@ -244,6 +243,9 @@ class SVEvent:
 
     def get_key(self):
         return self.chrom, self.type  #, tuple(tuple(sorted(a.genes)) for a in self.annotations)
+
+    def get_chrom_key(self):
+        return SortableByChrom.get_key(self)
 
 
 # class FusionEvent(SVEvent):
@@ -466,6 +468,8 @@ class ClinicalExperimentInfo:
 
         sorted_known_fusions = [sorted(p) for p in known_fusions['homo_sapiens']]
 
+        chr_order = get_chrom_order(self.cnf)
+
         with open(sv_fpath) as f:
             header_rows = []
             for i, l in enumerate(f):
@@ -473,7 +477,7 @@ class ClinicalExperimentInfo:
                 if i == 0:
                     header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
                 else:
-                    event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
+                    event = SVEvent.parse_sv_event(chr_order, **dict(zip(header_rows, fs)))
                     if event and event.sample == self.sample.name:
                         for annotation in event.annotations:
                             if event.is_fusion() and sorted(annotation.genes) in sorted_known_fusions:

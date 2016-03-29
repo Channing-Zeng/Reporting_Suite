@@ -44,7 +44,7 @@ class BaseClinicalReporting:
         self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_by_name(self.cnf)
 
-    def make_mutations_report(self, mutations_by_experiment):
+    def make_mutations_report(self, mutations_by_experiment, jbrowser_link):
         ms = [
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
@@ -97,8 +97,6 @@ class BaseClinicalReporting:
 
         mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
         mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
-        bed_fname = basename(self.cnf.bed_fpath).split('.')[0] + '.bed' if self.cnf.bed_fpath else None
-        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_fname)
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
@@ -107,7 +105,8 @@ class BaseClinicalReporting:
                 row = report.add_row()
                 row.add_record('Gene', mut.gene.name)
                 row_class = ' expandable_gene_row collapsed'
-                row.add_record('Position', **self._pos_recargs(mut, jbrowser_link))
+                row.add_record('Position',
+                    **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, mut.pos, jbrowser_link))
                 row.add_record('Change', **self._g_chg_recargs(mut))
 
                 if len(mutations_by_experiment.values()) == 1:
@@ -131,7 +130,8 @@ class BaseClinicalReporting:
                 row.add_record('Transcript', mut.transcript)
                 row_class = ' row_to_hide row_hidden'
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
-            row.add_record('Position', show_content=mut.is_canonical, **self._pos_recargs(mut, jbrowser_link))
+            row.add_record('Position', show_content=mut.is_canonical,
+               **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, mut.pos, jbrowser_link))
             row.add_record('Change', show_content=mut.is_canonical, **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
@@ -222,13 +222,12 @@ class BaseClinicalReporting:
         'DUP': 'Duplication',
     }
 
-    @staticmethod
-    def make_sv_report(svs_by_experiment):
+    def make_sv_report(self, svs_by_experiment, jbrowser_link):
         ms = [
-            Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
+            Metric('Genes'),
+            # Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
             Metric('Type'),
             Metric('Location', with_heatmap=False, align='left', sort_direction='ascending', style="width: 500px"),
-            Metric('Genes'),
             Metric('Transcript', align='left', style="width: 300px"),
             # Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
             # Metric('Effects', with_heatmap=False, align='left', class_='long_line'),
@@ -287,18 +286,25 @@ class BaseClinicalReporting:
 
             row = report.add_row()
 
-            row.add_record('Chr', sv_ann.event.chrom)
+            row.add_record('Genes', '/'.join(set(sv_ann.genes)) if sv_ann else None)
+
             type_str = None
             if sv_ann:
                 type_str = BaseClinicalReporting.sv_type_dict.get(sv_ann.event.type, sv_ann.event.type)
                 if sv_ann.effect == 'EXON_DEL':
                     type_str += ' ' + sv_ann.exon_info
+                if type_str == 'Fusion':
+                    type_str = 'Known fusion'
 
             row.add_record('Type', type_str)
-            row.add_record('Location', Metric.format_value(sv_ann.event.start) +
-                                       (('..' + Metric.format_value(sv_ann.event.end)) if sv_ann.event.end else '') if sv_ann else None,
-                           num=sv_ann.event.start if sv_ann else None)
-            row.add_record('Genes', '/'.join(set(sv_ann.genes)) if sv_ann else None)
+
+            if sv_ann and sv_ann.event.start:
+                row.add_record('Location',
+                    **self._pos_recargs(sv_ann.event.chrom, sv_ann.event.get_chrom_key(),
+                                        sv_ann.event.start, sv_ann.event.end, jbrowser_link))
+            else:
+                row.add_record('Location', None)
+
             row.add_record('Transcript', sv_ann.transcript if sv_ann else None)
             # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
             # row.add_record('Effects', ', '.join(set(a.effect.lower().replace('_', ' ') for a  in sv.annotations if a in ['EXON_DEL', 'FUSION'])))
@@ -311,8 +317,8 @@ class BaseClinicalReporting:
                     row.add_record(e.key + ' Split read support', _sv_ann.event.split_read_support if _sv_ann else None)
                     row.add_record(e.key + ' Paired read support', _sv_ann.event.paired_end_support if _sv_ann else None)
 
-            # if any(a.known for a in sv.annotations):
-            #     row.highlighted = True
+            if any(an.known for an in svann_by_experiment.values()):
+                row.highlighted = True
 
             if len(svann_by_experiment.keys()) == len(svs_by_experiment.keys()):
                 row.highlighted_green = True
@@ -566,13 +572,13 @@ class BaseClinicalReporting:
         return dict(value=aa_chg)
 
     @staticmethod
-    def _pos_recargs(mut, jbrowser_link=None):
-        c = (mut.chrom.replace('chr', '')) if mut.chrom else ''
-        p = Metric.format_value(mut.pos, human_readable=True, is_html=True) if mut.pos else ''
+    def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None):
+        c = (chrom.replace('chr', '')) if chrom else ''
+        p = Metric.format_value(str(start) + (('...' + str(end)) if end else ''), human_readable=True, is_html=True) if start else ''
         if jbrowser_link:
-            p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(mut.pos) + '...' + str(mut.pos) +
+            p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '...' + str(end or start) +
                  '" target="_blank">' + p + '</a>')
-        return dict(value=gray(c + ':') + p, num=mut.get_chrom_key() * 100000000000 + mut.pos)
+        return dict(value=gray(c + ':') + p, num=chrom_key * 100000000000 + start)
 
     cdna_chg_regexp = re.compile(r'([c,n]\.)([-\d_+*]+)(.*)')
     @staticmethod
@@ -643,13 +649,16 @@ class ClinicalReporting(BaseClinicalReporting):
         self.key_genes_report = None
         self.cov_plot_data = None
 
+        bed_fname = basename(clinical_experiment_info.target.bed_fpath).split('.')[0] + '.bed' if clinical_experiment_info.target.bed_fpath else None
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_fname)
+
         info('Preparing data...')
         if self.experiment.mutations:
-            self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations})
+            self.mutations_report = self.make_mutations_report({self.experiment: self.experiment.mutations}, jbrowser_link)
             self.mutations_plot_data = self.make_mutations_json({self.experiment: self.experiment.mutations})
             self.substitutions_plot_data = self.make_substitutions_json({self.experiment: self.experiment.mutations})
         if self.experiment.sv_events:
-            self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events})
+            self.sv_report = self.make_sv_report({self.experiment: self.experiment.sv_events}, jbrowser_link)
         if self.experiment.seq2c_events_by_gene:
             self.seq2c_plot_data = self.make_seq2c_plot_json({self.experiment.key: self.experiment})
             if self.seq2c_plot_data:
