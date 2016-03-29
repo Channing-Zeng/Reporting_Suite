@@ -227,9 +227,9 @@ class BaseClinicalReporting:
         ms = [
             Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
             Metric('Type'),
-            Metric('Location', with_heatmap=False, align='left', sort_direction='ascending'),
-            Metric('Genes', class_='long_line'),
-            Metric('Transcript', class_='long_line'),
+            Metric('Location', with_heatmap=False, align='left', sort_direction='ascending', style="width: 500px"),
+            Metric('Genes'),
+            Metric('Transcript', align='left', style="width: 300px"),
             # Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
             # Metric('Effects', with_heatmap=False, align='left', class_='long_line'),
         ]
@@ -253,19 +253,34 @@ class BaseClinicalReporting:
         # Writing records
         svanns_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         for e, svs in svs_by_experiment.items():
+            exon_dels_cnt = 0
+            known_cnt = 0
+            affecting_2_genes_cnt = 0
+            other_cnt = 0
             for sv_event in svs:
                 for an in sv_event.key_annotations:
                     # reporting all whole exon deletions
                     if sv_event.is_deletion() and ('exon_del' in an.effect.lower() or 'exon_loss' in an.effect.lower()):
                         svanns_by_key_by_experiment[an.get_key()][e] = an
+                        exon_dels_cnt += 1
 
                     # reporting all known (fusion)
                     elif an.known:
                         svanns_by_key_by_experiment[an.get_key()][e] = an
+                        known_cnt += 1
 
-                    # reporting all non-fusion events affecting 2 or more genes (start and end should not be the same gene. handling overlapping gene cases.)
-                    elif all(ann_g not in sv_event.end_genes for ann_g in an.genes):
-                        svanns_by_key_by_experiment[an.get_key()][e] = an
+                    # # reporting all non-fusion events affecting 2 or more genes (start and end should not be the same gene. handling overlapping gene cases.)
+                    # elif sv_event.end_genes and all(ann_g not in sv_event.end_genes for ann_g in an.genes):
+                    #     svanns_by_key_by_experiment[an.get_key()][e] = an
+                    #     affecting_2_genes_cnt += 1
+
+                    else:
+                        other_cnt += 1
+
+            info('exon_dels_cnt: ' + str(exon_dels_cnt))
+            info('known_cnt: ' + str(known_cnt))
+            info('affecting_2_genes_cnt: ' + str(affecting_2_genes_cnt))
+            info('other_cnt: ' + str(other_cnt))
 
         for sv_key, svann_by_experiment in svanns_by_key_by_experiment.items():
             sv_ann = next((s for s in svann_by_experiment.values() if s is not None), None)
@@ -670,11 +685,13 @@ class ClinicalReporting(BaseClinicalReporting):
                 if len(self.experiment.seq2c_events_by_gene.values()) > len(self.experiment.key_gene_by_name_chrom.values()):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
+
         circos_plot_fpath = make_circos_plot(self.cnf, output_fpath)
         image_by_key = None
         if circos_plot_fpath:
             data['circos'] = {'circos_img': basename(circos_plot_fpath)}
             image_by_key = {'circos': circos_plot_fpath}
+
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
@@ -873,6 +890,7 @@ class ClinicalReporting(BaseClinicalReporting):
 
 
 def make_circos_plot(cnf, output_fpath):
+    info('Making circos plot')
     circos_py_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'circos.py'))
     cmdline = '{circos_py_executable} '
 

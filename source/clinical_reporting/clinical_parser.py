@@ -480,8 +480,7 @@ class ClinicalExperimentInfo:
                                 info('Found ' + '/'.join(annotation.genes) + ' in known')
                                 annotation.known = True
 
-                            genes_to_check = annotation.genes + event.end_genes
-                            for g in genes_to_check:
+                            for g in annotation.genes:
                                 if (g, event.chrom) in key_gene_by_name_chrom:
                                     sv_events_by_gene_name[(g, event.chrom)] = event
                                     sv_events.add(event)
