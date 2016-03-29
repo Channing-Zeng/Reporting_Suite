@@ -10,20 +10,20 @@ from source.file_utils import safe_mkdir, add_suffix, verify_file, symlink_plus,
 from source.logger import info
 
 
-def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
+def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
     info('Combining vcf2txt variants')
     not_existing_snames = []
     if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
         info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
     else:
-        for i, (sname, vcf2txt_fpath) in enumerate(vcf2txt_fpath_by_sample.items()):
+        for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
             if not verify_file(vcf2txt_fpath, description='variants file'):
-                not_existing_snames.append(sname)
+                not_existing_snames.append(sample.name)
         if not_existing_snames:
             critical('For some samples do not exist, variants file was not found: ' + ', '.join(not_existing_snames))
         with file_transaction(cnf.work_dir, variants_fpath) as tx:
             with open(tx, 'w') as out:
-                for i, (sname, vcf2txt_fpath) in enumerate(vcf2txt_fpath_by_sample.items()):
+                for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
                     with open(vcf2txt_fpath) as f:
                         for j, l in enumerate(f):
                             if j == 0 and i == 0:
@@ -40,9 +40,9 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
     if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
         info('Combined PASSed filtered results ' + pass_variants_fpath + ' exist, reusing.')
     else:
-        for i, (sname, vcf2txt_fpath) in enumerate(vcf2txt_fpath_by_sample.items()):
+        for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
             if not verify_file(add_suffix(vcf2txt_fpath, source.mut_pass_suffix), description='PASS variants file'):
-                not_existing_pass_snames.append(sname)
+                not_existing_pass_snames.append(sample.name)
         if not_existing_pass_snames:
             critical('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing_pass_snames))
         # if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
@@ -54,7 +54,7 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
         total_varks = 0
         total_duplicated_count = 0
         total_records_count = 0
-        for i, (sname, vcf2txt_fpath) in enumerate(vcf2txt_fpath_by_sample.items()):
+        for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
             met_in_this_sample = set()
             with open(add_suffix(vcf2txt_fpath, source.mut_pass_suffix)) as f:
                 for j, l in enumerate(f):
@@ -62,7 +62,7 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
                         fs = l.replace('\n', '').split()
                         vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
                         if vark in met_in_this_sample:
-                            warn(vark + ' already met for sample ' + sname)
+                            warn(vark + ' already met for sample ' + sample.name)
                             total_duplicated_count += 1
                         else:
                             met_in_this_sample.add(vark)
@@ -70,7 +70,7 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
                             total_varks += 1
                         total_records_count += 1
         info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
-             'in ' + str(len(vcf2txt_fpath_by_sample)) + ' samples with total ' + str(total_varks) + ' records')
+             'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
         info('Duplicated variants: ' + str(total_duplicated_count) + ' out of total ' + str(total_records_count) + ' records')
         if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
             info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
@@ -80,7 +80,7 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
         max_freq = 0
         max_freq_vark = 0
         for vark, count in count_in_cohort_by_vark.items():
-            f = float(count) / len(vcf2txt_fpath_by_sample)
+            f = float(count) / len(samples)
             freq_in_cohort_by_vark[vark] = f
             if f > max_freq:
                 max_freq = f
@@ -96,7 +96,7 @@ def combine_results(cnf, vcf2txt_fpath_by_sample, variants_fpath):
         status_col, reason_col, pcnt_sample_col = None, None, None
         with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
             with open(tx, 'w') as out:
-                for i, (sname, vcf2txt_fpath) in enumerate(vcf2txt_fpath_by_sample.items()):
+                for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
                     with open(add_suffix(vcf2txt_fpath, source.mut_pass_suffix)) as f:
                         for j, l in enumerate(f):
                             fs = l.replace('\n', '').split('\t')
@@ -154,12 +154,12 @@ def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
     for c in callers:
         if c.get_single_samples():
             samples = c.get_single_samples()
-            vcf2txt_by_sample = {s.name: s.get_vcf2txt_by_callername(c.name) for s in samples}
-            combine_results(cnf, vcf2txt_by_sample, c.single_vcf2txt_res_fpath)
+            vcf2txt_fpaths = [s.get_vcf2txt_by_callername(c.name) for s in samples]
+            combine_results(cnf, samples, vcf2txt_fpaths, c.single_vcf2txt_res_fpath)
         if c.get_paired_samples():
             samples = c.get_paired_samples()
-            vcf2txt_by_sample = {s.name: s.get_vcf2txt_by_callername(c.name) for s in samples}
-            combine_results(cnf, vcf2txt_by_sample, c.paired_vcf2txt_res_fpath)
+            vcf2txt_fpaths = [s.get_vcf2txt_by_callername(c.name) for s in samples]
+            combine_results(cnf, samples, vcf2txt_fpaths, c.paired_vcf2txt_res_fpath)
 
     info()
     info('Symlinking final VCFs:')

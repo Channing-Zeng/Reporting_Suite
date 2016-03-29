@@ -279,7 +279,8 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
     info()
 
     info('Combining results...')
-    variants_fpath, pass_variants_fpath = combine_results(cnf, samples, variants_fpath)
+    vcf2txt_fpaths = [s.variants_fpath for s in samples]
+    variants_fpath, pass_variants_fpath = combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath)
 
     if cnf.qc:
         _summarize_varqc(cnf, cnf.output_dir, samples, cnf.project_name, post_filter=True)
