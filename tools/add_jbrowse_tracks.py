@@ -9,6 +9,7 @@ from source.file_utils import verify_dir, safe_mkdir, verify_file, splitext_plus
 from source.logger import warn, info
 from source.targetcov.bam_and_bed_utils import index_bam
 from source.utils import is_uk
+from joblib import Parallel, delayed
 
 
 def add_project_files_to_jbrowse(cnf, bcbio_structure):
@@ -28,6 +29,9 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
         vcf_fpath_by_sample = caller.get_filt_vcf_by_sample()
 
     for sample in bcbio_structure.samples:
+        index_bam(cnf, sample.bam, use_grid=True)
+
+    for sample in bcbio_structure.samples:
         if all(isfile(join(jbrowse_project_dirpath, sample.name + ext)) for ext in ['.bam', '.bam.bai', '.vcf.gz', '.vcf.gz.tbi', '.bigwig']):
             continue
         vcf_link = None
@@ -41,7 +45,6 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
                 create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath + '.tbi')
 
         bam_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam)
-        index_bam(cnf, sample.bam)
         create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam + '.bai')
         bigwig_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, splitext(sample.bam)[0] + '.bigwig')
         print_sample_tracks_info(sample.name, bcbio_structure.project_name, trunc_symlink(bam_link), trunc_symlink(bigwig_link),
