@@ -68,14 +68,14 @@ class BaseClinicalReporting:
 
         if len(mutations_by_experiment) == 1:
             ms.extend([
-                Metric('Freq', short_name='Freq', max_width=55, unit='%', class_='shifted_column', with_heatmap=False),          # .19
+                Metric('Freq', short_name='Freq', max_width=55, unit='%', with_heatmap=False),          # .19
                 Metric('Depth', short_name='Depth', max_width=48, med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
             ])
         else:
             for e in mutations_by_experiment.keys():
                 ms.extend([
                     Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, unit='%',
-                           class_='shifted_column', with_heatmap=False,
+                           with_heatmap=False,
                            td_style='background-color: white'),          # .19
                     Metric(e.key + ' Depth', short_name='depth', max_width=48,
                            med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False,
@@ -131,7 +131,7 @@ class BaseClinicalReporting:
                 row_class = ' row_to_hide row_hidden'
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', show_content=mut.is_canonical,
-               **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, mut.pos, jbrowser_link))
+               **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, None, jbrowser_link))
             row.add_record('Change', show_content=mut.is_canonical, **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
@@ -695,8 +695,8 @@ class ClinicalReporting(BaseClinicalReporting):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
 
-        min_af = self.cnf.min_af or 0
-        data['min_af'] = str(float(min_af) * 100)
+        min_freq = self.cnf.min_freq or self.cnf.variant_filtering.min_freq_vardict2mut or 0
+        data['min_af'] = str(float(min_freq) * 100)
 
         circos_plot_fpath = make_circos_plot(self.cnf, output_fpath)
         image_by_key = None
@@ -834,7 +834,7 @@ class ClinicalReporting(BaseClinicalReporting):
                     min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
                 Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
                 Metric('Therapeutic Agents', max_width=120, style='white-space: normal;'),  # Sorafenib
-                Metric('Freq', short_name='Freq', max_width=55, class_='shifted_column', style='white-space: pre;', with_heatmap=False)
+                Metric('Freq', short_name='Freq', max_width=55, style='white-space: pre;', with_heatmap=False)
             ])])
 
         report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_action_metric_storage)

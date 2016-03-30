@@ -139,7 +139,8 @@ table.draggable {
 .plot_tip_vertical_rule, .plot_tip_horizontal_rule {
   position: absolute;
   border: 1px solid #BBB;
-  z-index: -2; }
+  z-index: -2;
+  display: none }
 
 .plot_tip_vertical_rule {
   border-left: 1px; }
