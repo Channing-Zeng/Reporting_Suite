@@ -20,9 +20,6 @@ def main():
             (['--mutations'], dict(
                 dest='mutations_fpath',
             )),
-            (['--freq'], dict(
-                dest='min_af',
-            )),
             (['--sv'], dict(
                 dest='sv_fpath',
             )),

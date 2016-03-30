@@ -53,11 +53,6 @@ def main(args):
                 default=True,
                 help=SUPPRESS_HELP)
              ),
-            (['--freq', '--min-freq'], dict(
-                dest='min_freq',
-                type='float',
-                help=SUPPRESS_HELP)
-             ),
         ],
         required_keys=['vcf'],
         file_keys=['vcf'],
@@ -77,7 +72,7 @@ def main(args):
         verify_vcf(cnf.vcf, is_critical=True)
 
     if not cnf.vcf2txt:
-        vcf2txt_res_fpath = run_vcf2txt(cnf, {cnf.sample: cnf.vcf}, cnf.output_file, cnf.min_freq)
+        vcf2txt_res_fpath = run_vcf2txt(cnf, {cnf.sample: cnf.vcf}, cnf.output_file)
         if not vcf2txt_res_fpath:
             critical('vcf2txt run returned non-0')
         info('Saved vcf2txt output to ' + vcf2txt_res_fpath)

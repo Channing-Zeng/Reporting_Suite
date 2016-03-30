@@ -409,7 +409,6 @@ class BCBioRunner:
            ' {sv_cmdl}' +
            ' {sv_vcf_cmdl}' +
            ' {targqc_summary_cmdl}' +
-          (' --freq ' + str(self.min_af) if self.min_af else '') +
            ' --target-type ' + self.bcbio_structure.target_type +
           (' --bed ' + target_bed if target_bed else '') +
           (' --jira ' + self.cnf.jira if self.cnf.jira else '') +

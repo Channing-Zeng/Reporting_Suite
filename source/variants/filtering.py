@@ -118,11 +118,8 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
         vardict2mut_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
 
     c = cnf.variant_filtering
-    min_freq = cnf.min_freq or c.min_freq
-    if min_freq is None:
-        min_freq = defaults['default_min_freq']
 
-    cmdline = '{vardict2mut_executable} {vcf2txt_res_fpath} -f {min_freq} '
+    cmdline = '{vardict2mut_executable} {vcf2txt_res_fpath} '
     if vardict2mut_executable.endswith('.pl'):
         cmdline += ' --report_reason '
         if c.min_hotspot_freq is not None and c.min_hotspot_freq != 'default':
@@ -358,7 +355,7 @@ def write_vcfs(cnf, var_samples, output_dirpath,
 
 def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample):
     c = cnf.variant_filtering
-    min_freq = cnf.min_freq or c.min_freq
+    min_freq = c.min_freq
     if min_freq is None:
         min_freq = defaults['default_min_freq']
 

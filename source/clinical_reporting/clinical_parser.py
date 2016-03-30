@@ -509,6 +509,8 @@ class ClinicalExperimentInfo:
 
                 sname, gname, chrom, start, end, length, log2r, sig, fragment, amp_del, ab_seg, total_seg, \
                     ab_log2r, log2r_diff, ab_seg_loc, ab_samples, ab_samples_pcnt = fs[:17]
+                if '_' in chrom:
+                    continue
                 gene = KeyGene(gname, chrom=chrom)
                 gene.chrom, gene.start, gene.end = chrom, int(start), int(end)
                 event = Seq2CEvent(
