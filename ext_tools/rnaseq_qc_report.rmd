@@ -46,7 +46,7 @@ if(length(colnames(qcDat)[grep("Disambiguated", colnames(qcDat))])>0){
 ```
 # Sequencing Depth
 
-The below plot shows the numbers of reads obtained for each sample. For a set of samples that have come from the same multiplexed library we should expect similar numbers of reads for each sample. Large differences in numbers might indicate issues during the library preparation process. Whilst large differences in read numbers may be controlled for in downstream processings (e.g. read count normalisation), you may wish to consider whether the read depths achieved have fallen below recommended levels depending on the applications (e.g. ~ 10 million reads for differential gene expression analysis.)
+The below plot shows the numbers of reads obtained for each sample. For a set of samples that have come from the same multiplexed library we should expect similar numbers of reads for each sample. Large differences in numbers might indicate issues during the library preparation process. Whilst large differences in read numbers may be controlled for in downstream processings (e.g. read count normalisation), you may wish to consider whether the read depths achieved have fallen below recommended levels depending on the applications (e.g. ~ 10 million reads for differential gene expression analysis.) If disambiguation (see below) was used these rates are only reflective of the component that was assigned to the primary species (typically human) and not the whole sequencing depth. 
 
 ```{r Seq_Depth, echo=FALSE, cache=TRUE}
 ggplot(qcDat, aes(x=Sample, y=Total.reads/1e6,fill= factor(condition))) +
@@ -59,7 +59,7 @@ ggplot(qcDat, aes(x=Sample, y=Total.reads/1e6,fill= factor(condition))) +
 
 # Alignment Rates
 
-The barplot below shows the percentages of reads for each sample that align to the reference genome. A high-quality RNA-Seq library should have ~95% of reads align. Low alignment rates could indicate contamination of samples (e.g. adapter sequences), low sequencing quality or other artefacts. These can be further investigated in the sequence level QC (e.g. from FastQC). The horizontal line indicates the median alignment rate for the full set of samples.
+The barplot below shows the percentages of reads for each sample that align to the reference genome. A high-quality RNA-Seq library should have ~95% of reads align. Low alignment rates could indicate contamination of samples (e.g. adapter sequences), low sequencing quality or other artefacts. These can be further investigated in the sequence level QC (e.g. from FastQC). The horizontal line indicates the median alignment rate for the full set of samples. If disambiguation (see below) was used, these percentages reflect fully aligned read pairs assigned to the primary species; if the percentage is not 100%, the lack is reflective of read pairs where one mate didn't align.
 
 ```{r Aln_Rate, echo=FALSE, cache=TRUE}
 ggplot(qcDat, aes(x=Sample,y=Mapped.reads.pct,fill= factor(condition))) +
@@ -73,7 +73,7 @@ ggplot(qcDat, aes(x=Sample,y=Mapped.reads.pct,fill= factor(condition))) +
 
 # Disambiguation
 
-When samples are at risk of cross-species contamination (e.g. those derived from PDXs), then it is useful to assess the proportions of reads per sample that align to the different species involved. If the Disambiguate program was run to assess this, the next plot should show this information.
+When samples are at risk of cross-species contamination (e.g. those derived from PDXs), then it is useful to assess the proportions of reads per sample that are assigned to the different species involved. If the Disambiguate algorithm was run to assess this, the next plot should show this information.
 
 
 ```{r Disambig, echo=FALSE, cache=TRUE, eval=doDisambig}
@@ -126,7 +126,7 @@ ggplot(gloc, aes(x = Sample, y = value, fill = variable)) +
 
 # Ribosomal RNA rates
 
-Depending on the library preparation methods used, the proportion of rRNA sequences should be quite low. If large proportions of rRNA sequences are seen, you may wish to consider if the
+Depending on the library preparation methods used, the proportion of rRNA sequences should be quite low. If large proportions of rRNA sequences are seen, it is wise to consider if the
 depth of the remaining sequences is sufficient for further analyses.
 
 ```{r rRNA, echo=FALSE, cache=TRUE}
@@ -191,7 +191,7 @@ pheatmap(sampleDistMatrix, clustering_distance_rows=sampleDists, annotation_col=
 
 ## Principal Components Analysis
 
-Principal Components Analysis (PCA) is a very popular method that based on the principles of dimensional
+Principal Components Analysis (PCA) is a very popular method that is based on the principles of dimensional
 reduction. Below is a PCA plot of the samples within the space of the first two principal components that explain the most variation in the data. These were calculated using the read counts of the top 1000 most variable genes within the dataset.
 
 ```{r PCA, echo=FALSE, cache=TRUE}
