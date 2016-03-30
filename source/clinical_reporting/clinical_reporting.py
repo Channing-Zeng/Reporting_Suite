@@ -574,7 +574,7 @@ class BaseClinicalReporting:
     @staticmethod
     def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None):
         c = (chrom.replace('chr', '')) if chrom else ''
-        p = Metric.format_value(str(start) + (('...' + str(end)) if end else ''), human_readable=True, is_html=True) if start else ''
+        p = Metric.format_value(str(start) + (('-' + str(end)) if end else ''), human_readable=True, is_html=True) if start else ''
         if jbrowser_link:
             p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '...' + str(end or start) +
                  '" target="_blank">' + p + '</a>')

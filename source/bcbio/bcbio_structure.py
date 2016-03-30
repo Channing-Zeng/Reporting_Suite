@@ -859,7 +859,7 @@ class BCBioStructure(BaseProjectStructure):
             elif sample.phenotype == 'tumor':
                 self.batches[batch_name].tumor.append(sample)
 
-        sample.var_dirpath = adjust_path(join(sample.dirpath, 'raw'))
+        sample.var_dirpath = adjust_path(join(sample.dirpath, 'var'))
         # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
@@ -875,18 +875,15 @@ class BCBioStructure(BaseProjectStructure):
 
             for caller_name in variantcallers:
                 info(caller_name)
+                caller = self.variant_callers.get(caller_name)
+                if not caller:
+                    self.variant_callers[caller_name] = VariantCaller(caller_name, self)
+                self.variant_callers[caller_name].samples.append(sample)
 
                 vcf_fpath = self._set_vcf_file(caller_name, batch_name)
-
                 if not vcf_fpath:  # in sample dir?
                     vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample)
-
                 if vcf_fpath:
-                    caller = self.variant_callers.get(caller_name)
-                    if not caller:
-                        self.variant_callers[caller_name] = VariantCaller(caller_name, self)
-
-                    self.variant_callers[caller_name].samples.append(sample)
                     sample.vcf_by_callername[caller_name] = vcf_fpath
         info()
         return sample
@@ -1013,7 +1010,7 @@ class BCBioStructure(BaseProjectStructure):
             return var_vcf_fpath
 
         if sample.phenotype != 'normal':
-            warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outsize '
+            warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outside '
                 'the var directory. Phenotype is ' + str(sample.phenotype))
         else:
             info('Notice: no VCF file for ' + sample.name + ', ' + caller_name + ', phenotype ' + str(sample.phenotype))

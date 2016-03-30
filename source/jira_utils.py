@@ -59,7 +59,10 @@ def retrieve_jira_info(url):
         return None
 
     info('Getting issue ' + case_id)
-    issue = jira_inst.issue('NGSG-' + case_id)
+    try:
+        issue = jira_inst.issue('NGSG-' + case_id)
+    except:
+        return None
 
     case = JiraCase(case_id=case_id, url=url)
     # print issue.fields.project.key             # 'JRA'
