@@ -77,7 +77,7 @@ class BaseSample:
         self.phenotype = None
         self.gender = None
         self.genome = None
-        self.var_dirpath = None
+        self.raw_var_dirpath = None
         self.normal_match = normal_match
         self.min_af = None
         self.sv_fpath = sv_fpath

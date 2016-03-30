@@ -126,7 +126,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                     skipped_variants_count += 1
                                     continue
 
-                                fs[n_samples_col] = len(samples)
+                                fs[n_samples_col] = str(len(samples))
                                 fs[n_var_col] = str(count_in_cohort_by_vark[vark])
                                 fs[pcnt_sample_col] = str(freq)
                                 fs[ave_af_col] = ''

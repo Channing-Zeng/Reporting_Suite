@@ -164,7 +164,7 @@ class HiSeqStructure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: ' + pname + ' not found in the configuration.')
+                    critical('Error: Project ' + pname + ' not found in the configuration.')
                 az_proj_name = az_prjname_by_subprj.values()[0]
 
             project.set_dirpath(proj_dirpath, az_proj_name)
@@ -227,7 +227,7 @@ class MiSeqStructure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: ' + pname + ' not found in the configuration.')
+                    critical('Error: Project ' + pname + ' not found in the configuration.')
                 az_proj_name = az_prjname_by_subprj.values()[0]
 
             project.set_dirpath(proj_dirpath, az_proj_name)
@@ -260,7 +260,7 @@ class HiSeq4000Structure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: ' + pname + ' not found in the configuration.')
+                    critical('Error: Project ' + pname + ' not found in the configuration.')
                 az_proj_name = az_prjname_by_subprj.values()[0]
             # if len(self.project_by_name) > 1:
             #     az_project_name += '_' + pname.replace(' ', '_').replace('-', '_').replace('.', '_')
@@ -300,7 +300,7 @@ class NextSeq500Structure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: ' + pname + ' not found in the configuration.')
+                    critical('Error: Project ' + pname + ' not found in the configuration.')
                 az_proj_name = az_prjname_by_subprj.values()[0]
 
             project.set_dirpath(self.unaligned_dirpath, az_proj_name)
