@@ -859,7 +859,7 @@ class BCBioStructure(BaseProjectStructure):
             elif sample.phenotype == 'tumor':
                 self.batches[batch_name].tumor.append(sample)
 
-        sample.raw_var_dirpath = adjust_path(join(sample.dirpath, 'raw'))
+        sample.var_dirpath = adjust_path(join(sample.dirpath, 'raw'))
         # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
