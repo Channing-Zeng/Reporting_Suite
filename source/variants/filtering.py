@@ -77,7 +77,7 @@ def index_vcf(cnf, sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None
 
 def run_vcf2txt_vardict2mut_for_samples(
         cnf, var_samples, output_dirpath, vcf2txt_out_fpath,
-        caller_name=None, sample_min_freq=None, threads_num=1):
+        caller_name=None, threads_num=1):
 
     threads_num = min(len(var_samples), cnf.threads)
     info('Number of threads for filtering: ' + str(threads_num))
@@ -85,7 +85,7 @@ def run_vcf2txt_vardict2mut_for_samples(
     safe_mkdir(output_dirpath)
 
     vcf_fpath_by_sample = {s.name: s.anno_vcf_fpath for s in var_samples}
-    res = run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq)
+    res = run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath)
     if not res:
         err('vcf2txt run returned non-0')
         return None
@@ -97,7 +97,7 @@ def run_vcf2txt_vardict2mut_for_samples(
     info('Running vardict2mut')
     res = run_vardict2mut(cnf, vcf2txt_out_fpath,
         add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
-        sample_min_freq=sample_min_freq, vardict2mut_executable=vardict2mut_py)
+        vardict2mut_executable=vardict2mut_py)
     if not res:
         critical('vardict2mut.py run returned non-0')
     mut_fpath = res
@@ -109,8 +109,7 @@ def run_vcf2txt_vardict2mut_for_samples(
 
 
 @fn_timer
-def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
-                    sample_min_freq=None, vardict2mut_executable=None):
+def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2mut_executable=None):
     cmdline = None
     if vardict2mut_res_fpath is None:
         vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
@@ -120,8 +119,6 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None,
 
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq
-    if min_freq == 'bcbio' or min_freq is None:
-        min_freq = sample_min_freq
     if min_freq is None:
         min_freq = defaults['default_min_freq']
 
@@ -359,11 +356,9 @@ def write_vcfs(cnf, var_samples, output_dirpath,
     info('Filtered VCFs are written.')
 
 
-def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=None):
+def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample):
     c = cnf.variant_filtering
     min_freq = cnf.min_freq or c.min_freq
-    if min_freq == 'bcbio' or min_freq is None:
-        min_freq = sample_min_freq
     if min_freq is None:
         min_freq = defaults['default_min_freq']
 
@@ -399,14 +394,13 @@ def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=None):
     return cmdline
 
 
-def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath, sample_min_freq=None):
+def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath):
     info()
     info('Running VarDict vcf2txt...')
 
     vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
 
-    cmdline = vcf2txt + ' ' + \
-        make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample, sample_min_freq=sample_min_freq)
+    cmdline = vcf2txt + ' ' + make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample)
 
     res = run_vcf2txt_with_retries(cnf, cmdline, vcf2txt_out_fpath)
     return res

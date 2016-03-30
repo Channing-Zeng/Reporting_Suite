@@ -280,14 +280,6 @@ class BCBioRunner:
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
-        if cnf.min_freq is not None:
-            self.min_af = cnf.min_freq
-        else:
-            min_af = list(set(sample.min_af for sample in self.bcbio_structure.samples))[0]
-            if min_af is not None:
-                self.min_af = min_af
-        if self.min_af:
-            varfilter_paramline += ' --freq ' + str(self.min_af)
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vf',

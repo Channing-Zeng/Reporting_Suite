@@ -825,8 +825,8 @@ class BCBioStructure(BaseProjectStructure):
 
         self._set_bam_file(sample)
 
-        if 'min_allele_fraction' in sample_info['algorithm']:
-            sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
+        # if 'min_allele_fraction' in sample_info['algorithm']:
+        #     sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
 
         sample.phenotype = None
 

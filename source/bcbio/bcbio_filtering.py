@@ -512,9 +512,8 @@ def __proc_caller_samples(cnf, bcbio_structure, caller, vcf_by_sample, vcf2txt_f
     info('-' * 70)
     info('Filtering using vcf2txt...')
 
-    mut_fpath = run_vcf2txt_vardict2mut_for_samples(
-        cnf, var_samples, bcbio_structure.var_dirpath, vcf2txt_fpath,
-        caller_name=caller.name, sample_min_freq=bcbio_structure.samples[0].min_af)
+    mut_fpath = run_vcf2txt_vardict2mut_for_samples(cnf, var_samples,
+        bcbio_structure.var_dirpath, vcf2txt_fpath, caller_name=caller.name)
 
     if mut_fpath:
         __symlink_mut_pass(bcbio_structure, mut_fpath)
