@@ -17,6 +17,8 @@ var table_short_clones = [];
 var table_full_clones = [];
 var key_or_target = null;
 
+var minAF = 0;
+
 $(function() {
     var tables_short = $('.table_short');
     var tables_full = $('.table_full');
@@ -77,6 +79,12 @@ function extendClick(switch_id) {
     table_div.prepend(table_full_clone);
     var table_full = table_div.find('.table_full');
     if (table_full) {
+      if (table_id == 'variants') {
+        $(table_full).css('height', '');
+        $('.table_full#report_table_mutations tr').each(function() {
+            checkAF(this, minAF);
+        });
+      }
       $(table_full).show();
       if (msieversion() == 0) {
           table_full.tableSort();
@@ -110,6 +118,12 @@ function reduceClick(switch_id) {
     table_div.prepend(table_short_clone);
     var table_short = table_div.find('.table_short');
     if (table_short) {
+      if (table_id == 'variants') {
+        $(table_short).css('height', '');
+        $('.table_short#report_table_mutations tr').each(function() {
+            checkAF(this, minAF);
+        });
+      }
       table_short.show();
       if (msieversion() == 0) {
           table_short.tableSort();
@@ -162,6 +176,34 @@ jQuery(function($) {
         append: false
     });
 });
+
+function filterMutationsByAF(thresholdValue) {
+    minAF = thresholdValue;
+    var table_short = $('.table_short#report_table_mutations');
+    var table_full = $('.table_full#report_table_mutations');
+    if (table_short) {
+        $(table_short).css('height', '');
+        $('.table_short#report_table_mutations tr').each(function() {
+            checkAF(this, minAF);
+        });
+    }
+    if (table_full) {
+        $(table_full).css('height', '');
+        $('.table_full#report_table_mutations tr').each(function() {
+            checkAF(this, minAF);
+        });
+    }
+}
+
+function checkAF(row, minAF) {
+      for (var c = 0, m = row.cells.length; c < m; c++) {
+        if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value == 'Freq') {
+            if (row.cells[c].attributes.number.value * 100 < minAF)
+                $(row).addClass('af_less_threshold');
+            else $(row).removeClass('af_less_threshold');
+        }
+    }
+}
 
 //function extendedClick() {
 //    //$('.row_to_hide').toggleClass('row_hidden');

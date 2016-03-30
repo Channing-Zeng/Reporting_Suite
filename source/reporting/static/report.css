@@ -24,14 +24,13 @@
       text-align: left;
       padding: 2px 6px 2px 4px; }
     #report table.report_table th {
-      vertical-align: bottom; }
+      vertical-align: bottom;
+      border-bottom: 1px solid #bbb; }
     #report table.report_table td.shifted_column, #report table.report_table th.shifted_column {
       padding-left: 0;
       border-left: 20px solid white; }
     #report table.report_table td.stick_to_left, #report table.report_table th.stick_to_left {
       padding-left: 0 !important; }
-    #report table.report_table tbody tr:first-child td {
-      border-top: 1px solid #bbb; }
     #report table.report_table td.left_column_td, #report table.report_table th.left_column_td, #report table.report_table tr.td:first-child, #report table.report_table tr.th:first-child {
       padding-left: 0 !important; }
       #report table.report_table td.left_column_td a, #report table.report_table th.left_column_td a, #report table.report_table tr.td:first-child a, #report table.report_table tr.th:first-child a {
@@ -43,7 +42,7 @@
       font-weight: bold; }
     #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
       height: 20px; }
-    #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
+    #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty, #report table.report_table tr.af_less_threshold {
       display: none; }
     #report table.report_table tr.highlighted_row td {
       background-color: #f5ffa3; }

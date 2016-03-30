@@ -124,6 +124,14 @@
                 <div id="variants_table_div">
                     {table}
                 </div>
+                </div>
+                    <div style="float: left; margin-top: 10px; padding-left: 110px;">
+                    Set AF threshold
+                    <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
+                           onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
+                    <input type="text" id="mut_af_textbox" min="0" max="100" value="{min_af}" maxlength="3" size="3"
+                           onchange="filterMutationsByAF(this.value)" oninput="mut_af_slider.value=this.value" style="text-align: right"/>&nbsp%
+                </div>
                 {.repeated section experiments}
                 <div class="js_plot" id="mut_plot">
                     <table>

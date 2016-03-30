@@ -111,6 +111,10 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             'coverage': self.__coverage_section(self.key_genes_report, self.cov_plot_data),
             # 'actionable_genes': self.__actionable_genes_section()
         }
+
+        min_af = self.cnf.min_af or 0
+        data['min_af'] = str(float(min_af) * 100)
+
         for i in enumerate(self.experiment_by_key.keys()):
             data['seq2c']['experiments'][i]['amp_del'] = self.__seq2c_section(self.seq2c_reports[i])
         write_static_html_report(self.cnf, data, output_fpath,

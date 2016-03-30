@@ -695,6 +695,9 @@ class ClinicalReporting(BaseClinicalReporting):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
 
+        min_af = self.cnf.min_af or 0
+        data['min_af'] = str(float(min_af) * 100)
+
         circos_plot_fpath = make_circos_plot(self.cnf, output_fpath)
         image_by_key = None
         if circos_plot_fpath:
