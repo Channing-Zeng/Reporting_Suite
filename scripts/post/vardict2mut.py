@@ -611,7 +611,8 @@ class Filtration:
                 if not status_col and not reason_col:
                     l += '\tSignificance\tReason'
                 output_f.write(l + '\n')
-                all_transcripts_output_f.write(l + '\n')
+                if all_transcripts_output_f:
+                    all_transcripts_output_f.write(l + '\n')
                 continue
             fields = l.split('\t')
             if len(fields) < len(header):
@@ -623,6 +624,9 @@ class Filtration:
                 no_transcript = False
                 if fields[transcript_col].split('.')[0] in self.canonical_transcripts:
                     is_canonical = True
+            if not all_transcripts_output_f:
+                if not is_canonical and not no_transcript:
+                    self.apply_reject_counter('not canonical transcript', True, no_transcript)
 
             if fields[pass_col] != 'TRUE':
                 self.apply_reject_counter('PASS=False', is_canonical, no_transcript)
@@ -831,10 +835,14 @@ class Filtration:
                 fm_data=[sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq])
 
         info()
-        for title, counter, reject_counter in \
-                [['All', self.all_counter, self.all_reject_counter],
-                 ['No transcript', self.no_transcript_counter, self.no_transcript_reject_counter],
-                 ['Canonical', self.canonical_counter, self.canonical_reject_counter]]:
+
+        counters = [['All', self.all_counter, self.all_reject_counter]]
+        if all_transcripts_output_f:
+            counters.extend([
+                ['No transcript', self.no_transcript_counter, self.no_transcript_reject_counter],
+                ['Canonical', self.canonical_counter, self.canonical_reject_counter]])
+
+        for title, counter, reject_counter in counters:
             info(title + ':')
             info('    Written ' + str(counter['lines_written']) + ' lines')
             info('    Kept unknown: ' + str(counter['unknown']))
@@ -843,6 +851,7 @@ class Filtration:
             info('    Dropped: ' + str(sum(reject_counter.values())))
             for reason, count in reject_counter.items():
                 info('        ' + str(count) + ' ' + reason)
+            info()
 
 
 def parse_mut_tp53(mut_fpath):

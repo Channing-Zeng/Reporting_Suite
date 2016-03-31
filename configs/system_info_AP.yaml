@@ -176,7 +176,8 @@ key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
-canonical_transcripts:        /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
+#canonical_transcripts:        /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
+snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
 
 queue: ngs.q
 
