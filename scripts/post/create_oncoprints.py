@@ -15,6 +15,7 @@ from source.clinical_reporting.clinical_parser import get_key_or_target_bed_gene
 from source.logger import critical, warn, err, step_greetings
 from source.prepare_args_and_cnf import check_genome_resources
 from source.clinical_reporting.known_sv import fusions as known_fusions
+from source.targetcov.Region import get_chrom_order
 from source.utils import is_uk
 from source.utils import is_us
 from source.webserver import exposing
@@ -157,7 +158,7 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
 
     mut_by_samples, altered_genes = parse_mutations(mutations_fpath, altered_genes, key_genes)
     seq2c_events_by_sample, altered_genes = parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes)
-    sv_events_by_samples, altered_genes = parse_sv_files(samples, altered_genes, key_genes)
+    sv_events_by_samples, altered_genes = parse_sv_files(cnf, samples, altered_genes, key_genes)
 
     with file_transaction(cnf.work_dir, data_fpath) as tx:
         with open(tx, 'w') as out_f:
@@ -310,7 +311,7 @@ def parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes):
     return seq2c_events_by_sample, altered_genes
 
 
-def parse_sv_files(samples, altered_genes, key_genes):
+def parse_sv_files(cnf, samples, altered_genes, key_genes):
     sv_events_by_samples = defaultdict(set)
     sv_fpaths = [sample.find_sv_fpath() for sample in samples]
     sv_fpaths = [f for f in sv_fpaths if f]
@@ -319,6 +320,8 @@ def parse_sv_files(samples, altered_genes, key_genes):
         return sv_events_by_samples, altered_genes
     
     sorted_known_fusions = [sorted(p) for p in known_fusions['homo_sapiens']]
+
+    chr_order = get_chrom_order(cnf)
 
     for sv_fpath in sv_fpaths:
         info('Parsing prioritized SV from ' + sv_fpath)
@@ -333,7 +336,7 @@ def parse_sv_files(samples, altered_genes, key_genes):
                     sample_col = header_rows.index('sample')
                     known_col = header_rows.index('known')
                 else:
-                    event = SVEvent.parse_sv_event(**dict(zip(header_rows, fs)))
+                    event = SVEvent.parse_sv_event(chr_order, **dict(zip(header_rows, fs)))
                     sample = fs[sample_col]
                     if event:
                         for annotation in event.annotations:
