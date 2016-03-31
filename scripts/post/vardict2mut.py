@@ -33,7 +33,11 @@ def get_args():
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
 
     parser.add_option('-o', dest='output_file')
+    parser.add_option('--o-all-transcripts', dest='all_transcripts_output_file')
+    parser.add_option('--o-fm', dest='fm_output_file')
+
     parser.add_option('--cohort-freqs', dest='cohort_freqs_fpath')
+
     parser.add_option('-D', '--min-depth', dest='filt_depth', type='int', help='The minimum total depth')
     parser.add_option('-V', '--min-vd', dest='min_vd', type='int', help='The minimum reads supporting variant')
     parser.add_option('-f', '--min-freq', dest='min_freq', type='float',
@@ -53,10 +57,9 @@ def get_args():
                       help='Keep only those variants satisfying -R option. The option is meant to find '
                            're-occuring variants or artifacts.')
 
-    parser.add_option('-M', '--fm', dest='is_output_fm', action='store_true', help='Output in FM\'s format')
     parser.add_option('-p', '--platform', dest='platform',
                       help='The platform, such as WXS, WGS, RNA-Seq, VALIDATION, etc. No Default. '
-                           'Used when output is in FM\'s format (-M option)')
+                           'Used for output in FM\'s format')
 
     parser.set_usage('Usage: ' + __file__ + ' vcf2txt_res_fpath [opts] -o output_fpath')
 
@@ -79,20 +82,37 @@ def get_args():
 
     info()
 
-    return cnf, vcf2txt_res_fpath, adjust_path(cnf.output_file)
+    return cnf, vcf2txt_res_fpath
 
 
 def main():
-    cnf, vcf2txt_res_fpath, cnf.out_fpath = get_args()
+    cnf, vcf2txt_res_fpath = get_args()
 
     info('-' * 70)
-    info('Writing to ' + cnf.out_fpath)
+    info('Writing to ' + cnf.output_file)
+    if cnf.all_transcripts_output_file:
+        info('Writing info for all transcripts to ' + cnf.all_transcripts_output_file)
+    if cnf.fm_output_file:
+        info('Writing in FM format to ' + cnf.fm_output_file)
 
     f = Filtration(cnf)
-    f.do_filtering(vcf2txt_res_fpath, cnf.out_fpath)
+
+    input_f = open(verify_file(vcf2txt_res_fpath))
+    output_f = open(adjust_path(cnf.output_file), 'w')
+    fm_output_f = open(adjust_path(cnf.fm_output_file), 'w') if cnf.fm_output_file else None
+    all_transcripts_output_f = open(adjust_path(cnf.all_transcripts_output_file), 'w') if cnf.all_transcripts_output_file else None
+
+    f.do_filtering(input_f, output_f, fm_output_f, all_transcripts_output_f)
+
+    input_f.close()
+    output_f.close()
+    if fm_output_f:
+        fm_output_f.close()
+    if all_transcripts_output_f:
+        all_transcripts_output_f.close()
 
     info()
-    info('Saved to ' + cnf.out_fpath)
+    info('Saved to ' + cnf.output_file)
 
 
 class Filtration:
@@ -100,6 +120,14 @@ class Filtration:
     sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
 
     def __init__(self, cnf):
+        self.canonical_reject_counter = defaultdict(int)
+        self.no_transcript_reject_counter = defaultdict(int)
+        self.all_reject_counter = defaultdict(int)
+
+        self.canonical_counter = defaultdict(int)
+        self.no_transcript_counter = defaultdict(int)
+        self.all_counter = defaultdict(int)
+
         cnf.genome.compendia_ms7_hotspot    = verify_file(cnf.genome.compendia_ms7_hotspot, 'compendia_ms7_hotspot')
         cnf.genome.actionable               = verify_file(cnf.genome.actionable, 'actionable')
         cnf.genome.filter_common_snp        = verify_file(cnf.genome.filter_common_snp, 'filter_common_snp')
@@ -126,11 +154,12 @@ class Filtration:
         self.oncogenes = parse_genes_list(adjust_path(cnf.oncogenes))
 
         self.reg_exp_sample = cnf.reg_exp_sample
-        self.is_output_fm = cnf.is_output_fm
         self.platform = cnf.platform
 
-        with open(verify_file(cnf.canonical_transcripts or cnf.snpeff_transcripts)) as f:
-            self.canonical_transcripts = [tr.strip() for tr in f]
+        canon_tr_fpath = verify_file(cnf.canonical_transcripts or cnf.snpeff_transcripts, is_critical=True)
+        info('Using canonical transcripts from ' + canon_tr_fpath)
+        with open(canon_tr_fpath) as f:
+            self.canonical_transcripts = [tr.strip().split('.')[0] for tr in f]
 
         self.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut
         self.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
@@ -446,9 +475,9 @@ class Filtration:
                     tier = types_by_region[region][type_]
                     self.update_status(Filtration.statuses[tier], 'act_' + type_ + '_in_gene_' + gene)
 
-    def print_mutations_for_one_gene(self, out_f, cur_gene_mutations, gene, sensitizations):
+    def print_mutations_for_one_gene(self, output_f, fm_output_f, all_transcripts_output_f, cur_gene_mutations, gene, sensitizations):
         for cur_gene_mut_info in cur_gene_mutations:
-            fields, status, reasons, gene_aachg, fm_data = cur_gene_mut_info
+            fields, status, reasons, gene_aachg, fm_data, is_canonical, no_transcript = cur_gene_mut_info
             for sensitization, sens_or_res in self.sensitizations_by_gene[gene]:
                 sensitization_aa_chg = Filtration.sensitization_aa_changes.keys()[Filtration.sensitization_aa_changes.values().index(sensitization)]
 
@@ -464,33 +493,41 @@ class Filtration:
                 #     self.update_status('likely', reasons + [sensitization_aa_chg + '_required'], force=True)
                 # elif sensitization not in sensitizations and status == 'likely':
                 #     self.update_status('unlikely', sensitization_aa_chg + '_required', force=True)
-            self.print_mutation(out_f, status, reasons, fields, fm_data)
+            self.print_mutation(output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data=fm_data)
 
-    def print_mutation(self, out_f, status, reasons, fields, fm_data=None):
-        self.lines_written += 1
-        if status == 'unknown': self.unknown_count += 1
-        if status == 'unlikely': self.unlikely_count += 1
-        if status == 'likely': self.likely_count += 1
-        if status == 'known': self.known_count += 1
+    def print_mutation(self, output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data):
+        self.apply_counter('lines_written', is_canonical, no_transcript)
+        if status == 'unknown': self.apply_counter('unknown', is_canonical, no_transcript)
+        if status == 'likely': self.apply_counter('likely', is_canonical, no_transcript)
+        if status == 'known': self.apply_counter('known', is_canonical, no_transcript)
 
-        if fm_data and self.is_output_fm:
-            sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq = fm_data
-            out_f.write('\t'.join([sample, platform, 'short-variant', gene, status, aa_chg, cdna_chg,
-                                   chrom + ':' + pos, str(depth), str(allele_freq * 100),
-                                   '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
-        else:
-            out_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
+        if is_canonical or no_transcript:
+            if fm_data and fm_output_f:
+                sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq = fm_data
+                fm_output_f.write('\t'.join([sample, platform, 'short-variant', gene, status, aa_chg, cdna_chg,
+                                       chrom + ':' + pos, str(depth), str(allele_freq * 100),
+                                       '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
+            output_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
+        if all_transcripts_output_f:
+            all_transcripts_output_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
             # if status != fields[-2] or ','.join(reasons) != fields[-1]:
             #     out_f.write('\t'.join(fields[1:15] + fields[-3:] + [status]) + ('\t' + ','.join(reasons) + '\n'))
 
-    def do_filtering(self, vcf2txt_res_fpath, out_fpath):
-        self.lines_written = 0
-        self.unknown_count = 0
-        self.unlikely_count = 0
-        self.likely_count = 0
-        self.known_count = 0
-        self.filter_reject_counter = defaultdict(int)
+    def apply_counter(self, reason, is_canonical, no_transcript):
+        self.all_counter[reason] += 1
+        if is_canonical:
+            self.canonical_counter[reason] += 1
+        if no_transcript:
+            self.no_transcript_counter[reason] += 1
 
+    def apply_reject_counter(self, reason, is_canonical, no_transcript):
+        self.all_reject_counter[reason] += 1
+        if is_canonical:
+            self.canonical_reject_counter[reason] += 1
+        if no_transcript:
+            self.no_transcript_reject_counter[reason] += 1
+
+    def do_filtering(self, input_f, output_f, fm_output_f=None, all_transcripts_output_f=None):
         pass_col = None
         sample_col = None
         chr_col = None
@@ -519,7 +556,6 @@ class Filtration:
         reason_col = None
         lof_col = None
 
-        lines_written = 0
         header = ''
 
         sensitizations = []
@@ -530,283 +566,283 @@ class Filtration:
         platform_regexp = re.compile('[_-]([^_\d]+?)$')  # TODO: fix pattern
         sample_regexp = re.compile(self.reg_exp_sample) if self.reg_exp_sample else None
 
-        with open(verify_file(vcf2txt_res_fpath)) as f, open(out_fpath, 'w') as out_f:
-            if self.is_output_fm:
-                out_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
-            for i, l in enumerate(f):
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                if i == 0:
-                    header = l.split('\t')
-                    pass_col = header.index('PASS')
-                    sample_col = header.index('Sample')
-                    chr_col = header.index('Chr')
-                    pos_col = header.index('Start')
-                    ref_col = header.index('Ref')
-                    alt_col = header.index('Alt')
-                    class_col = header.index('Var_Class')
-                    type_col = header.index('Type')
-                    effect_col = header.index('Effect')
-                    func_col = header.index('Functional_Class')
-                    gene_code_col = header.index('Gene_Coding')
-                    allele_freq_col = header.index('AlleleFreq')
-                    gene_col = header.index('Gene')
-                    depth_col = header.index('Depth')
-                    vd_col = header.index('VD')
-                    aa_chg_col = header.index('Amino_Acid_Change')
-                    cosmaachg_col = header.index('COSMIC_AA_Change')
-                    cosmcnt_col = header.index('COSMIC_Cnt') if 'COSMIC_Cnt' in header else None
-                    msicol = header.index('MSI')
-                    cdna_chg_col = header.index('cDNA_Change')
-                    gene_coding_col = header.index('Gene_Coding')
-                    transcript_col = header.index('Transcript')
-                    exon_col = header.index('Exon')
-                    pcnt_sample_col = header.index('Pcnt_sample')
-                    try:
-                        reason_col = header.index('Reason')
-                    except ValueError:
-                        reason_col = None
-                    else:
-                        status_col = reason_col - 1
-                    try:
-                        lof_col = header.index('LOF')
-                    except ValueError:
-                        lof_col = None
-                    if not self.is_output_fm:
-                        if not status_col and not reason_col:
-                            l += '\tSignificance\tReason'
-                        out_f.write(l + '\n')
-                    continue
-                fields = l.split('\t')
-                if len(fields) < len(header):
-                    critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(header)) + ')')
-
-                if fields[pass_col] != 'TRUE':
-                    self.filter_reject_counter['PASS=False'] += 1
-                    continue
-                if fields[transcript_col] and fields[gene_coding_col] == 'transcript' \
-                        and fields[transcript_col] not in self.canonical_transcripts:
-                    self.filter_reject_counter['non-canonical transcript'] += 1
-                    continue
-
-                if reason_col:
-                    fields = fields[:-1]
-                if status_col:
-                    fields = fields[:-1]
-
-                sample, chrom, pos, ref, alt, aa_chg, gene, depth = \
-                    fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
-                    fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
-
-                # gene_aachg = '-'.join([gene, aa_chg])
-                if 'chr' not in chrom: chrom = 'chr' + chrom
-                key = '-'.join([chrom, pos, ref, alt])
-                allele_freq = float(fields[allele_freq_col])
-
-                var_class, var_type, fclass, gene_coding, effect, cdna_chg, transcript = \
-                    fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], \
-                    fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
-                var_type = var_type.upper()
-
-                region = ''
-                if fields[exon_col]:
-                    region = fields[exon_col].split('/')[0]
-                    if 'intron' in var_type:
-                        region = 'intron' + region
-
-                is_lof = fields[lof_col]
-
-                self.status = 'unknown'
-                self.reason_by_status = {k: set() for k in Filtration.statuses}
-
-                if pos == '46924425':
-                    pass
-
-                if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
-                    self.filter_reject_counter['PROTEIN_PROTEIN_CONTACT'] += 1
-                    continue
-
-                #################################
-                # Checking actionable mutations #
-                #################################
-                aa_chg, is_act = self.check_actionable(chrom, pos, ref, alt, gene, aa_chg)
-                fields[aa_chg_col] = aa_chg
-                is_act = self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or is_act
-
-                if not is_act:
-                    if gene in self.tier_by_type_by_region_by_gene:
-                        self.check_by_mut_type(cdna_chg, region, self.tier_by_type_by_region_by_gene[gene], gene)
-                    elif gene in self.genes_with_generic_rules:  # it can be only either in tier_by_type_by_region_by_gene or genes_with_generic_rules
-                        self.check_by_general_rules(var_type, aa_chg, is_lof, gene)
-
-                if is_lof:
-                    if gene in self.oncogenes:
-                        if is_act:
-                            warn(aa_chg + ' in ' + gene + ': LOF in a oncogoene, and actionable')
-                        for s in Filtration.statuses:
-                            self.reason_by_status[s].add('oncogene_lof')
-                        # self.update_status('unlikely', reasons + ['oncogene_lof'], force=True)
-                        # info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
-                    elif gene in self.suppressors:
-                        if not is_act:
-                            warn(aa_chg + ' in ' + gene + ': LOF in a suppressor, but not actionable')
-                        # is_act = True
-                        self.update_status('likely', 'suppressor_lof')
-                        # for s in Filtration.statuses:
-                        #     self.reason_by_status[s].add('suppressor_lof')
-                        # info('gene ' + gene + ' is a suppressor, and mutation is LOF. Making actionable. Status was ' + self.status)
-                        # self.update_status(status, reasons, 'known', 'lof_in_suppressor')
-
-                if not is_act:
-                    if key in self.filter_snp:
-                        self.filter_reject_counter['not act and in filter_common_snp'] += 1
-                        continue
-                    if '-'.join([gene, aa_chg]) in self.snpeff_snp:
-                        self.filter_reject_counter['not act and in snpeff_snp'] += 1
-                        continue
-                    if key in self.filter_artifacts and allele_freq < 0.2:
-                        self.filter_reject_counter['not act and in filter_artifacts and AF < 0.5'] += 1
-                        continue
-
-                if depth < self.filt_depth:
-                    self.filter_reject_counter['depth < ' + str(self.filt_depth) + ' (filt_depth)'] += 1
-                    continue
-                if fields[vd_col] < self.min_vd:
-                    self.filter_reject_counter['VD < ' + str(self.min_vd) + ' (min_vd)'] += 1
-                    continue
-
-                snps = re.findall(r'rs\d+', fields[3])
-                if any(snp in self.snpeff_snp_rsids for snp in snps):
-                    self.filter_reject_counter['snp in snpeffect_export_polymorphic'] += 1
-                    continue
-
-                platform = re.findall(platform_regexp, sample)[0] if platform_regexp.match(sample) else ''
-                if platform.lower() not in [p.lower() for p in ['WXS', 'RNA-Seq', 'VALIDATION', 'WGS']]:
-                    platform = ''
-                if self.platform:
-                    platform = self.platform
-
-                if sample_regexp:
-                    if sample_regexp.match(sample):
-                        sample = re.findall(self.reg_exp_sample, sample)[0]
-                    else:
-                        self.filter_reject_counter['sample not matching ' + self.reg_exp_sample] += 1
-                        continue
-
-                # Filter low AF MSI
-                if abs(len(ref) - len(alt)) == 1:
-                    msi = int(fields[msicol])
-                    msi_fail = any([
-                        msi <=  7 and allele_freq < 0.05,
-                        msi ==  8 and allele_freq < 0.07,
-                        msi ==  9 and allele_freq < 0.125,
-                        msi == 10 and allele_freq < 0.175,
-                        msi == 11 and allele_freq < 0.25,
-                        msi == 12 and allele_freq < 0.3,
-                        msi >  12 and allele_freq < 0.35])
-                    if msi_fail:
-                        self.filter_reject_counter['MSI fail'] += 1
-                        continue
-
-                cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
-                cosm_aa_chg = fields[cosmaachg_col]
-                cosm_aa_chg = self.check_by_var_class(var_class, cosm_aa_chg, cosmic_counts)
-                aa_chg = self.check_by_type(var_type, aa_chg, cdna_chg, effect)
-
-                if is_hotspot_nt(chrom, pos, ref, alt, self.hotspot_nucleotides):
-                    self.update_status('likely', 'hotspot_nucl_change')
-                elif is_hotspot_prot(gene, aa_chg, self.hotspot_proteins):
-                    self.update_status('likely', 'hotspot_AA_change')
-
-                if is_act:
-                    if self.min_hotspot_freq is not None and allele_freq < self.min_hotspot_freq:
-                        self.filter_reject_counter['act and AF < ' + str(self.min_hotspot_freq) + ' (min_hotspot_freq)'] += 1
-                        continue
-                    # if allele_freq < 0.2 and key in self.act_germline:
-                    #     self.filter_reject_counter['act and AF < 0.2 and is act_germline'] += 1
-                    #     continue
+        if fm_output_f:
+            fm_output_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
+        for i, l in enumerate(input_f):
+            l = l.replace('\n', '')
+            if not l:
+                continue
+            if i == 0:
+                header = l.split('\t')
+                pass_col = header.index('PASS')
+                sample_col = header.index('Sample')
+                chr_col = header.index('Chr')
+                pos_col = header.index('Start')
+                ref_col = header.index('Ref')
+                alt_col = header.index('Alt')
+                class_col = header.index('Var_Class')
+                type_col = header.index('Type')
+                effect_col = header.index('Effect')
+                func_col = header.index('Functional_Class')
+                gene_code_col = header.index('Gene_Coding')
+                allele_freq_col = header.index('AlleleFreq')
+                gene_col = header.index('Gene')
+                depth_col = header.index('Depth')
+                vd_col = header.index('VD')
+                aa_chg_col = header.index('Amino_Acid_Change')
+                cosmaachg_col = header.index('COSMIC_AA_Change')
+                cosmcnt_col = header.index('COSMIC_Cnt') if 'COSMIC_Cnt' in header else None
+                msicol = header.index('MSI')
+                cdna_chg_col = header.index('cDNA_Change')
+                gene_coding_col = header.index('Gene_Coding')
+                transcript_col = header.index('Transcript')
+                exon_col = header.index('Exon')
+                pcnt_sample_col = header.index('Pcnt_sample')
+                try:
+                    reason_col = header.index('Reason')
+                except ValueError:
+                    reason_col = None
                 else:
-                    if self.min_freq and allele_freq < self.min_freq:
-                        self.filter_reject_counter['not act and AF < ' + str(self.min_freq) + ' (min_freq)'] += 1
-                        continue
-                    if var_type.startswith('INTRON') and self.status == 'unknown':
-                        self.filter_reject_counter['not act and unknown and in INTRON'] += 1
-                        continue
-                    if var_type.startswith('SYNONYMOUS'):
-                        self.filter_reject_counter['not act and SYNONYMOUS'] += 1
-                        continue
-                    if fclass.upper() == 'SILENT':
-                        self.filter_reject_counter['not act and SILENT'] += 1
-                        continue
-                    if 'SPLICE' in var_type and not aa_chg and self.status == 'unknown':
-                        self.filter_reject_counter['not act and SPLICE and no aa_chg and unknown'] += 1
-                        continue
+                    status_col = reason_col - 1
+                try:
+                    lof_col = header.index('LOF')
+                except ValueError:
+                    lof_col = None
+                if not status_col and not reason_col:
+                    l += '\tSignificance\tReason'
+                output_f.write(l + '\n')
+                all_transcripts_output_f.write(l + '\n')
+                continue
+            fields = l.split('\t')
+            if len(fields) < len(header):
+                critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(header)) + ')')
 
-                    if self.status != 'known':
-                        if var_type.startswith('UPSTREAM'):
-                            self.filter_reject_counter['not known and UPSTREAM'] += 1
-                            continue
-                        if var_type.startswith('DOWNSTREAM'):
-                            self.filter_reject_counter['not known and DOWNSTREAM'] += 1
-                            continue
-                        if var_type.startswith('INTERGENIC'):
-                            self.filter_reject_counter['not known and INTERGENIC'] += 1
-                            continue
-                        if var_type.startswith('INTRAGENIC'):
-                            self.filter_reject_counter['not known and INTRAGENIC'] += 1
-                            continue
-                        if 'UTR_' in var_type and 'CODON' not in var_type:
-                            self.filter_reject_counter['not known and not UTR_/CODON'] += 1
-                            continue
-                        if 'NON_CODING' in gene_coding.upper():
-                            self.filter_reject_counter['not known and NON_CODING'] += 1
-                            continue
-                        if fclass.upper().startswith('NON_CODING'):
-                            self.filter_reject_counter['not known and NON_CODING'] += 1
-                            continue
-                        if var_class == 'dbSNP':
-                            self.filter_reject_counter['not known and dbSNP'] += 1
-                            continue
-                        # if float(fields[pcnt_sample_col]) > self.max_ratio:
-                        # if self.freq_in_sample_by_vark:
-                        #     vark = ':'.join([chrom, pos, ref, alt])
-                        #     if vark in self.freq_in_sample_by_vark:
-                        #         cohort_freq = self.freq_in_sample_by_vark[vark]
-                        #         if cohort_freq > self.max_ratio:
-                        #     self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
-                        #     continue
+            no_transcript = True
+            is_canonical = False
+            if fields[transcript_col] and fields[gene_coding_col] == 'transcript':
+                no_transcript = False
+                if fields[transcript_col].split('.')[0] in self.canonical_transcripts:
+                    is_canonical = True
 
-                # if gene in self.sensitizations_by_gene and (prev_gene == gene or not cur_gene_mutations):
-                #     if gene_aachg in Filtration.sensitization_aa_changes:
-                #         sensitization = Filtration.sensitization_aa_changes[gene_aachg]
-                #         sensitizations.append(sensitization)
-                #     fm_data = [sample, platform, prev_gene, pos, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq]
-                #     cur_gene_mutations.append([fields, self.status, self.reason_by_status[self.status], gene_aachg, fm_data])
-                # else:
-                #     if cur_gene_mutations:
-                #         self.print_mutations_for_one_gene(out_f, cur_gene_mutations, prev_gene, sensitizations)
-                #         cur_gene_mutations = []
-                #         sensitizations = []
-                # prev_gene = gene
-                #
-                # if gene not in self.sensitizations_by_gene:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
-                self.print_mutation(out_f, self.status, self.reason_by_status[self.status], fields,
-                    fm_data=[sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq])
-                lines_written += 1
+            if fields[pass_col] != 'TRUE':
+                self.apply_reject_counter('PASS=False', is_canonical, no_transcript)
+                continue
+
+            if reason_col:
+                fields = fields[:-1]
+            if status_col:
+                fields = fields[:-1]
+
+            sample, chrom, pos, ref, alt, aa_chg, gene, depth = \
+                fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
+                fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
+
+            # gene_aachg = '-'.join([gene, aa_chg])
+            if 'chr' not in chrom: chrom = 'chr' + chrom
+            key = '-'.join([chrom, pos, ref, alt])
+            allele_freq = float(fields[allele_freq_col])
+
+            var_class, var_type, fclass, gene_coding, effect, cdna_chg, transcript = \
+                fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], \
+                fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
+            var_type = var_type.upper()
+
+            if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
+                self.apply_reject_counter('PROTEIN_PROTEIN_CONTACT', is_canonical, no_transcript)
+                continue
+
+            region = ''
+            if fields[exon_col]:
+                region = fields[exon_col].split('/')[0]
+                if 'intron' in var_type:
+                    region = 'intron' + region
+
+            is_lof = fields[lof_col]
+
+            self.status = 'unknown'
+            self.reason_by_status = {k: set() for k in Filtration.statuses}
+
+            #################################
+            # Checking actionable mutations #
+            #################################
+            aa_chg, is_act = self.check_actionable(chrom, pos, ref, alt, gene, aa_chg)
+            fields[aa_chg_col] = aa_chg
+            is_act = self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or is_act
+
+            if not is_act:
+                if gene in self.tier_by_type_by_region_by_gene:
+                    self.check_by_mut_type(cdna_chg, region, self.tier_by_type_by_region_by_gene[gene], gene)
+                elif gene in self.genes_with_generic_rules:  # it can be only either in tier_by_type_by_region_by_gene or genes_with_generic_rules
+                    self.check_by_general_rules(var_type, aa_chg, is_lof, gene)
+
+            if is_lof:
+                if gene in self.oncogenes:
+                    if is_act:
+                        warn(aa_chg + ' in ' + gene + ': LOF in a oncogoene, and actionable')
+                    for s in Filtration.statuses:
+                        self.reason_by_status[s].add('oncogene_lof')
+                    # self.update_status('unlikely', reasons + ['oncogene_lof'], force=True)
+                    # info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
+                elif gene in self.suppressors:
+                    # if not is_act:
+                    #     warn((aa_chg if aa_chg else effect) + ' in ' + gene + ': LOF in a suppressor, but not actionable')
+                    # is_act = True
+                    self.update_status('likely', 'suppressor_lof')
+                    # for s in Filtration.statuses:
+                    #     self.reason_by_status[s].add('suppressor_lof')
+                    # info('gene ' + gene + ' is a suppressor, and mutation is LOF. Making actionable. Status was ' + self.status)
+                    # self.update_status(status, reasons, 'known', 'lof_in_suppressor')
+
+            if not is_act:
+                if key in self.filter_snp:
+                    self.apply_reject_counter('not act and in filter_common_snp', is_canonical, no_transcript)
+                    continue
+                if '-'.join([gene, aa_chg]) in self.snpeff_snp:
+                    self.apply_reject_counter('not act and in snpeff_snp', is_canonical, no_transcript)
+                    continue
+                if key in self.filter_artifacts and allele_freq < 0.2:
+                    self.apply_reject_counter('not act and in filter_artifacts and AF < 0.5', is_canonical, no_transcript)
+                    continue
+
+            if depth < self.filt_depth:
+                self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
+                continue
+            if fields[vd_col] < self.min_vd:
+                self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd)', is_canonical, no_transcript)
+                continue
+
+            snps = re.findall(r'rs\d+', fields[3])
+            if any(snp in self.snpeff_snp_rsids for snp in snps):
+                self.apply_reject_counter('snp in snpeffect_export_polymorphic', is_canonical, no_transcript)
+                continue
+
+            platform = re.findall(platform_regexp, sample)[0] if platform_regexp.match(sample) else ''
+            if platform.lower() not in [p.lower() for p in ['WXS', 'RNA-Seq', 'VALIDATION', 'WGS']]:
+                platform = ''
+            if self.platform:
+                platform = self.platform
+
+            if sample_regexp:
+                if sample_regexp.match(sample):
+                    sample = re.findall(self.reg_exp_sample, sample)[0]
+                else:
+                    self.apply_reject_counter('sample not matching ' + self.reg_exp_sample, is_canonical, no_transcript)
+                    continue
+
+            # Filter low AF MSI
+            if abs(len(ref) - len(alt)) == 1:
+                msi = int(fields[msicol])
+                msi_fail = any([
+                    msi <=  7 and allele_freq < 0.05,
+                    msi ==  8 and allele_freq < 0.07,
+                    msi ==  9 and allele_freq < 0.125,
+                    msi == 10 and allele_freq < 0.175,
+                    msi == 11 and allele_freq < 0.25,
+                    msi == 12 and allele_freq < 0.3,
+                    msi >  12 and allele_freq < 0.35])
+                if msi_fail:
+                    self.apply_reject_counter('MSI fail', is_canonical, no_transcript)
+                    continue
+
+            cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
+            cosm_aa_chg = fields[cosmaachg_col]
+            cosm_aa_chg = self.check_by_var_class(var_class, cosm_aa_chg, cosmic_counts)
+            aa_chg = self.check_by_type(var_type, aa_chg, cdna_chg, effect)
+
+            if is_hotspot_nt(chrom, pos, ref, alt, self.hotspot_nucleotides):
+                self.update_status('likely', 'hotspot_nucl_change')
+            elif is_hotspot_prot(gene, aa_chg, self.hotspot_proteins):
+                self.update_status('likely', 'hotspot_AA_change')
+
+            if is_act:
+                if self.min_hotspot_freq is not None and allele_freq < self.min_hotspot_freq:
+                    self.apply_reject_counter('act and AF < ' + str(self.min_hotspot_freq) + ' (min_hotspot_freq)', is_canonical, no_transcript)
+                    continue
+                # if allele_freq < 0.2 and key in self.act_germline:
+                #     self.filter_reject_counter['act and AF < 0.2 and is act_germline'] += 1
+                #     continue
+            else:
+                if self.min_freq and allele_freq < self.min_freq:
+                    self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
+                    continue
+                if var_type.startswith('INTRON') and self.status == 'unknown':
+                    self.apply_reject_counter('not act and unknown and in INTRON', is_canonical, no_transcript)
+                    continue
+                if var_type.startswith('SYNONYMOUS'):
+                    self.apply_reject_counter('not act and SYNONYMOUS', is_canonical, no_transcript)
+                    continue
+                if fclass.upper() == 'SILENT':
+                    self.apply_reject_counter('not act and SILENT', is_canonical, no_transcript)
+                    continue
+                if 'SPLICE' in var_type and not aa_chg and self.status == 'unknown':
+                    self.apply_reject_counter('not act and SPLICE and no aa_chg and unknown', is_canonical, no_transcript)
+                    continue
+
+                if self.status != 'known':
+                    if var_type.startswith('UPSTREAM'):
+                        self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
+                        continue
+                    if var_type.startswith('DOWNSTREAM'):
+                        self.apply_reject_counter('not known and DOWNSTREAM', is_canonical, no_transcript)
+                        continue
+                    if var_type.startswith('INTERGENIC'):
+                        self.apply_reject_counter('not known and INTERGENIC', is_canonical, no_transcript)
+                        continue
+                    if var_type.startswith('INTRAGENIC'):
+                        self.apply_reject_counter('not known and INTRAGENIC', is_canonical, no_transcript)
+                        continue
+                    if 'UTR_' in var_type and 'CODON' not in var_type:
+                        self.apply_reject_counter('not known and not UTR_/CODON', is_canonical, no_transcript)
+                        continue
+                    if 'NON_CODING' in gene_coding.upper():
+                        self.apply_reject_counter('not known and NON_CODING', is_canonical, no_transcript)
+                        continue
+                    if fclass.upper().startswith('NON_CODING'):
+                        self.apply_reject_counter('not known and fclass=NON_CODING', is_canonical, no_transcript)
+                        continue
+                    if var_class == 'dbSNP':
+                        self.apply_reject_counter('not known and dbSNP', is_canonical, no_transcript)
+                        continue
+                    # if float(fields[pcnt_sample_col]) > self.max_ratio:
+                    # if self.freq_in_sample_by_vark:
+                    #     vark = ':'.join([chrom, pos, ref, alt])
+                    #     if vark in self.freq_in_sample_by_vark:
+                    #         cohort_freq = self.freq_in_sample_by_vark[vark]
+                    #         if cohort_freq > self.max_ratio:
+                    #     self.filter_reject_counter['not known and Pcnt_sample > max_ratio (' + str(self.max_ratio) + ')'] += 1
+                    #     continue
+
+            # if gene in self.sensitizations_by_gene and (prev_gene == gene or not cur_gene_mutations):
+            #     if gene_aachg in Filtration.sensitization_aa_changes:
+            #         sensitization = Filtration.sensitization_aa_changes[gene_aachg]
+            #         sensitizations.append(sensitization)
+            #     fm_data = [sample, platform, prev_gene, pos, aa_chg_col, cdna_chg_col, chr_col, depth, allele_freq]
+            #     cur_gene_mutations.append([fields, self.status, self.reason_by_status[self.status], gene_aachg, fm_data, is_canonical, no_transcript])
+            # else:
+            #     if cur_gene_mutations:
+            #         self.print_mutations_for_one_gene(output_f, fm_output_f, all_transcripts_output_f, cur_gene_mutations, prev_gene, sensitizations)
+            #         cur_gene_mutations = []
+            #         sensitizations = []
+            # prev_gene = gene
+            #
+            # if gene not in self.sensitizations_by_gene:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
+            self.print_mutation(output_f, fm_output_f, all_transcripts_output_f,
+                self.status, self.reason_by_status[self.status], fields, is_canonical, no_transcript,
+                fm_data=[sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq])
 
         info()
-        info('Written ' + str(lines_written) + ' lines')
-
-        info()
-        info('Filtering stats:')
-        info('  Dropped: ' + str(sum(self.filter_reject_counter.values())))
-        for reason, count in self.filter_reject_counter.items():
-            info('      ' + str(count) + ' ' + reason)
-        info('  Kept unknown: ' + str(self.unknown_count))
-        info('  Set unlikely: ' + str(self.unlikely_count))
-        info('  Set likely: ' + str(self.likely_count))
-        info('  Set known: ' + str(self.known_count))
+        for title, counter, reject_counter in \
+                [['All', self.all_counter, self.all_reject_counter],
+                 ['No transcript', self.no_transcript_counter, self.no_transcript_reject_counter],
+                 ['Canonical', self.canonical_counter, self.canonical_reject_counter]]:
+            info(title + ':')
+            info('    Written ' + str(counter['lines_written']) + ' lines')
+            info('    Kept unknown: ' + str(counter['unknown']))
+            info('    Set likely: ' + str(counter['likely']))
+            info('    Set known: ' + str(counter['known']))
+            info('    Dropped: ' + str(sum(reject_counter.values())))
+            for reason, count in reject_counter.items():
+                info('        ' + str(count) + ' ' + reason)
 
 
 def parse_mut_tp53(mut_fpath):

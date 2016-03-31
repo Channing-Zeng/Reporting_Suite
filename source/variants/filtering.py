@@ -144,6 +144,12 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
         cmdline += (' --reuse ' if cnf.reuse_intermediate else '')
         cmdline += ' --genome ' + cnf.genome.name
         cmdline += ' -o ' + vardict2mut_res_fpath
+
+        all_transcripts_path = add_suffix(vardict2mut_res_fpath, 'all_transcripts')
+        fm_path = splitext(vardict2mut_res_fpath)[0] + '.fm'
+        cmdline += ' --o-all-transcripts ' + all_transcripts_path
+        cmdline += ' --o-fm ' + fm_path
+
         if cnf.cohort_freqs_fpath:
             cmdline += ' --cohort-freqs ' + cnf.cohort_freqs_fpath
         cmdline = cmdline.format(**locals())
