@@ -61,7 +61,7 @@ metric_storage = MetricStorage(
     ])])
 
 
-def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None, dataset_project=None):
+def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None, dataset_project=None, oncoprints_link=None):
     step_greetings('Making the %s project-level report' % ('preproc' if bcbio_structure is None else 'postproc'))
 
     # if dataset_structure is None and bcbio_structure:
@@ -110,7 +110,8 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
             sample_match_on_hover_js += '</script>\n'
 
     _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure,
-                      additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js))
+                      additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
+                      oncoprints_link=oncoprints_link)
 
     info()
     info('*' * 70)
@@ -383,7 +384,8 @@ def _relpath_all(value, base_dirpath):
         return value
 
 
-def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure, additional_data=None):
+def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure,
+                      additional_data=None, oncoprints_link=None):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -426,7 +428,6 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
             common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
     common_dict['run_section'] = get_run_info(cnf, bcbio_structure)
 
-    oncoprints_link = get_oncoprints_link(cnf, bcbio_structure, project_name)
     if oncoprints_link:
         common_dict['oncoprints'] = {'oncoprints_link': '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
                                                        '(loading may take 5-10 seconds)'.format(**locals())}

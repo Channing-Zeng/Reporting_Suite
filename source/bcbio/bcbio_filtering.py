@@ -47,7 +47,11 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
             critical('For some samples do not exist, PASS variants file was not found: ' + ', '.join(s.name for s in not_existing_pass_snames))
         # if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
         info('*' * 70)
-        info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', counting freqs in cohort')
+        if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+            info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut))
+        else:
+            info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio_vardict2mut) + ', i.e. no filter')
+
         info('Calculating frequences of varaints in the cohort')
         info('*' * 70)
         count_in_cohort_by_vark = defaultdict(int)
@@ -134,12 +138,14 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                 out.write(l)
                                 written_lines_count += 1
 
-        info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
-             ': ' + str(skipped_variants_count))
+        if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+            info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio_vardict2mut) +
+                 ': ' + str(skipped_variants_count))
         info('Actionable records: ' + str(act_variants_count))
         info('Not actionable, but known records: ' + str(known_variants_count))
-        info('Unknown and not actionable records with freq < ' +
-             str(cnf.variant_filtering.max_ratio_vardict2mut) + ': ' + str(good_freq_variants_count))
+        if cnf.variant_filtering.max_ratio_vardict2mut < 1.0:
+            info('Unknown and not actionable records with freq < ' +
+                 str(cnf.variant_filtering.max_ratio_vardict2mut) + ': ' + str(good_freq_variants_count))
         verify_file(pass_variants_fpath, 'PASS variants file', is_critical=True)
         info('Written ' + str(written_lines_count) + ' records to ' + pass_variants_fpath)
 
