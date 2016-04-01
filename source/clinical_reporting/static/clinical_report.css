@@ -46,13 +46,13 @@ ol {
   max-width: 600px; }
 
 #easy_zoom {
-  width: 550px;
-  height: 550px;
+  width: 50%;
+  height: 500px;
   border: 5px solid #eee;
   background: #fff;
   color: #333;
   position: absolute;
-  left: 650px;
+  left: 50%;
   overflow: hidden;
   -moz-box-shadow: 0 0 10px #777;
   -webkit-box-shadow: 0 0 10px #777;
@@ -61,7 +61,7 @@ ol {
   line-height: 400px;
   text-align: center; }
 
-.ciccos_image {
+.circos_image {
   width: 50%; }
 
 /*# sourceMappingURL=clinical_report.css.map */
