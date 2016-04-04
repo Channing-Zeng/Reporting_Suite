@@ -17,22 +17,15 @@ from joblib import Parallel, delayed
 import source
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
-from source.fastqc.summarize_fastqc import write_fastqc_combo_report
-from source.jira_utils import retrieve_jira_info
-from source.preproc.dataset_structure import DatasetStructure, DatasetSample
-from source.bcbio.project_level_report import make_project_level_report
-from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import index_bam, markdup_bam, verify_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source import logger
 from source.logger import info, critical, err, is_local, warn, send_email
-from source.utils import is_az
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, adjust_path, \
     add_suffix, file_transaction, splitext_plus
-from source.webserver.exposing import sync_with_ngs_server
 from targqc import find_fastq_pairs
 
 NGS_WEBSERVER_PREPROC_DIR = '/opt/lampp/htdocs/reports'

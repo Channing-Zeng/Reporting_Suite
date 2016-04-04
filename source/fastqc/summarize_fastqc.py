@@ -17,7 +17,7 @@ def write_fastqc_combo_report(cnf, output_fpath, samples):
     """ samples = [ Sample(name, fastqc_html_fpath) ]
     """
     graphs = extract_graphs(samples)
-    with file_transaction(cnf.work_dir, output_fpath) as tx:
+    with file_transaction(cnf.work_dir if cnf else None, output_fpath) as tx:
         with open(tx, 'w') as out:
             out.write(' <html> <head> <title>FASTQC</title>\n')
             out.write(_print_js() + '\n')

@@ -170,12 +170,12 @@ function write_to_excel(table) {
     attr("download", "mutations.xls");
 }
 
-jQuery(function($) {
-    $('#circos_zoom').easyZoom({
-        parent: '#circos_plot_div',
-        append: false
-    });
-});
+//jQuery(function($) {
+//    $('#circos_zoom').easyZoom({
+//        parent: '#circos_plot_div',
+//        append: false
+//    });
+//});
 
 function filterMutationsByAF(thresholdValue) {
     minAF = thresholdValue;

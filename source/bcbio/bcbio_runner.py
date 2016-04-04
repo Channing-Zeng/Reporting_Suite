@@ -936,6 +936,7 @@ class BCBioRunner:
                 add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
                 info()
 
+            oncoprints_link = None
             if is_us():
                 oncoprints_link = get_oncoprints_link(self.cnf, self.bcbio_structure, self.bcbio_structure.project_name)
 
