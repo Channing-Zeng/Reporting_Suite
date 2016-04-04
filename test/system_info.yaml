@@ -102,6 +102,6 @@ snpeff_transcripts:           ~/Dropbox/az/reference_data/common/canonical_trans
 
 queue: ngs.q
 
-qsub_runner: test/qsub_runner_local.sh
+qsub_runner: scripts/runner_sequencial.sh
 
 smtp_host: 'localhost'
