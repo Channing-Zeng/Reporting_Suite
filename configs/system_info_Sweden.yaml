@@ -28,10 +28,10 @@ resources:
 #    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bgzip
 #  picard:
 #    path: ext_tools/picard/picard.jar
-#  qsub:
-#    path: /apps/sge61/bin/lx24-amd64/qsub
-#  qdel:
-#    path: /apps/sge61/bin/lx24-amd64/qdel
+  qsub:
+    path: tools/qsub.sh
+  qdel:
+    path: tools/qdel.sh
 #  bwa:
 #    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bwa
 #  sambamba:
