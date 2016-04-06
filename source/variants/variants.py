@@ -4,13 +4,12 @@ from genericpath import isfile, isdir
 from os.path import basename, join
 
 import source
-from source.bcbio.bcbio_filtering import combine_results
 from source.logger import info, err, debug, critical, warn
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transaction
-from source.variants.filtering import make_vcf2txt_cmdl_params, run_vcf2txt_with_retries, count_cohort_freqs
+from source.variants.filtering import combine_results
 from source.variants.vcf_processing import verify_vcf
 
 

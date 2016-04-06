@@ -20,9 +20,6 @@ from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resource
 from source.prepare_args_and_cnf import determine_sys_cnf
 
 
-aa_chg_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
-
-
 def get_args():
     info(' '.join(sys.argv))
     info()
@@ -40,22 +37,15 @@ def get_args():
 
     parser.add_option('-D', '--min-depth', dest='filt_depth', type='int', help='The minimum total depth')
     parser.add_option('-V', '--min-vd', dest='min_vd', type='int', help='The minimum reads supporting variant')
+    parser.add_option('--gmaf', dest='min_gmaf', type='float',
+                      help='When the GMAF is greater than specified, it\'s considered common SNP and filtered out.')
     parser.add_option('-f', '--min-freq', dest='min_freq', type='float',
                       help='The minimum allele frequency for regular variants. Default: 0.05')
     parser.add_option('-F', '--min-freq-hs', dest='min_hotspot_freq', type='float',
                       help='The minimum allele frequency hotspot somatic mutations, typically lower then -f. '
                            'Default: 0.01 or half -f, whichever is less')
-    parser.add_option('-R', '--max-rate', dest='max_ratio', type='float',
-                      help=('If a variant is present in > [max_ratio] fraction of samples, it\'s deemed not a mutation.\n' +
-                            '[default: 1.0, or no filtering].\n'
-                            'Use with caution. '
-                            'It\'ll filter even if it\'s in COSMIC, unless if actionable.'
-                            'Don\'t use it if the sample is homogeneous. Use only in heterogeneous samples.'))
     parser.add_option('-N', '--keep-utr-intronic', dest='keep_utr_intronic', action='store_true',
                       help='Keep all intronic and UTR in the output, but will be set as "unknown".')
-    parser.add_option('-r', '--keep-max-rate', dest='keep_max_ratio', action='store_true',
-                      help='Keep only those variants satisfying -R option. The option is meant to find '
-                           're-occuring variants or artifacts.')
 
     parser.add_option('-p', '--platform', dest='platform',
                       help='The platform, such as WXS, WGS, RNA-Seq, VALIDATION, etc. No Default. '
@@ -68,7 +58,7 @@ def get_args():
         critical('Provide the first argument - output from vcf2txt.pl')
     logger.is_debug = opts.debug
 
-    vcf2txt_res_fpath = verify_file(args[0])
+    vcf2txt_res_fpath = verify_file(args[0], is_critical=True)
 
     run_cnf = determine_run_cnf(opts)
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), run_cnf)
@@ -132,22 +122,27 @@ class Filtration:
         cnf.genome.actionable               = verify_file(cnf.genome.actionable, 'actionable')
         cnf.genome.filter_common_snp        = verify_file(cnf.genome.filter_common_snp, 'filter_common_snp')
         cnf.genome.filter_common_artifacts  = verify_file(cnf.genome.filter_common_artifacts, 'filter_common_artifacts')
+        cnf.genome.splice                   = verify_file(cnf.genome.splice, 'splice')
         cnf.suppressors                     = verify_file(cnf.suppressors, 'suppressors')
         cnf.oncogenes                       = verify_file(cnf.oncogenes, 'oncogenes')
         cnf.ruledir                         = verify_dir(cnf.ruledir, 'ruledir')
         cnf.snpeffect_export_polymorphic    = verify_file(cnf.snpeffect_export_polymorphic, 'snpeffect_export_polymorphic')
         cnf.actionable_hotspot              = verify_file(cnf.actionable_hotspot, 'actionable_hotspot')
         cnf.specific_mutations              = verify_file(cnf.specific_mutations, 'specific_mutations')
+        cnf.last_critical_aa                = verify_file(cnf.last_critical_aa, 'last_critical_aa')
         if not all([cnf.genome.compendia_ms7_hotspot,
                     cnf.genome.actionable,
                     cnf.genome.filter_common_snp,
                     cnf.genome.filter_common_artifacts,
+                    cnf.genome.splice,
                     cnf.suppressors,
                     cnf.oncogenes,
                     cnf.ruledir,
                     cnf.snpeffect_export_polymorphic,
                     cnf.actionable_hotspot,
-                    cnf.specific_mutations]):
+                    cnf.specific_mutations,
+                    cnf.last_critical_aa
+                    ]):
             critical('Critical: some of the required files are not found or empty (see above)')
 
         self.suppressors = parse_genes_list(adjust_path(cnf.suppressors))
@@ -161,13 +156,15 @@ class Filtration:
         with open(canon_tr_fpath) as f:
             self.canonical_transcripts = [tr.strip().split('.')[0] for tr in f]
 
+        self.max_ratio = cnf.max_ratio or cnf.variant_filtering.max_ratio
+        self.max_sample_cnt = cnf.max_sample_cnt or cnf.variant_filtering.max_sample_cnt
         self.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut
         self.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
         if self.min_hotspot_freq is None or self.min_hotspot_freq == 'default':
             self.min_hotspot_freq = min(0.01, self.min_freq / 2)
         self.filt_depth = cnf.variant_filtering.filt_depth
-        self.max_ratio = cnf.max_ratio or cnf.variant_filtering.max_ratio_vardict2mut
         self.min_vd = cnf.variant_filtering.min_vd
+        self.min_gmaf = cnf.variant_filtering.min_gmaf
 
         # self.freq_in_sample_by_vark = dict()
         # if cnf.cohort_freqs_fpath:
@@ -177,31 +174,33 @@ class Filtration:
         #             fs = l.replace('\n', '').split()
         #             self.freq_in_sample_by_vark[fs[0]] = float(fs[1])
 
-        self.tp53_positions = []
-        self.tp53_groups = dict()
         self.tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'DNE.txt')),
                             'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
                             'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
-        if cnf.genome.name.startswith('hg38'):
-            self.tp53_positions = (
-                '7670716 7670717 7673533 7673534 7673609 7673610 7673699 7673700 7673838 7673839 7674179 '
-                '7674180 7674291 7674292 7674857 7674858 7674972 7674973 7675051 7675052 7675237 7675238 '
-                '7675992 7675993 7676273 7676274 7676380 7676381 7676404 7676405 7676519 7676520 7670715 '
-                '7673608 7673837 7674290 7674971 7675236 7676272 7676403 7673535 7673701 7674181 7674859 '
-                '7675053 7675994 7676382 7676521').split()
-        elif cnf.genome.name.startswith('hg19') or cnf.genome.name.startswith('GRCh37'):
-            self.tp53_positions = (
-                '7574034 7574035 7576851 7576852 7576927 7576928 7577017 7577018 7577156 7577157 7577497 '
-                '7577498 7577609 7577610 7578175 7578176 7578290 7578291 7578369 7578370 7578555 7578556 '
-                '7579310 7579311 7579591 7579592 7579698 7579699 7579722 7579723 7579837 7579838 7574033 '
-                '7576926 7577155 7577608 7578289 7578554 7579590 7579721 7576853 7577019 7577499 7578177 '
-                '7578371 7579312 7579700 7579839').split()
+
+        self.splice_positions_by_gene = defaultdict(set)
+        with open(cnf.genome.splice) as f:
+            for l in f:
+                l = l.replace('\n', '')
+                if not l:
+                    continue
+                pos, g = l.split('\t')
+                self.splice_positions_by_gene[g].add(pos)
+
+        self.last_critical_aa_pos_by_gene = dict()
+        with open(cnf.last_critical_aa) as f:
+            for l in f:
+                l = l.replace('\n', '')
+                if not l:
+                    continue
+                g, aa_pos, transcript = l.split('\t')
+                self.last_critical_aa_pos_by_gene[g] = int(aa_pos)
 
         # Set up common SNP filter
         self.filter_snp = set()
         with open(cnf.genome.filter_common_snp) as f:
             for l in f:
-                l = l.strip()
+                l = l.replace('\n', '')
                 if not l:
                     continue
                 fields = l.split('\t')
@@ -211,7 +210,7 @@ class Filtration:
         self.snpeff_snp_rsids = set()
         with open(cnf.snpeffect_export_polymorphic) as f:
             for l in f:
-                l = l.strip()
+                l = l.replace('\n', '')
                 if not l:
                     continue
                 fields = l.split('\t')
@@ -226,7 +225,7 @@ class Filtration:
         self.filter_artifacts = set()
         with open(cnf.genome.filter_common_artifacts) as f:
             for l in f:
-                l = l.strip()
+                l = l.replace('\n', '')
                 if not l:
                     continue
                 fields = l.split('\t')
@@ -235,7 +234,7 @@ class Filtration:
         self.actionable_hotspots = defaultdict(set)
         with open(cnf.actionable_hotspot) as f:
             for l in f:
-                l = l.strip()
+                l = l.replace('\n', '')
                 if not l:
                     continue
                 fields = l.split('\t')
@@ -251,7 +250,7 @@ class Filtration:
         # self.rules[inframe_ins] = {}
         with open(cnf.genome.actionable) as f:
             for l in f:
-                l = l.strip()
+                l = l.replace('\n', '')
                 if not l:
                     continue
                 fields = l.split('\t')
@@ -285,7 +284,7 @@ class Filtration:
         self.hotspot_proteins = set()
         with open(cnf.genome.compendia_ms7_hotspot) as f:
             for l in f:
-                l = l.strip()
+                l = l.replace('\n', '')
                 if not l:
                     continue
                 fields = l.split('\t')
@@ -302,12 +301,10 @@ class Filtration:
         self.sensitizations_by_gene, \
         self.spec_transcripts_by_aachg = parse_specific_mutations(cnf.specific_mutations)
 
-        if not all([self.rules, self.tp53_positions, self.tp53_groups, self.act_somatic, self.act_germline, self.actionable_hotspots]):
+        if not all([self.rules, self.splice_positions_by_gene, self.act_somatic, self.act_germline, self.actionable_hotspots]):
             if not self.rules:
                 err('No rules, cannot proceed')
-            if not self.tp53_groups:
-                err('No tp53_groups, cannot proceed')
-            if not self.tp53_positions:
+            if not self.splice_positions_by_gene:
                 err('No tp53_positions, cannot proceed')
             if not self.act_somatic:
                 err('No act_somatic, cannot proceed')
@@ -379,6 +376,7 @@ class Filtration:
                 aa_chg = 'splice'
         return aa_chg
 
+    aa_chg_trim_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
     def check_actionable(self, chrom, pos, ref, alt, gene, aa_chg):
         key = '-'.join([chrom, pos, ref, alt])
         if key in self.act_somatic:
@@ -390,16 +388,16 @@ class Filtration:
             if key in self.act_somatic:
                 return aa_chg, self.update_status('known', 'act_somatic')
 
-        if aa_chg_pattern.match(aa_chg) and gene in self.actionable_hotspots:
+        if Filtration.aa_chg_trim_pattern.match(aa_chg) and gene in self.actionable_hotspots:
             act_hotspots = self.actionable_hotspots[gene]
             if aa_chg in act_hotspots:
                 return aa_chg, self.update_status('known', 'act_hotspot')
-            aa_chg_trim = re.findall(aa_chg_pattern, aa_chg)[0]
+            aa_chg_trim = re.findall(Filtration.aa_chg_trim_pattern, aa_chg)[0]
             if aa_chg_trim in act_hotspots:
                 return aa_chg, self.update_status('known', 'act_hotspot')
 
         if gene == 'TP53':
-            tp53_group = classify_tp53(aa_chg, pos, ref, alt, self.tp53_positions, self.tp53_groups)
+            tp53_group = classify_tp53(aa_chg, pos, ref, alt, self.splice_positions_by_gene[gene], self.tp53_groups)
             if tp53_group != 'NA':
                 return aa_chg, self.update_status('known', 'act_somatic_tp53_group_' + tp53_group.split(' ')[1])
 
@@ -440,11 +438,11 @@ class Filtration:
             gene_aachg = '-'.join([gene, aa_chg])
             if transcript and gene_aachg in self.spec_transcripts_by_aachg:
                 if self.spec_transcripts_by_aachg[gene_aachg] != transcript:
-                    return None, None
+                    return None
             if gene_aachg in self.tier_by_specific_mutations:
                 tier = self.tier_by_specific_mutations[gene_aachg]
                 self.update_status(Filtration.statuses[tier], 'actionable')
-                # status, reasons = self.update_status(status, reasons, statuses[tier], 'actionable')
+                return True
 
         if region and effect in ['HIGH', 'MODERATE']:
             codon = re.sub('[^0-9]', '', aa_chg)
@@ -453,6 +451,7 @@ class Filtration:
                 tier = self.tier_by_specific_mutations[gene_codon_chg]
                 # status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated_codon_' + codon + '_in_exon_' + region)
                 self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
+                return True
 
     def check_by_general_rules(self, var_type, aa_chg, is_lof, gene):
         # if 'splice_site' in reasons:
@@ -551,12 +550,11 @@ class Filtration:
         transcript_col = None
         effect_col = None
         exon_col = None
-        pcnt_sample_col = None
         status_col = None
         reason_col = None
         lof_col = None
 
-        header = ''
+        headers = []
 
         sensitizations = []
         cur_gene_mutations = []
@@ -573,39 +571,38 @@ class Filtration:
             if not l:
                 continue
             if i == 0:
-                header = l.split('\t')
-                pass_col = header.index('PASS')
-                sample_col = header.index('Sample')
-                chr_col = header.index('Chr')
-                pos_col = header.index('Start')
-                ref_col = header.index('Ref')
-                alt_col = header.index('Alt')
-                class_col = header.index('Var_Class')
-                type_col = header.index('Type')
-                effect_col = header.index('Effect')
-                func_col = header.index('Functional_Class')
-                gene_code_col = header.index('Gene_Coding')
-                allele_freq_col = header.index('AlleleFreq')
-                gene_col = header.index('Gene')
-                depth_col = header.index('Depth')
-                vd_col = header.index('VD')
-                aa_chg_col = header.index('Amino_Acid_Change')
-                cosmaachg_col = header.index('COSMIC_AA_Change')
-                cosmcnt_col = header.index('COSMIC_Cnt') if 'COSMIC_Cnt' in header else None
-                msicol = header.index('MSI')
-                cdna_chg_col = header.index('cDNA_Change')
-                gene_coding_col = header.index('Gene_Coding')
-                transcript_col = header.index('Transcript')
-                exon_col = header.index('Exon')
-                pcnt_sample_col = header.index('Pcnt_sample')
+                headers = l.split('\t')
+                pass_col = headers.index('PASS')
+                sample_col = headers.index('Sample')
+                chr_col = headers.index('Chr')
+                pos_col = headers.index('Start')
+                ref_col = headers.index('Ref')
+                alt_col = headers.index('Alt')
+                class_col = headers.index('Var_Class')
+                type_col = headers.index('Type')
+                effect_col = headers.index('Effect')
+                func_col = headers.index('Functional_Class')
+                gene_code_col = headers.index('Gene_Coding')
+                allele_freq_col = headers.index('AlleleFreq')
+                gene_col = headers.index('Gene')
+                depth_col = headers.index('Depth')
+                vd_col = headers.index('VD')
+                aa_chg_col = headers.index('Amino_Acid_Change')
+                cosmaachg_col = headers.index('COSMIC_AA_Change')
+                cosmcnt_col = headers.index('COSMIC_Cnt') if 'COSMIC_Cnt' in headers else None
+                msicol = headers.index('MSI')
+                cdna_chg_col = headers.index('cDNA_Change')
+                gene_coding_col = headers.index('Gene_Coding')
+                transcript_col = headers.index('Transcript')
+                exon_col = headers.index('Exon')
                 try:
-                    reason_col = header.index('Reason')
+                    reason_col = headers.index('Reason')
                 except ValueError:
                     reason_col = None
                 else:
                     status_col = reason_col - 1
                 try:
-                    lof_col = header.index('LOF')
+                    lof_col = headers.index('LOF')
                 except ValueError:
                     lof_col = None
                 if not status_col and not reason_col:
@@ -615,8 +612,8 @@ class Filtration:
                     all_transcripts_output_f.write(l + '\n')
                 continue
             fields = l.split('\t')
-            if len(fields) < len(header):
-                critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(header)) + ')')
+            if len(fields) < len(headers):
+                critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(headers)) + ')')
 
             no_transcript = True
             is_canonical = False
@@ -627,6 +624,7 @@ class Filtration:
             if not all_transcripts_output_f:
                 if not is_canonical and not no_transcript:
                     self.apply_reject_counter('not canonical transcript', True, no_transcript)
+                    continue
 
             if fields[pass_col] != 'TRUE':
                 self.apply_reject_counter('PASS=False', is_canonical, no_transcript)
@@ -637,9 +635,10 @@ class Filtration:
             if status_col:
                 fields = fields[:-1]
 
-            sample, chrom, pos, ref, alt, aa_chg, gene, depth = \
+            sample, chrom, pos, ref, alt, aa_chg, cosm_aa_chg, gene, depth = \
                 fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
-                fields[alt_col], fields[aa_chg_col], fields[gene_col], float(fields[depth_col])
+                fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
+                float(fields[depth_col])
 
             # gene_aachg = '-'.join([gene, aa_chg])
             if 'chr' not in chrom: chrom = 'chr' + chrom
@@ -707,12 +706,16 @@ class Filtration:
                 if key in self.filter_artifacts and allele_freq < 0.2:
                     self.apply_reject_counter('not act and in filter_artifacts and AF < 0.5', is_canonical, no_transcript)
                     continue
+                gmaf = fields[headers.index('GMAF')]
+                if gmaf and all(not g or float(g) == 0 or float(g) > self.min_gmaf for g in gmaf.split(',')):
+                    self.apply_reject_counter('not act and all GMAF > ' + str(self.min_gmaf) + ' or zero', is_canonical, no_transcript)
+                    continue
 
             if depth < self.filt_depth:
                 self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
                 continue
-            if fields[vd_col] < self.min_vd:
-                self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd)', is_canonical, no_transcript)
+            if fields[vd_col] < self.min_vd and allele_freq >= 0.5:
+                self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript)
                 continue
 
             snps = re.findall(r'rs\d+', fields[3])
@@ -749,7 +752,6 @@ class Filtration:
                     continue
 
             cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
-            cosm_aa_chg = fields[cosmaachg_col]
             cosm_aa_chg = self.check_by_var_class(var_class, cosm_aa_chg, cosmic_counts)
             aa_chg = self.check_by_type(var_type, aa_chg, cdna_chg, effect)
 
@@ -772,41 +774,47 @@ class Filtration:
                 if var_type.startswith('INTRON') and self.status == 'unknown':
                     self.apply_reject_counter('not act and unknown and in INTRON', is_canonical, no_transcript)
                     continue
-                if var_type.startswith('SYNONYMOUS'):
-                    self.apply_reject_counter('not act and SYNONYMOUS', is_canonical, no_transcript)
-                    continue
-                if fclass.upper() == 'SILENT':
-                    self.apply_reject_counter('not act and SILENT', is_canonical, no_transcript)
-                    continue
+                if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
+                    if var_class == 'dbSNP' or fields[headers.index('ID')].startswith('rs'):
+                        self.update_status('unknown', 'silent')
                 if 'SPLICE' in var_type and not aa_chg and self.status == 'unknown':
-                    self.apply_reject_counter('not act and SPLICE and no aa_chg and unknown', is_canonical, no_transcript)
+                    self.apply_reject_counter('not act and SPLICE and no aa_ch\g and unknown', is_canonical, no_transcript)
                     continue
 
-                if self.status != 'known':
-                    if var_type.startswith('UPSTREAM'):
-                        self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
-                        continue
-                    if var_type.startswith('DOWNSTREAM'):
-                        self.apply_reject_counter('not known and DOWNSTREAM', is_canonical, no_transcript)
-                        continue
-                    if var_type.startswith('INTERGENIC'):
-                        self.apply_reject_counter('not known and INTERGENIC', is_canonical, no_transcript)
-                        continue
-                    if var_type.startswith('INTRAGENIC'):
-                        self.apply_reject_counter('not known and INTRAGENIC', is_canonical, no_transcript)
-                        continue
-                    if 'UTR_' in var_type and 'CODON' not in var_type:
-                        self.apply_reject_counter('not known and not UTR_/CODON', is_canonical, no_transcript)
-                        continue
-                    if 'NON_CODING' in gene_coding.upper():
-                        self.apply_reject_counter('not known and NON_CODING', is_canonical, no_transcript)
-                        continue
-                    if fclass.upper().startswith('NON_CODING'):
-                        self.apply_reject_counter('not known and fclass=NON_CODING', is_canonical, no_transcript)
-                        continue
-                    if var_class == 'dbSNP':
-                        self.apply_reject_counter('not known and dbSNP', is_canonical, no_transcript)
-                        continue
+            if self.status != 'known' and not is_act:
+                if var_type.startswith('UPSTREAM'):
+                    self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
+                    continue
+                if var_type.startswith('DOWNSTREAM'):
+                    self.apply_reject_counter('not known and DOWNSTREAM', is_canonical, no_transcript)
+                    continue
+                if var_type.startswith('INTERGENIC'):
+                    self.apply_reject_counter('not known and INTERGENIC', is_canonical, no_transcript)
+                    continue
+                if var_type.startswith('INTRAGENIC'):
+                    self.apply_reject_counter('not known and INTRAGENIC', is_canonical, no_transcript)
+                    continue
+                if 'UTR_' in var_type and 'CODON' not in var_type:
+                    self.apply_reject_counter('not known and not UTR_/CODON', is_canonical, no_transcript)
+                    continue
+                if 'NON_CODING' in gene_coding.upper():
+                    self.apply_reject_counter('not known and NON_CODING', is_canonical, no_transcript)
+                    continue
+                if fclass.upper().startswith('NON_CODING'):
+                    self.apply_reject_counter('not known and fclass=NON_CODING', is_canonical, no_transcript)
+                    continue
+                if var_class == 'dbSNP':
+                    self.apply_reject_counter('not known and dbSNP', is_canonical, no_transcript)
+                    continue
+
+            # Ignore any variants that occur after last known critical amino acid
+            aa_chg_pos_pattern = re.compile('^[A-Z](\d+).*')
+            if aa_chg_pos_pattern.match(aa_chg) and gene in self.last_critical_aa_pos_by_gene:
+                aa_pos = int(aa_chg_pos_pattern.findall(aa_chg)[0])
+                if aa_pos >= self.last_critical_aa_pos_by_gene[gene]:
+                    self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
+                    continue
+
                     # if float(fields[pcnt_sample_col]) > self.max_ratio:
                     # if self.freq_in_sample_by_vark:
                     #     vark = ':'.join([chrom, pos, ref, alt])
@@ -856,16 +864,17 @@ class Filtration:
 
 def parse_mut_tp53(mut_fpath):
     mut_tp53 = set()
-    with open(mut_fpath) as f:
-        for l in f:
-            l = l.strip()
-            if not l:
-                continue
-            line = l.split('\t')
-            if not line[19] or 'p.' not in line[19]:
-                continue
-            prot = line[19].replace('p.', '')
-            mut_tp53.add(prot)
+    if verify_file(mut_fpath):
+        with open(mut_fpath) as f:
+            for l in f:
+                l = l.strip()
+                if not l:
+                    continue
+                line = l.split('\t')
+                if not line[19] or 'p.' not in line[19]:
+                    continue
+                prot = line[19].replace('p.', '')
+                mut_tp53.add(prot)
 
     return mut_tp53
 
@@ -895,34 +904,33 @@ def is_hotspot_prot(gene, aa_chg, hotspot_proteins):
 
 
 stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
-
 fs_pattern = re.compile('^[A-Z]+(\d+)fs')
+aa_snp_chg_pattern = re.compile('^[A-Z]\d+[A-Z]$')
 
-
-def classify_tp53(aa_chg, pos, ref, alt, tp53_pos, tp53_groups):
+def classify_tp53(aa_chg, pos, ref, alt, tp53_positions, tp53_groups):
     ref = ref.replace(' ', '')
     alt = alt.replace(' ', '')
     pos = pos.replace(' ', '')
     aa_chg = aa_chg.replace(' ', '')
-    if pos in tp53_pos and len(ref) == 1 and len(alt) == 1:
+    if pos in tp53_positions and len(ref) == 1 and len(alt) == 1:
         return 'Group 6'
     aa_chg = aa_chg.replace('p.', '')
     aa_num = 0
     if aa_chg:
         aa_num = int(re.sub('[^0-9]', '', aa_chg))
-    if fs_pattern.match(aa_chg):
-        if aa_num < 359:
-            return 'Group 5'
-    elif stop_gain_pattern.match(aa_chg):
-        if aa_num < 359:
-            return 'Group 4'
-    elif aa_chg_pattern.match(aa_chg):
+    if aa_snp_chg_pattern.match(aa_chg):
         if aa_chg in tp53_groups['Group 1']:
             return 'Group 1'
         if aa_chg in tp53_groups['Group 2']:
             return 'Group 2'
         if aa_chg in tp53_groups['Group 3']:
             return 'Group 3'
+    elif stop_gain_pattern.match(aa_chg):
+        if aa_num < 359:
+            return 'Group 4'
+    elif fs_pattern.match(aa_chg):
+        if aa_num < 359:
+            return 'Group 5'
     return 'NA'
 
 

@@ -55,6 +55,7 @@ genomes:
     filter_common_artifacts:      ~/Dropbox/az/reference_data/filtering/filter_common_artifacts.txt
     actionable:                   ~/Dropbox/az/reference_data/filtering/actionable.txt
     compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering/Compendia.MS7.Hotspot.txt
+    splice:                       ~/Dropbox/az/reference_data/filtering/SPLICE.txt
 
   hg19:
     seq: ~/Dropbox/az/reference_data/hg19.fa
@@ -64,6 +65,7 @@ genomes:
     filter_common_artifacts:      ~/Dropbox/az/reference_data/filtering/filter_common_artifacts.txt
     actionable:                   ~/Dropbox/az/reference_data/filtering/actionable.txt
     compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering/Compendia.MS7.Hotspot.txt
+    splice:                       ~/Dropbox/az/reference_data/filtering/SPLICE.txt
 
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
@@ -88,6 +90,7 @@ genomes:
     filter_common_artifacts:      ~/Dropbox/az/reference_data/filtering.hg38/filter_common_artifacts.txt
     actionable:                   ~/Dropbox/az/reference_data/filtering.hg38/actionable.txt
     compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering.hg38/Compendia.MS7.Hotspot.txt
+    splice:                       ~/Dropbox/az/reference_data/filtering.hg38/SPLICE.txt
 
 
 snpeffect_export_polymorphic: ~/Dropbox/az/reference_data/common/snpeffect_export_Polymorphic.txt
@@ -97,6 +100,7 @@ key_genes:                    ~/Dropbox/az/reference_data/common/az_key_genes.tx
 suppressors:                  ~/Dropbox/az/reference_data/common/suppressors.txt
 oncogenes:                    ~/Dropbox/az/reference_data/common/oncogenes.txt
 specific_mutations:           ~/Dropbox/az/reference_data/common/specific_mutations.tsv
+last_critical_aa:             ~/Dropbox/az/reference_data/common/last_critical_aa.txt
 #canonical_transcripts:        ~/Dropbox/az/reference_data/common/canonical_transcripts.txt
 snpeff_transcripts:           ~/Dropbox/az/reference_data/common/canonical_transcripts.txt
 

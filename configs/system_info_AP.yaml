@@ -44,8 +44,8 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_latest.vcf.gz
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
@@ -61,6 +61,7 @@ genomes:
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+    splice:                       /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/SPLICE.txt
 
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
 
@@ -70,8 +71,8 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbsnp_latest.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/clinvar_latest.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_latest.vcf.gz
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
@@ -87,6 +88,7 @@ genomes:
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+    splice:                       /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/SPLICE.txt
 
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
 
@@ -96,9 +98,9 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v146.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf.gz
     oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
@@ -116,6 +118,7 @@ genomes:
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+    splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
@@ -123,9 +126,9 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v146.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf.gz
     oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
@@ -143,6 +146,7 @@ genomes:
     filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
+    splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
@@ -176,6 +180,7 @@ key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
+last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
 #canonical_transcripts:        /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
 snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
 
