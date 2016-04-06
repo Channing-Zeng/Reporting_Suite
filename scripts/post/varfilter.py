@@ -44,7 +44,12 @@ def main(args):
             (['--qc'], dict(
                 dest='qc',
                 action='store_true',
-                default=None,
+                default=True,
+                help=SUPPRESS_HELP)
+             ),
+            (['--no-qc'], dict(
+                dest='qc',
+                action='store_false',
                 help=SUPPRESS_HELP)
              ),
             (['--no-tsv'], dict(

@@ -46,7 +46,7 @@ def _annotate(cnf, samples):
         ' --log-dir -' +
         ' --genome ' + cnf.genome.name +
        (' --no-check ' if cnf.no_check else '') +
-       (' --qc ' if cnf.qc else '') +
+       (' --qc' if cnf.qc else ' --no-qc') +
       ((' --caller ' + cnf.caller) if cnf.caller else '')
     )
 
@@ -210,7 +210,7 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                    (' --cohort-freqs {cohort_freqs_fpath}' if cohort_freqs_fpath else '') +
                    (' --reuse ' if cnf.reuse_intermediate else '') +
                   ((' --caller ' + cnf.caller) if cnf.caller else '') +
-                   (' --qc' if cnf.qc else '') +
+                   (' --qc' if cnf.qc else ' --no-qc') +
                    (' --no-tsv' if not cnf.tsv else '')
                 ).format(**locals())
             j = submit_job(cnf, cmdl,
