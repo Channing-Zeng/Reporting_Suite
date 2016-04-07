@@ -764,21 +764,24 @@ class Filtration:
                 if self.min_hotspot_freq is not None and allele_freq < self.min_hotspot_freq:
                     self.apply_reject_counter('act and AF < ' + str(self.min_hotspot_freq) + ' (min_hotspot_freq)', is_canonical, no_transcript)
                     continue
-                # if allele_freq < 0.2 and key in self.act_germline:
-                #     self.filter_reject_counter['act and AF < 0.2 and is act_germline'] += 1
-                #     continue
             else:
-                if self.min_freq and allele_freq < self.min_freq:
-                    self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
-                    continue
+                if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
+                    # Discarding any dbSNP silent mutation.
+                    # Caveat: any silent mutation with entries in both dbSNP and COSMIC will be filtered,
+                    # so it might filter out some somatic mutation. But keeping those will increase silent
+                    # mutation nearly 10 times. Just another evidence how noisy COSMIC is.
+                    if var_class == 'dbSNP' or any(f.startswith('rs') for f in fields[headers.index('ID')].split(';')):
+                        self.apply_reject_counter('SYNONYMOUS and dbSNP', is_canonical, no_transcript)
+                        continue
+                    self.update_status('unknown', 'silent')
                 if var_type.startswith('INTRON') and self.status == 'unknown':
                     self.apply_reject_counter('not act and unknown and in INTRON', is_canonical, no_transcript)
                     continue
-                if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
-                    if var_class == 'dbSNP' or fields[headers.index('ID')].startswith('rs'):
-                        self.update_status('unknown', 'silent')
                 if 'SPLICE' in var_type and not aa_chg and self.status == 'unknown':
                     self.apply_reject_counter('not act and SPLICE and no aa_ch\g and unknown', is_canonical, no_transcript)
+                    continue
+                if self.min_freq and allele_freq < self.min_freq:
+                    self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
                     continue
 
             if self.status != 'known' and not is_act:
