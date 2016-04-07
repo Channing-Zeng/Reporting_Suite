@@ -270,7 +270,7 @@ class BCBioRunner:
             ' -t ' + str(self.threads_per_sample) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
             ' --log-dir -' + \
-            ' --genome {genome}'
+            ' --genome {cnf.genome.name}'
 
         if cnf.email:
             summaries_cmdline_params += ' --email ' + remove_quotes(self.cnf.email) + ' '
@@ -426,7 +426,7 @@ class BCBioRunner:
                 paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name)
             )
 
-            seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome}'
+            seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {cnf.genome.name}'
             seq2c_cmdline += ' -t ' + str(self.max_threads)
             seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
             if self.is_wgs:
@@ -469,7 +469,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'bam_to_bigwig.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
-            paramln=basic_params + ' --genome {genome}  -s \'{sample}\' --bam \'{bam}\''
+            paramln=basic_params + ' --genome {cnf.genome.name}  -s \'{sample}\' --bam \'{bam}\''
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
