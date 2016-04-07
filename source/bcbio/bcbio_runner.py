@@ -1126,8 +1126,8 @@ def _final_email_notification(html_report_url, jira_url, bs):
     send_email(txt, subj)
 
 
-def change_permissions(path):
+def change_permissions(cnf, path):
     try:
-        os.system('chmod -R g+w ' + path)
+        call(cnf, 'chmod -R g+w ' + path, silent=True)
     except:
         pass

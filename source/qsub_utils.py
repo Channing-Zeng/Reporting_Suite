@@ -182,7 +182,7 @@ def del_jobs(cnf, jobs_running):
         qdel = get_system_path(cnf, 'qdel', is_critical=False)
         command = ' '.join(done_job_ids)
         if qdel:
-            res = call(cnf, qdel + ' ' + command, exit_on_error=False)
+            res = call(cnf, qdel + ' ' + command, exit_on_error=False, silent=not cnf.debug)
             if res == 0:
                 info('All running jobs for this project has been deleted from queue.')
             else:
