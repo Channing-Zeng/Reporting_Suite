@@ -155,14 +155,14 @@ class BCBioRunner:
         if Steps.contains(cnf.steps, 'VarFilter'):
             self.steps.extend([self.varfilter])
 
-        if Steps.contains(cnf.steps, 'TargQC'):
+        if not self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'TargQC'):
             self.steps.extend([self.targetcov, self.targqc_summary, self.abnormal_regions])
-        if any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
+        if not self.bcbio_structure.is_rnaseq and any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
         # if Steps.contains(cnf.steps, 'AbnormalCovReport'):
         #    self.steps.append(self.abnormal_regions)
 
-        if not not self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'Seq2C'):
+        if not self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
 
         # if Steps.contains(cnf.steps, 'ClinicalReport') or \
@@ -172,7 +172,8 @@ class BCBioRunner:
             self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
-            self.steps.extend([self.targqc_summary])
+            if not self.bcbio_structure.is_rnaseq:
+                self.steps.extend([self.targqc_summary])
 
         from sys import platform as _platform
         if 'linux' in _platform:
@@ -235,7 +236,9 @@ class BCBioRunner:
             info('Target BED file is saved in ' + ready_target_bed)
 
         if seq2c_bed and original_seq2c_bed:
-            ready_seq2c_bed = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, basename(original_seq2c_bed))
+            cnv_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir)
+            safe_mkdir(cnv_dirpath)
+            ready_seq2c_bed = join(cnv_dirpath, basename(original_seq2c_bed))
             try:
                 shutil.copy(seq2c_bed, ready_seq2c_bed)
             except OSError:
@@ -354,127 +357,75 @@ class BCBioRunner:
             # symlink
         ##### END FILTERING #####
 
-        targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
-            '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
-        if exons_bed:
-            targetcov_params += '--exons ' + exons_bed + ' '
-        if exons_no_genes_bed:
-            targetcov_params += '--exons-no-genes ' + exons_no_genes_bed + ' '
-        if target_bed:
-            targetcov_params += '--bed ' + target_bed + ' '
-        if original_bed:
-            targetcov_params += '--original-bed ' + original_bed + ' '
-        if genes_fpath:
-            targetcov_params += '--genes ' + genes_fpath + ' '
-        if cnf.no_dedup:
-            targetcov_params += '--no-dedup '
-        targetcov_params += '--no-prep-bed '
-
-        if cnf.steps and 'AbnormalCovReport' in cnf.steps:
-            targetcov_params += '--extended '
-        self.targetcov = Step(cnf, run_id,
-            name=BCBioStructure.targqc_name, short_name='tc',
-            interpreter='python',
-            script=join('scripts', 'post', 'targetcov.py'),
-            dir_name=BCBioStructure.targqc_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
-            paramln=targetcov_params
-        )
-        abnormal_regions_cmdl = summaries_cmdline_params + ' --mutations {mutations_fpath} ' + self.final_dir
-        if target_bed:
-            abnormal_regions_cmdl += ' --bed ' + target_bed
-        self.abnormal_regions = Step(cnf, run_id,
-            name='AbnormalCovReport', short_name='acr',
-            interpreter='python',
-            script=join('scripts', 'post', 'abnormal_regions.py'),
-            dir_name=BCBioStructure.targqc_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
-            paramln=abnormal_regions_cmdl
-        )
-        self.ngscat = Step(cnf, run_id,
-            name=BCBioStructure.ngscat_name, short_name='nc',
-            interpreter='python',
-            script=join('scripts', 'post', 'ngscat.py'),
-            dir_name=BCBioStructure.ngscat_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.ngscat_name + '.log'),
-            paramln=params_for_one_sample + ' --bam \'{bam}\' --bed ' + str(target_bed) + ' -o \'{output_dir}\' -s \'{sample}\' '
-                    '--saturation y --work-dir \'' + join(cnf.work_dir, BCBioStructure.ngscat_name) + '_{sample}\''
-        )
-
-        # self.qualimap = Step(cnf, run_id,
-        #     name=BCBioStructure.qualimap_name, short_name='qm',
-        #     interpreter='python',
-        #     script=join('scripts', 'post', 'qualimap.py'),
-        #     dir_name=BCBioStructure.qualimap_dir,
-        #     paramln=params_for_one_sample + ' --bam {bam} {bed} -o {output_dir}',
-        # )
-        #############
-        # Summaries #
-        # self.varqc_summary = Step(cnf, run_id,
-        #     name=BCBioStructure.varqc_name + '_summary', short_name='vqs',
-        #     interpreter='python',
-        #     script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
-        #     dir_name=BCBioStructure.varqc_summary_dir,
-        #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_name + '_summary.log'),
-        #     paramln=summaries_cmdline_params + ' ' + self.final_dir +
-        #         ' --varqc-name ' + BCBioStructure.varqc_name +
-        #         ' --varqc-dir ' + BCBioStructure.varqc_summary_dir
-        # )
-        # self.varqc_after_summary = Step(cnf, run_id,
-        #     name=BCBioStructure.varqc_after_name + '_summary', short_name='vqas',
-        #     interpreter='python',
-        #     script=join('scripts', 'post_bcbio', 'varqc_summary.py'),
-        #     dir_name=BCBioStructure.varqc_after_summary_dir,
-        #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.varqc_after_name + '_summary.log'),
-        #     paramln=summaries_cmdline_params + ' ' + self.final_dir +
-        #         ' --varqc-name ' + BCBioStructure.varqc_after_name +
-        #         ' --varqc-dir ' + BCBioStructure.varqc_after_summary_dir
-        # )
-
-        clinreport_paramline = (params_for_one_sample +
-           ' -s {sample}' +
-           ' {targqc_cmdl}' +
-           ' {mutations_cmdl}' +
-           ' {varqc_cmdl}' +
-           ' {match_cmdl}' +
-           ' {seq2c_cmdl}' +
-           ' {sv_cmdl}' +
-           ' {sv_vcf_cmdl}' +
-           ' {targqc_summary_cmdl}' +
-           ' --target-type ' + self.bcbio_structure.target_type +
-          (' --bed ' + target_bed if target_bed else '') +
-          (' --jira ' + self.cnf.jira if self.cnf.jira else '') +
-           ' -o {output_dir} ' +
-           ' --project-level-report {project_report_path}')
-        self.clin_report = Step(cnf, run_id,
-            name=source.clinreport_name, short_name='clin',
-            interpreter='python',
-            script=join('scripts', 'post', 'clinical_report.py'),
-            dir_name=source.clinreport_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '.log'),
-            paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name)
-        )
-        self.clin_report_perl = Step(cnf, run_id,
-            name=source.clinreport_name + '_perl', short_name='clin_perl',
-            interpreter='python',
-            script=join('scripts', 'post', 'clinical_report.py'),
-            dir_name=source.clinreport_dir + '_perl',
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '_perl.log'),
-            paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name + '_perl')
-        )
-
-        self.mongo_loader = Step(cnf, run_id,
-            name='MongoLoader', short_name='ml',
-            interpreter='java',
-            script='vcf_loader',
-            dir_name='mongo_loader',
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, 'mongo_loader.log'),
-            paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
-        )
-
         if self.bcbio_structure.is_rnaseq:
+            self.clin_report = None
+            self.targetcov = None
+            self.abnormal_regions = None
             self.seq2c = None
+            self.targqc_summary = None
         else:
+            targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
+                '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
+            if exons_bed:
+                targetcov_params += '--exons ' + exons_bed + ' '
+            if exons_no_genes_bed:
+                targetcov_params += '--exons-no-genes ' + exons_no_genes_bed + ' '
+            if target_bed:
+                targetcov_params += '--bed ' + target_bed + ' '
+            if original_bed:
+                targetcov_params += '--original-bed ' + original_bed + ' '
+            if genes_fpath:
+                targetcov_params += '--genes ' + genes_fpath + ' '
+            if cnf.no_dedup:
+                targetcov_params += '--no-dedup '
+            targetcov_params += '--no-prep-bed '
+
+            if cnf.steps and 'AbnormalCovReport' in cnf.steps:
+                targetcov_params += '--extended '
+            self.targetcov = Step(cnf, run_id,
+                name=BCBioStructure.targqc_name, short_name='tc',
+                interpreter='python',
+                script=join('scripts', 'post', 'targetcov.py'),
+                dir_name=BCBioStructure.targqc_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
+                paramln=targetcov_params
+            )
+            abnormal_regions_cmdl = summaries_cmdline_params + ' --mutations {mutations_fpath} ' + self.final_dir
+            if target_bed:
+                abnormal_regions_cmdl += ' --bed ' + target_bed
+            self.abnormal_regions = Step(cnf, run_id,
+                name='AbnormalCovReport', short_name='acr',
+                interpreter='python',
+                script=join('scripts', 'post', 'abnormal_regions.py'),
+                dir_name=BCBioStructure.targqc_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
+                paramln=abnormal_regions_cmdl
+            )
+
+            clinreport_paramline = (params_for_one_sample +
+               ' -s {sample}' +
+               ' {targqc_cmdl}' +
+               ' {mutations_cmdl}' +
+               ' {varqc_cmdl}' +
+               ' {match_cmdl}' +
+               ' {seq2c_cmdl}' +
+               ' {sv_cmdl}' +
+               ' {sv_vcf_cmdl}' +
+               ' {targqc_summary_cmdl}' +
+               ' --target-type ' + self.bcbio_structure.target_type +
+              (' --bed ' + target_bed if target_bed else '') +
+              (' --jira ' + self.cnf.jira if self.cnf.jira else '') +
+               ' -o {output_dir} ' +
+               ' --project-level-report {project_report_path}')
+            self.clin_report = Step(cnf, run_id,
+                name=source.clinreport_name, short_name='clin',
+                interpreter='python',
+                script=join('scripts', 'post', 'clinical_report.py'),
+                dir_name=source.clinreport_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', source.clinreport_name  + '.log'),
+                paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name)
+            )
+
             seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome}'
             seq2c_cmdline += ' -t ' + str(self.max_threads)
             seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
@@ -498,28 +449,20 @@ class BCBioRunner:
                 run_on_chara=True
             )
 
-        targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
-        if target_bed:
-            targqc_summary_cmdline += ' --bed ' + target_bed
-        if exons_bed:
-            targqc_summary_cmdline += ' --exons ' + exons_bed
+            targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
+            if target_bed:
+                targqc_summary_cmdline += ' --bed ' + target_bed
+            if exons_bed:
+                targqc_summary_cmdline += ' --exons ' + exons_bed
 
-        self.targqc_summary = Step(cnf, run_id,
-            name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.targqc_name + '_summary.log'),
-            dir_name=BCBioStructure.targqc_summary_dir,
-            paramln=targqc_summary_cmdline
-        )
-        # self.fastqc_summary = Step(cnf, run_id,
-        #     name=BCBioStructure.fastqc_name, short_name='fastqc',
-        #     interpreter='python',
-        #     script=join('scripts', 'post_bcbio', 'fastqc_summary.py'),
-        #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.fastqc_name + '_summary.log'),
-        #     dir_name=BCBioStructure.fastqc_summary_dir,
-        #     paramln=summaries_cmdline_params + ' ' + self.final_dir
-        # )
+            self.targqc_summary = Step(cnf, run_id,
+                name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
+                interpreter='python',
+                script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.targqc_name + '_summary.log'),
+                dir_name=BCBioStructure.targqc_summary_dir,
+                paramln=targqc_summary_cmdline
+            )
 
         self.bw_converting = Step(cnf, run_id,
             name='bam_to_bigwig', short_name='bamtobw',
