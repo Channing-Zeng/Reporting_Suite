@@ -970,11 +970,11 @@ class BCBioRunner:
             del_jobs(self.cnf, self.jobs_running)
             info('Changing permissions...')
             if isdir(self.bcbio_structure.final_dirpath):
-                change_permissions(self.bcbio_structure.final_dirpath)
+                change_permissions(self.cnf, self.bcbio_structure.final_dirpath)
             if isdir(self.bcbio_structure.work_dir):
-                change_permissions(self.bcbio_structure.work_dir)
+                change_permissions(self.cnf, self.bcbio_structure.work_dir)
             if isdir(join(self.bcbio_structure.work_dir, '..', 'config')):
-                change_permissions(join(self.bcbio_structure.work_dir, '..', 'config'))
+                change_permissions(self.cnf, join(self.bcbio_structure.work_dir, '..', 'config'))
             info()
             info('Done post-processing.')
 
