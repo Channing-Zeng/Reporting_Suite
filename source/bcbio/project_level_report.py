@@ -16,7 +16,7 @@ from source.file_utils import verify_file, add_suffix, verify_dir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
 from source.tools_from_cnf import get_system_path
-from source.utils import get_ext_tools_dirpath
+from source.utils import get_ext_tools_dirname
 
 BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr
@@ -209,7 +209,7 @@ def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_str
     if bcbio_structure:
         if isfile(bcbio_structure.fastqc_summary_fpath):
             recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
-        if not cnf.is_rna_seq:
+        if not bcbio_structure.is_rnaseq:
             recs = add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
         else:
             recs = add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
@@ -261,7 +261,7 @@ def create_qc_report(cnf, bcbio_structure):
         if fname.endswith('.csv')]
     if not csv_files_in_config_dir:
         return None
-    report_rmd_template_fpath = join(get_ext_tools_dirpath(is_common_file=True), 'qc_report.rmd')
+    report_rmd_template_fpath = get_system_path(cnf, join(get_ext_tools_dirname(is_common_file=True), 'qc_report.rmd'))
     report_template = open(report_rmd_template_fpath).read()
     report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.qc_report_name + '.rmd')
     report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.qc_report_name + '.html')
@@ -327,7 +327,7 @@ def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=Non
                     #     rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
                     sample_reports_records[s.name].append(rec)
 
-            if cnf.is_rna_seq:
+            if bcbio_structure.is_rnaseq:
                 sample_reports_records[s.name].extend(add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
             else:
                 sample_reports_records[s.name].extend(add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))

@@ -96,9 +96,9 @@ def get_chr_len_fpath(cnf):
     return chr_len_fpath
 
 
-def get_ext_tools_dirpath(is_common_file=False):
+def get_ext_tools_dirname(is_common_file=False):
     from sys import platform as _platform
-    if 'darwin' in _platform and not is_common_file:
+    if not is_common_file and 'darwin' in _platform:
         return join('ext_tools', 'osx')
     else:
         return 'ext_tools'

@@ -31,7 +31,9 @@ def main():
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
 
-    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
+        = process_post_bcbio_args(parser)
+    is_wgs = cnf.is_wgs = cnf.is_wgs or is_wgs_in_bcbio
 
     if len(bcbio_project_dirpaths) < 2 or len(bcbio_project_dirpaths) > 2:
         critical('Usage: ' + __file__ + ' wgs_project_project_bcbio_path '
@@ -42,7 +44,8 @@ def main():
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(
             bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
-        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
+        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath,
+                            is_wgs=is_wgs, is_rnaseq=is_rnaseq)
         bcbio_structures.append(bs)
 
     trg_bs = next((bs for bs in bcbio_structures if bs.bed), None)

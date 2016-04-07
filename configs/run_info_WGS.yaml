@@ -2,8 +2,6 @@ steps:
 - Variants
 - TargQC
 - Seq2C
-- ClinicalReport
-- Summary
 
 
 # reuse_intermediate: True

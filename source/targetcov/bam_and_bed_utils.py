@@ -13,7 +13,7 @@ from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
 from source.targetcov.Region import SortableByChrom
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import md5, get_chr_lengths_from_seq, get_ext_tools_dirpath
+from source.utils import md5, get_chr_lengths_from_seq, get_ext_tools_dirname
 
 
 def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
@@ -527,7 +527,7 @@ def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thres
             return None
         else:
             return output_fpath
-    sambamba = get_system_path(cnf, join(get_ext_tools_dirpath(), 'sambamba'), is_critical=True)
+    sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     depth_thresholds = depth_thresholds or cnf.coverage_reports.depth_thresholds
     thresholds_str = ' -T'.join([str(d) for d in depth_thresholds])
     cmdline = 'depth region -F "not duplicate and not failed_quality_control" -L {bed} -T {thresholds_str} {bam}'.format(**locals())

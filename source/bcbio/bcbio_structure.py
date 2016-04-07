@@ -41,7 +41,9 @@ def bcbio_summary_script_proc_params(proc_name, proc_dir_name=None, description=
     for args, kwargs in extra_opts or []:
         parser.add_option(*args, **kwargs)
 
-    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
+        = process_post_bcbio_args(parser)
+    is_wgs = cnf.is_wgs = cnf.is_wgs or is_wgs_in_bcbio
 
     cnf_project_name = cnf.project_name
     if len(bcbio_project_dirpaths) > 1:
@@ -49,7 +51,9 @@ def bcbio_summary_script_proc_params(proc_name, proc_dir_name=None, description=
 
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
-        bcbio_structures.append(BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.proc_name))
+        bcbio_structures.append(BCBioStructure(
+                cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath, cnf.proc_name,
+                is_wgs=is_wgs, is_rnaseq=is_rnaseq))
 
     # Single project, running as usually
     if len(bcbio_structures) == 1:
@@ -100,6 +104,9 @@ def process_post_bcbio_args(parser):
     bcbio_project_dirpaths = []
     bcbio_cnfs = []
     final_dirpaths = []
+    is_wgs = None
+    is_rnaseq = None
+    genome_build = None
 
     for dirpath in bcbio_dirpaths:
         bcbio_project_dirpath, final_dirpath, config_dirpath = _detect_bcbio_dirpath(dirpath)
@@ -110,17 +117,14 @@ def process_post_bcbio_args(parser):
         bcbio_cnfs.append(bcbio_cnf)
 
         _detect_sys_config(config_dirpath, opts)
-        is_wgs = not any('variant_regions' in d['algorithm'] for d in bcbio_cnf['details'])
-        _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs)
 
-        bcbio_yaml_genome = None
-        bcbio_yaml_genomes = set([d.get('genome_build') for d in bcbio_cnf['details']])
-        if len(bcbio_yaml_genomes) > 0:
-            if len(bcbio_yaml_genomes) != 1:
-                critical('Got different genome_build values in bcbio YAML ' + bcbio_cnf_fpath)
-            bcbio_yaml_genome = bcbio_yaml_genomes.pop()
-            if bcbio_yaml_genome is None:
-                warn('genome_build is not present for any sample in bcbio YAML ' + bcbio_cnf_fpath)
+        _is_wgs = any('variant_regions' not in d['algorithm'] for d in bcbio_cnf['details'])
+        if is_wgs is not None and is_wgs != _is_wgs:
+            critical('Projects are incompatible: WGS and non-WGA projects are mixed')
+        is_wgs = _is_wgs
+        if is_wgs:
+            if not all('variant_regions' not in d['algorithm'] for d in bcbio_cnf['details']):
+                critical('Some of the samples are WGS (no variant_regions specified), but not all')
 
         bcbio_analysis_type = None
         bcbio_analysis_types = set([d.get('analysis') for d in bcbio_cnf['details']])
@@ -128,8 +132,34 @@ def process_post_bcbio_args(parser):
             if len(bcbio_analysis_types) != 1:
                 critical('Different analysis values in bcbio YAML ' + bcbio_cnf_fpath)
             bcbio_analysis_type = bcbio_analysis_types.pop()
+        _is_rnaseq = 'rna' in bcbio_analysis_type.lower()
+        if is_rnaseq is not None and is_rnaseq != _is_rnaseq:
+            critical('Projects are incompatible: RNAseq and non-RNAseq projects are mixed')
+        is_rnaseq = _is_rnaseq
 
-        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf, bcbio_yaml_genome, bcbio_analysis_type=bcbio_analysis_type)
+        _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs, is_rnaseq=is_rnaseq)
+
+        _genome_build = None
+        for d in bcbio_cnf['details']:
+            if 'genome_build' not in d:
+                critical('genome_build is not specified for some samples in bcbio.yaml')
+            if _genome_build is not None and _genome_build != d['genome_build']:
+                critical('Got different genome_build values in bcbio YAML ' + bcbio_cnf_fpath)
+            _genome_build = d['genome_build']
+        if genome_build is not None and _genome_build != genome_build:
+            critical('Projects are incompatible: different genome builds are specified')
+        genome_build = _genome_build
+
+        bcbio_yaml_genomes = set([d['genome_build'] for d in bcbio_cnf['details'] if 'genome_build' in d])
+        if len(bcbio_yaml_genomes) == 0:
+
+            if len(bcbio_yaml_genomes) != 1:
+                critical('Got different genome_build values in bcbio YAML ' + bcbio_cnf_fpath)
+            bcbio_yaml_genome = bcbio_yaml_genomes.pop()
+            if bcbio_yaml_genome is None:
+                warn('genome_build is not present for any sample in bcbio YAML ' + bcbio_cnf_fpath)
+
+        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf, genome_build)
 
         check_genome_resources(cnf)
 
@@ -142,7 +172,7 @@ def process_post_bcbio_args(parser):
     if cnf.project_name:
         cnf.project_name = ''.join((c if (c.isalnum() or c in '-') else '_') for c in cnf.project_name)
 
-    return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags
+    return cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs, is_rnaseq
 
 
 def _detect_bcbio_dirpath(dir_arg):
@@ -201,7 +231,7 @@ def _detect_sys_config(config_dirpath, opts):
     info('Using system configuarion ' + opts.sys_cnf)
 
 
-def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
+def _detect_move_run_config(config_dirpath, opts, is_wgs=False, is_rnaseq=False):
     provided_cnf_fpath = adjust_path(opts.run_cnf)
 
     # provided in commandline?
@@ -255,7 +285,9 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
                  config_dirpath + ', using the default one.')
 
             # using one of the default ones.
-            if 'deep_seq' in opts.__dict__ and opts.deep_seq:
+            if is_rnaseq:
+                opts.run_cnf = defaults['run_cnf_rnaseq']
+            elif 'deep_seq' in opts.__dict__ and opts.deep_seq:
                 opts.run_cnf = defaults['run_cnf_deep_seq']
             elif is_wgs:
                 opts.run_cnf = defaults['run_cnf_wgs']
@@ -276,10 +308,10 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
 
 
 class BCBioSample(BaseSample):
-    def __init__(self, sample_name, final_dir, is_rna_seq=False, **kwargs):
+    def __init__(self, sample_name, final_dir, is_rnaseq=False, **kwargs):
         dirpath = join(final_dir, sample_name)
         targqc_dirpath = join(dirpath, BCBioStructure.targqc_dir)
-        qualimap_dirpath = join(dirpath, BCBioStructure.qualimap_rna_dir) if is_rna_seq else join(targqc_dirpath, BCBioStructure.qualimap_name)
+        qualimap_dirpath = join(dirpath, BCBioStructure.qualimap_rna_dir) if is_rnaseq else join(targqc_dirpath, BCBioStructure.qualimap_name)
 
         BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
             fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
@@ -553,7 +585,7 @@ class BaseProjectStructure:
 
 
 class BCBioStructure(BaseProjectStructure):
-    def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None):
+    def __init__(self, cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath=None, proc_name=None, is_wgs=False, is_rnaseq=False):
         BaseProjectStructure.__init__(self)
 
         self.bcbio_project_dirpath = bcbio_project_dirpath
@@ -567,7 +599,13 @@ class BCBioStructure(BaseProjectStructure):
 
         self.original_bed = None
         self.bed = None
-        self.is_wgs = False
+        self.is_wgs = is_wgs
+        if self.is_wgs:
+            info('WGS project')
+        self.is_rnaseq = is_rnaseq
+        if self.is_rnaseq:
+            info('Pipeline is RNA-seq')
+
         self.project_name = None
         self.target_type = None
 
@@ -668,7 +706,7 @@ class BCBioStructure(BaseProjectStructure):
         info()
         info('-' * 70)
 
-        # reading sampels
+        # reading samples
         for sample in [self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']]:
             if sample.dirpath is None:
                 err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
@@ -685,14 +723,9 @@ class BCBioStructure(BaseProjectStructure):
 
         self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
-
-        if cnf.is_rna_seq:
-            self.gene_counts_fpath =      join(self.date_dirpath, BCBioStructure.gene_counts_fname)
-            self.exon_counts_fpath =      join(self.date_dirpath, BCBioStructure.exon_counts_fname)
-            self.gene_tpm_fpath    =      join(self.date_dirpath, BCBioStructure.gene_tpm_fname)
-            self.isoform_tpm_fpath =      join(self.date_dirpath, BCBioStructure.isoform_tpm_fname)
-
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
+        self.flagged_regions_dirpath = join(self.date_dirpath, BCBioStructure.flagged_dir)
+
         self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
         self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
         self.varqc_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_report_fpath),
@@ -701,7 +734,12 @@ class BCBioStructure(BaseProjectStructure):
         self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath),
             ((k + '.') if len(self.variant_callers.values()) > 1 else '') + basename(self.varqc_after_report_fpath)))
             for k in self.variant_callers.keys()])
-        self.flagged_regions_dirpath = join(self.date_dirpath, BCBioStructure.flagged_dir)
+
+        if self.is_rnaseq:
+            self.gene_counts_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_fname)
+            self.exon_counts_fpath = join(self.date_dirpath, BCBioStructure.exon_counts_fname)
+            self.gene_tpm_fpath    = join(self.date_dirpath, BCBioStructure.gene_tpm_fname)
+            self.isoform_tpm_fpath = join(self.date_dirpath, BCBioStructure.isoform_tpm_fname)
 
         # setting bed files for samples
         if cnf.bed:
@@ -715,27 +753,24 @@ class BCBioStructure(BaseProjectStructure):
                 self.sv_bed = sv_bed_files_used[0]
                 info('Using ' + (self.sv_bed or 'CDS') + ' for Seq2C')
 
-        is_wgs_flags = [s.is_wgs for s in self.samples]
-        if len(set(is_wgs_flags)) > 2:
-            critical('Error: more than 1 variant_regions file found: ' + str(is_wgs_flags))
-        self.is_wgs = is_wgs_flags[0] if is_wgs_flags else False
-
         if not self.is_wgs:
             if not self.bed and self.sv_bed:
                 info('Not WGS, no --bed, setting --bed as sv_regions: ' + self.sv_bed)
                 self.bed = self.sv_bed
-            if not self.bed and cnf.genome.cds:
+            if not self.bed and not self.is_rnaseq and cnf.genome.cds:
                 info('Not WGS, no --bed, setting --bed as CDS reference BED file: ' + cnf.genome.cds)
                 self.bed = cnf.genome.cds
-        if not self.sv_bed and cnf.genome.cds:
+        if not self.sv_bed and not self.is_rnaseq and cnf.genome.cds:
             info('No sv_regions, setting sv_regions as CDS reference BED file ' + cnf.genome.cds)
             self.sv_bed = cnf.genome.cds
 
         for s in self.samples:
             s.bed = self.bed  # for TargQC
-            s.sv_bed = self.sv_bed  # for TargQC
+            s.sv_bed = self.sv_bed  # for Seq2C
 
-        if self.is_wgs:
+        if self.is_rnaseq:
+            self.target_type = 'transcriptome'
+        elif self.is_wgs:
             self.target_type = 'genome'
             info('Using WGS parameters for filtering')
         elif cnf.deep_seq:
@@ -838,8 +873,10 @@ class BCBioStructure(BaseProjectStructure):
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = BCBioSample(sample_name=str(sample_info['description']).replace('.', '_'), final_dir=self.final_dirpath,
-                             is_rna_seq=self.cnf.is_rna_seq)
+        sample = BCBioSample(
+            sample_name=str(sample_info['description']).replace('.', '_'),
+            final_dir=self.final_dirpath,
+            is_rnaseq=self.is_rnaseq)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
@@ -850,18 +887,13 @@ class BCBioStructure(BaseProjectStructure):
             return sample
 
         self._set_bam_file(sample)
-        if self.cnf.is_rna_seq:
+        if self.is_rnaseq:
             self._set_gene_counts_file(sample)
 
         # if 'min_allele_fraction' in sample_info['algorithm']:
         #     sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
 
         sample.phenotype = None
-
-        sample.genome = sample_info.get('genome_build') or 'hg19'
-        if sample.genome not in self.cnf.genomes:
-            critical('No section in genomes for ' + sample.genome + ' in ' + self.cnf.sys_cnf)
-        # sample.genome = self.cnf.genomes[sample.genome]
 
         self._set_bed_file(sample, sample_info)
 
@@ -944,16 +976,16 @@ class BCBioStructure(BaseProjectStructure):
         if not sample.sv_bed:
             info('No sv_regions file for ' + sample.name)
 
-        variant_regions = False
-        if sample_info['algorithm'].get('variant_regions'):  # SV regions?
-            variant_regions = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['variant_regions']))
-        if not variant_regions:
-            sample.is_wgs = True
-            info('No variant_regions file for ' + sample.name + ', assuming WGS')
+        # variant_regions = False
+        # if sample_info['algorithm'].get('variant_regions'):  # SV regions?
+        #     variant_regions = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['variant_regions']))
+        # if not variant_regions:
+        #     sample.is_wgs = True
+        #     info('No variant_regions file for ' + sample.name + ', assuming WGS')
 
-        if self.cnf.bed:  # Custom BED provided in command line?
-            sample.bed = verify_bed(self.cnf.bed, is_critical=True)
-            info('TargQC BED file for ' + sample.name + ': ' + str(sample.bed))
+        # if self.cnf.bed:  # Custom BED provided in command line?
+        #     sample.bed = verify_bed(self.cnf.bed, is_critical=True)
+        #     info('TargQC BED file for ' + sample.name + ': ' + str(sample.bed))
         # else:
             # sample.bed = sample.sv_bed
             # if sample.bed:

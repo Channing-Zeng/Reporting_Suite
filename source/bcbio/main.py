@@ -40,7 +40,9 @@ def main():
     parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering. Default %f' % defaults['default_min_freq'])
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
 
-    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags = process_post_bcbio_args(parser)
+    cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
+        = process_post_bcbio_args(parser)
+    is_wgs = cnf.is_wgs = cnf.is_wgs or is_wgs_in_bcbio
 
     cnf.run_date = time.localtime()
     cnf_project_name = cnf.project_name
@@ -51,7 +53,8 @@ def main():
     info('*' * 70)
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
-        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
+        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath,
+                            is_wgs=is_wgs, is_rnaseq=is_rnaseq)
         bcbio_structures.append(bs)
 
     # Post-processing one bcbio project as usually

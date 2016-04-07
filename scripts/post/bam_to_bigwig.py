@@ -32,7 +32,7 @@ from collections import defaultdict
 import source
 from source.file_utils import file_transaction, add_suffix, adjust_path, intermediate_fname
 from source.targetcov.bam_and_bed_utils import check_md5, bam_to_bed, remove_dups, index_bam, verify_bam
-from source.utils import get_ext_tools_dirpath, get_chr_len_fpath, get_chr_lengths
+from source.utils import get_ext_tools_dirname, get_chr_len_fpath, get_chr_lengths
 from source.logger import critical, info, err
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources
@@ -134,7 +134,7 @@ def sort_bed_by_alphabet(cnf, input_bed_fpath, output_bed_fpath=None):
 def convert_to_bigwig(bedgraph_fpath, cnf, chr_len_fpath, bw_fpath):
     try:
         with file_transaction(cnf.work_dir, bw_fpath) as tx_fpath:
-            cmdl = get_system_path(cnf, join(get_ext_tools_dirpath(), 'bedGraphToBigWig'), is_critical=True)
+            cmdl = get_system_path(cnf, join(get_ext_tools_dirname(), 'bedGraphToBigWig'), is_critical=True)
             cmdl += ' ' + bedgraph_fpath + ' ' + chr_len_fpath + ' ' + tx_fpath
             call(cnf, cmdl, exit_on_error=True)
     finally:

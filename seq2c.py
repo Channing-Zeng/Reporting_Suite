@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
 from collections import OrderedDict
+from shutil import copyfile
+from traceback import format_exc
 
 import bcbio_postproc
 
@@ -8,7 +10,7 @@ import bcbio_postproc
 import sys
 import os
 from os.path import join, basename, splitext, dirname
-from optparse import OptionParser
+from optparse import OptionParser, SUPPRESS_HELP
 
 import source
 from source import logger
@@ -16,7 +18,7 @@ from source.calling_process import call
 from source.config import Config
 from source.copy_number import run_seq2c
 from source.file_utils import verify_dir, adjust_system_path, verify_file, adjust_path, safe_mkdir
-from source.logger import info, critical
+from source.logger import info, critical, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, determine_run_cnf, \
     determine_sys_cnf, set_up_dirs, check_genome_resources
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed, count_bed_cols, prepare_beds
@@ -42,6 +44,7 @@ def proc_args(argv):
     parser.add_option('--bed', dest='bed', help='BED file to run Seq2C analysis')
     parser.add_option('-c', '--controls', dest='controls', help='Optional control sample names for Seq2C. For multiple controls, separate them using :')
     parser.add_option('--seq2c-opts', dest='seq2c_opts', help='Options for the final lr2gene.pl script.')
+    parser.add_option('--no-prep-bed', dest='prep_bed', help=SUPPRESS_HELP, action='store_false', default=True)
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
@@ -77,12 +80,7 @@ def proc_args(argv):
             for s_name, bam_fpath in bam_by_sample.items()]
     samples.sort(key=lambda _s: _s.key_to_sort())
 
-    target_bed, _, _ = get_bed_targqc_inputs(cnf, cnf.bed)
-    if not target_bed:
-        info('No input BED is specified, using CDS instead from ' + str(cnf.genome.cds))
-        target_bed = verify_bed(cnf.genome.cds)
-    else:
-        info('Using target ' + target_bed)
+    target_bed = verify_bed(cnf.bed, is_critical=True) if cnf.bed else None
 
     if not cnf.only_summary:
         cnf.qsub_runner = adjust_system_path(cnf.qsub_runner)
@@ -128,11 +126,28 @@ def read_samples(sample2bam_fpath):
 def main():
     cnf, samples, bed_fpath, output_dir = proc_args(sys.argv)
 
-    bed_fpath = verify_bed(bed_fpath)
-    bed_cols = count_bed_cols(bed_fpath)
-    if bed_cols < 4:
-        check_genome_resources(cnf)
-        _, _, _, bed_fpath = prepare_beds(cnf, None, None, bed_fpath)
+    if cnf.prep_bed is not False:
+        if not bed_fpath:
+            info('No input BED is specified, using CDS instead from ' + str(cnf.genome.cds))
+            bed_fpath = verify_bed(cnf.genome.cds, 'CDS bed file for ' + cnf.genome.name)
+
+        seq2c_bed_fname = basename(bed_fpath)
+
+        bed_cols = count_bed_cols(bed_fpath)
+        if bed_cols < 4:
+            check_genome_resources(cnf)
+            _, _, _, bed_fpath = prepare_beds(cnf, None, None, bed_fpath)
+
+        try:
+            copyfile(bed_fpath, join(output_dir, seq2c_bed_fname))
+        except OSError:
+            err(format_exc())
+            info()
+        else:
+            info('Seq2C bed file is saved in ' + join(output_dir, seq2c_bed_fname))
+
+    bed_fpath = verify_bed(bed_fpath, is_critical=True, description='Input BED file')
+    info('Using target ' + bed_fpath)
 
     run_seq2c(cnf, output_dir, samples, bed_fpath, cnf.is_wgs)
 

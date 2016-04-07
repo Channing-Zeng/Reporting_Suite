@@ -42,8 +42,9 @@ def run_seq2c_bcbio_structure(cnf, bcbio_structure):
         seq2c_bed = verify_bed(cnf.bed)
 
     info('Calculating normalized coverages for CNV...')
-    cnv_report_fpath = run_seq2c(cnf, join(bcbio_structure.date_dirpath, BCBioStructure.cnv_dir),
-                                 bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
+    cnv_report_fpath = run_seq2c(
+        cnf, join(bcbio_structure.date_dirpath, BCBioStructure.cnv_dir),
+        bcbio_structure.samples, seq2c_bed, is_wgs=cnf.is_wgs)
 
     # if not verify_module('matplotlib'):
     #     warn('No matplotlib, skipping plotting Seq2C')
@@ -110,15 +111,6 @@ def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2
 def run_seq2c(cnf, output_dirpath, samples, seq2c_bed, is_wgs):
     step_greetings('Running Seq2C')
 
-    seq2c_exposed_fpath = join(output_dirpath, 'seq2c_target.bed')
-    try:
-        copyfile(seq2c_bed, seq2c_exposed_fpath)
-    except OSError:
-        err(format_exc())
-        info()
-    else:
-        info('Seq2C bed file is saved in ' + seq2c_exposed_fpath)
-
     bams_by_sample = dict()
     for s in samples:
         if not s.bam:
@@ -149,7 +141,7 @@ def run_seq2c(cnf, output_dirpath, samples, seq2c_bed, is_wgs):
 
     info('Getting reads and cov stats')
     mapped_read_fpath = join(output_dirpath, 'mapped_reads_by_sample.tsv')
-    output_fpath, samples = __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
+    mapped_read_fpath, samples = __get_mapped_reads(cnf, samples, bams_by_sample, mapped_read_fpath)
     info()
     if not mapped_read_fpath:
         return None
@@ -426,7 +418,7 @@ def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_de
     seq2c_bed = None
     if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name,
             silent=True) for s in samples) or not cnf.reuse_intermediate:
-        if cnf.prep_bed is not False:
+        if cnf._prep_bed is not False:
             _, _, _, seq2c_bed = \
                 prepare_beds(cnf, features_bed=features_bed_fpath, target_bed=target_bed, seq2c_bed=target_bed)
         else:
@@ -588,6 +580,10 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
             mapped_reads_by_sample[s.name] = mapped_reads
 
         else:
+            if s.name not in bam_by_sample:
+                err('No BAM for ' + s.name + ', not running Seq2C')
+                return None, None
+
             info('Submitting a sambamba job to get mapped read numbers')
             bam_fpath = bam_by_sample[s.name]
             j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True)
@@ -612,4 +608,3 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
     successful_samples = [s for s in samples if s.name in mapped_reads_by_sample]
     info('Samples processed: ' + str(len(samples)) + ', successfully: ' + str(len(successful_samples)))
     return output_fpath, successful_samples
-

@@ -6,7 +6,7 @@ import shutil
 import traceback
 from collections import defaultdict
 from genericpath import exists
-from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize
+from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize, basename
 import datetime
 from time import sleep
 from traceback import format_exc
@@ -86,7 +86,7 @@ class Steps(list):
             return Steps.contains([s.name for s in self], step)
 
     def add_step(self, step):
-        if not self.__contains__(step.name):
+        if step and not self.__contains__(step.name):
             self.append(step)
 
     def extend(self, iterable):
@@ -138,7 +138,9 @@ class BCBioRunner:
         total_callers_num = total_samples_num * len(self.bcbio_structure.variant_callers)
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
-        self._init_steps(cnf, self.run_id)
+        target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_bed = self._prep_bed()
+
+        self._init_steps(cnf, self.run_id, target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_bed)
 
         if not cnf.steps:
             cnf.steps = []
@@ -160,21 +162,17 @@ class BCBioRunner:
         # if Steps.contains(cnf.steps, 'AbnormalCovReport'):
         #    self.steps.append(self.abnormal_regions)
 
-        if Steps.contains(cnf.steps, 'Seq2C'):
+        if not not self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'Seq2C'):
             self.steps.extend([self.seq2c])
 
         # if Steps.contains(cnf.steps, 'ClinicalReport') or \
         #         Steps.contains(cnf.steps, 'ClinicalReports') or \
         #         Steps.contains(cnf.steps, source.clinreport_name):
-        if not cnf.is_rna_seq:
+        if not bcbio_structure.is_rnaseq:
             self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
             self.steps.extend([self.targqc_summary])
-
-        # fastqc summary and clinical report -- special case (turn on if user uses default steps)
-        if set(defaults['steps']) == set(cnf.steps) and not cnf.is_rna_seq:
-            self.steps.extend([self.clin_report])
 
         from sys import platform as _platform
         if 'linux' in _platform:
@@ -199,13 +197,60 @@ class BCBioRunner:
 
         self.jobs_running = []
 
+    def _prep_bed(self):
+        if self.bcbio_structure.is_rnaseq and not self.bcbio_structure.bed:
+            return None, None, None, None, None, None
+
+        info()
+        info('Checking BED files')
+        self.is_wgs = self.bcbio_structure.is_wgs
+
+        target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(self.cnf, self.bcbio_structure.bed)
+        original_target_bed = target_bed
+        seq2c_bed = self.bcbio_structure.sv_bed
+        original_seq2c_bed = seq2c_bed
+
+        reuse = self.cnf.reuse_intermediate
+        if reuse and target_bed:
+            reuse = check_md5(self.cnf.work_dir, adjust_path(target_bed), 'target')
+            if reuse:
+                info('Target ' + target_bed + ' didn\'t change')
+                if exons_bed:
+                    reuse = check_md5(self.cnf.work_dir, exons_bed, 'features')
+                    if reuse:
+                        info('Features ' + exons_bed + ' didn\'t change')
+
+        with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
+            exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed, seq2c_bed)
+            _, _, target_bed, exons_bed, exons_no_genes_bed = \
+                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
+
+        # exposing
+        if target_bed and original_target_bed:
+            ready_target_bed = join(self.bcbio_structure.date_dirpath, basename(original_target_bed))
+            try:
+                shutil.copy(target_bed, ready_target_bed)
+            except OSError:
+                err(traceback.format_exc())
+            info('Target BED file is saved in ' + ready_target_bed)
+
+        if seq2c_bed and original_seq2c_bed:
+            ready_seq2c_bed = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, basename(original_seq2c_bed))
+            try:
+                shutil.copy(seq2c_bed, ready_seq2c_bed)
+            except OSError:
+                err(traceback.format_exc())
+            info('Seq2C BED file is saved in ' + ready_seq2c_bed)
+
+        return target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_target_bed
+
     @staticmethod
     def __generate_run_id(final_dir, project_name, prid='', timestamp=''):
         hasher = hashlib.sha1(final_dir + prid + timestamp)
         path_hash = base64.urlsafe_b64encode(hasher.digest()[0:4])[:-2]
         return project_name + '_' + path_hash
 
-    def _init_steps(self, cnf, run_id):
+    def _init_steps(self, cnf, run_id, target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_bed):
         basic_params = \
             ' --sys-cnf ' + self.cnf.sys_cnf + \
             ' --run-cnf ' + self.cnf.run_cnf + \
@@ -264,20 +309,6 @@ class BCBioRunner:
         #             '--proc-name ' + BCBioStructure.varqc_after_name
         # )
 
-        info()
-        info('Checking BED files')
-        self.is_wgs = self.cnf.is_wgs or self.bcbio_structure.is_wgs
-        target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed = self.prep_bed()
-
-        if target_bed:
-            ready_target_bed = join(self.bcbio_structure.date_dirpath, 'target.bed')
-            try:
-                shutil.copy(target_bed, ready_target_bed)
-            except OSError:
-                err(traceback.format_exc())
-            target_bed = ready_target_bed
-            cnf.bed = target_bed
-
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
@@ -331,14 +362,14 @@ class BCBioRunner:
             targetcov_params += '--exons-no-genes ' + exons_no_genes_bed + ' '
         if target_bed:
             targetcov_params += '--bed ' + target_bed + ' '
-        if self.bcbio_structure.bed:
-            targetcov_params += '--original-bed ' + self.bcbio_structure.bed + ' '
+        if original_bed:
+            targetcov_params += '--original-bed ' + original_bed + ' '
         if genes_fpath:
             targetcov_params += '--genes ' + genes_fpath + ' '
         if cnf.no_dedup:
             targetcov_params += '--no-dedup '
-
         targetcov_params += '--no-prep-bed '
+
         if cnf.steps and 'AbnormalCovReport' in cnf.steps:
             targetcov_params += '--extended '
         self.targetcov = Step(cnf, run_id,
@@ -441,28 +472,31 @@ class BCBioRunner:
             paramln='-module loader -project {project} -sample {sample} -path {path} -variantCaller {variantCaller}'
         )
 
-        seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome}'
-        seq2c_cmdline += ' -t ' + str(self.max_threads)
-        seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
-        if self.is_wgs:
-            seq2c_cmdline += ' --wgs '
-        normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
-        if normal_snames or cnf.seq2c_controls:
-            controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
-            seq2c_cmdline += ' -c ' + ':'.join(controls)
-        if cnf.seq2c_opts:
-            seq2c_cmdline += ' --seq2c-opts ' + cnf.seq2c_opts
-        if cnf.reannotate:
-            seq2c_cmdline += ' --reannotate '
-        self.seq2c = Step(cnf, run_id,
-            name=BCBioStructure.seq2c_name, short_name='seq2c',
-            interpreter='python',
-            script=join('scripts', 'post_bcbio', 'seq2c.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
-            dir_name=BCBioStructure.cnv_summary_dir,
-            paramln=seq2c_cmdline,
-            run_on_chara=True
-        )
+        if self.bcbio_structure.is_rnaseq:
+            self.seq2c = None
+        else:
+            seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {genome}'
+            seq2c_cmdline += ' -t ' + str(self.max_threads)
+            seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
+            if self.is_wgs:
+                seq2c_cmdline += ' --wgs '
+            normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
+            if normal_snames or cnf.seq2c_controls:
+                controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
+                seq2c_cmdline += ' -c ' + ':'.join(controls)
+            if cnf.seq2c_opts:
+                seq2c_cmdline += ' --seq2c-opts ' + cnf.seq2c_opts
+            if cnf.reannotate:
+                seq2c_cmdline += ' --reannotate '
+            self.seq2c = Step(cnf, run_id,
+                name=BCBioStructure.seq2c_name, short_name='seq2c',
+                interpreter='python',
+                script=join('scripts', 'post_bcbio', 'seq2c.py'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
+                dir_name=BCBioStructure.cnv_summary_dir,
+                paramln=seq2c_cmdline,
+                run_on_chara=True
+            )
 
         targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if target_bed:
@@ -495,28 +529,6 @@ class BCBioRunner:
             paramln=basic_params + ' --genome {genome}  -s \'{sample}\' --bam \'{bam}\''
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
-
-    def prep_bed(self):
-        target_bed, exons_bed, genes_fpath = get_bed_targqc_inputs(self.cnf, self.bcbio_structure.bed)
-        exons_no_genes_bed = None
-        seq2c_bed = self.bcbio_structure.sv_bed
-
-        reuse = self.cnf.reuse_intermediate
-        if reuse and target_bed:
-            reuse = check_md5(self.cnf.work_dir, adjust_path(target_bed), 'target')
-            if reuse:
-                info('Target ' + target_bed + ' didn\'t change')
-                if exons_bed:
-                    reuse = check_md5(self.cnf.work_dir, exons_bed, 'features')
-                    if reuse:
-                        info('Features ' + exons_bed + ' didn\'t change')
-
-        with with_cnf(self.cnf, reuse_intermediate=reuse) as cnf:
-            exons_bed, exons_no_genes_bed, target_bed, seq2c_bed = prepare_beds(cnf, exons_bed, target_bed, seq2c_bed)
-            _, _, target_bed, exons_bed, exons_no_genes_bed = \
-                extract_gene_names_and_filter_exons(cnf, target_bed, exons_bed, exons_no_genes_bed)
-
-        return target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed
 
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
         if sample_name:
@@ -763,7 +775,7 @@ class BCBioRunner:
 
                     self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
 
-            if self.seq2c in self.steps:
+            if self.seq2c and self.seq2c in self.steps:
                 self._submit_job(
                     self.seq2c,
                     wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
@@ -942,7 +954,7 @@ class BCBioRunner:
                 oncoprints_link = get_oncoprints_link(self.cnf, self.bcbio_structure, self.bcbio_structure.project_name)
 
             html_report_fpath = make_project_level_report(
-                    self.cnf, bcbio_structure=self.bcbio_structure, oncoprints_link=oncoprints_link)
+                self.cnf, bcbio_structure=self.bcbio_structure, oncoprints_link=oncoprints_link)
 
             html_report_url = None
             if html_report_fpath:
