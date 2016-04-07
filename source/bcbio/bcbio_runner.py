@@ -166,13 +166,14 @@ class BCBioRunner:
         # if Steps.contains(cnf.steps, 'ClinicalReport') or \
         #         Steps.contains(cnf.steps, 'ClinicalReports') or \
         #         Steps.contains(cnf.steps, source.clinreport_name):
-        self.steps.extend([self.clin_report])
+        if not cnf.is_rna_seq:
+            self.steps.extend([self.clin_report])
 
         if Steps.contains(cnf.steps, 'Summary'):
             self.steps.extend([self.targqc_summary])
 
         # fastqc summary and clinical report -- special case (turn on if user uses default steps)
-        if set(defaults['steps']) == set(cnf.steps):
+        if set(defaults['steps']) == set(cnf.steps) and not cnf.is_rna_seq:
             self.steps.extend([self.clin_report])
 
         from sys import platform as _platform

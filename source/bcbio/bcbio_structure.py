@@ -122,7 +122,14 @@ def process_post_bcbio_args(parser):
             if bcbio_yaml_genome is None:
                 warn('genome_build is not present for any sample in bcbio YAML ' + bcbio_cnf_fpath)
 
-        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf, bcbio_yaml_genome)
+        bcbio_analysis_type = None
+        bcbio_analysis_types = set([d.get('analysis') for d in bcbio_cnf['details']])
+        if len(bcbio_analysis_types) > 0:
+            if len(bcbio_analysis_types) != 1:
+                critical('Different analysis values in bcbio YAML ' + bcbio_cnf_fpath)
+            bcbio_analysis_type = bcbio_analysis_types.pop()
+
+        cnf = Config(opts.__dict__, opts.sys_cnf, opts.run_cnf, bcbio_yaml_genome, bcbio_analysis_type=bcbio_analysis_type)
 
         check_genome_resources(cnf)
 
@@ -269,15 +276,16 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False):
 
 
 class BCBioSample(BaseSample):
-    def __init__(self, sample_name, final_dir, **kwargs):
+    def __init__(self, sample_name, final_dir, is_rna_seq=False, **kwargs):
         dirpath = join(final_dir, sample_name)
         targqc_dirpath = join(dirpath, BCBioStructure.targqc_dir)
+        qualimap_dirpath = join(dirpath, BCBioStructure.qualimap_rna_dir) if is_rna_seq else join(targqc_dirpath, BCBioStructure.qualimap_name)
 
         BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
             fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
             targqc_dirpath=targqc_dirpath,
             ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
-            qualimap_dirpath=join(targqc_dirpath, BCBioStructure.qualimap_name),
+            qualimap_dirpath=qualimap_dirpath,
             picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
             flagged_regions_dirpath=join(targqc_dirpath, BCBioStructure.flag_regions_name),
             clinical_report_dirpath=join(dirpath, source.clinreport_dir),
@@ -508,6 +516,14 @@ class BaseProjectStructure:
     bigwig_name      = 'bigwig'
     flag_regions_name = 'flaggedRegions'
 
+    ## RNAseq
+    gene_counts_fname = 'combined.counts'
+    exon_counts_fname = 'combined.dexseq'
+    gene_tpm_fname    = 'combined.gene.sf.tpm'
+    isoform_tpm_fname = 'combined.isoform.sf.tpm'
+    qc_report_name    = 'qc_report'
+    qualimap_rna_dir  = join('qc', qualimap_dir)
+
     fastqc_repr      = 'FastQC'
     varqc_repr       = 'VarQC'
     varqc_after_repr = 'VarQC after filtering'
@@ -620,6 +636,7 @@ class BCBioStructure(BaseProjectStructure):
 
         self.work_dir = self.cnf.work_dir = self.cnf.work_dir or abspath(join(self.final_dirpath, pardir, 'work', 'post_processing'))
         set_up_work_dir(cnf)
+        self.config_dir = abspath(join(self.final_dirpath, pardir, 'config'))
 
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
         self.raw_var_dirpath = join(self.var_dirpath, 'raw')
@@ -646,6 +663,7 @@ class BCBioStructure(BaseProjectStructure):
                 dst_fpath = join(self.date_dirpath, 'project-summary.txt')
                 info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
                 _extract_project_summary(project_summary_fpath, dst_fpath)
+                self.project_summary_fpath = dst_fpath
 
         info()
         info('-' * 70)
@@ -667,6 +685,13 @@ class BCBioStructure(BaseProjectStructure):
 
         self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
+
+        if cnf.is_rna_seq:
+            self.gene_counts_fpath =      join(self.date_dirpath, BCBioStructure.gene_counts_fname)
+            self.exon_counts_fpath =      join(self.date_dirpath, BCBioStructure.exon_counts_fname)
+            self.gene_tpm_fpath    =      join(self.date_dirpath, BCBioStructure.gene_tpm_fname)
+            self.isoform_tpm_fpath =      join(self.date_dirpath, BCBioStructure.isoform_tpm_fname)
+
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
         self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
         self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
@@ -813,7 +838,8 @@ class BCBioStructure(BaseProjectStructure):
             os.rename(src_fpath, dst_fpath)
 
     def _read_sample_details(self, sample_info):
-        sample = BCBioSample(sample_name=str(sample_info['description']).replace('.', '_'), final_dir=self.final_dirpath)
+        sample = BCBioSample(sample_name=str(sample_info['description']).replace('.', '_'), final_dir=self.final_dirpath,
+                             is_rna_seq=self.cnf.is_rna_seq)
 
         info('Sample "' + sample.name + '"')
         if not self.cnf.verbose: info(ending='')
@@ -824,6 +850,8 @@ class BCBioStructure(BaseProjectStructure):
             return sample
 
         self._set_bam_file(sample)
+        if self.cnf.is_rna_seq:
+            self._set_gene_counts_file(sample)
 
         # if 'min_allele_fraction' in sample_info['algorithm']:
         #     sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
@@ -1019,6 +1047,15 @@ class BCBioStructure(BaseProjectStructure):
             info('Notice: no VCF file for ' + sample.name + ', ' + caller_name + ', phenotype ' + str(sample.phenotype))
 
         return None
+
+    def _set_gene_counts_file(self, sample):
+        gene_counts = adjust_path(join(sample.dirpath, sample.name + '-ready.counts'))
+        if isfile(gene_counts):
+            sample.gene_counts = gene_counts
+            info('Gene counts file for ' + sample.name + ': ' + sample.gene_counts)
+        else:
+            sample.gene_counts = None
+            err('No gene counts file for ' + sample.name)
 
     def clean(self):
         for sample in self.samples:

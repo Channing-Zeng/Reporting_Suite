@@ -2,6 +2,7 @@ import json
 import os
 import time
 from inspect import getsourcefile
+from os import listdir
 from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile
 from collections import OrderedDict
 from collections import defaultdict
@@ -9,10 +10,13 @@ from collections import defaultdict
 import source
 from scripts.post.create_oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
+from source.calling_process import call
 from source.logger import info, step_greetings, warn
 from source.file_utils import verify_file, add_suffix, verify_dir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
+from source.tools_from_cnf import get_system_path
+from source.utils import get_ext_tools_dirpath
 
 BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr
@@ -30,6 +34,13 @@ PHENOTYPE             = 'Phenotype'
 NORM_MATCH            = 'Normal Match'
 ABNORMAL_NAME         = 'Flagged regions'
 
+## RNAseq reports
+QC_REPORT_NAME        = 'QC report'
+GENE_COUNTS_NAME      = 'Gene counts'
+EXON_COUNTS_NAME      = 'Exon counts'
+GENE_TPM_NAME         = 'Gene TPM'
+ISOFORM_TPM_NAME      = 'Isoform TPM'
+QUALIMAP_NAME         = 'Qualimap'
 
 metric_storage = MetricStorage(
     general_section=ReportSection(metrics=[
@@ -44,6 +55,11 @@ metric_storage = MetricStorage(
         Metric(MUTATIONS_SINGLE_NAME),
         Metric(MUTATIONS_PAIRED_NAME),
         Metric(ABNORMAL_NAME),
+        Metric(QC_REPORT_NAME),
+        Metric(GENE_COUNTS_NAME),
+        Metric(EXON_COUNTS_NAME),
+        Metric(GENE_TPM_NAME),
+        Metric(ISOFORM_TPM_NAME)
     ]),
     sections=[ReportSection(metrics=[
         Metric(PRE_FASTQC_NAME),
@@ -51,11 +67,13 @@ metric_storage = MetricStorage(
         # Metric('BAM'),
         Metric(PRE_SEQQC_NAME),
         Metric(SEQQC_NAME),
+        Metric(QUALIMAP_NAME),
         # Metric(MUTATIONS_NAME),
         Metric(VARQC_NAME),
         Metric(VARQC_AFTER_NAME),
         Metric(GENDER, description='If not defined, means that the target does not contain key male Y genes that we could check'),
         Metric(CLINICAL_NAME),
+        Metric(GENE_COUNTS_NAME),
         Metric(PHENOTYPE),
         Metric(NORM_MATCH),
     ])])
@@ -69,8 +87,8 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
     #     dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
     #     dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
 
-    general_records = _add_summary_reports(metric_storage.general_section, bcbio_structure, dataset_structure, dataset_project)
-    sample_reports_records = _add_per_sample_reports(metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
+    general_records = _add_summary_reports(cnf, metric_storage.general_section, bcbio_structure, dataset_structure, dataset_project)
+    sample_reports_records = _add_per_sample_reports(cnf, metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
 
     sample_reports = []
     samples = []
@@ -169,7 +187,7 @@ def _make_url_record(html_fpath_value, metric, base_dirpath):
         return Record(metric=metric, value=metric.name, url=url)
 
 
-def _add_summary_reports(general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
+def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     """ We want links to be relative, so we make paths relative to the project-level-report parent directory.
         - If the bcbio_structure is set, project-level report is located at bcbio_structure.date_dirpath
         - If dataset_dirpath is set, project-level report is located right at dataset_dirpath
@@ -189,20 +207,12 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
         recs.append(_make_url_record(dataset_project.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
-        recs.extend(_mutations_records(general_section, bcbio_structure))
-
-        varqc_d = bcbio_structure.varqc_report_fpath_by_caller
-        varqc_d['all'] = bcbio_structure.varqc_report_fpath
-
-        varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
-        varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
-
         if isfile(bcbio_structure.fastqc_summary_fpath):
             recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
-        recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
-        recs.append(_make_url_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
-        recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
-
+        if not cnf.is_rna_seq:
+            recs = add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
+        else:
+            recs = add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
         # if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
         #     url_val = OrderedDict(
         #             [(region_type, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region_type + '.html'))
@@ -213,7 +223,60 @@ def _add_summary_reports(general_section, bcbio_structure=None, dataset_structur
     return recs
 
 
-def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
+def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath):
+    recs.append(_make_url_record(bcbio_structure.gene_counts_fpath, general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.exon_counts_fpath, general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.gene_tpm_fpath, general_section.find_metric(GENE_TPM_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.isoform_tpm_fpath, general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
+
+    qc_report_fpath = create_qc_report(cnf, bcbio_structure)
+    if qc_report_fpath and isfile(qc_report_fpath):
+        recs.append(_make_url_record(qc_report_fpath, general_section.find_metric(QC_REPORT_NAME), base_dirpath))
+        info('RNASeq QC report saved in ' + qc_report_fpath)
+    else:
+        warn('RNASeq QC report was not created')
+    return recs
+
+
+def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath):
+    recs.extend(_mutations_records(general_section, bcbio_structure))
+
+    varqc_d = bcbio_structure.varqc_report_fpath_by_caller
+    varqc_d['all'] = bcbio_structure.varqc_report_fpath
+
+    varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
+    varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
+
+    recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
+    recs.append(_make_url_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
+    recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
+    return recs
+
+
+def create_qc_report(cnf, bcbio_structure):
+    info('Making RNASeq QC report')
+    csv_files_in_config_dir = [
+        join(bcbio_structure.config_dir, fname)
+        for fname in listdir(bcbio_structure.config_dir)
+        if fname.endswith('.csv')]
+    if not csv_files_in_config_dir:
+        return None
+    report_rmd_template_fpath = join(get_ext_tools_dirpath(is_common_file=True), 'qc_report.rmd')
+    report_template = open(report_rmd_template_fpath).read()
+    report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.qc_report_name + '.rmd')
+    report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.qc_report_name + '.html')
+    with open(report_rmd_fpath, 'w') as out_r_script_handle:
+        out_r_script_handle.write(report_template.format(bcbio_csv=csv_files_in_config_dir[0],
+                                  project_summary=bcbio_structure.project_summary_fpath, combined_counts=bcbio_structure.gene_counts_fpath))
+
+    render_rmd_r = get_system_path(cnf, 'Rscript', join('tools', 'render_rmd.R'))
+    render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath
+    call(cnf, render_rmd_cmdline, print_stderr=False)
+    os.remove(report_rmd_fpath)
+    return report_html_fpath
+
+
+def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     base_dirpath = None
     if dataset_project:
         base_dirpath = dirname(dataset_project.project_report_html_fpath)
@@ -248,27 +311,8 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
 
         normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
         for s in bcbio_structure.samples:
-            targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
-
             if s.fastqc_html_fpath and isfile(s.fastqc_html_fpath):
                 sample_reports_records[s.name].append(_make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME), base_dirpath))
-            sample_reports_records[s.name].append(_make_url_record(targqc_d, individual_reports_section.find_metric(SEQQC_NAME), base_dirpath))
-
-            if not s.phenotype or s.phenotype != 'normal':
-                varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-                varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-                sample_reports_records[s.name].extend([
-                    _make_url_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
-                    _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
-                ])
-
-            if not verify_file(s.clinical_html, is_critical=False):
-                clinical_html = join(dirname(dirname(s.clinical_html)), 'clinicalReport', basename(s.clinical_html))
-                if verify_file(clinical_html):
-                    s.clinical_html = clinical_html
-            rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
-            if rec and rec.value:
-                sample_reports_records[s.name].append(rec)
 
             if gender_record_by_sample.get(s.name):
                 sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
@@ -282,6 +326,11 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
                     # else:
                     #     rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
                     sample_reports_records[s.name].append(rec)
+
+            if cnf.is_rna_seq:
+                sample_reports_records[s.name].extend(add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
+            else:
+                sample_reports_records[s.name].extend(add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
 
     # for (repr_name, links_by_sample) in to_add:
     #     cur_metric = Metric(repr_name)
@@ -334,6 +383,37 @@ def _add_per_sample_reports(individual_reports_section, bcbio_structure=None, da
     #     ])
 
     return sample_reports_records
+
+
+def add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
+    recs = []
+    recs.append(_make_url_record(s.gene_counts, individual_reports_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
+    if verify_file(s.qualimap_html_fpath):
+        recs.append(_make_url_record(s.qualimap_html_fpath, individual_reports_section.find_metric(QUALIMAP_NAME), base_dirpath))
+    return recs
+
+
+def add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
+    recs = []
+    targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
+    _make_url_record(targqc_d, individual_reports_section.find_metric(SEQQC_NAME), base_dirpath)
+
+    if not s.phenotype or s.phenotype != 'normal':
+        varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
+        varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
+        recs.extend([
+            _make_url_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
+            _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
+        ])
+
+    if not verify_file(s.clinical_html, is_critical=False):
+        clinical_html = join(dirname(dirname(s.clinical_html)), 'clinicalReport', basename(s.clinical_html))
+        if verify_file(clinical_html):
+            s.clinical_html = clinical_html
+    rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
+    if rec and rec.value:
+        recs.append(rec)
+    return recs
 
 
 # def _add_varqc_reports(bcbio_structure, name, dir_name):

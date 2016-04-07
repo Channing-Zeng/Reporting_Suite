@@ -56,7 +56,7 @@ for k, v in run_info_defaults.items():
 
 
 class Config(object):
-    def __init__(self, d, sys_cnf=None, run_cnf=None, bcbio_genome_build=None, **kwargs):
+    def __init__(self, d, sys_cnf=None, run_cnf=None, bcbio_genome_build=None, bcbio_analysis_type=None, **kwargs):
         object.__setattr__(self, '__d', dict())
 
         self.level = 0
@@ -87,7 +87,9 @@ class Config(object):
                     critical('Genome ' + str(build_name) + ' not in ' + sys_cnf_fpath)
                 self.genome = Config(self.genomes[build_name])
                 self.genome.name = build_name
-
+            self.is_rna_seq = False
+            if bcbio_analysis_type and 'rna' in bcbio_analysis_type.lower():
+                self.is_rna_seq = True
         else:
             for k, v in d.items():
                 self[k] = v
