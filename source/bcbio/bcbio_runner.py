@@ -609,7 +609,7 @@ class BCBioRunner:
                 # BAMS
                 if self.targetcov in self.steps:
                     if not sample.bam or not verify_bam(sample.bam):
-                        err('Cannot run coverage reports (targetcov, qualimap, ngscat) without BAM files.')
+                        err('Cannot run coverage reports (targetcov) without BAM files.')
                         info('Target coverage for "' + sample.name + '"')
                     else:
                         self._submit_job(
@@ -727,7 +727,6 @@ class BCBioRunner:
             if self.targqc_summary in self.steps:
                 wait_for_steps = []
                 wait_for_steps += [self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps]
-                wait_for_steps += [self.ngscat.job_name(s.name) for s in self.bcbio_structure.samples if self.ngscat in self.steps]
                 self._submit_job(
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps)
