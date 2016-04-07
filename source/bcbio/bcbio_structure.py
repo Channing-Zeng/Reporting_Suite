@@ -851,6 +851,9 @@ class BCBioStructure(BaseProjectStructure):
         for batch_name in batch_names:
             self.batches[batch_name].name = batch_name
 
+            if sample.phenotype == 'tumour':  # support UK language
+                sample.phenotype = 'tumor'
+
             if sample.phenotype == 'normal':
                 if self.batches[batch_name].normal:
                     critical('Multiple normal samples for batch ' + batch_name)
