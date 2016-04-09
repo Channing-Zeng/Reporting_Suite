@@ -791,17 +791,16 @@ class BCBioStructure(BaseProjectStructure):
                     # if not isfile(ungz_fpath) and isfile(gz_fpath) and verify_file(gz_fpath):
                     #     call(cnf, 'gunzip ' + gz_fpath + ' -c', output_fpath=ungz_fpath)
                     c.paired_anno_vcf_by_sample[b.tumor[0].name] = gz_fpath
-            elif b.tumor:
+                    b.normal.vcf_by_callername[c.name] = None
+            else:
                 b.paired = False
                 info('Batch ' + b.name + ' is single')
                 for c in self.variant_callers.values():
-                    gz_fpath = b.tumor[0].get_anno_vcf_fpath_by_callername(c.name, gz=True)
+                    gz_fpath = (b.normal or b.tumor[0]).get_anno_vcf_fpath_by_callername(c.name, gz=True)
                     # ungz_fpath = splitext(gz_fpath)[0]
                     # if not isfile(ungz_fpath) and isfile(gz_fpath) and verify_file(gz_fpath):
                     #     call(cnf, 'gunzip ' + gz_fpath + ' -c', output_fpath=ungz_fpath)
-                    c.single_anno_vcf_by_sample[b.tumor[0].name] = gz_fpath
-            else:
-                warn('Batch ' + b.name + ' does not contain tumor samples')
+                    c.single_anno_vcf_by_sample[(b.normal or b.tumor[0]).name] = gz_fpath
 
         for c in self.variant_callers.values():
             if c.single_anno_vcf_by_sample:
@@ -929,25 +928,28 @@ class BCBioStructure(BaseProjectStructure):
         if 'ensemble' in sample_info['algorithm'] and len(variantcallers) >= 2:
             variantcallers.append('ensemble')
 
-        if sample.phenotype and sample.phenotype != 'normal':
-            assert len(batch_names) == 1, 'Multiple batches for ' + sample.name + ': ' + ', '.join(batch_names)
-            batch_name = batch_names[0]
+        if len(batch_names) > 1:
+            if sample.phenotype == 'tumor':
+                critical('Multiple batches for tumor sample ' + sample.name + ': ' + ', '.join(batch_names))
+            return sample
 
-            if isinstance(variantcallers, basestring):
-                variantcallers = [variantcallers]
+        batch_name = batch_names[0]
 
-            for caller_name in variantcallers:
-                info(caller_name)
-                caller = self.variant_callers.get(caller_name)
-                if not caller:
-                    self.variant_callers[caller_name] = VariantCaller(caller_name, self)
-                self.variant_callers[caller_name].samples.append(sample)
+        if isinstance(variantcallers, basestring):
+            variantcallers = [variantcallers]
 
-                vcf_fpath = self._set_vcf_file(caller_name, batch_name)
-                if not vcf_fpath:  # in sample dir?
-                    vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample)
-                if vcf_fpath:
-                    sample.vcf_by_callername[caller_name] = vcf_fpath
+        for caller_name in variantcallers:
+            info(caller_name)
+            caller = self.variant_callers.get(caller_name)
+            if not caller:
+                self.variant_callers[caller_name] = VariantCaller(caller_name, self)
+            self.variant_callers[caller_name].samples.append(sample)
+
+            vcf_fpath = self._set_vcf_file(caller_name, batch_name, silent=sample.phenotype == 'normal')
+            if not vcf_fpath:  # in sample dir?
+                vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample, silent=sample.phenotype == 'normal')
+            if vcf_fpath:
+                sample.vcf_by_callername[caller_name] = vcf_fpath
         info()
         return sample
 
@@ -1000,7 +1002,7 @@ class BCBioStructure(BaseProjectStructure):
             sample.bam = None
             err('No BAM file for ' + sample.name)
 
-    def _set_vcf_file(self, caller_name, batch_name):
+    def _set_vcf_file(self, caller_name, batch_name, silent=False):
         vcf_fname = batch_name + '-' + caller_name + '.vcf'
 
         vcf_fpath_gz = adjust_path(join(self.date_dirpath, vcf_fname + '.gz'))  # in datestamp
@@ -1040,11 +1042,12 @@ class BCBioStructure(BaseProjectStructure):
             info('Found uncompressed VCF in the datestamp/var dir ' + var_vcf_fpath)
             return var_vcf_fpath
 
-        warn('Warning: no VCF found for batch ' + batch_name + ', ' + caller_name + ', gzip or '
-            'uncompressed version in the datestamp directory.')
+        if not silent:
+            warn('Warning: no VCF found for batch ' + batch_name + ', ' + caller_name + ', gzip or '
+                'uncompressed version in the datestamp directory.')
         return None
 
-    def _set_vcf_file_from_sample_dir(self, caller_name, sample):
+    def _set_vcf_file_from_sample_dir(self, caller_name, sample, silent=False):
         vcf_fname = sample.name + '-' + caller_name + '.vcf'
 
         vcf_fpath_gz = adjust_path(join(sample.dirpath, vcf_fname + '.gz'))  # in var
@@ -1072,12 +1075,9 @@ class BCBioStructure(BaseProjectStructure):
             info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
             return var_vcf_fpath
 
-        if sample.phenotype != 'normal':
+        if not silent:
             warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outside '
                 'the var directory. Phenotype is ' + str(sample.phenotype))
-        else:
-            info('Notice: no VCF file for ' + sample.name + ', ' + caller_name + ', phenotype ' + str(sample.phenotype))
-
         return None
 
     def _set_gene_counts_file(self, sample):
