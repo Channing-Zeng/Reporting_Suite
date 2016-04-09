@@ -1,3 +1,4 @@
+import socket
 from distutils import file_util
 import getpass
 import hashlib
@@ -269,15 +270,15 @@ def determine_run_cnf(opts, is_wgs=False, is_targetseq=False):
 
 
 def detect_sys_cnf_by_location():
-    sys_cnf = defaults['sys_cnfs']['us']
     if is_uk():
-        sys_cnf = defaults['sys_cnfs']['uk']
+        return defaults['sys_cnfs']['uk']
     elif is_china():
-        sys_cnf = defaults['sys_cnfs']['china']
+        return defaults['sys_cnfs']['china']
     elif is_local():
-        sys_cnf = defaults['sys_cnfs']['local']
+        return defaults['sys_cnfs']['local']
     elif is_us():
-        sys_cnf = defaults['sys_cnfs']['us']
+        return defaults['sys_cnfs']['us']
     elif is_cloud():
-        sys_cnf = defaults['sys_cnfs']['cloud']
-    return sys_cnf
+        return defaults['sys_cnfs']['cloud']
+    warn('Warning: could not detect location by hostname: ' + socket.gethostname() + '. Using local')
+    return defaults['sys_cnfs']['local']
