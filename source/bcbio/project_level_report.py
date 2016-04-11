@@ -269,7 +269,7 @@ def create_qc_report(cnf, bcbio_structure):
         out_r_script_handle.write(report_template.format(bcbio_csv=csv_files_in_config_dir[0],
                                   project_summary=bcbio_structure.project_summary_fpath, combined_counts=bcbio_structure.gene_counts_fpath))
 
-    render_rmd_r = get_system_path(cnf, 'Rscript', join('tools', 'render_rmd.R'))
+    render_rmd_r = get_system_path(cnf, 'Rscript', join('tools', 'render_rmd.R'), is_critical=True)
     render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath
     call(cnf, render_rmd_cmdline, print_stderr=False)
     os.remove(report_rmd_fpath)

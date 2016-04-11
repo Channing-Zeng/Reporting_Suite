@@ -7,14 +7,15 @@ from traceback import format_exc
 from source.file_utils import adjust_path, verify_file, open_gzipsafe, add_suffix
 from source.logger import err, info
 from source.targetcov.Region import SortableByChrom
-from source.utils import get_chr_lengths_from_seq
+from source.utils import get_chr_lengths_from_seq, is_local
 
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
-hg38_seq_fpath = '~/Dropbox/az/reference_data/hg38.fa'
-hg19_seq_fpath = '~/Dropbox/az/reference_data/hg19.fa'
-canonical_transcripts_fpath = '~/Dropbox/az/reference_data/common/canonical_transcripts.txt'
+hg38_seq_fpath = '~/Dropbox/az/reference_data/hg38.fa' if is_local() else '/ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa'
+hg19_seq_fpath = '~/Dropbox/az/reference_data/hg19.fa' if is_local() else '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
+canonical_transcripts_fpath = '~/Dropbox/az/reference_data/common/canonical_transcripts.txt' if is_local() else '/ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt'
 
 ALL_EXONS = True
+MIR_AND_CDS_ONLY = True
 
 
 '''
@@ -554,6 +555,11 @@ def _proc_ucsc(inp, output_fpath, chr_order):  #, approved_gene_by_name, approve
                     if gene_symbol.startswith('MIR'):
                         transcript.biotype = 'miRNA'
                         exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
+                    elif MIR_AND_CDS_ONLY:
+                        pass
+                    else:
+                        exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
+
                 else:
                     transcript.biotype = 'protein_coding'
                     if cdsStart <= eStart:
@@ -562,6 +568,7 @@ def _proc_ucsc(inp, output_fpath, chr_order):  #, approved_gene_by_name, approve
                         exon = Exon(transcript, cdsStart, eEnd, 'CDS', exon_number)
                     else:
                         err('Warn: exon ' + str(eStart) + ':' + str(eEnd) + ' does not contain CDS, CDS start = ' + str(cdsStart))
+
                 if exon:
                     transcript.exons.append(exon)
 

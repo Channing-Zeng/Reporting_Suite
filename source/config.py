@@ -30,6 +30,7 @@ defaults = dict(
     sys_cnfs = dict(
         us = join(configs_dirpath, 'system_info_Waltham.yaml'),
         uk = join(configs_dirpath, 'system_info_AP.yaml'),
+        sweden = join(configs_dirpath, 'system_info_Sweden.yaml'),
         china = join(configs_dirpath, 'system_info_China.yaml'),
         cloud = join(configs_dirpath, 'system_info_cloud.yaml'),
         local = abspath(join(test_dirpath, 'system_info.yaml')),

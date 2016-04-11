@@ -181,6 +181,10 @@ def is_cloud():
     hostname = socket.gethostname()
     return 'starcluster' in hostname
 
+def is_sweden():
+    hostname = socket.gethostname()
+    return 'seml' in hostname
+
 
 def md5(fpath):
     hash = hashlib.md5()
