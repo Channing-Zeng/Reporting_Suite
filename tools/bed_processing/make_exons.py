@@ -15,14 +15,23 @@ hg19_seq_fpath = '~/Dropbox/az/reference_data/hg19.fa' if is_local() else '/ngs/
 canonical_transcripts_fpath = '~/Dropbox/az/reference_data/common/canonical_transcripts.txt' if is_local() else '/ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt'
 
 ALL_EXONS = True
-MIR_AND_CDS_ONLY = True
+# MIR_AND_CDS_ONLY = False
 
 
 '''
 # LOCAL
-make_exons.py hg19 RefSeq_knownGene.hg19.txt RefSeq_CDS_miRNA.all_features.hg19.bed
-make_exons.py hg38 RefSeq_knownGene.hg38.txt RefSeq_CDS_miRNA.all_features.hg38.bed
+make_exons.py hg19 RefSeq_knownGene.hg19.txt RefSeq.all_features.hg19.bed
+make_exons.py hg38 RefSeq_knownGene.hg38.txt RefSeq.all_features.hg38.bed
 
+egrep -w "miRNA|protein_coding" RefSeq.all_features.hg19.bed > RefSeq_CDS_miRNA.all_features.hg19.bed
+egrep -w "miRNA|protein_coding" RefSeq.all_features.hg38.bed > RefSeq_CDS_miRNA.all_features.hg38.bed
+egrep -w "miRNA|protein_coding" RefSeq.all_features.hg19.canon.bed > RefSeq_CDS_miRNA.all_features.hg19.canon.bed
+egrep -w "miRNA|protein_coding" RefSeq.all_features.hg38.canon.bed > RefSeq_CDS_miRNA.all_features.hg38.canon.bed
+
+grep -v "_hap" RefSeq.all_features.hg19.bed                 > RefSeq.all_features.hg19-noalt.bed
+grep -v "_alt" RefSeq.all_features.hg38.bed                 > RefSeq.all_features.hg38-noalt.bed
+grep -v "_hap" RefSeq.all_features.hg19.canon.bed           > RefSeq.all_features.hg19-noalt.canon.bed
+grep -v "_alt" RefSeq.all_features.hg38.canon.bed           > RefSeq.all_features.hg38-noalt.canon.bed
 grep -v "_hap" RefSeq_CDS_miRNA.all_features.hg19.bed       > RefSeq_CDS_miRNA.all_features.hg19-noalt.bed
 grep -v "_alt" RefSeq_CDS_miRNA.all_features.hg38.bed       > RefSeq_CDS_miRNA.all_features.hg38-noalt.bed
 grep -v "_hap" RefSeq_CDS_miRNA.all_features.hg19.canon.bed > RefSeq_CDS_miRNA.all_features.hg19-noalt.canon.bed
@@ -38,8 +47,8 @@ cp ~/Dropbox/az/reference_data/Exons/RefSeq/*.hg19*.bed /ngs/reference_data/geno
 cp ~/Dropbox/az/reference_data/Exons/RefSeq/*.hg38*.bed /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
 
 # US
-scp $uk:/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/*.bed /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/
-scp $uk:/ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/*.bed /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/
+scp -r $uk:/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq
+scp -r $uk:/ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
 '''
 
 
@@ -130,10 +139,10 @@ def main():
 
     info('Found:')
     info('  ' + str(len(gene_by_name_and_chrom)) + ' genes')
-    coding_and_mirna_genes = []
-    for g in gene_by_name_and_chrom.values():
-        if any(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts):
-            coding_and_mirna_genes.append(g)
+
+    genes = gene_by_name_and_chrom.values()
+
+    coding_and_mirna_genes = [g for g in genes if any(t.biotype in ['protein_coding', 'miRNA'] for t in g.transcripts)]
 
     coding_genes = [g for g in coding_and_mirna_genes if any(t.biotype == 'protein_coding' for t in g.transcripts)]
     coding_transcripts = [t for g in coding_and_mirna_genes for t in g.transcripts if t.biotype == 'protein_coding']
@@ -147,110 +156,122 @@ def main():
     info('  ' + str(len(codingmiRNA_genes)) + ' genes with both coding and miRNA transcripts')
 
     info()
-    info('Choosing CDS or miRNA genes...')
-    genes = []
-    for g in coding_and_mirna_genes:
-        if any(tx.exons for tx in g.transcripts):  # want to report only genes containing any CDS or miRNA exons
-            genes.append(g)
+    # info('Choosing genes with exons...')
+    # genes = [g for g in genes if any(tx.exons for tx in g.transcripts)]
+    # genes = [g for g in genes if any(tx.exons for tx in g.transcripts)]
 
     info('Choosing canonical...')
+    canon_genes = choose_canonical(genes, canonical_transcripts_ids)
+
+    info()
+    info('Sorting and printing all regions...')
+    print_genes(genes, output_fpath, canon_only=False)
+
+    info()
+    info('Sorting and printing canonical regions...')
+    canon_output_fpath = add_suffix(output_fpath, 'canon')
+    print_genes(canon_genes, canon_output_fpath, canon_only=True)
+
+    info()
+    info('Saved all regions to\n   ' + output_fpath + '\n   ' + canon_output_fpath)
+
+
+def print_genes(genes, output_fpath, canon_only):
+    regions = []
+    already_added_gene_features = set()
+    transcripts = []
+    for g in genes:
+        for tr in g.transcripts:
+            if not canon_only or tr.is_canonical:
+                transcripts.append(tr)
+    for tr in sorted(transcripts, key=lambda _tr: _tr.get_key()):
+        to_add_gene = all(tr2.biotype == 'protein_coding' for tr2 in tr.gene.transcripts if (tr2.is_canonical or not canon_only)) \
+                      and tr.gene not in already_added_gene_features \
+                      and (len(tr.gene.canonical_transcripts) == 1 or len(tr.gene.transcripts) == 1)
+        if to_add_gene:
+            # skip gene feature for all miRNA because there are multi-domain miRNA located in different
+            # places with the same gene name
+            regions.append(tr.gene)
+            already_added_gene_features.add(tr.gene)
+        if tr.exons:
+            regions.append(tr)
+            for e in tr.exons:
+                regions.append(e)
+
+    info('Writing ' + str(len(regions)) + ' regions')
+    with open(adjust_path(output_fpath), 'w') as all_out:
+        for r in regions:
+            all_out.write(r.__str__())
+
+
+def choose_canonical(genes, canonical_transcripts_ids):
     not_found_in_canon_coding_num = 0
     not_found_in_canon_coding_num_one_transcript = 0
     not_found_in_canon_mirna_num = 0
+    not_found_in_canon_other_num = 0
     many_canon_coding_num = 0
     many_canon_mirna_num = 0
+    many_canon_other_num = 0
+
     canon_genes = []
     for g in genes:
+        _canon_tx = []
         for t in g.transcripts:
             if t.transcript_id in canonical_transcripts_ids:
                 t.is_canonical = True
-        canon_tanscripts = [t for t in g.transcripts if t.is_canonical]
-        if len(canon_tanscripts) > 1:
+                _canon_tx.append(t)
+
+        if len(_canon_tx) > 1:
             if any(t.biotype == 'protein_coding' for t in g.transcripts):
                 many_canon_coding_num += 1
-                canon_tanscripts = [sorted(canon_tanscripts, key=Transcript.length)[-1]]
-            if any(t.biotype != 'protein_coding' for t in g.transcripts):
+                longest_canon_t = max(_canon_tx, key=Transcript.length)
+                for t in g.transcripts:
+                    if t != longest_canon_t:
+                        t.is_canonical = False
+            elif any(t.biotype == 'miRNA' for t in g.transcripts):
                 many_canon_mirna_num += 1
-        if not canon_tanscripts:
+            else:
+                many_canon_other_num += 1
+
+        if len(_canon_tx) == 0:
             if any(t.biotype == 'protein_coding' for t in g.transcripts):
                 not_found_in_canon_coding_num += 1
                 if len(g.transcripts) == 1:
                     not_found_in_canon_coding_num_one_transcript += 1
-                canon_tanscripts = [sorted(g.transcripts, key=Transcript.length)[-1]]
-            if any(t.biotype != 'protein_coding' for t in g.transcripts):
+                longest_t = max(g.transcripts, key=Transcript.length)
+                longest_t.is_canonical = True
+            elif any(t.biotype == 'miRNA' for t in g.transcripts):
                 not_found_in_canon_mirna_num += 1
-        g.canonical_transcripts = canon_tanscripts
-        if canon_tanscripts:
-            canon_genes.append(g)
+            else:
+                not_found_in_canon_other_num += 1
+
+        g.canonical_transcripts = [t for t in g.transcripts if t.is_canonical]
+        if len(g.canonical_transcripts) > 0:
+            if g.canonical_transcripts:
+                canon_genes.append(g)
 
     info('Coding genes with canonical transcripts: ' +
          str(sum(1 for g in canon_genes if any(t.biotype == 'protein_coding' for t in g.canonical_transcripts))))
     info('Coding canonical transcripts: ' +
          str(sum(1 for g in canon_genes for t in g.canonical_transcripts if t.biotype == 'protein_coding')))
-    info('Non-coding genes with canonical transcripts: ' +
-         str(sum(1 for g in canon_genes if any(t.biotype != 'protein_coding' for t in g.canonical_transcripts))))
-    info('Non-coding canonical transcripts: ' +
-         str(sum(1 for g in canon_genes for t in g.canonical_transcripts if t.biotype != 'protein_coding')))
+    info('miRNA genes with canonical transcripts: ' +
+         str(sum(1 for g in canon_genes if any(t.biotype == 'miRNA' for t in g.canonical_transcripts))))
+    info('miRNA canonical transcripts: ' +
+         str(sum(1 for g in canon_genes for t in g.canonical_transcripts if t.biotype == 'miRNA')))
+    info('Other canonical transcripts: ' +
+         str(sum(1 for g in canon_genes for t in g.canonical_transcripts if t.biotype not in ['miRNA', 'protein_coding'])))
+    info('Other genes with canonical transcripts: ' +
+         str(sum(1 for g in canon_genes if any(t.biotype not in ['miRNA', 'protein_coding'] for t in g.canonical_transcripts))))
 
     info()
     info('Coding genes with no canonical transcripts (picking longest out of the rest): ' + str(not_found_in_canon_coding_num))
-    info('Non-coding genes with no canonical transcripts (skipping all): ' + str(not_found_in_canon_mirna_num))
+    info('miRNA genes with no canonical transcripts (skipping all): ' + str(not_found_in_canon_mirna_num))
+    info('Other genes with no canonical transcripts (skipping all): ' + str(not_found_in_canon_other_num))
     info('Coding genes with many canonical transcripts (picking longest): ' + str(many_canon_coding_num))
-    info('Non-coding genes with many canonical transcripts (keeping all): ' + str(many_canon_mirna_num))
+    info('miRNA genes with many canonical transcripts (keeping all): ' + str(many_canon_mirna_num))
+    info('Other genes with many canonical transcripts (keeping all): ' + str(many_canon_other_num))
 
-    info()
-    info('Sorting and printing all regions...')
-    regions = []
-    printed_genes = set()
-    transcripts = []
-    for g in genes:
-        for tx in g.transcripts:
-            transcripts.append(tx)
-    for tx in sorted(transcripts, key=lambda tx: tx.get_key()):
-        to_add_gene = all(other_tx.biotype == 'protein_coding' for other_tx in tx.gene.transcripts) and tx.gene not in printed_genes
-        if to_add_gene:
-            # skip gene feature for all miRNA because there are multi-domain miRNA located in different
-            # places with the same gene name
-            regions.append(tx.gene)
-            printed_genes.add(tx.gene)
-        if tx.exons:
-            regions.append(tx)
-            for e in tx.exons:
-                regions.append(e)
-
-    info('Writing ' + str(len(regions)) + ' regions')
-    with open(adjust_path(output_fpath), 'w') as out:
-       for r in regions:
-            out.write(r.__str__())
-
-    info()
-    info('Sorting and printing canonical regions...')
-    regions = []
-    printed_genes = set()
-    transcripts = []
-    for g in canon_genes:
-        for tx in g.canonical_transcripts:
-            transcripts.append(tx)
-    for tx in sorted(transcripts, key=lambda tx: tx.get_key()):
-        to_add_gene = all(other_tx.biotype == 'protein_coding' for other_tx in tx.gene.canonical_transcripts) and tx.gene not in printed_genes
-        if to_add_gene:
-            # skip gene feature for all miRNA because there are multi-domain miRNA located in different
-            # places with the same gene name
-            regions.append(tx.gene)
-            printed_genes.add(tx.gene)
-        if tx.exons:
-            regions.append(tx)
-            for e in tx.exons:
-                regions.append(e)
-
-    canon_output_fpath = add_suffix(output_fpath, 'canon')
-    info('Writing ' + str(len(regions)) + ' canonical regions to ' + canon_output_fpath)
-    with open(adjust_path(canon_output_fpath), 'w') as out:
-       for r in regions:
-            out.write(r.__str__())
-
-    info()
-    info('Saved results to ' + output_fpath + ', ' + canon_output_fpath)
+    return canon_genes
 
 
 def _approve(gene_by_name, synonyms_fpath):
@@ -543,6 +564,9 @@ def _proc_ucsc(inp, output_fpath, chr_order):  #, approved_gene_by_name, approve
             transcript = Transcript(gene, transcript_id, txStart, txEnd, strand)
             gene.transcripts.append(transcript)
 
+            if gene_symbol == 'CCNYL2':
+                pass
+
             for exon_number, eStart, eEnd in zip(
                    range(exonCount),
                    [s for s in exonStarts if s],
@@ -554,11 +578,9 @@ def _proc_ucsc(inp, output_fpath, chr_order):  #, approved_gene_by_name, approve
                                                          # no CDS for this gene, thus reporting exons
                     if gene_symbol.startswith('MIR'):
                         transcript.biotype = 'miRNA'
-                        exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
-                    elif MIR_AND_CDS_ONLY:
-                        pass
                     else:
-                        exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
+                        transcript.biotype = 'other'
+                    exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
 
                 else:
                     transcript.biotype = 'protein_coding'
@@ -625,12 +647,24 @@ class Gene(SortableByChrom):
         self.canonical_transcripts = []
 
     def get_start(self):
-        assert len(self.canonical_transcripts) == 1, 'There must be exactly 1 canonical in a gene to get gene start. Number of canonical is ' + str(len(self.canonical_transcripts))
-        return self.canonical_transcripts[0].start
+        if len(self.canonical_transcripts) == 1:
+            return self.canonical_transcripts[0].start
+        elif len(self.transcripts) == 1:
+            return self.transcripts[0].start
+        else:
+            return 'There must be exactly 1 transcript or exactly 1 canonical transcript in a gene to get gene start. ' \
+                   'Number of transcripts is ' + str(len(self.transcripts)) + ', ' \
+                   'Number of canonical transcripts is ' + str(len(self.canonical_transcripts))
 
     def get_end(self):
-        assert len(self.canonical_transcripts) == 1, 'There must be exactly 1 canonical transcript in a gene to get gene end. Number of canonical is ' + str(len(self.canonical_transcripts))
-        return self.canonical_transcripts[0].end
+        if len(self.canonical_transcripts) == 1:
+            return self.canonical_transcripts[0].end
+        elif len(self.transcripts) == 1:
+            return self.transcripts[0].end
+        else:
+            return 'There must be exactly 1 transcript or exactly 1 canonical transcript in a gene to get gene start. ' \
+                   'Number of transcripts is ' + str(len(self.transcripts)) + ', ' \
+                   'Number of canonical transcripts is ' + str(len(self.canonical_transcripts))
 
     def __str__(self):
         fs = [self.chrom,
