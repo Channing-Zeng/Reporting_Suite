@@ -62,9 +62,8 @@ class BaseClinicalReporting:
             Metric('VarDict status', short_name='Status', max_width=230, class_='long_line'),     # Likely
             # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
             Metric('Databases'),                 # rs352343, COSM2123
+            Metric('ClinVar', short_name='SolveBio ClinVar'),
         ]
-        # if is_local():
-        #     ms.append(Metric('ClinVar', short_name='SolveBio ClinVar'))  # Pathogenic?, URL
 
         if len(mutations_by_experiment) == 1:
             ms.extend([
@@ -142,8 +141,7 @@ class BaseClinicalReporting:
             row.add_record('VarDict status', **self._signif_field(mut))
             # row.add_record('VarDict reason', mut.reason)
             row.add_record('Databases', **self._db_recargs(mut))
-            # if is_local():
-            #     row.add_record('ClinVar', **self._clinvar_recargs(mut))
+            row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             if len(mutations_by_experiment.values()) == 1:
                 row.add_record('Freq', mut.freq if mut else None, show_content=mut.is_canonical)

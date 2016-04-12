@@ -435,8 +435,8 @@ class ClinicalExperimentInfo:
             self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
                 self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
-            # info('Retrieving SolveBio...')
-            # self.get_mut_info_from_solvebio()
+            info('Retrieving SolveBio...')
+            self.get_mut_info_from_solvebio()
         else:
             warn('No mutations_fpath provided, skipping mutation stats.')
         info()

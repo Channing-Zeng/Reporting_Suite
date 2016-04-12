@@ -28,7 +28,7 @@ def parse_response(res, mut):
         rec.clinsig = 'Uncertain'
 
     coords = res['genomic_coordinates']
-    rec.url = 'https://www.solvebio.com/variant/GRCH37-{chrom}-{start}-{stop}-{alt}'.format(
+    rec.url = 'https://astrazeneca.solvebio.com/variant/GRCH37-{chrom}-{start}-{stop}-{alt}'.format(
         chrom=coords['chromosome'],
         start=coords['start'],
         stop=coords['stop'],
