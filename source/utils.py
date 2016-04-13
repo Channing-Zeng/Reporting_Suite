@@ -119,6 +119,16 @@ def get_chr_lengths(cnf):
     return chr_lengths
 
 
+def get_db_path(cnf, dbconf, dbname):
+    db_path = cnf['genome'].get(dbname)
+    if not db_path:
+        db_path = dbconf.get('path')
+        if not db_path:
+            err('Please, provide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
+            return None
+    return verify_file(db_path, is_critical=True)
+
+
 def format_integer(name, value, unit=''):
     value = int(value)
     if value is not None:

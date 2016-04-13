@@ -13,6 +13,7 @@ from source.file_utils import iterate_file, intermediate_fname, verify_file, spl
 from source.logger import step_greetings, critical, info, err, warn, debug
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
+from source.utils import get_db_path
 from source.variants import qc
 from source.variants.vcf_processing import iterate_vcf, remove_prev_eff_annotation, bgzip_and_tabix, igvtools_index, \
     verify_vcf
@@ -140,16 +141,6 @@ def intersect_vcf(cnf, input_fpath, db_fpath, key):
     else:
         warn('Intersection with ' + key + ' didn\'t work')
     return input_fpath
-
-
-def get_db_path(cnf, dbconf, dbname):
-    db_path = cnf['genome'].get(dbname)
-    if not db_path:
-        db_path = dbconf.get('path')
-        if not db_path:
-            err('Please, provide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
-            return None
-    return verify_file(db_path, is_critical=True)
 
 
 def rm_gz_ext(fpath):

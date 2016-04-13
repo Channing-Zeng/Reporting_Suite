@@ -1,3 +1,5 @@
+import gzip
+import re
 from os.path import join
 
 from ext_modules import vcf_parser
@@ -6,6 +8,7 @@ import source
 from source.logger import step_greetings, warn
 from source.file_utils import open_gzipsafe
 from source.reporting.reporting import Metric, MetricStorage, ReportSection, SampleReport
+from source.utils import get_db_path
 from source.variants.vcf_processing import get_sample_column_index
 import source.variants.vcf_processing as vcf_processing
 
@@ -36,7 +39,33 @@ metric_storage = MetricStorage(
 )
 
 
+def set_db_versions(cnf):
+    m = metric_storage.find_metric('In dbSNP')
+    m.description = 'Variants in dbSNP' + get_db_version(cnf, 'dbsnp')
+    m = metric_storage.find_metric('In Cosmic')
+    m.description = 'Variants in Cosmic' + get_db_version(cnf, 'cosmic')
+
+
+def get_db_version(cnf, dbname):
+    db_fpath = get_db_path(cnf, cnf.annotation[dbname], dbname)
+    if db_fpath:
+        if db_fpath.endswith('.gz'):
+            opener = gzip.open
+        else:
+            opener = open
+        with opener(db_fpath, 'r') as f:
+            for line in f:
+                if not line.startswith('#'):
+                    break
+                if (dbname == 'dbsnp' and line.startswith('##dbSNP_BUILD_ID=')) or \
+                        (dbname == 'cosmic' and line.startswith('##source=')):
+                    db_version = re.findall('\d+', line.split('=')[1])[0]
+                    return ' v' + str(db_version)
+    return ''
+
+
 def make_report(cnf, vcf_fpath, sample):
+    set_db_versions(cnf)
     step_greetings('Quality control reports')
 
     total_with_rejected = 0
