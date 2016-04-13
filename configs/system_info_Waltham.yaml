@@ -73,6 +73,7 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.bed
@@ -100,6 +101,7 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.bed
@@ -137,6 +139,7 @@ genomes:
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
       reference: hg19
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed
@@ -174,6 +177,7 @@ genomes:
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19-noalt/snpeff/  # data dir path
     snpeff:
       reference: hg19
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-noalt.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-noalt.bed
@@ -207,6 +211,7 @@ genomes:
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
       reference: hg19
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-chr20.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-chr20.bed
@@ -230,8 +235,6 @@ genomes:
       rptmk: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
       RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
 
-    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
-
   GRCh37:
     seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
@@ -249,8 +252,6 @@ key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
-#canonical_transcripts:        /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
-snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
 
 queue: batch.q
 

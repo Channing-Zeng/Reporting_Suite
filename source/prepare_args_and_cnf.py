@@ -71,6 +71,8 @@ def check_genome_resources(cnf):
     canonical_transcripts_fpath = None
     if cnf.snpeff_transcripts:
         canonical_transcripts_fpath = cnf.snpeff_transcripts
+    if cnf.genome.snpeff_transcripts:
+        canonical_transcripts_fpath = cnf.genome.snpeff_transcripts
     if cnf.genome.snpeff and cnf.genome.snpeff.transcripts:
         canonical_transcripts_fpath = cnf.genome.snpeff.transcripts
 

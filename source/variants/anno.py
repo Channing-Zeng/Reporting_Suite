@@ -481,7 +481,7 @@ def _snpeff(cnf, input_fpath):
     # db_path = cnf.genome.snpeff.reference
     # if db_path and isinstance(db_path, basestring): opts += ' -dataDir ' + db_path
 
-    custom_transcripts = cnf.genome.snpeff.transcripts or cnf.snpeff_transcripts
+    custom_transcripts = cnf.genome.snpeff.transcripts or cnf.genome.snpeff_transcripts or cnf.snpeff_transcripts
     if custom_transcripts and verify_file(custom_transcripts, 'Transcripts for snpEff -onlyTr'):
         opts += ' -onlyTr ' + custom_transcripts + ' '
     elif not cnf.genome.canonical_transcripts and not cnf.canonical_transcripts:  # to avoid too many results in clinical report

@@ -49,6 +49,7 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
@@ -76,6 +77,7 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
@@ -106,6 +108,7 @@ genomes:
 
     snpeff:
       reference: hg19
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 
@@ -134,6 +137,7 @@ genomes:
 
     snpeff:
       reference: hg19
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 
@@ -181,8 +185,6 @@ suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppre
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
 last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
-#canonical_transcripts:        /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
-snpeff_transcripts:           /ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt
 
 queue: ngs.q
 
