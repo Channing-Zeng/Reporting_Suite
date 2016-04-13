@@ -29,7 +29,8 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
         vcf_fpath_by_sample = caller.get_filt_vcf_by_sample()
 
     for sample in bcbio_structure.samples:
-        index_bam(cnf, sample.bam, use_grid=True)
+        if sample.bam:
+            index_bam(cnf, sample.bam, use_grid=True)
 
     for sample in bcbio_structure.samples:
         if all(isfile(join(jbrowse_project_dirpath, sample.name + ext)) for ext in ['.bam', '.bam.bai', '.vcf.gz', '.vcf.gz.tbi', '.bigwig']):
@@ -44,11 +45,12 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
                     call(cnf, cmdline, exit_on_error=False)
                 create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, vcf_fpath + '.tbi')
 
-        bam_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam)
-        create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam + '.bai')
-        bigwig_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, splitext(sample.bam)[0] + '.bigwig')
-        print_sample_tracks_info(sample.name, bcbio_structure.project_name, trunc_symlink(bam_link), trunc_symlink(bigwig_link),
-                                 trunc_symlink(vcf_link), jbrowse_tracks_fpath)
+        if sample.bam:
+            bam_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam)
+            create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, sample.bam + '.bai')
+            bigwig_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, splitext(sample.bam)[0] + '.bigwig')
+            print_sample_tracks_info(sample.name, bcbio_structure.project_name, trunc_symlink(bam_link),
+                                     trunc_symlink(bigwig_link), trunc_symlink(vcf_link), jbrowse_tracks_fpath)
 
 
 def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_link, jbrowse_tracks_fpath):
