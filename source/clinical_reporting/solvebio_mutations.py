@@ -64,20 +64,28 @@ def query_mutations(cnf, mutations):
         err(format_exc())
         err('Could not retrieve information for SolveBio, skipping')
 
-    queries = [
-        ds.query().filter(gene_symbol=m.gene.name) \
+    MAX_BATCH_SIZE = 250
+    batches = []
+    batch = None
+    for i, m in enumerate(mutations):
+        if i % MAX_BATCH_SIZE == 0:
+            batch = []
+            batches.append(batch)
+        batch.append(ds.query().filter(gene_symbol=m.gene.name) \
             .position(m.chrom, position=m.pos) \
-            .filter(allele=m.alt, reference_allele=m.ref)
-        for m in mutations]
+            .filter(allele=m.alt, reference_allele=m.ref))
 
     info('Querying mutations against SolveBio ClinVar depository...')
     try:
-        for mut, res in zip(mutations, BatchQuery(queries).execute()):
-            if res['results']:
-                solvbio_record = parse_response(res['results'][0], mut)
-                if solvbio_record:
-                    mut.solvebio = solvbio_record
-        info('Done, found ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
+        for i, batch in enumerate(batches):
+            if len(batches) > 1:
+                info('  batch ' + str(i) + '...')
+            for mut, res in zip(mutations, BatchQuery(batch).execute()):
+                if res['results']:
+                    solvbio_record = parse_response(res['results'][0], mut)
+                    if solvbio_record:
+                        mut.solvebio = solvbio_record
+            info('  done, found ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
     except SolveError:
         err(format_exc())
         err('Could not retrieve information for SolveBio, skipping')

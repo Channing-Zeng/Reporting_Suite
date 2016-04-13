@@ -25,7 +25,7 @@ resources:
   java:
     path: /usr/bin/java
   python:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/anaconda/bin/python
+    path: /gpfs/users/klpf990/virtualenv/bin/python
     # path: /opt/az/local/psf/python/64_2.7.3/python
     # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
   igvtools:
