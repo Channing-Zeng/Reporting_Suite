@@ -46,6 +46,10 @@
       display: none; }
     #report table.report_table tr.highlighted_row td {
       background-color: #f5ffa3; }
+    #report table.report_table tr.highlighted_green_row td:last-child {
+      border-right: 1px solid #bbb; }
+    #report table.report_table tr.highlighted_green_row td {
+      background-color: #daffde; }
 
 #contigs_are_ordered {
   z-index: 0;
@@ -140,7 +144,7 @@ table.draggable {
   position: absolute;
   border: 1px solid #BBB;
   z-index: -2;
-  display: none }
+  display: none; }
 
 .plot_tip_vertical_rule {
   border-left: 1px; }
