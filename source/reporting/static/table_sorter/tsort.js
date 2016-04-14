@@ -50,7 +50,7 @@ Array - Specifc table
 			if (settings['delay'] <= 0) { // For performance reasons, delay can not be smaller than 1
 				settings['delay'] = 1;
 			}
-
+			var isLargeTable = $(table).attr('class').search('large_table') != -1;
 			//alert(column_widths);
 
 			/* GET SORTING CRITERIA */
@@ -88,47 +88,50 @@ Array - Specifc table
 			function getTableData() {
 
 				/* PUT TABLE DATA INTO AN OBJECT ARRAY */
-				$(table).find('tr').not('.row_to_hide').each(function(index) {
-					if (index > 0) {
-						$(this).addClass('tsort_id-' + (index - 1)); // Add a class to each tr that corresponds with the object id (tsortid-0)
-						var child_rows = [];
-						var child_rows_sortable = [];
-						var child_number = 0;
-						var nextRow = $(this).next('.row_to_hide');
-						while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {
-							nextRow.addClass('tsort_child_id-' + child_number );
-							child_rows.push(nextRow);
-							child_rows_sortable = addTdData(nextRow, child_number, child_rows_sortable);
-							nextRow = nextRow.next('.row_to_hide');
-                      		child_number++;
-						}
-						table_data = addTdData($(this), index - 1, table_data);
-						table_data[table_data.length - 1].child_rows = child_rows;
-						table_data[table_data.length - 1].child_rows_sortable = child_rows_sortable;
+				var rows = $(table).find('tbody tr').not('.row_to_hide');
+				for (var index = 0; index < rows.length; index++) {
+					var row = $(rows[index]);
+					row.attr('id', 'tsort_id-' + index); // Add a class to each tr that corresponds with the object id (tsortid-0)
+					var child_rows = [];
+					var child_rows_sortable = [];
+					var child_number = 0;
+					var nextRow = row.next('.row_to_hide');
+					while (nextRow.hasClass('row_to_hide') && (nextRow.length > 0)) {
+						nextRow.attr('id', 'tsort_child_id-' + child_number );
+						child_rows.push(nextRow);
+						child_rows_sortable = addTdData(nextRow, child_number, child_rows_sortable);
+						nextRow = nextRow.next('.row_to_hide');
+						child_number++;
 					}
-				});
+					table_data = addTdData(row, index, table_data);
+					table_data[table_data.length - 1].child_rows = child_rows;
+					table_data[table_data.length - 1].child_rows_sortable = child_rows_sortable;
+				}
 			}
 
 			function addTdData(tr, index, table_data) {
-				tr.find('td').each(function (td_index) {
-
-					if ($(this).is(":first-child")) {
-						table_data.push(new Object());
-						table_data[table_data.length - 1].id = index;
-						table_data[table_data.length - 1].td = new Array();
-						table_data[table_data.length - 1].height = $(this).parent().height();
+				var cols = tr.find('td');
+				var tdData = new Object();
+				for (var td_index = 0; td_index < cols.length; td_index++) {
+					var cell = $(cols[td_index]);
+					if (cell.is(":first-child")) {
+						tdData.id = index;
+						tdData.td = [];
+						if (!isLargeTable)
+							tdData.height = cell.parent().height();
 					}
 
-					if ($(this).attr('data-sortAs') != undefined ) {
-						table_data[table_data.length - 1].td.push($(this).attr('data-sortAs'));
-					} else if (typeof settings['sortAs'] != undefined && settings['sortAs'][$(this).text()] != undefined ) {
-						table_data[table_data.length - 1].td.push(settings['sortAs'][$(this).text()]);
+					if (cell.attr('data-sortAs') != undefined ) {
+						tdData.td.push(cell.attr('data-sortAs'));
+					} else if (typeof settings['sortAs'] != undefined && settings['sortAs'][cell.text()] != undefined ) {
+						tdData.td.push(settings['sortAs'][cell.text()]);
 					} else if (sorting_criteria[td_index] == 'numeric') {
-						table_data[table_data.length - 1].td.push(getNumber($(this).text()));
+						tdData.td.push(getNumber(cell.text()));
 					} else {
-						table_data[table_data.length - 1].td.push($(this).text());
+						tdData.td.push(cell.text());
 					}
-				});
+				}
+				table_data.push(tdData);
 				return table_data;
 			}
 			// Auto detect whether the column should be treated as text or numeric.
@@ -170,43 +173,44 @@ Array - Specifc table
 					}
 				}
 			});
+			if (!isLargeTable) {
+				// Set each td's width
+				//var padding = 6;  // for some reason, minWidth setting doesn't properly act with cell paddings
+				$(table).find('th').each(function() {
+					var width = parseInt($(this).outerWidth(true));
+					var pad = parseInt($(this).css('padding-right')) + parseInt($(this).css('padding-left'));
+					//if ($(this).css('text-align') == 'right') {
+					//    console.log($(this).text() + ' pad: ' + pad);
+					//}
+					column_widths.push(width);
+					column_paddings.push(pad);
+				});
 
-			// Set each td's width
-			//var padding = 6;  // for some reason, minWidth setting doesn't properly act with cell paddings
-			$(table).find('th').each(function() {
-                var width = parseInt($(this).outerWidth(true));
-                var pad = parseInt($(this).css('padding-right')) + parseInt($(this).css('padding-left'));
-                //if ($(this).css('text-align') == 'right') {
-                //    console.log($(this).text() + ' pad: ' + pad);
-                //}
-				column_widths.push(width);
-				column_paddings.push(pad);
-			});
+				$(table).find('tr td, tr th').each(function() {
+					$(this).css( {
+						minWidth: column_widths[$(this).index()] - column_paddings[$(this).index()] //- ($(this).index() == 0 ? padding + 5 : padding + 7)
+					} );
+					//$(this).css( {
+					//	minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)
+					//} );
+				});
 
-			$(table).find('tr td, tr th').each(function() {
-				$(this).css( {
-					minWidth: column_widths[$(this).index()] - column_paddings[$(this).index()] //- ($(this).index() == 0 ? padding + 5 : padding + 7)
-				} );
-				//$(this).css( {
-				//	minWidth: parseInt(column_widths[$(this).index()]) - ($(this).index() == 0 ? padding + 5 : padding + 7)
-				//} );
-			});
+				// Set each row's height and width
+				$(table).find('tr').each(function() {
+					$(this).width($(this).outerWidth(true));
+					$(this).height($(this).outerHeight(true));
+				});
 
-			// Set each row's height and width
-			$(table).find('tr').each(function() {
-				$(this).width($(this).outerWidth(true));
-				$(this).height($(this).outerHeight(true));
-			});
+				// Set table height and width
+				$(table).height($(this).outerHeight()).width($(this).outerWidth());
 
-			// Set table height and width
-			$(table).height($(this).outerHeight()).width($(this).outerWidth());
-
-			// Put all the rows back in place
-			var vertical_offset = 0; // Beginning distance of rows from the table body in pixels
-			$(table).find('tr').each(function(index) {
-				$(this).css('top', vertical_offset);
-				vertical_offset += $(this).outerHeight();
-			});
+				// Put all the rows back in place
+				var vertical_offset = 0; // Beginning distance of rows from the table body in pixels
+				$(table).find('tr').each(function(index) {
+					$(this).css('top', vertical_offset);
+					vertical_offset += $(this).outerHeight();
+				});
+			}
 
 			// Set table cells position to absolute
 			/*
@@ -331,7 +335,7 @@ Array - Specifc table
 
 			// This function receives the new sorted table data array and displays it
 			function display_table(data, column_index) {
-				var data = data.concat(); // .concat() fixes function scope issues with references by saving a copy of it (function within function loading old data)
+				data = data.concat(); // .concat() fixes function scope issues with references by saving a copy of it (function within function loading old data)
 
 				vertical_offset = $(table).find('tr').height(); // Start at header height
 
@@ -349,7 +353,7 @@ Array - Specifc table
 
 					for ( index = 0; index < data.length; index++ ) {
 						var el = data[index];
-						$(table).find('tr.tsort_id-' + el.id).css({ top: vertical_offset }).appendTo(table);
+						$('#tsort_id-' + el.id).css({ top: vertical_offset }).appendTo(table);
 						table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 						vertical_offset += el.height;
 					}
@@ -358,7 +362,7 @@ Array - Specifc table
 
 					for ( index = 0; index < data.length; index++) {
 						var el = data[index];
-						$(table).find('tr.tsort_id-' + el.id).stop().delay(settings['delay'] * index).animate({ top: vertical_offset}, settings['speed'], 'swing').appendTo(table);
+						$('#tsort_id-' + el.id).stop().delay(settings['delay'] * index).animate({ top: vertical_offset}, settings['speed'], 'swing').appendTo(table);
 						table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 						vertical_offset += el.height;
 					}
@@ -370,7 +374,7 @@ Array - Specifc table
 					$(table).find('tr:gt(0)').fadeOut(settings['speed']).promise().done(function() {
 						for ( index = 0; index < data.length; index++) {
 							var el = data[index];
-							$(table).find('tr.tsort_id-' + el.id).css({ top: vertical_offset }).appendTo(table);
+							$('#tsort_id-' + el.id).css({ top: vertical_offset }).appendTo(table);
 							vertical_offset += el.height;
 							if (index == table_data.length - 1 ) {
 								$(table).find('tr').delay(1).fadeIn(settings['speed'], 'swing').promise().done(function() {
@@ -390,7 +394,7 @@ Array - Specifc table
 					if ( copied_tr.length == 0 ) {
 						for ( index = 0; index < data.length; index++ ) {
 							var el = data[index];
-							copied_tr[el.id] = $(table).find('tr.tsort_id-' + el.id).clone();
+							copied_tr[el.id] = $('#tsort_id-' + el.id).clone();
 						}
 					}
 
@@ -419,13 +423,14 @@ Array - Specifc table
 							$(this).promise().done(function() {
 								for ( index = 0; index < data.length; index++ ) {
 									var el = data[index];
-									$(table).find('tr.tsort_id-' + el.id).css({ top: vertical_offset, left: '', right: "-" + settings['distance'] }).appendTo(table).delay(index * settings['delay']).animate({ right: "0px", opacity: 1 }, settings['speed'], 'swing', function() {
+									$('#tr.tsort_id-' + el.id).css({ top: vertical_offset, left: '', right: "-" + settings['distance'] })
+										.appendTo(table).delay(index * settings['delay']).animate({ right: "0px", opacity: 1 }, settings['speed'], 'swing',
+										function() {
+											$(this).css('right','auto');
 
-										$(this).css('right','auto');
-
-										if ($(this).is('tr')) {
-											animating = false;
-										}
+											if ($(this).is('tr')) {
+												animating = false;
+											}
 									});
 				  					table = add_child_rows(table, el.child_rows, el.child_rows_sortable);
 
@@ -443,18 +448,20 @@ Array - Specifc table
 					if ( copied_tr.length == 0 ) {
 						for ( index = 0; index < data.length; index++ ) {
 							var el = data[index];
-							copied_tr[el.id] = $(table).find('tr.tsort_id-' + el.id).clone();
+							copied_tr[el.id] = $('#tsort_id-' + el.id).clone();
 						};
 					}
 
 					$(table).find('tr:gt(0)').each(function(index, el) {
 						$(this).delay(index * settings['delay']).animate( { left: '-' + settings['distance'], opacity: 0} , settings['speed'], 'swing', function() {
 							$(this).remove();
-							$(copied_tr[data[index]['id']]).clone().css( { opacity: 0 } ).appendTo(table).css({ top: vertical_offset, left: '', right: '-' + settings['distance'] }).animate({ right: "0px", opacity: 1 }, settings['speed'], function() {
-								$(this).css('right','auto');
+							$(copied_tr[data[index]['id']]).clone().css( { opacity: 0 } ).appendTo(table)
+								.css({ top: vertical_offset, left: '', right: '-' + settings['distance'] })
+								.animate({ right: "0px", opacity: 1 }, settings['speed'], function() {
+									$(this).css('right','auto');
 
-								if (index == table_data.length - 1) {
-									animating = false;
+									if (index == table_data.length - 1) {
+										animating = false;
 								}
 							});
 
