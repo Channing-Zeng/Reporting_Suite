@@ -224,10 +224,10 @@ def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_str
 
 
 def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath):
-    recs.append(_make_url_record(bcbio_structure.gene_counts_fpath, general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
-    recs.append(_make_url_record(bcbio_structure.exon_counts_fpath, general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
-    recs.append(_make_url_record(bcbio_structure.gene_tpm_fpath, general_section.find_metric(GENE_TPM_NAME), base_dirpath))
-    recs.append(_make_url_record(bcbio_structure.isoform_tpm_fpath, general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.gene_counts_report_fpath, general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.exon_counts_report_fpath, general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.gene_tpm_report_fpath, general_section.find_metric(GENE_TPM_NAME), base_dirpath))
+    recs.append(_make_url_record(bcbio_structure.isoform_tpm_report_fpath, general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
 
     qc_report_fpath = create_qc_report(cnf, bcbio_structure)
     if qc_report_fpath and isfile(qc_report_fpath):

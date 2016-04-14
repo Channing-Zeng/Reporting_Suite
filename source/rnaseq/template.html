@@ -1,0 +1,75 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+    <meta http-equiv="x-ua-compatible" content="IE=Edge"/>
+    <meta http-equiv="Content-Type" content="text/html;charset=ISO-8859-1">
+
+    <link rel="stylesheet" type="text/css" href="bootstrap/bootstrap.min.css" />
+    <link rel="stylesheet" type="text/css" href="common.css" />
+    <link rel="stylesheet" type="text/css" href="report.css" />
+    <link rel="stylesheet" type="text/css" href="table_sorter/style.css" />
+    <link rel="stylesheet" type="text/css" href="rnaseq.css" />
+    <!--[if IE]>
+    <style>
+        table {
+            table-layout: fixed;
+            width: 100%;
+        }
+        table td {
+        }
+    </style>
+    <![endif]-->
+
+    <script type="text/javascript">
+        window.reporting = {};
+        window.console = {log: function() {}};
+    </script>
+    <script type="text/javascript" src="jquery-1.12.0.min.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bootstrap/bootstrap-tooltip-vlad.js"></script>
+    <script type="text/javascript" src="scripts/utils.js"></script>
+    <script type="text/javascript" src="table_sorter/tsort.js"></script>
+    <script type="text/javascript" src="rnaseq_heatmaps.js"></script>
+
+    <script type="text/javascript">
+        $(function() {
+            $("[rel=tooltip]").tooltip({ animation: false });
+
+            if (msieversion() == 0) {
+                $('table.tableSorter').tableSort();
+            }
+        });
+    </script>
+
+</head>
+
+<body>
+<div class="content">
+    <div id='header'>
+        <h1 class="report-header">{{ caption }}</h1>
+        <p id='report_date'>{{ report_date }}</p>
+    </div>
+
+    <noscript>
+        <span style="margin-left: 0;">
+            Unfortunately, <span style="font-weight: bold">JavaScript</span> in your
+            browser <span style="font-weight: bold">is disabled or not supported.</span></br>
+            JavaScript is required to build this page.
+        </span>
+    </noscript>
+    <div style="margin-left: 0; padding-bottom: 10px">
+            Download {{ file_link }}
+    </div>
+    <div class='report-and-plots'>
+        <div id='report'>{{ report }}</div>
+
+        <div id='plot'>{{ plots }}</div>
+
+        <div style="clear: left"></div>
+        <div style="clear: right"></div>
+
+    </div>
+</div>
+</body>
+</html>

@@ -549,10 +549,16 @@ class BaseProjectStructure:
     flag_regions_name = 'flaggedRegions'
 
     ## RNAseq
-    gene_counts_fname = 'combined.counts'
-    exon_counts_fname = 'combined.dexseq'
-    gene_tpm_fname    = 'combined.gene.sf.tpm'
-    isoform_tpm_fname = 'combined.isoform.sf.tpm'
+    gene_counts_unannotated_fname = 'combined.counts'
+    exon_counts_unannotated_fname = 'combined.dexseq'
+    gene_tpm_unannotated_fname    = 'combined.gene.sf.tpm'
+    isoform_tpm_unannotated_fname = 'combined.isoform.sf.tpm'
+    gene_counts_fname = 'annotated_' + gene_counts_unannotated_fname
+    exon_counts_fname = 'annotated_' + exon_counts_unannotated_fname
+    gene_tpm_fname    = 'annotated_' + gene_tpm_unannotated_fname
+    isoform_tpm_fname = 'annotated_' + isoform_tpm_unannotated_fname
+    gene_counts_name  = 'expression'
+    gene_counts_dir   = gene_counts_summary_dir = gene_counts_name
     qc_report_name    = 'qc_report'
     qualimap_rna_dir  = join('qc', qualimap_dir)
 
@@ -740,6 +746,10 @@ class BCBioStructure(BaseProjectStructure):
             self.exon_counts_fpath = join(self.date_dirpath, BCBioStructure.exon_counts_fname)
             self.gene_tpm_fpath    = join(self.date_dirpath, BCBioStructure.gene_tpm_fname)
             self.isoform_tpm_fpath = join(self.date_dirpath, BCBioStructure.isoform_tpm_fname)
+            self.gene_counts_report_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.gene_counts_fname)
+            self.exon_counts_report_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.exon_counts_fname)
+            self.gene_tpm_report_fpath    = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.gene_tpm_fname)
+            self.isoform_tpm_report_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.isoform_tpm_fname)
 
         # setting bed files for samples
         if cnf.bed:

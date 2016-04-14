@@ -1,0 +1,24 @@
+table.report_table.vertical_header th {
+  background-color: white; }
+
+table.report_table.vertical_header th:nth-child(n+2) span {
+  g-origin: 50 50%;
+  transform: rotate(-90deg);
+  -webkit-transform: rotate(-90deg);
+  -moz-transform: rotate(-90deg);
+  -o-transform: rotate(-90deg);
+  -ms-transform: rotate(-90deg);
+  white-space: nowrap;
+  display: inline-block;
+  text-align: center;
+  position: relative;
+  left: 30%; }
+
+table.report_table.vertical_header th:nth-child(n+2) span:before {
+  content: "";
+  width: 0;
+  padding-top: 100%;
+  display: inline-block;
+  vertical-align: top; }
+
+/*# sourceMappingURL=rnaseq.css.map */

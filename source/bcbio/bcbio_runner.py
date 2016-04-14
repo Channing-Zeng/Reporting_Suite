@@ -171,6 +171,9 @@ class BCBioRunner:
         if not bcbio_structure.is_rnaseq:
             self.steps.extend([self.clin_report])
 
+        if self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'Expression'):
+            self.steps.extend([self.gene_expression])
+
         if Steps.contains(cnf.steps, 'Summary'):
             if not self.bcbio_structure.is_rnaseq:
                 self.steps.extend([self.targqc_summary])
@@ -363,6 +366,15 @@ class BCBioRunner:
             self.abnormal_regions = None
             self.seq2c = None
             self.targqc_summary = None
+            gene_expression_cmdl = summaries_cmdline_params + ' --genome {cnf.genome.name} ' + self.final_dir;
+            self.gene_expression = Step(cnf, run_id,
+                name=BCBioStructure.gene_counts_name, short_name='expr',
+                interpreter='python',
+                script=join('scripts', 'post_bcbio', 'gene_expression_summary.py'),
+                dir_name=BCBioStructure.gene_counts_summary_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', self.bcbio_structure.gene_counts_dir  + '.log'),
+                paramln=gene_expression_cmdl
+            )
         else:
             targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
                 '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
@@ -842,6 +854,9 @@ class BCBioRunner:
                         sample=sample.name, genome=sample.genome, bam=sample.bam,
                         # wait_for_steps=[self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else [],
                         mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
+
+            if self.bcbio_structure.is_rnaseq and self.gene_expression in self.steps:
+                self._submit_job(self.gene_expression)
             if not self.cnf.verbose:
                 print ''
             if self.cnf.verbose:

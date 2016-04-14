@@ -266,7 +266,7 @@ class BaseReport:
     def __init__(self, sample=None, html_fpath=None, url=None, json_fpath=None,
                  records=None, plots=None, metric_storage=None, display_name='',
                  report_name='', caller_tag=None, project_tag=None, expandable=False,
-                 unique=False, **kwargs):
+                 unique=False, keep_order=False, large_table=False, heatmap_by_rows=False, vertical_sample_names=False, **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
@@ -291,6 +291,11 @@ class BaseReport:
         self.expandable = expandable
 
         self.unique = unique
+
+        self.keep_order = keep_order
+        self.large_table = large_table
+        self.heatmap_by_rows = heatmap_by_rows
+        self.vertical_sample_names = vertical_sample_names
 
     def set_project_tag(self, tag):
         if not self.project_tag and tag:
@@ -327,7 +332,8 @@ class BaseReport:
         return fpath
 
     def save_html(self, cnf, output_fpath, caption='', #type_=None,
-                  extra_js_fpaths=list(), extra_css_fpaths=list()):
+                  extra_js_fpaths=list(), extra_css_fpaths=list(),
+                  tmpl_fpath=None, data_dict=None):
         # class Encoder(JSONEncoder):
         #     def default(self, o):
         #         if isinstance(o, (VariantCaller, BCBioSample)):
@@ -341,7 +347,7 @@ class BaseReport:
         # ), separators=(',', ':'), cls=Encoder)
         safe_mkdir(dirname(output_fpath))
         fpath = write_html_report(cnf, self, output_fpath, caption=caption,
-              extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
+              extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths, tmpl_fpath=tmpl_fpath, data_dict=data_dict)
         self.html_fpath = fpath
         return fpath
 
@@ -374,6 +380,16 @@ class Row:
         self.color = color
         self.class_ = class_
         self.hidden = hidden
+
+        self.numbers = []
+        self.min = None
+        self.max = None
+        self.med = None
+        self.low_outer_fence = None
+        self.low_inner_fence = None
+        self.top_inner_fence = None
+        self.top_outer_fence = None
+        self.all_values_equal = False
 
     def add_record(self, metric_name, value, **kwargs):
         metric = self.__parent_report.metric_storage.find_metric(metric_name)
@@ -1209,13 +1225,18 @@ def build_section_html(report, section, sortable=True):
 
     calc_cell_contents(report, rows)
 
-    rows.sort(key=lambda r: r.records[0].num if r.records[0].metric.numbers else r.records[0].value)
+    if not report.keep_order:
+        rows.sort(key=lambda r: r.records[0].num if r.records[0].metric.numbers else r.records[0].value)
 
     table_class = 'report_table fix-align-char'
     if sortable:
         table_class += ' tableSorter'
     if report.expandable:
         table_class += ' table_short'
+    if report.large_table:
+        table_class += ' large_table'
+    if report.vertical_sample_names:
+        table_class += ' vertical_header'
 
     table = '\n<table cellspacing="0" class="' + table_class + '" id="report_table_' + section.name + '">'
     table += '\n<thead>\n<tr class="top_row_tr">'
@@ -1400,6 +1421,7 @@ def calc_cell_contents(report, rows):
                             rec.frac_width > max_frac_widths_by_metric[rec.metric.name]:
                 max_frac_widths_by_metric[rec.metric.name] = rec.frac_width
             if rec.num:
+                row.numbers.append(rec.num)
                 rec.metric.numbers.append(rec.num)
             # elif rec.sort_as:
             #     rec.metric.numbers.append(rec.sort_as)
@@ -1412,44 +1434,22 @@ def calc_cell_contents(report, rows):
     #                 if not rec.metric.values:
     #                     rec.metric.values = []
     #                 rec.metric.values.append(rec.num)
-
-    for metric in metrics:
-        if metric.name == 'Types of recurrent alterations': pass
-        if metric.numbers and metric.with_heatmap:
-            # For metrics where we know the "normal value" - we want to color everything above normal white,
-            #   and everything below - red, starting from normal, finishing with bottom
-            if metric.ok_threshold is not None:
-                if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
-                    metric.med = metric.ok_threshold
-                    if metric.bottom is not None:
-                        metric.low_outer_fence = metric.bottom
-
-            def _cmp(a, b):  # None is always less than anything
-                if a and b:
-                    return cmp(a, b)
-                elif a:
-                    return 1
-                else:
-                    return -1
-
-            numbers = sorted(
-                [v for v in metric.numbers],
-                cmp=_cmp)
-            l = len(numbers)
-
-            metric.min = numbers[0]
-            metric.max = numbers[l - 1]
-            metric.all_values_equal = metric.min == metric.max
-            if metric.med is None:
-                metric.med = numbers[(l - 1) / 2] if l % 2 != 0 else mean([numbers[l / 2], numbers[(l / 2) - 1]])
-            q1 = numbers[int(floor((l - 1) / 4))]
-            q3 = numbers[int(floor((l - 1) * 3 / 4))]
-
-            d = q3 - q1
-            metric.low_outer_fence = metric.low_outer_fence if metric.low_outer_fence is not None else q1 - 3   * d
-            metric.low_inner_fence = metric.low_inner_fence if metric.low_inner_fence is not None else q1 - 1.5 * d
-            metric.top_inner_fence = metric.top_inner_fence if metric.top_inner_fence is not None else q3 + 1.5 * d
-            metric.top_outer_fence = metric.top_outer_fence if metric.top_outer_fence is not None else q3 + 3   * d
+    if report.heatmap_by_rows:
+        for row in rows:
+            if row.numbers:
+                row = calc_heatmap_stats(row)
+    else:
+        for metric in metrics:
+            if metric.name == 'Types of recurrent alterations': pass
+            if metric.numbers and metric.with_heatmap:
+                # For metrics where we know the "normal value" - we want to color everything above normal white,
+                #   and everything below - red, starting from normal, finishing with bottom
+                if metric.ok_threshold is not None:
+                    if isinstance(metric.ok_threshold, int) or isinstance(metric.ok_threshold, float):
+                        metric.med = metric.ok_threshold
+                        if metric.bottom is not None:
+                            metric.low_outer_fence = metric.bottom
+                metric = calc_heatmap_stats(metric)
 
     # Second round: setting shift and color properties based on max/min widths and vals
     for row in rows:
@@ -1459,6 +1459,7 @@ def calc_cell_contents(report, rows):
                 rec.right_shift = max_frac_widths_by_metric[rec.metric.name] - rec.frac_width
 
             metric = rec.metric
+            heatmap_stats = rec.metric if not report.heatmap_by_rows else row
 
             # Color heatmap
             if rec.num and metric.with_heatmap:
@@ -1480,37 +1481,37 @@ def calc_cell_contents(report, rows):
                         #     rec.text_color = lambda: rec_to_align_with.text_color()
                         #     continue
 
-                if not metric.all_values_equal:
+                if not heatmap_stats.all_values_equal:
                     rec.text_color = 'black'
 
                     # Low outliers
-                    if rec.num < rec.metric.low_outer_fence:
+                    if rec.num < heatmap_stats.low_outer_fence:
                         rec.color = get_color(low_hue, outer_low_brt)
                         rec.text_color = 'white'
 
-                    elif rec.num < rec.metric.low_inner_fence:
+                    elif rec.num < heatmap_stats.low_inner_fence:
                         rec.color = get_color(low_hue, inner_low_brt)
 
                     # Normal values
-                    elif rec.num < metric.med:
+                    elif rec.num < heatmap_stats.med:
                         try:
-                            k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (metric.med - rec.metric.low_inner_fence)
+                            k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (heatmap_stats.med - heatmap_stats.low_inner_fence)
                         except:
                             pass
-                        brt = round(MEDIAN_BRT - (metric.med - rec.num) * k)
+                        brt = round(MEDIAN_BRT - (heatmap_stats.med - rec.num) * k)
                         rec.color = get_color(low_hue, brt)
 
                     # High outliers
-                    elif rec.num > rec.metric.top_inner_fence:
+                    elif rec.num > heatmap_stats.top_inner_fence:
                         rec.color = get_color(top_hue, inner_top_brt)
 
-                    elif rec.num > rec.metric.top_outer_fence:
+                    elif rec.num > heatmap_stats.top_outer_fence:
                         rec.color = get_color(top_hue, outer_top_brt)
                         rec.text_color = 'white'
 
-                    elif rec.num > metric.med:
-                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (rec.metric.top_inner_fence - metric.med)
-                        brt = round(MEDIAN_BRT - (rec.num - metric.med) * k)
+                    elif rec.num > heatmap_stats.med:
+                        k = (MEDIAN_BRT - MIN_NORMAL_BRT) / (heatmap_stats.top_inner_fence - heatmap_stats.med)
+                        brt = round(MEDIAN_BRT - (rec.num - heatmap_stats.med) * k)
                         rec.color = get_color(top_hue, brt)
 
         for rec in row.records:
@@ -1526,12 +1527,20 @@ def calc_cell_contents(report, rows):
 
 
 def write_html_report(cnf, report, html_fpath, caption='',
-        extra_js_fpaths=None, extra_css_fpaths=None, image_by_key=None):
+        extra_js_fpaths=None, extra_css_fpaths=None, image_by_key=None, tmpl_fpath=None, data_dict=None):
 
-    with open(template_fpath) as f: html = f.read()
+    tmpl_fpath = tmpl_fpath or template_fpath
+    with open(tmpl_fpath) as f: html = f.read()
 
     html = _insert_into_html(html, caption, 'caption')
     html = _insert_into_html(html, datetime.datetime.now().strftime('%d %B %Y, %A, %H:%M:%S'), 'report_date')
+
+    if data_dict:
+        for keyword, text in data_dict.iteritems():
+            html = _insert_into_html(html, text, keyword)
+
+    html = _embed_css_and_scripts(html, dirname(html_fpath), extra_js_fpaths, extra_css_fpaths, cnf.debug)
+    html = _embed_images(html, dirname(html_fpath), image_by_key, cnf.debug)
 
     report_html = build_report_html(report)
     html = _insert_into_html(html, report_html, 'report')
@@ -1541,6 +1550,35 @@ def write_html_report(cnf, report, html_fpath, caption='',
 
     return __write_html(cnf, html, html_fpath,
         extra_js_fpaths, extra_css_fpaths, image_by_key)
+
+
+def calc_heatmap_stats(metric):
+    def _cmp(a, b):  # None is always less than anything
+        if a and b:
+            return cmp(a, b)
+        elif a:
+            return 1
+        else:
+            return -1
+    numbers = sorted(
+        [v for v in metric.numbers],
+        cmp=_cmp)
+    l = len(numbers)
+
+    metric.min = numbers[0]
+    metric.max = numbers[l - 1]
+    metric.all_values_equal = metric.min == metric.max
+    if not metric.med or metric.med is None:
+        metric.med = numbers[(l - 1) / 2] if l % 2 != 0 else mean([numbers[l / 2], numbers[(l / 2) - 1]])
+    q1 = numbers[int(floor((l - 1) / 4))]
+    q3 = numbers[int(floor((l - 1) * 3 / 4))]
+
+    d = q3 - q1
+    metric.low_outer_fence = metric.low_outer_fence if metric.low_outer_fence is not None else q1 - 3   * d
+    metric.low_inner_fence = metric.low_inner_fence if metric.low_inner_fence is not None else q1 - 1.5 * d
+    metric.top_inner_fence = metric.top_inner_fence if metric.top_inner_fence is not None else q3 + 1.5 * d
+    metric.top_outer_fence = metric.top_outer_fence if metric.top_outer_fence is not None else q3 + 3   * d
+    return metric
 
 
 # def _copy_aux_files(results_dirpath, extra_files=list()):
@@ -1701,13 +1739,13 @@ def write_static_html_report(cnf, data_dict, html_fpath, tmpl_fpath=None,
 
     html = jsontemplate.expand(html, data_dict)
 
+    html = _embed_css_and_scripts(html, dirname(html_fpath), extra_js_fpaths, extra_css_fpaths, cnf.debug)
+    html = _embed_images(html, dirname(html_fpath), image_by_key, cnf.debug)
+
     return __write_html(cnf, html, html_fpath, extra_js_fpaths, extra_css_fpaths, image_by_key)
 
 
 def __write_html(cnf, html, html_fpath, extra_js_fpaths, extra_css_fpaths, image_by_key):
-    html = _embed_css_and_scripts(html, dirname(html_fpath), extra_js_fpaths, extra_css_fpaths, cnf.debug)
-    html = _embed_images(html, dirname(html_fpath), image_by_key, cnf.debug)
-
     with file_transaction(cnf.work_dir, html_fpath) as tx:
         with open(tx, 'w') as f:
             f.write(html)

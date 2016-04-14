@@ -76,6 +76,7 @@ genomes:
     bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed  # all regions
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
     ensembl: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.full.bed
+    all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 
   hg38:
     seq: ~/Dropbox/az/reference_data/hg38.fa
@@ -96,6 +97,7 @@ genomes:
     actionable:                   ~/Dropbox/az/reference_data/filtering.hg38/actionable.txt
     compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering.hg38/Compendia.MS7.Hotspot.txt
     splice:                       ~/Dropbox/az/reference_data/filtering.hg38/SPLICE.txt
+    all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 
 snpeffect_export_polymorphic: ~/Dropbox/az/reference_data/common/snpeffect_export_Polymorphic.txt
 actionable_hotspot:           ~/Dropbox/az/reference_data/common/actionable_hotspot.txt

@@ -90,6 +90,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/SPLICE.txt
 
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
+
     circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
   hg38-noalt:
@@ -117,6 +119,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/SPLICE.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
 
     circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
@@ -156,6 +160,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+
     tracks:
       cpgIslandExt: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
       dgvMerged: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/dgvMerged.bed          ## Copy Number Variants
@@ -192,6 +198,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+
     tracks:
       cpgIslandExt: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/tracks/cpgIslandExt.bed       ## CpG Island
       dgvMerged: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/tracks/dgvMerged.bed          ## Copy Number Variants
@@ -227,6 +235,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
     tracks:
       cpgIslandExt: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/cpgIslandExt.bed       ## CpG Island
