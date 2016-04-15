@@ -42,6 +42,20 @@ java -Xms750m -Xmx3g -jar /ngs/RDI/PROGRAMS/snpEff4.2/snpEff.jar eff -d -canon \
 -c /ngs/RDI/PROGRAMS/snpEff4.2/snpEff.config hg38 2> snpeff_verbose_output_hg38.txt
 """
 
+"""
+LOCAL:
+$ /Users/vladsaveliev/googledrive/az/reporting_suite/tools/prepare_transcripts.py
+UK:
+cp ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
+cp ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
+cp ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt /ngs/reference_data/genomes/Hsapiens/hg38-noalt/canonical_transcripts.txt
+US:
+scp $uk:/ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
+cp /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt /ngs/reference_data/genomes/Hsapiens/hg19-noalt/canonical_transcripts.txt
+scp $uk:/ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
+cp /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt /ngs/reference_data/genomes/Hsapiens/hg38-noalt/canonical_transcripts.txt
+"""
+
 def later_tx_version(t1, t2):
     return t1.split('.') > t2.split('.')
 
@@ -51,7 +65,7 @@ def eq_tx(t1, t2):
 base_dir = adjust_path('~/Dropbox/az/reference_data/canonical_transcripts')
 
 def get_transcripts_from_snpeff_output(snpeff_output_fname):
-    tx_per_gene = defaultdict(list)
+    tx_per_genev_by_gene = defaultdict(lambda: defaultdict(list))
 
     snpeff_output_fpath = join(base_dir, snpeff_output_fname)
     with open(snpeff_output_fpath) as f:
@@ -65,33 +79,34 @@ def get_transcripts_from_snpeff_output(snpeff_output_fname):
                     continue
                 else:
                     g = fs[0]
+                    gv = fs[1]
                     t = fs[2]
                     is_met = False
-                    for prev_t in tx_per_gene[g]:
+                    for prev_t in tx_per_genev_by_gene[g][gv]:
                         if eq_tx(t, prev_t):
                             is_met = True
                             # info(t + ' has the same base tx id as ' + prev_t)
                             if later_tx_version(t, prev_t):
                                 # info(t + ' is later than ' + prev_t + ', replacing')
-                                tx_per_gene[g][tx_per_gene[g].index(prev_t)] = t
+                                tx_per_genev_by_gene[g][gv][tx_per_genev_by_gene[g][gv].index(prev_t)] = t
                                 break
                             else:
                                 # info(t + ' is earlier than ' + prev_t + ', skipping')
                                 break
                     if not is_met:
-                        tx_per_gene[g].append(t)
+                        tx_per_genev_by_gene[g][gv].append(t)
 
             elif 'Canonical transcripts:' in l:
                 transcripts_started = True
-    return tx_per_gene
+    return tx_per_genev_by_gene
 
 info('Getting transcripts for hg19')
-hg19_trs_by_gene = get_transcripts_from_snpeff_output('snpeff_verbose_output_hg19.txt')
-hg19_genes = set(hg19_trs_by_gene.keys())
+hg19_tx_per_genev_by_gene = get_transcripts_from_snpeff_output('snpeff_verbose_output_hg19.txt')
+hg19_genes = set(hg19_tx_per_genev_by_gene.keys())
 
 info('Getting transcripts for hg38')
-hg38_trs_by_gene = get_transcripts_from_snpeff_output('snpeff_verbose_output_hg38.txt')
-hg38_genes = set(hg38_trs_by_gene.keys())
+hg38_tx_per_genev_by_gene = get_transcripts_from_snpeff_output('snpeff_verbose_output_hg38.txt')
+hg38_genes = set(hg38_tx_per_genev_by_gene.keys())
 
 info('Genes present only in hg19: ' + str(len(hg19_genes - hg38_genes)))
 info('Genes present only in hg38: ' + str(len(hg38_genes - hg19_genes)))
@@ -104,38 +119,48 @@ mult_hg19_tx_count = 0
 mult_hg38_tx_count = 0
 with open(canon_tx_hg19_fpath, 'w') as hg19, open(canon_tx_hg38_fpath, 'w') as hg38:
     for g in hg38_genes:
+        hg19_trs_by_gv = hg19_tx_per_genev_by_gene[g]
+        hg38_trs_by_gv = hg38_tx_per_genev_by_gene[g]
+
         if g in zhongwu_replacement_tx_for_genes:
             repl_t = zhongwu_replacement_tx_for_genes[g]
 
             print g + ' in Zhongwu\'s list as ' + repl_t
-            print '  hg19: replacing ' + ', '.join(hg19_trs_by_gene[g]) + ' -> ' + repl_t
-            hg19_trs_by_gene[g] = [repl_t]
-            print '  hg38:'
-            is_met = False
-            for t in hg38_trs_by_gene[g]:
-                if eq_tx(t, repl_t):
-                    print '    ' + t + ' eq to ' + repl_t
-                    is_met = True
-            if not is_met:
-                print '  not met in ' + ', '.join(hg38_trs_by_gene[g])
-            print '  replacing ' + ', '.join(hg38_trs_by_gene[g]) + ' -> ' + repl_t
-            hg38_trs_by_gene[g] = [repl_t]
 
-        if not set(hg19_trs_by_gene[g]) == set(hg38_trs_by_gene[g]):
+            print '  hg19: replacing all gene versions: ' + ', '.join(hg19_trs_by_gv.keys())
+            for gv, trs in hg19_trs_by_gv.items():
+                print '     replacing gene version ' + gv + ': ' + ', '.join(trs) + ' -> ' + repl_t
+                hg19_trs_by_gv[gv] = [repl_t]
+
+            print '  hg38:'
+            for gv, trs in hg38_trs_by_gv.items():
+                print '     replacing gene version ' + gv + ': ' + ', '.join(trs) + ' -> ' + repl_t
+                hg38_trs_by_gv[gv] = [repl_t]
+                is_met = False
+                for t in trs:
+                    if eq_tx(t, repl_t):
+                        print '    ' + t + ' eq to ' + repl_t
+                        is_met = True
+                if not is_met:
+                    print '  not met in ' + ', '.join(trs)
+
+        if not set(hg19_trs_by_gv) == set(hg38_trs_by_gv):
             # print 'Transcripts do not match:\n  hg19: ' + ', '.join(hg19_trs_by_gene[g]) + '\n  hg38: ' + ', '.join(hg38_trs_by_gene[g])
             not_matching_tr_count += 1
-        if len(hg38_trs_by_gene[g]) > 1:
-            # print 'Multiple hg38 tx for ' + g + ': ' + ', '.join(hg38_trs_by_gene[g])
-            mult_hg38_tx_count += 1
-        if len(hg19_trs_by_gene[g]) > 1:
-            # print 'Multiple hg19 tx for ' + g + ': ' + ', '.join(hg38_trs_by_gene[g])
-            mult_hg19_tx_count += 1
 
+        for gv, trs in hg19_trs_by_gv.items():
+            if len(trs) > 1:
+                # print 'Multiple hg19 tx for ' + g + ': ' + ', '.join(hg38_trs_by_gene[g])
+                mult_hg19_tx_count += 1
+            for t in trs:
+                hg19.write(t + '\n')
 
-
-        if hg19_trs_by_gene[g]:
-            hg19.write('\n'.join(hg19_trs_by_gene[g]) + '\n')
-        hg38.write('\n'.join(hg38_trs_by_gene[g]) + '\n')
+        for gv, trs in hg38_trs_by_gv.items():
+            if len(trs) > 1:
+                # print 'Multiple hg38 tx for ' + g + ': ' + ', '.join(hg38_trs_by_gene[g])
+                mult_hg38_tx_count += 1
+            for t in trs:
+                hg38.write(t + '\n')
 
 print '---'
 print 'total genes:', len(hg38_genes)

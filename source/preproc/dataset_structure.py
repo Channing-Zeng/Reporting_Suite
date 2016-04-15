@@ -2,7 +2,7 @@ from collections import OrderedDict, defaultdict
 from itertools import dropwhile
 import re
 import os
-from os.path import join, isfile, isdir, basename, exists
+from os.path import join, isfile, isdir, basename, exists, dirname
 import shutil
 import traceback
 from source import TargQC_Sample
@@ -11,20 +11,20 @@ from source.file_utils import verify_dir, verify_file, splitext_plus, safe_mkdir
 
 
 def _sample_name_special_chars(sn):
-    return re.sub(r'[\-_\. ]+', r'[\-_\.]+', re.sub(r'[\-_\. ]+$', r'', sn))
+    return re.sub(r'[\W_]+', r'[\W_]+', re.sub(r'[\W_ ]+$', r'', sn))
 
 
 def get_hiseq4000_miseq_regexp(sample, suf):
-    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
-    return _sample_name_special_chars(sn) + '_S\d+_L\d\d\d_' + suf + '.*\.fastq\.gz'
+    # sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.', '/'])
+    return _sample_name_special_chars(sample.name) + '_S\d+_L\d\d\d_' + suf + '.*\.fastq\.gz'
 
 def get_hiseq_regexp(sample, suf):
-    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
-    return _sample_name_special_chars(sn) + '_' + sample.index + '_L\d\d\d_' + suf + '.*\.fastq\.gz'
+    # sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.', '/'])
+    return _sample_name_special_chars(sample.name) + '_' + sample.index + '_L\d\d\d_' + suf + '.*\.fastq\.gz'
 
 def get_nextseq500_regexp(sample, suf):
-    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.'])
-    return _sample_name_special_chars(sn) + '_S\d+_' + suf + '.*\.fastq\.gz'
+    sn = ''.join(c for c in sample.name if c.isalnum() or c in ['-', '_', '.', '/'])
+    return _sample_name_special_chars(sample.name) + '_S\d+_' + suf + '.*\.fastq\.gz'
 
 
 class DatasetStructure:
@@ -164,8 +164,9 @@ class HiSeqStructure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
-                             'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    warn('Warn: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
+                         'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    continue
                 az_proj_name = az_prjname_by_subprj.values()[0]
 
             project.set_dirpath(proj_dirpath, az_proj_name)
@@ -228,8 +229,9 @@ class MiSeqStructure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
-                             'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    warn('Warn: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
+                         'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    continue
                 az_proj_name = az_prjname_by_subprj.values()[0]
 
             project.set_dirpath(proj_dirpath, az_proj_name)
@@ -262,8 +264,9 @@ class HiSeq4000Structure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
-                             'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    warn('Warn: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
+                         'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    continue
                 az_proj_name = az_prjname_by_subprj.values()[0]
             # if len(self.project_by_name) > 1:
             #     az_project_name += '_' + pname.replace(' ', '_').replace('-', '_').replace('.', '_')
@@ -303,8 +306,9 @@ class NextSeq500Structure(DatasetStructure):
             az_proj_name = az_prjname_by_subprj.get(pname) if not isinstance(az_prjname_by_subprj, basestring) else az_prjname_by_subprj
             if az_proj_name is None:
                 if len(self.project_by_name) > 1:
-                    critical('Error: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
-                             'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    warn('Warn: cannot correspond subproject ' + pname + ' and project names and JIRA cases. '
+                         'Please, follow the SOP for multiple-project run: http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Pre+Processing+QC+Reporting')
+                    continue
                 az_proj_name = az_prjname_by_subprj.values()[0]
 
             project.set_dirpath(self.unaligned_dirpath, az_proj_name)
@@ -375,7 +379,7 @@ class DatasetProject:
 
 class DatasetSample:
     def __init__(self, name, index=None, source_fastq_dirpath=None):
-        self.name = name
+        self.name = re.sub(r'[\W_]', r'_', name)
         self.index = index
 
         self.l_fpath = None
@@ -438,6 +442,8 @@ def _concat_fastq(cnf, fastq_fpaths, output_fpath):
     if len(fastq_fpaths) == 1:
         if not isfile(output_fpath):
             info('  no need to merge - symlinking ' + fastq_fpaths[0] + ' -> ' + output_fpath)
+            if not isdir(dirname(output_fpath)):
+                critical('Dir for the symlink ' + dirname(output_fpath) + ' does not exist')
             os.symlink(fastq_fpaths[0], output_fpath)
             return output_fpath
     else:
