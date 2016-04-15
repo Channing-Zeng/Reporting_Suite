@@ -90,25 +90,37 @@ def main():
     if not verify_bed(features_fpath, 'Annotated reference BED file'):
         critical('Annotated reference is required')
 
-    gene_transcript_bed, cds_exon_bed = _split_reference(cnf, features_fpath)
+    # features_and_beds = _split_reference_by_priority(cnf, features_fpath)
+
     bed = BedTool(input_bed_fpath).cut([0, 1, 2])
 
-    info('Annotating based on CDS and exons from ' + features_fpath)
+    info()
 
-    annotated, off_targets = _annotate(cnf, bed, cds_exon_bed, chr_order)
+    annotated = None
+    off_targets = None
 
-    if off_targets:
-        off_target_bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
-        # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
-        # log('Saved off target1 to ' + str(off_target_fpath))
-        info()
-        info('Trying to annotate missed regions based on genes and transcrips rather than CDS and exons...')
-        annotated_2, off_targets = _annotate(cnf, off_target_bed, gene_transcript_bed, chr_order)
+    for feature in ['CDS', 'Exon', 'Transcript', 'Gene']:
+        info('Extracting ' + feature + ' features from ' + features_fpath)
+        features_bed = BedTool(features_fpath).filter(lambda x: x[6] == feature)
 
-        for a in annotated_2:
-            a.feature = 'UTR/Intron/Decay'
-        annotated.extend(annotated_2)
+        info('Annotating based on ' + feature)
+        new_annotated, off_targets = _annotate(cnf, bed, features_bed, chr_order)
+        if not annotated:
+            annotated = new_annotated
+            for a in annotated:
+                a.feature = feature
+        else:
+            annotated.extend(new_annotated)
 
+        if off_targets:
+            info('not annotated regions remained')
+            bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
+
+            # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
+            # log('Saved off target1 to ' + str(off_target_fpath))
+            info()
+
+    if annotated is not None and off_targets is not None:
         annotated.extend(off_targets)
 
     info()
@@ -197,8 +209,8 @@ def _annotate(cnf, bed, ref_bed, chr_order):
     # p = subprocess.Popen(cmdline.split(), stdin=p.stdout, stdout=subprocess.PIPE)
     intersection = bed.intersect(ref_bed, wao=True)
 
-    total_lines = 0
-    total_uniq_lines = 0
+    # total_lines = 0
+    # total_uniq_lines = 0
     total_annotated = 0
     total_uniq_annotated = 0
 
@@ -217,9 +229,9 @@ def _annotate(cnf, bed, ref_bed, chr_order):
         #              '(' + str(len(fs)) + ') in ' + '\t'.join(str(f) for f in fs))
 
         assert e_chr == '.' or a_chr == e_chr, str((a_chr + ', ' + e_chr))
-        total_lines += 1
-        if (a_chr, a_start, a_end) not in met:
-            total_uniq_lines += 1
+        # total_lines += 1
+        # if (a_chr, a_start, a_end) not in met:
+        #     total_uniq_lines += 1
 
         if e_chr == '.':
             off_targets.append(Region(a_chr, int(a_start), int(a_end), ref_chrom_order=chr_order.get(a_chr)))
@@ -235,8 +247,6 @@ def _annotate(cnf, bed, ref_bed, chr_order):
 
         met.add((a_chr, a_start, a_end))
 
-    info('Total intersections, including off-target: ' + str(total_lines))
-    info('Total uniq regions in intersections, including off-target: ' + str(total_uniq_lines))
     info('Total annotated regions: ' + str(total_annotated))
     info('Total uniq annotated regions: ' + str(total_uniq_annotated))
     info('Total off target regions: ' + str(len(off_targets)))
@@ -256,33 +266,13 @@ def _save_regions(regions, fpath):
     return fpath
 
 
-def _split_reference(cnf, features_bed_fpath):
-    info('Splitting the reference file into genes and non-genes:')
-    features_bed = BedTool(features_bed_fpath)
-    gene_transcript_bed = features_bed.filter(lambda x: x[6] in ['Gene', 'Transcript'])
-    cds_exon_bed = features_bed.filter(lambda x: x[6] in ['CDS', 'Exon'])
-
-    # ref_bed_no_genes_fpath = join(cnf.work_dir, basename(exons_fpath) + '__no_whole_genes')
-    # ref_bed_genes_fpath = join(cnf.work_dir, basename(exons_fpath) + '__whole_genes')
-    # cmdline = 'grep -wv Gene {exons_fpath} | grep -wv Multi_Gene'.format(**locals())
-
-    # if cnf.reuse_intermediate and verify_file(ref_bed_no_genes_fpath, silent=True, is_critical=False):
-    #     log('Reusing existing ' + ref_bed_no_genes_fpath)
-    # else:
-    #     with open(ref_bed_no_genes_fpath, 'w') as out:
-    #         cmdline = 'grep -wv Gene {ref_bed_fpath} | grep -wv Multi_Gene'.format(**locals())
-    #         log(cmdline + ' > ' + ref_bed_no_genes_fpath)
-    #         subprocess.call(cmdline, shell=True, stdout=out)
-    # if verify_file(ref_bed_genes_fpath, silent=True, is_critical=False):
-    #     log('Reusing existing ' + ref_bed_genes_fpath)
-    # else:
-    #     with open(ref_bed_genes_fpath, 'w') as out:
-    #         cmdline = 'grep -w Gene {ref_bed_fpath}'.format(**locals())
-    #         log(cmdline + ' > ' + ref_bed_genes_fpath)
-    #         subprocess.call(cmdline, shell=True, stdout=out)
-    # log()
-
-    return gene_transcript_bed, cds_exon_bed
+def _split_reference_by_priority(cnf, features_bed_fpath):
+    features = ['CDS', 'Exon', 'Transcript', 'Gene']
+    info('Splitting the reference file into ' + ', '.join(features))
+    features_and_beds = []
+    for f in features:
+        features_and_beds.append((f, BedTool(features_bed_fpath).filter(lambda x: x[6] == f)))
+    return features_and_beds
 
 
 if __name__ == '__main__':

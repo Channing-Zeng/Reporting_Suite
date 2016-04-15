@@ -42,7 +42,7 @@ genomes:
     snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
     features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed  # canonical only
-    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed  # all regions
+    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg19.bed  # all regions
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
 
     az_exome: ~/Dropbox/az/reference_data/AZ_Exome.chr21.bed
@@ -73,7 +73,7 @@ genomes:
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
     features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed  # canonical only
-    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.bed  # all regions
+    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg19.bed  # all regions
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
     ensembl: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.full.bed
     all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
@@ -88,7 +88,7 @@ genomes:
     snpeff_transcripts:           ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt
 
     features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed  # canonical only
-    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.bed  # all regions
+    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg38.bed  # all regions
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
 #    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering.hg38/dbSNP_multi_mafs_latest.txt
