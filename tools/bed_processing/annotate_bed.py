@@ -100,25 +100,25 @@ def main():
     off_targets = None
 
     for feature in ['CDS', 'Exon', 'Transcript', 'Gene']:
-        info('Extracting ' + feature + ' features from ' + features_fpath)
-        features_bed = BedTool(features_fpath).filter(lambda x: x[6] == feature)
+        if bed:
+            info('Extracting ' + feature + ' features from ' + features_fpath)
+            features_bed = BedTool(features_fpath).filter(lambda x: x[6] == feature)
 
-        info('Annotating based on ' + feature)
-        new_annotated, off_targets = _annotate(cnf, bed, features_bed, chr_order)
-        if not annotated:
-            annotated = new_annotated
-            for a in annotated:
-                a.feature = feature
-        else:
-            annotated.extend(new_annotated)
+            info('Annotating based on ' + feature)
+            new_annotated, off_targets = _annotate(cnf, bed, features_bed, chr_order)
+            if not annotated:
+                annotated = new_annotated
+                for a in annotated:
+                    a.feature = feature
+            else:
+                annotated.extend(new_annotated)
 
-        if off_targets:
-            info('not annotated regions remained')
-            bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
+            if off_targets:
+                bed = BedTool([(r.chrom, r.start, r.end) for r in off_targets])
 
-            # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
-            # log('Saved off target1 to ' + str(off_target_fpath))
-            info()
+                # off_target_fpath = _save_regions(off_targets, join(work_dirpath, 'off_target_1.bed'))
+                # log('Saved off target1 to ' + str(off_target_fpath))
+                info()
 
     if annotated is not None and off_targets is not None:
         annotated.extend(off_targets)
