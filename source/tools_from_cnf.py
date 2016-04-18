@@ -2,7 +2,6 @@ import subprocess
 from genericpath import exists
 from os.path import join
 from distutils.version import LooseVersion
-import sys
 
 from source.file_utils import code_base_path, adjust_system_path, verify_obj_by_path
 from source.logger import info, err, critical

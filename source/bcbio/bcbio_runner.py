@@ -26,7 +26,7 @@ from source.file_utils import safe_mkdir
 from source.logger import info, err, critical, send_email, warn, is_local
 from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed, \
     check_md5
-from source.utils import is_us, md5, is_uk
+from source.utils import is_us, md5, is_uk, is_sweden
 from source.variants import summarize_qc
 from source.variants.filtering import make_vcf2txt_cmdl_params
 from source.variants.vcf_processing import verify_vcf
@@ -558,7 +558,7 @@ class BCBioRunner:
             extra_qsub_opts += '-l h="chara|rask" '
 
         mem_opts = ''
-        if mem_m and not is_local():
+        if mem_m and not is_local() and not is_sweden():
             mem_m = min(max(mem_m, 200), 90 * 1024)
             mem = str(int(mem_m)) + 'M'
             if mem_m < 1:
@@ -848,7 +848,7 @@ class BCBioRunner:
                             wait_for_steps=wait_for_steps,
                             threads=self.threads_per_sample)
 
-            if self.bw_converting in self.steps:
+            if is_uk() or is_us() and self.bw_converting in self.steps:
                 for sample in self.bcbio_structure.samples:
                     if sample.bam and isfile(sample.bam):
                         self._submit_job(self.bw_converting, sample.name,
