@@ -28,7 +28,7 @@ def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
             cmdline = '{samtools} index {bam_fpath}'.format(**locals())
             call(cnf, cmdline)
     else:
-        debug('Actutal "bai" index exist.')
+        debug('Actual "bai" index exist.')
 
 
 def index_bam_grid(cnf, bam_fpath, sambamba=None):
@@ -43,6 +43,26 @@ def index_bam_grid(cnf, bam_fpath, sambamba=None):
         info()
         return j
     return None
+
+
+def markdup_sam(cnf, in_sam_fpath, samblaster=None):
+    """Perform non-stream based deduplication of SAM input files using samblaster.
+    """
+    if not samblaster:
+        samblaster = get_system_path(cnf, 'samblaster')
+        if not samblaster:
+            warn('No samblaster, can\'t mark duplicates.')
+            return None
+
+    out_sam_fpath = add_suffix(in_sam_fpath, 'markdup')
+    tmp_fpath = join(cnf.work_dir, splitext_plus(basename(in_sam_fpath))[0] + '_markdup')
+    safe_mkdir(dirname(tmp_fpath))
+    cmdline = ('{samblaster} -i {in_sam_fpath} -o {out_sam_fpath}').format(**locals())
+    res = call(cnf, cmdline, output_fpath=out_sam_fpath, stdout_to_outputfile=False, exit_on_error=False)
+    if res:
+        return out_sam_fpath
+    else:
+        return None
 
 
 def markdup_bam(cnf, in_bam_fpath, bammarkduplicates=None):

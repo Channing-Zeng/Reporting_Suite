@@ -21,7 +21,7 @@ from source.jira_utils import retrieve_jira_info
 from source.preproc.dataset_structure import DatasetStructure
 from source.bcbio.project_level_report import make_project_level_report
 from source.qsub_utils import submit_job, wait_for_jobs
-from source.targetcov.bam_and_bed_utils import index_bam, markdup_bam
+from source.targetcov.bam_and_bed_utils import index_bam, markdup_sam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source import logger
@@ -216,15 +216,15 @@ def main():
             sambamba = get_system_path(cnf, 'sambamba')
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')
-            bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
-            if sambamba and bwa and seqtk and bammarkduplicates:
+            samblaster = get_system_path(cnf, 'samblaster')
+            if sambamba and bwa and seqtk and samblaster:
                 info()
-                info('Alignming ' + str(downsample_to) + ' random reads to the reference')
+                info('Aligning ' + str(downsample_to) + ' random reads to the reference')
                 aligned = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
                     sambamba,
                     bwa,
                     seqtk,
-                    bammarkduplicates,
+                    samblaster,
                     cnf.genome.bwa,
                     cnf.is_pcr) for s, l, r in zip(samples, lefts, rights))
                 for sample, bam_fpath in zip(samples, aligned):
@@ -248,7 +248,7 @@ def main():
                             bed_by_subprj.get(project.name, bed_by_subprj.values()[0] if bed_by_subprj.values() else None))
                         cnf.work_dir = dirname(cnf.work_dir)
             else:
-                err('For downsampled targqc and metamappint, bwa, sambamba, bammarkduplicates and seqtk are required.')
+                err('For downsampled targqc and metamapping, bwa, sambamba, samblaster and seqtk are required.')
 
         if cnf.fastqc:
             if not cnf.expose_to_ngs_server_only:
@@ -330,7 +330,7 @@ def main():
     #         err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
 
 
-def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):
+def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, samblaster, bwa_prefix, is_pcr=False):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
@@ -340,17 +340,17 @@ def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates
     if not res:
         return None
 
+    if not is_pcr:
+        markdup_sam_fpath = markdup_sam(cnf, sam_fpath, samblaster)
+        if markdup_sam_fpath:
+            sam_fpath = markdup_sam_fpath
+
     cmdline = '{sambamba} view -t {cnf.threads} -S -f bam {sam_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=bam_fpath)
 
     prefix = splitext(sorted_bam_fpath)[0]
     cmdline = '{sambamba} sort -t {cnf.threads} {bam_fpath} -o {sorted_bam_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath=sorted_bam_fpath, stdout_to_outputfile=False)
-
-    if not is_pcr:
-        markdup_bam_fpath = markdup_bam(cnf, sorted_bam_fpath, bammarkduplicates)
-        if markdup_bam_fpath:
-            sorted_bam_fpath = markdup_bam_fpath
 
     index_bam(cnf, sorted_bam_fpath, sambamba=sambamba)
     return sorted_bam_fpath
