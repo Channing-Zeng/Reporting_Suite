@@ -481,7 +481,7 @@ class BCBioRunner:
             interpreter='python',
             script=join('scripts', 'post', 'bam_to_bigwig.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
-            paramln=basic_params + ' --genome {cnf.genome.name}  -s \'{sample}\' --bam \'{bam}\''
+            paramln=params_for_one_sample + ' -s \'{sample}\' --bam \'{bam}\''
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
