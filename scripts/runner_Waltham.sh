@@ -10,9 +10,10 @@ hostname >&2
 finger $(whoami) | head -n1 >&2
 echo "" >&2
 source /etc/profile.d/modules.sh >&2
-module unload python >&2 2>&2
+#module unload python >&2 2>&2
 module unload gcc >&2 2>&2
 module load gcc/4.9.2 sge bedtools/2.24.0 bcbio bedops aws/2.7.8 >&2 2>&2
+export LD_LIBRARY_PATH=/group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/lib:${LD_LIBRARY_PATH}
 echo >&2
 echo "${CMDLINE}" >&2
 echo >&2

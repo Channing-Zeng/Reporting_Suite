@@ -16,9 +16,9 @@ project_dir = dirname(this_py_real_fpath)
 addsitedir(join(project_dir))
 addsitedir(join(project_dir, 'ext_modules'))
 
-virtualenv_site_dir = join(project_dir, 'virtualenv', 'lib', 'python2.7', 'site-packages')
-if isdir(virtualenv_site_dir):
-    addsitedir(virtualenv_site_dir)
+# virtualenv_site_dir = join(project_dir, 'virtualenv', 'lib', 'python2.7', 'site-packages')
+# if isdir(virtualenv_site_dir):
+#     addsitedir(virtualenv_site_dir)
 
 if __name__ == '__main__':
     from source.bcbio.main import main
