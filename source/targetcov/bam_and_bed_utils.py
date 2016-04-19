@@ -17,6 +17,9 @@ from source.utils import md5, get_chr_lengths_from_seq, get_ext_tools_dirname
 
 
 def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
+    if use_grid:
+        return index_bam_grid(cnf, bam_fpath, sambamba)
+
     sambamba = sambamba or get_system_path(cnf, 'sambamba')
     indexed_bam = bam_fpath + '.bai'
     if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
@@ -28,7 +31,7 @@ def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
             cmdline = '{samtools} index {bam_fpath}'.format(**locals())
             call(cnf, cmdline)
     else:
-        debug('Actual "bai" index exist.')
+        debug('Actual "bai" index exists.')
 
 
 def index_bam_grid(cnf, bam_fpath, sambamba=None):
@@ -42,7 +45,9 @@ def index_bam_grid(cnf, bam_fpath, sambamba=None):
         j = submit_job(cnf, cmdline, basename(bam_fpath) + '_index', output_fpath=indexed_bam, stdout_to_outputfile=False)
         info()
         return j
-    return None
+    else:
+        debug('Actual "bai" index exists.')
+        return None
 
 
 def markdup_sam(cnf, in_sam_fpath, samblaster=None):
