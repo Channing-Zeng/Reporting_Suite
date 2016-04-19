@@ -41,7 +41,7 @@ def index_bam_grid(cnf, bam_fpath, sambamba=None):
         sambamba = sambamba or get_system_path(cnf, 'sambamba')
         if sambamba is None:
             sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
-        cmdline = '{sambamba} index {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
+        cmdline = '{sambamba} index {bam_fpath}'.format(**locals())  # -F (=not) 1024 (=duplicate)
         j = submit_job(cnf, cmdline, basename(bam_fpath) + '_index', output_fpath=indexed_bam, stdout_to_outputfile=False)
         info()
         return j

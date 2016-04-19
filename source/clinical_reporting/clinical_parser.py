@@ -63,8 +63,8 @@ class Mutation(SortableByChrom):
         self.eff_type = None
         self.status = None
         self.reason = None
-        self.cosmic_ids = []
-        self.dbsnp_ids = []
+        self.cosmic_id = None
+        self.dbsnp_id = None
         self.solvebio = None
 
         self.depth = None
@@ -709,8 +709,8 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                         mut.freq = float(af)
                     else:
                         mut.freq = None
-                    mut.dbsnp_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('rs')]
-                    mut.cosmic_ids = [''.join(c for c in id_ if c.isdigit()) for id_ in ids.split(';') if id_.startswith('COS')]
+                    mut.dbsnp_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('rs')), None)
+                    mut.cosmic_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('COS')), None)
                     mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
                     mut.var_type = var_type
                     mut.var_class = var_class

@@ -48,21 +48,16 @@ class BaseClinicalReporting:
         ms = [
             Metric('Gene'),  # Gene & Transcript
             Metric('Transcript'),  # Gene & Transcript
-            # Metric('Codon chg', max_width=max_width, class_='long_line'),            # c.244G>A
             Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
             Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
-            # Metric('Allele'),             # Het.
-            # Metric('Chr', max_width=33, with_heatmap=False),       # chr11
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
             Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
             Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
-            # Metric('COSMIC', max_width=70, style='', class_='long_line'),                 # rs352343, COSM2123
             Metric('Status', short_name='Status'),     # Somatic
             Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Status', max_width=230, class_='long_line'),     # Likely
-            # Metric('VarDict reason', short_name='VarDict\nreason'),     # Likely
-            Metric('Databases'),                 # rs352343, COSM2123
-            Metric('ClinVar', short_name='SolveBio ClinVar'),
+            Metric('Databases'),                 # rs352343, COSM2123, SolveBio
+            # Metric('ClinVar', short_name='SolveBio ClinVar'),
         ]
 
         if len(mutations_by_experiment) == 1:
@@ -94,31 +89,36 @@ class BaseClinicalReporting:
                 if mut.cdna_change.strip():
                     print_cdna = True
 
-        mut_canonical = [[m.is_canonical if m is not None else False for m in muts] for e, muts in mutations_by_experiment.items()]
-        mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items()) for j, m in enumerate(muts) if m is not None and mut_canonical[i][j]]
+        # canonical_mutations = [
+        #     [m.is_canonical if m is not None else False for m in muts]
+        #      for e, muts in mutations_by_experiment.items()]
+        #
+        # mut_positions = [m.pos for i, (e, muts) in enumerate(mutations_by_experiment.items())
+        #                  for j, m in enumerate(muts) if m is not None and canonical_mutations[i][j]]
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
-            if mut.pos not in mut_positions:
-                mut_positions.append(mut.pos)
-                row = report.add_row()
-                row.add_record('Gene', mut.gene.name)
-                row_class = ' expandable_gene_row collapsed'
-                row.add_record('Position',
-                    **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, mut.pos, jbrowser_link))
-                row.add_record('Change', **self._g_chg_recargs(mut))
 
-                if len(mutations_by_experiment.values()) == 1:
-                    row.add_record('Freq', mut.freq if mut else None)
-                    row.add_record('Depth', mut.depth if mut else None)
-                else:
-                    for e, m in mut_by_experiment.items():
-                        row.add_record(e.key + ' Freq', m.freq if m else None)
-                        row.add_record(e.key + ' Depth', m.depth if m else None)
-                row.class_ = row_class
-                self._highlighting_and_hiding_mut_row(row, mut)
-                if len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
-                    row.highlighted_green = True
+            # if mut.pos not in mut_positions:
+            #     mut_positions.append(mut.pos)
+            #     row = report.add_row()
+            #     row.add_record('Gene', mut.gene.name)
+            #     row_class = ' expandable_gene_row collapsed'
+            #     row.add_record('Position',
+            #         **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, mut.pos, jbrowser_link))
+            #     row.add_record('Change', **self._g_chg_recargs(mut))
+            #
+            #     if len(mutations_by_experiment.values()) == 1:
+            #         row.add_record('Freq', mut.freq if mut else None)
+            #         row.add_record('Depth', mut.depth if mut else None)
+            #     else:
+            #         for e, m in mut_by_experiment.items():
+            #             row.add_record(e.key + ' Freq', m.freq if m else None)
+            #             row.add_record(e.key + ' Depth', m.depth if m else None)
+            #     row.class_ = row_class
+            #     self._highlighting_and_hiding_mut_row(row, mut, freq_in_samples)
+            #     if len(mutations_by_experiment) > 1 and len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
+            #         row.highlighted_green = True
 
             row = report.add_row()
             row.add_record('Gene', mut.gene.name, show_content=mut.is_canonical)
@@ -141,7 +141,7 @@ class BaseClinicalReporting:
             row.add_record('VarDict status', **self._signif_field(mut))
             # row.add_record('VarDict reason', mut.reason)
             row.add_record('Databases', **self._db_recargs(mut))
-            row.add_record('ClinVar', **self._clinvar_recargs(mut))
+            # row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             if len(mutations_by_experiment.values()) == 1:
                 row.add_record('Freq', mut.freq if mut else None, show_content=mut.is_canonical)
@@ -151,10 +151,13 @@ class BaseClinicalReporting:
                     row.add_record(e.key + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
                     row.add_record(e.key + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
 
-            row.class_ = row_class
             self._highlighting_and_hiding_mut_row(row, mut)
-            if len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
-                row.highlighted_green = True
+
+            if len(mut_by_experiment) > 1:
+                k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
+                row.color = 'hsl(100, 100%, ' + str(40 * (1 - k)) + '%)'
+
+            row.class_ = row_class
 
         return report
 
@@ -553,16 +556,21 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _db_recargs(mut):
-        db = ''
-        if mut.dbsnp_ids:
-            db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search'
-                             '&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
-        if db and mut.cosmic_ids:
-            db += ', '
-        if mut.cosmic_ids:
-            db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' +
-                            cid + '">COSM</a>' for cid in mut.cosmic_ids)
-        return dict(value=db)
+        def filter_digits(s):
+            return ''.join(c for c in s if c.isdigit())
+
+        val = OrderedDict()
+
+        if mut.dbsnp_id:
+            val[mut.dbsnp_id] = 'http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + \
+                                filter_digits(mut.dbsnp_id)
+        if mut.cosmic_id:
+            val[mut.cosmic_id] = 'http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + \
+                                 filter_digits(mut.cosmic_id)
+        if mut.solvebio:
+            val[mut.solvebio.clinsig] = mut.solvebio.url
+
+        return dict(value=None, html_fpath=val)
 
     @staticmethod
     def _aa_chg_recargs(mut):
@@ -575,8 +583,8 @@ class BaseClinicalReporting:
         p = Metric.format_value(str(start) + (('-' + str(end)) if end else ''), human_readable=True, is_html=True) if start else ''
         if jbrowser_link:
             p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '...' + str(end or start) +
-                 '" target="_blank">' + p + '</a>')
-        return dict(value=gray(c + ':') + p, num=chrom_key * 100000000000 + start)
+                 '" target="_blank">' + gray(c + ':') + p + '</a>')
+        return dict(value=p, num=chrom_key * 100000000000 + start)
 
     cdna_chg_regexp = re.compile(r'([c,n]\.)([-\d_+*]+)(.*)')
     @staticmethod
@@ -612,13 +620,6 @@ class BaseClinicalReporting:
         if mut.reason:
             signif += gray(' (' + mut.reason + ')')
         return dict(value=signif)
-
-    @staticmethod
-    def _clinvar_recargs(mut):
-        if mut.solvebio:
-            return dict(value=mut.solvebio.clinsig, url=mut.solvebio.url)
-        else:
-            return dict(value='')
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):

@@ -238,20 +238,6 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                 printed_genes += genes_in_col[i]
         return seq2c_dict
 
-    @staticmethod
-    def make_db_html(mut):
-        db = ''
-        if mut.dbsnp_ids:
-            db += ', '.join(('<a href="http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search'
-                             '&type=rs&rs=' + rs_id + '">dbSNP</a>') for rs_id in mut.dbsnp_ids)
-        if db and mut.cosmic_ids:
-            db += ', '
-        if mut.cosmic_ids:
-            db += ', '.join('<a href="http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' +
-                            cid + '">COSM</a>' for cid in mut.cosmic_ids)
-        return db
-
-
     # def make_key_genes_cov_json(self, experiment_by_key):
     #     chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
     #     chr_cum_len_by_chrom = dict(zip([c.name for c in self.chromosomes_by_name.values()], chr_cum_lens))

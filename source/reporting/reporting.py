@@ -96,15 +96,19 @@ class Record:
     def format_html(self):
         if not self.show_content:
             return ''
-        val = self.value
-        # if self.html_fpath:
-        #     if isinstance(self.html_fpath, dict):
-        #         val = self.value + ': '
-        #         val += ', '.join('<a href="' + v + '">' + k + '</a>'
-        #                          for k, v in self.html_fpath.items())
-        #     else:
-        #         val = '<a href="' + self.html_fpath + '">' + self.value + '</a>'
-        return self.metric.format(val, human_readable=True, is_html=True)
+        if self.html_fpath:
+            if isinstance(self.html_fpath, dict):
+                val = ''
+                if self.value:
+                    val += self.value + ': '
+                val += ', '.join(
+                    '<a href="' + v + '">' + self.metric.format(k, human_readable=True, is_html=True) + '</a>'
+                     for k, v in self.html_fpath.items())
+            else:
+                val = '<a href="' + self.html_fpath + '">' + self.value + '</a>'
+        else:
+            val = self.metric.format(self.value, human_readable=True, is_html=True)
+        return val
 
     def __repr__(self):
         return self.metric.name + ' ' + self.metric.format(self.value, human_readable=True)
@@ -207,7 +211,7 @@ class Metric:
     @staticmethod
     def format_value(value, unit='', human_readable=True, is_html=False):
         if value is None:
-            return '.'
+            return ''
 
         unit_str = unit
         if unit and is_html:
@@ -372,11 +376,10 @@ class BaseReport:
 
 
 class Row:
-    def __init__(self, parent_report, records=None, highlighted=False, highlighted_green=False, color=None, class_ = None, hidden=False):
+    def __init__(self, parent_report, records=None, highlighted=False, color=None, class_ = None, hidden=False):
         self.__parent_report = parent_report
         self.records = records or []
         self.highlighted = highlighted
-        self.highlighted_green = highlighted_green
         self.color = color
         self.class_ = class_
         self.hidden = hidden
@@ -455,9 +458,11 @@ class SampleReport(BaseReport):
         return flat_rows
 
     def save_html(self, cnf, output_fpath, caption='', #type_=None,
-            extra_js_fpaths=list(), extra_css_fpaths=list()):
+            extra_js_fpaths=list(), extra_css_fpaths=list(),
+            tmpl_fpath=None, data_dict=None):
         return BaseReport.save_html(self, cnf, output_fpath, caption=caption, #type_='SampleReport',
-            extra_js_fpaths=list(), extra_css_fpaths=list())
+                    extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths,
+                    tmpl_fpath=tmpl_fpath, data_dict=data_dict)
 
     def __repr__(self):
         return self.display_name + (', ' + self.report_name if self.report_name else '')
@@ -559,7 +564,8 @@ class PerRegionSampleReport(SampleReport):
         return rows
 
     def save_html(self, cnf, output_fpath, caption='', #type_=None,
-                  extra_js_fpaths=None, extra_css_fpaths=None):
+                  extra_js_fpaths=None, extra_css_fpaths=None,
+                  tmpl_fpath=None, data_dict=None):
         return None
         # sample_reports = []
         # fr = FullReport(self.report_name, sample_reports, self.metric_storage)
@@ -741,14 +747,16 @@ class FullReport(BaseReport):
             self.save_html(cnf, base_path + '.html', caption)
 
     def save_html(self, cnf, output_fpath, caption='',  #type_=None,
-                  display_name=None, extra_js_fpaths=None, extra_css_fpaths=None):
+                  display_name=None, extra_js_fpaths=None, extra_css_fpaths=None,
+                  tmpl_fpath=None, data_dict=None):
         safe_mkdir(dirname(output_fpath))
         if len(self.sample_reports) == 0:
             err('No sample reports found: HTML summary will not be made.')
             return None
 
         return BaseReport.save_html(self, cnf, output_fpath, caption=caption,  #type_='FullReport',
-            extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths)
+            extra_js_fpaths=extra_js_fpaths, extra_css_fpaths=extra_css_fpaths,
+            tmpl_fpath=tmpl_fpath, data_dict=data_dict)
 
     def __repr__(self):
         return self.name
@@ -1125,6 +1133,9 @@ def make_cell_th(metric, class_='', sortable=True):
 
 
 def make_cell_td(rec, class_=''):
+    if rec.metric.name == 'Databases':
+        pass
+
     html = ''
 
     if not rec.metric.values:
@@ -1264,8 +1275,8 @@ def build_section_html(report, section, sortable=True):
             tr_style += ' background-color: ' + row.color
         if row.highlighted:
             tr_class_ += ' highlighted_row'
-        elif row.highlighted_green:
-            tr_class_ += ' highlighted_green_row'
+        # elif row.highlighted_green:
+        #     tr_class_ += ' highlighted_green_row'
         if row.class_:
             tr_class_ += row.class_
 
@@ -1425,7 +1436,7 @@ def calc_cell_contents(report, rows):
                 rec.metric.numbers.append(rec.num)
             # elif rec.sort_as:
             #     rec.metric.numbers.append(rec.sort_as)
-            if rec.value is not None:
+            if rec.value is not None or rec.html_fpath is not None:
                 rec.metric.values.append(rec.value)
     # else:
     #     for rec in report.records:
