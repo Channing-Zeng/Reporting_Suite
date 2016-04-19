@@ -224,38 +224,41 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
         else:
             info('Updating existing record for ' + pid)
         d = values_by_keys_by_pid[pid]
+        for k in header_keys:
+            if k not in d:
+                err('Error: ' + k + ' not in ' + project_list_fpath + ' for ' + pid)
 
-        d['PID'] = pid.replace(',', ';')
+        d['PID'] = pid
 
         if analysis_dirpath:
             d['Analyses directory ' + (country_id if not is_local() else 'US')] = analysis_dirpath
         if project_name and (analysis_dirpath or not __unquote(d['Name'])):  # update only if running after bcbio, or no value there at all
-            d['Name'] = project_name.replace(',', ';')
+            d['Name'] = project_name
         if html_report_url and (analysis_dirpath or not __unquote(d['HTML report path'])):  # update only if running after bcbio, or no value there at all
             d['HTML report path'] = html_report_url
 
         if jira_case:
-            d['JIRA URL'] = jira_case.url.replace(',', ';')
+            d['JIRA URL'] = jira_case
             # if 'Updated By' in d and __unquote(d['Updated By']):
             d['Updated By'] = getpass.getuser()
             if jira_case.description:
-                d['Description'] = jira_case.summary.replace(',', ';').replace('\n', ' ')
+                d['Description'] = jira_case.summary
             if jira_case.data_hub:
-                d['Data Hub'] = jira_case.data_hub.replace(',', ';')
+                d['Data Hub'] = jira_case.data_hub
             if jira_case.type:
-                d['Type'] = jira_case.type.replace(',', ';')
+                d['Type'] = jira_case.type
             if jira_case.department:
-                d['Department'] = jira_case.department.replace(',', ';')
+                d['Department'] = jira_case.department
             if jira_case.division:
-                d['Division'] = jira_case.division.replace(',', ';')
+                d['Division'] = jira_case.division
             if jira_case.assignee:
-                d['Assignee'] = jira_case.assignee.replace(',', ';')
+                d['Assignee'] = jira_case.assignee
             if jira_case.reporter:
-                d['Reporter'] = jira_case.reporter.replace(',', ';')
+                d['Reporter'] = jira_case.reporter
         if samples_num:
             d['Sample Number'] = str(samples_num)
 
-        new_line = ','.join(__re_quote(d[k]) or '' for k in header_keys)
+        new_line = ','.join(__requote(d.get(k, '').replace(',', ';').replace('\n', ' | ')) or '' for k in header_keys)
 
         with open(tx_fpath, 'w') as f:
             os.umask(0002)
@@ -290,7 +293,7 @@ def __unquote(s):
     return s
 
 
-def __re_quote(s):
+def __requote(s):
     if s.startswith('"') or s.startswith("'"):
         s = s[1:]
     if s.endswith('"') or s.endswith("'"):
