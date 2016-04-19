@@ -4,7 +4,7 @@ from source.file_utils import open_gzipsafe
 
 from source.utils import human_sorted, get_chr_lengths
 from source.logger import step_greetings, info
-from ext_modules import vcf_parser as vcf
+from source.variants import vcf_parser as vcf
 
 import matplotlib
 import matplotlib.pyplot

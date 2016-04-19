@@ -2,7 +2,7 @@ from collections import OrderedDict
 import os
 import shutil
 from os.path import dirname, realpath, join, basename, isfile, pardir
-from ext_modules import vcf_parser as vcf
+from source.variants import vcf_parser as vcf
 
 from source.calling_process import call
 from source.file_utils import intermediate_fname, verify_file, splitext_plus
@@ -25,7 +25,6 @@ def make_tsv(cnf, vcf_fpath, samplename, main_sample_index=None):
     tsv_fpath = _extract_fields(cnf, vcf_fpath, samplename, main_sample_index)
     if not tsv_fpath:
         return tsv_fpath
-
 
     return tsv_fpath
 

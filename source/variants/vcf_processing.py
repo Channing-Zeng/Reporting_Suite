@@ -9,8 +9,8 @@ from os.path import basename, join, expanduser, splitext, realpath, dirname, par
 from collections import OrderedDict
 ##from memory_profiler import profile
 
-from ext_modules import vcf_parser
-from ext_modules.vcf_parser.model import _Record
+from source.variants import vcf_parser
+from source.variants.vcf_parser.model import _Record
 
 from source.calling_process import call_subprocess, call
 from source.change_checking import check_file_changed

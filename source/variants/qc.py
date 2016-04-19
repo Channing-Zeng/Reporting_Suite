@@ -2,7 +2,7 @@ import gzip
 import re
 from os.path import join
 
-from ext_modules import vcf_parser
+from source.variants import vcf_parser
 
 import source
 from source.logger import step_greetings, warn
