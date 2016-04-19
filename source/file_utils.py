@@ -13,11 +13,8 @@ import functools
 import random
 import ConfigParser
 import collections
-import sys
 import fnmatch
 import time
-import uuid
-import yaml
 
 from source.logger import info, err, warn, critical
 
@@ -333,6 +330,7 @@ def partition(pred, iterable):
 def merge_config_files(fnames):
     """Merge configuration files, preferring definitions in latter files.
     """
+    import yaml
     def _load_yaml(fname):
         with open(fname) as in_handle:
             config = yaml.load(in_handle)

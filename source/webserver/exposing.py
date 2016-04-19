@@ -7,7 +7,7 @@ from source import verify_file
 from source.file_utils import file_transaction, safe_mkdir, adjust_path
 from source.logger import info, critical, err, is_local, warn
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import is_uk, is_us, is_az
+from source.utils import is_uk, is_us, is_az, is_sweden
 from source.webserver.ssh_utils import connect_to_server
 from source.jira_utils import retrieve_jira_info
 
@@ -39,7 +39,16 @@ uk = Location('UK',
     csv_fpath='/ngs/web_content/reports/NGS.Project.csv',
     dirpath='/ngs/web_content',
     reports_dirpath='/ngs/web_content/reports',
-    proper_path_should_contain=['/ngs/oncology/analysis/', '/ngs/oncology/datasets/']
+    proper_path_should_contain=['/ngs/oncology/analysis/', '/ngs/oncology/datasets/',
+                                '/ngs/PHB/analysis/', '/ngs/PHB/datasets/']
+)
+sweden = Location('Sweden',
+    report_url_base='http://www.seml.astrazeneca.net/~klpf990/reports/',
+    website_url_base='http://ngs.usbod.astrazeneca.net/',
+    csv_fpath='/home/klpf990/www/reports/NGS.Project.csv',
+    dirpath='/home/klpf990/www/reports',
+    reports_dirpath='/home/klpf990/www/reports',
+    proper_path_should_contain=['/ngs/projects/']
 )
 local = Location('Local',
     report_url_base='http://localhost/reports/',
@@ -65,6 +74,7 @@ def sync_with_ngs_server(
     if is_us(): loc = us
     elif is_uk(): loc = uk
     elif is_local(): loc = local
+    elif is_sweden(): loc = sweden
     else:
         return None
 

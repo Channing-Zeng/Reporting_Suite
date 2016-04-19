@@ -21,3 +21,5 @@ numpy
 HTSeq
 CrossMap
 biopython
+jsontemplate
+solvebio

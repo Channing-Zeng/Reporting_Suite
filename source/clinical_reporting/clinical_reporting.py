@@ -55,7 +55,7 @@ class BaseClinicalReporting:
             Metric('Status', short_name='Status'),     # Somatic
             Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Status', max_width=230, class_='long_line'),     # Likely
-            Metric('Databases'),                 # rs352343, COSM2123, SolveBio
+            Metric('Databases', class_='long_line'),                 # rs352343, COSM2123, SolveBio
             # Metric('ClinVar', short_name='SolveBio ClinVar'),
         ]
 

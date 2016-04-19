@@ -10,14 +10,11 @@ from source.file_utils import verify_file, verify_module, adjust_path
 
 from source.logger import info, err, critical, debug
 
-if verify_module('yaml'):
-    from yaml import load as load_yaml
-    try:
-        from yaml import CDumper as Dumper, CLoader as Loader
-    except ImportError:
-        from yaml import Dumper, Loader
-else:
-    critical('Error: cannot import module yaml. ')
+from yaml import load as load_yaml
+try:
+    from yaml import CDumper as Dumper, CLoader as Loader
+except ImportError:
+    from yaml import Dumper, Loader
 
 # this_script_dirpath = dirname(abspath(__file__))
 # configs_dirpath = abspath(join(abspath(this_script_dirpath), pardir, 'configs'))
