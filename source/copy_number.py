@@ -2,12 +2,12 @@
 import math
 import os
 from collections import defaultdict, OrderedDict
+from json import load
 from os.path import join, splitext, basename, dirname, abspath, isfile
 from shutil import copyfile
 from time import sleep
 from traceback import format_exc
 
-from ext_modules.simplejson import load
 from joblib import Parallel, delayed
 
 import source

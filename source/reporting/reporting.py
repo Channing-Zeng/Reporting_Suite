@@ -8,7 +8,7 @@ from math import floor
 import traceback
 import datetime
 
-from ext_modules.jsontemplate import jsontemplate
+import jsontemplate
 
 from source.bcbio.bcbio_structure import BCBioSample
 from source.file_utils import file_transaction, verify_file, safe_mkdir

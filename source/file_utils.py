@@ -17,7 +17,7 @@ import sys
 import fnmatch
 import time
 import uuid
-from ext_modules import yaml
+import yaml
 
 from source.logger import info, err, warn, critical
 

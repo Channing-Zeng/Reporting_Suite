@@ -14,7 +14,7 @@ return strings.
 There main interface is the class: ``Reader``.  It takes a file-like
 object and acts as a reader::
 
-    >>> from ext_modules import vcf_parser
+    >>> from source.variants import vcf_parser
     >>> vcf_reader = vcf_parser.Reader(open('vcf/test/example-4.0.vcf', 'r'))
     >>> for record in vcf_reader:
     ...     print record

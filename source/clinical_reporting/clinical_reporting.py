@@ -6,7 +6,6 @@ from os.path import join, dirname, abspath, relpath, basename
 import re
 
 import source
-from ext_modules.genologics import lims
 from source import info, verify_file
 from source.calling_process import call
 from source.logger import warn
@@ -521,6 +520,10 @@ class BaseClinicalReporting:
     @staticmethod
     def get_data_from_lims(cnf, project_name, sample_name):
         # Create the LIMS interface instance
+        try:
+            from genologics import lims
+        except:
+            return None
         lims_instance = lims.Lims()
         lims_sample = None
         sample_type = None

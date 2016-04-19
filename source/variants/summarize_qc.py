@@ -1,6 +1,6 @@
 from os.path import join
 
-from ext_modules.simplejson import load
+from json import load
 
 import source
 from source.logger import info

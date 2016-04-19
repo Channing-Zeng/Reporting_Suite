@@ -25,7 +25,7 @@ class JiraCase:
 
 def retrieve_jira_info(url):
     try:
-        from ext_modules.jira import JIRA
+        from jira import JIRA
     except ImportError, e:
         warn('Cannot import JIRA: ' + str(e))
         return None

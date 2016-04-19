@@ -15,7 +15,7 @@ def connect_to_server(server_url, username, password):
         err('Could not find key ' + rsa_key_path)
 
     try:
-        from ext_modules.paramiko import SSHClient, RSAKey, AutoAddPolicy
+        from paramiko import SSHClient, RSAKey, AutoAddPolicy
     except ImportError as e:
         err(format_exc())
         warn()
