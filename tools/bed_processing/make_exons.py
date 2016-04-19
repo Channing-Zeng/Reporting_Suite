@@ -42,6 +42,10 @@ grep -w CDS RefSeq_CDS_miRNA.all_features.hg19-noalt.canon.bed | cut -f1,2,3,4 >
 grep -w CDS RefSeq_CDS_miRNA.all_features.hg38.canon.bed       | cut -f1,2,3,4 > RefSeq_CDS.hg38.bed
 grep -w CDS RefSeq_CDS_miRNA.all_features.hg38-noalt.canon.bed | cut -f1,2,3,4 > RefSeq_CDS.hg38-noalt.bed
 
+grep -w chr20 RefSeq_CDS.hg19.bed > RefSeq_CDS.hg19-chr20.bed
+grep -w chr20 RefSeq.all_features.hg19.bed > RefSeq.all_features.hg19-chr20.bed
+grep -w chr20 RefSeq_CDS_miRNA.all_features.hg19.canon.bed > RefSeq_CDS_miRNA.all_features.hg19-chr20.canon.bed
+
 # UK
 cp ~/Dropbox/az/reference_data/Exons/RefSeq/*.hg19*.bed /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq
 cp ~/Dropbox/az/reference_data/Exons/RefSeq/*.hg38*.bed /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
@@ -711,10 +715,6 @@ class Exon(SortableByChrom):
 
     def get_key(self):
         return self.chrom_ref_order, self.start, self.end
-
-
-def _rm_quotes(l):
-    return l[1:-1]
 
 
 def is_approved_symbol(gname, approved_gene_by_name):

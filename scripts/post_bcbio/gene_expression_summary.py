@@ -11,13 +11,17 @@ import source
 from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.logger import info, step_greetings, err
 from source.rnaseq.gene_expression import make_gene_expression_heatmaps
-from tools.bed_processing.make_exons import _rm_quotes
+from source.file_utils import verify_file
+
+
+def _rm_quotes(l):
+    return l[1:-1]
 
 
 def get_gene_transcripts_id(cnf):
     genes_dict = dict()
     transcripts_dict = dict()
-    if not cnf.genome.all_transcripts or not isfile(cnf.genome.all_transcripts):
+    if not cnf.genome.all_transcripts or not verify_file(cnf.genome.all_transcripts):
         err('File with transcripts and genes ID was not found! Heatmaps cannot be created.')
     info('Getting transcripts ID and genes ID from ' + cnf.genome.all_transcripts)
 

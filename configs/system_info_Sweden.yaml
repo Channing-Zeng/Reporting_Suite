@@ -1,4 +1,4 @@
-#  APPS
+# /ngs/apps/az.reporting/bcbio_postproc.py
 
 resources:
 #  snpeff:
@@ -68,6 +68,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/SPLICE.txt
 
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
+
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
 
     circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
@@ -95,6 +97,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/SPLICE.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
 
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
 
@@ -127,6 +131,8 @@ genomes:
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
+
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
   hg19-chr20:
@@ -155,6 +161,8 @@ genomes:
     actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
     compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
     splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
