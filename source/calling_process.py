@@ -339,7 +339,7 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             if not verify_file(output_fpath, verify_size=verify_output_not_empty):
                 if exit_on_error:
                     clean()
-                    critical('Error: the output file for the program is empty or do not exist; exiting.')
+                    critical('Error: the output file for the program is empty or does not exist; exiting.')
                 else:
                     return None
 

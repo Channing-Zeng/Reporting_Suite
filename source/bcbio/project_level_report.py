@@ -262,15 +262,20 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
     if not csv_files_in_config_dir:
         info('No CSV file found in config dir ' + bcbio_structure.config_dir)
         return None
+
     report_rmd_template_fpath = get_system_path(cnf, join(get_ext_tools_dirname(is_common_file=True), 'qc_report.rmd'))
-    report_template = open(report_rmd_template_fpath).read()
-    report_rmd_fpath = join(cnf.work_dir, BCBioStructure.rnaseq_qc_report_name + '.rmd')
+    with open(report_rmd_template_fpath) as f:
+        report_template = f.read()
+
+    report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.rmd')
     report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
 
     with file_transaction(None, report_rmd_fpath) as tx:
         with open(tx, 'w') as f:
-            f.write(report_template.format(bcbio_csv=csv_files_in_config_dir[0],
-                project_summary=bcbio_structure.project_summary_fpath, combined_counts=bcbio_structure.gene_counts_fpath))
+            f.write(report_template.format(
+                bcbio_csv=csv_files_in_config_dir[0],
+                project_summary=bcbio_structure.project_summary_fpath,
+                combined_counts=bcbio_structure.gene_counts_fpath))
 
     render_rmd_r = get_script_cmdline(cnf, 'Rscript', join('tools', 'render_rmd.R'), is_critical=True)
     render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath

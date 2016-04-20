@@ -1,6 +1,28 @@
+v1.3.0, 21 Apr 2016
+Features
+- RNA-seq bcbio workflow support. QC reporting, counts heatmaps, RNA-seq Qualimap
+- Support Sweden HPC
+- Updated Vardict2mut filtering:
+-- Keeping silent mutations
+-- Filtering by MSI
+-- Filtering by GMAF, AF, cohort frequency, depth after actionable filtering
+-- Ignoring variants occurring after last known critical amino acid
+- Using virtualenv to handle python dependencies
+- More advanced BED annotation based on RefSeq
+- NGS reports:
+-- Separate tab for silent mutations
+-- Key genes coverage theshold for NGS reports is set exactly as half mean coverage
+-- SolveBio integration
+-- Dynamic AF filtration slider
+- Preproc: samblaster to deduplicate
+- Add script to prepare canonical transcript list from SnpEff output
+- Update script for making RefSeq BED reference data
+- VarQC reports: showing cosmic and dbsnp version in tooltips
+- Support normal sample only configurations
+
 v1.2.0, 28 Mar 2016
 Features
-- Circus plots integrated with all mutations visualized by frequency accorss the genome
+- Circos plots integrated with all mutations visualized by frequency accorss the genome
 - SV in NGS oncology reports: more consise, highlighting known fusion, linking to jBrowse.
 
 Optimization
@@ -28,7 +50,6 @@ Other
 
 
 v1.0.1, 2 Mar 2016
-
 - Stanalone variants.py - handling incorrect input
 - BED processing scripts updates: annotate_bed.py, sort_bed.py, standardize_bed.py
 - Using all transcripts for bed annotation, canonical only for reports and CNV. make_exons.py udpated to make both canon and all
@@ -43,7 +64,6 @@ Fixes
 
 
 v1.0.0, 29 Feb 2016
-
 New features:
 - New mutation filtering: using rules and manual curations by Robert McEwen and Hedley Carr. Reporting clasification assignment rationale.
 - Standalone script for variant annotation and filtration - variants.py
