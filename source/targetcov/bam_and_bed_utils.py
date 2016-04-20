@@ -183,7 +183,7 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
         target_bed = sort_bed(cnf, target_bed)
 
         cols = count_bed_cols(target_bed)
-        if cnf.reannotate or cols < 4:
+        if True or cnf.reannotate or cols < 4:
             info()
             if not features_bed:
                 critical(str(cols) + ' columns (less than 4), and no features to annotate regions '
@@ -191,7 +191,7 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
                     '(' + cnf.genome.name + ') in ' + cnf.sys_cnf)
             info('cnf.reannotate is ' + str(cnf.reannotate) + ', and cols in the target BED is ' + str(cols) +
                 '. Annotating target with the gene names from the "features" file ' + features_bed + '...')
-            target_bed = annotate_amplicons(cnf, target_bed)
+            target_bed = annotate_target(cnf, target_bed)
 
     def remove_no_anno(l, i):
         if l.split('\t')[3].strip() == '.': return None
@@ -215,7 +215,7 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
         if cols < 4:
             info()
             info('Number columns in SV bed is ' + str(cols) + '. Annotating amplicons with gene names...')
-            seq2c_bed = annotate_amplicons(cnf, seq2c_bed)
+            seq2c_bed = annotate_target(cnf, seq2c_bed)
         elif 8 > cols > 4:
             seq2c_bed = cut(cnf, seq2c_bed, 4)
         elif cols > 8:
@@ -266,7 +266,7 @@ def extract_gene_names_and_filter_exons(cnf, target_bed, features_bed, features_
             if not verify_file(features_filt_bed):
                 info()
                 warn('No gene symbols from the capture BED file was found in the features BED file. Re-annotating target...')
-                target_bed = annotate_amplicons(cnf, target_bed)
+                target_bed = annotate_target(cnf, target_bed)
                 #info('Merging regions within genes...')
                 #target_bed = group_and_merge_regions_by_gene(cnf, target_bed, keep_genes=False)
                 info('Sorting amplicons_bed by (chrom, gene_name, start)')
@@ -316,7 +316,7 @@ def get_gene_keys(bed_fpath, chrom_index=0, gene_index=3):
     return gene_keys_set, gene_keys_list
 
 
-def annotate_amplicons(cnf, target_bed):
+def annotate_target(cnf, target_bed):
     output_fpath = intermediate_fname(cnf, target_bed, 'ann')
     features_bed = verify_bed(cnf.genome.bed_annotation_features, is_critical=True, description='bed_annotation_features in system config')
 
