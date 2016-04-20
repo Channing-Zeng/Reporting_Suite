@@ -738,7 +738,7 @@ class Filtration:
 
             # Filter low AF MSI
             if abs(len(ref) - len(alt)) == 1:
-                msi = int(fields[msicol])
+                msi = float(fields[msicol])
                 msi_fail = any([
                     msi <=  7 and allele_freq < 0.05,
                     msi ==  8 and allele_freq < 0.07,
