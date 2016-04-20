@@ -972,7 +972,7 @@ class BCBioRunner:
                  jsons_by_sample_by_caller, htmls_by_sample_by_caller,
                  varqc_name=BCBioStructure.varqc_name, caption='Variant QC')
         else:
-            err('Not JSON and HTML found, cannot generate summary reports.')
+            err('VarQC: no JSON and HTML found, won\'t generate summary reports.')
 
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):

@@ -8,9 +8,11 @@ if not ((2, 7) <= sys.version_info[:2] < (3, 0)):
 
 from site import addsitedir
 from os.path import dirname, join, splitext, realpath, isdir
+# from inspect import getsourcefile
 
 this_py_fpath = splitext(__file__)[0] + '.py'
 this_py_real_fpath = realpath(this_py_fpath)
+# getsourcefile(lambda: 0)
 project_dir = dirname(this_py_real_fpath)
 
 addsitedir(join(project_dir))

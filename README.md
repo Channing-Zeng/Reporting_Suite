@@ -20,7 +20,8 @@ AZ_REPORTING=/ngs/RDI/SCRIPTS/az.reporting
 #Sweden:
 BCBIO=/ngs/apps/bcbio-nextgen
 AZ_REPORTING=/ngs/apps/az.reporting
-###
+#
+#
 git clone https://github.com/AstraZeneca-NGS/Reporting_Suite.git
 cd $AZ_REPORTING
 export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH

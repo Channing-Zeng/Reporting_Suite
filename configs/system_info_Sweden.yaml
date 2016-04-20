@@ -1,5 +1,7 @@
 # /ngs/apps/az.reporting/bcbio_postproc.py
 
+ld_library_path: /ngs/apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/lib
+
 resources:
   python:
     path: /ngs/apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python
