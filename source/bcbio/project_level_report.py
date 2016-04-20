@@ -274,8 +274,8 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
 
     render_rmd_r = get_script_cmdline(cnf, 'Rscript', join('tools', 'render_rmd.R'), is_critical=True)
     render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath
-    call(cnf, render_rmd_cmdline, output_fpath=report_rmd_fpath)
-    if verify_file(report_rmd_fpath):
+    call(cnf, render_rmd_cmdline, output_fpath=report_html_fpath, stdout_to_outputfile=False)
+    if verify_file(report_html_fpath):
         info('Saved RNAseq QC report to ' + report_html_fpath)
         return report_html_fpath
     else:

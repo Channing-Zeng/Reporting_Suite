@@ -437,7 +437,8 @@ class ClinicalExperimentInfo:
                 self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
             self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:
-                self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
+                if mut.gene.key in self.key_gene_by_name_chrom:
+                    self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
             info('Retrieving SolveBio...')
             self.get_mut_info_from_solvebio()
         else:
@@ -597,13 +598,18 @@ class ClinicalExperimentInfo:
                         gene.cdss.append(cds)
                         gene.strand = strand
 
+                else:
+                    gene = self.key_gene_by_name_chrom.get((symbol, chrom))
+                    if gene and not gene.chrom:
+                        gene.chrom = chrom
+
         # Cleaning up records that are not found in the target gene panel,
         # so we don't know about them and don't even want to report them
-        for gene in self.key_gene_by_name_chrom.values():
-            if not gene.chrom and (gene.name, gene.chrom) in self.key_gene_by_name_chrom:
-                del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
-            if not gene.start or not gene.end:
-                del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
+        # for gene in self.key_gene_by_name_chrom.values():
+            # if not gene.chrom and (gene.name, gene.chrom) in self.key_gene_by_name_chrom:
+            #     del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
+            # if not gene.start or not gene.end:
+            #     del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
         info('Keeping ' + str(len(self.key_gene_by_name_chrom)) + ' ' + self.genes_collection_type + ' genes based on targQC reports')
 
 def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type, for_flagged_report=False):
@@ -699,8 +705,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                 alts_met_before.add((chrom, start, ref, alt, transcript))
 
                 if (gname, chrom) not in key_gene_by_name_chrom:
-                    err('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutation:')
-                    err('  ' + l)
+                    # warn('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutation:\n  ' + l)
                     continue
 
                 mut = Mutation(chrom=chrom, chrom_ref_order=chr_order.get(chrom))

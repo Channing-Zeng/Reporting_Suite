@@ -915,6 +915,7 @@ class BCBioRunner:
 
             if self.bcbio_structure.is_rnaseq:
                 create_rnaseq_qc_report(self.cnf, self.bcbio_structure)
+                info()
 
             html_report_fpath = make_project_level_report(
                 self.cnf,
