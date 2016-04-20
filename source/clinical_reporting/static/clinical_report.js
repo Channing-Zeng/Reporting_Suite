@@ -46,6 +46,7 @@ $(function() {
             }
         }
     }
+    filterMutationsByAF($('#mut_af_slider')[0].value);
 
     $('#variants_table_controls').width($('#report_table_mutations').width() - 5);
     $('#download_mut_table').show();
@@ -56,6 +57,7 @@ $(function() {
 
 function extendClick(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
+    var showSilent = switch_id.search('silent') != -1;
     // Showing full
     switch_id = switch_id.split("_");
     var table_id = switch_id[switch_id.length - 1];
@@ -64,33 +66,46 @@ function extendClick(switch_id) {
       switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">' + key_or_target + ' genes</a> / <span>all genes</span>')
     }
     else {
-      switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / <span>+ unknown</span>')
+        switchElContent = '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / ';
+        if (showSilent) {
+            switchElContent += '<a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a> / ';
+            switchElContent += '<span>+ silent</span>';
+        }
+        else {
+            switchElContent += '<span>+ unknown</span> / ';
+            switchElContent += '<a class="dotted-link" id="extend_link_silent_' + table_id + '" onclick="extendClick($(this))">+ silent</a>';
+        }
+        switch_el.html(switchElContent)
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_short = table_div.find('.table_short');
     if (table_short) table_short.remove();
-    var table_full_clone = null;
-    for (var t = 0; t < table_full_clones.length; t++) {
-      if (table_full_clones[t].id_ == table_id) {
-        table_full_clone = table_full_clones[t].table;
-        table_full_clones.splice(t, 1);
-      }
-    }
-    table_div.prepend(table_full_clone);
     var table_full = table_div.find('.table_full');
-    if (table_full) {
-      if (table_id == 'variants') {
-        $(table_full).css('height', '');
-        $('.table_full#report_table_mutations tr').each(function() {
-            checkAF(this, minAF);
-        });
-      }
-      $(table_full).show();
-      if (msieversion() == 0) {
-          table_full.tableSort();
-      }
+    if (!table_full[0]) {
+        var table_full_clone = null;
+        for (var t = 0; t < table_full_clones.length; t++) {
+          if (table_full_clones[t].id_ == table_id) {
+            table_full_clone = table_full_clones[t].table;
+            table_full_clones.splice(t, 1);
+          }
+        }
+        table_div.prepend(table_full_clone);
+        table_full = table_div.find('.table_full');
     }
-    table_full_clones.push({'id_': table_id, 'table': table_full_clone.clone()});
+    if (table_full) {
+        if (table_id == 'variants') {
+            $(table_full).css('height', '');
+            $('.table_full#report_table_mutations tr').each(function() {
+                checkSilent(this, showSilent);
+                checkAF(this, minAF);
+            });
+        }
+        $(table_full).show();
+        if (msieversion() == 0) {
+            table_full.tableSort();
+        }
+    }
+    if (table_full_clone) table_full_clones.push({'id_': table_id, 'table': table_full_clone.clone()});
 }
 
 function reduceClick(switch_id) {
@@ -103,7 +118,8 @@ function reduceClick(switch_id) {
       switch_el.html('<span>'  + key_or_target + ' genes</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">all genes</a>')
     }
     else {
-      switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a>')
+      switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a> ' +
+          '/ <a class="dotted-link" id="extend_link_silent_' + table_id + '" onclick="extendClick($(this))">+ silent</a>')
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
@@ -176,6 +192,17 @@ function write_to_excel(table) {
 //        append: false
 //    });
 //});
+
+function checkSilent(row, showSilent) {
+    for (var c = 0, m = row.cells.length; c < m; c++) {
+        var cell = row.cells[c];
+        if (cell.attributes.metric && cell.attributes.metric.value == 'VarDict status') {
+            if (!showSilent && cell.innerText.search('silent') != -1)
+                $(row).addClass('row_hidden');
+            else $(row).removeClass('row_hidden');
+        }
+    }
+}
 
 function filterMutationsByAF(thresholdValue) {
     minAF = thresholdValue;

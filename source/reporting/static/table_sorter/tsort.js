@@ -165,11 +165,14 @@ Array - Specifc table
 			// Add divs for directional arrows
 			$(table).find('th').each(function(index) {
 				if ( sorting_criteria[index] != 'nosort' ) {
-					var computedStyle = getComputedStyle(this, null);
-					if (computedStyle.textAlign == 'left') {
-						$('<div class="sortArrow sortArrowRight"><div class="sortArrowDescending"></div></div>').appendTo($(this));   //<div class="sortArrowAscending"></div>
-					} else {
-						$('<div class="sortArrow sortArrowLeft"><div class="sortArrowDescending"></div></div>').prependTo($(this));   //<div class="sortArrowAscending"></div>
+					var arrows = $(this).find($('.sortArrow'));
+					if (!arrows){
+						var computedStyle = getComputedStyle(this, null);
+						if (computedStyle.textAlign == 'left') {
+							$('<div class="sortArrow sortArrowRight"><div class="sortArrowDescending"></div></div>').appendTo($(this));   //<div class="sortArrowAscending"></div>
+						} else {
+							$('<div class="sortArrow sortArrowLeft"><div class="sortArrowDescending"></div></div>').prependTo($(this));   //<div class="sortArrowAscending"></div>
+						}
 					}
 				}
 			});
