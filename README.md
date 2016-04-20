@@ -9,6 +9,27 @@ Includes:
 - Variant, CNV, Coverage reporting via single, easy to interpret HTML Report
 
 <br>
+####Installation
+```
+#US:
+BCBIO=/group/ngs/src/bcbio-nextgen
+AZ_REPORTING=/group/ngs/src/az.reporting
+#UK:
+BCBIO=/apps/bcbio-nextgen
+AZ_REPORTING=/ngs/RDI/SCRIPTS/az.reporting
+#Sweden:
+BCBIO=/ngs/apps/bcbio-nextgen
+AZ_REPORTING=/ngs/apps/az.reporting
+###
+git clone https://github.com/AstraZeneca-NGS/Reporting_Suite.git
+cd $AZ_REPORTING
+export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
+module load virtualenv
+virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
+pip install -r python_requirements.txt
+```
+
+<br>
 ####Usage (bcbio decoupling in progress)
 ```
 az-reporting.py [/path/to/a/bcbio/directory] [--run-cnf run_info.yaml] [--sys-cnf system_info.yaml] [--bed target.bed]
