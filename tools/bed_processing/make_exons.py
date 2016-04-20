@@ -20,7 +20,8 @@ ALL_EXONS = True
 
 
 '''
-# LOCAL
+# * How to update reference data on servers *
+# LOCAL:
 make_exons.py hg19 RefSeq_knownGene.hg19.txt RefSeq.all_features.hg19.bed
 make_exons.py hg38 RefSeq_knownGene.hg38.txt RefSeq.all_features.hg38.bed
 
@@ -47,13 +48,15 @@ grep -w chr20 RefSeq_CDS.hg19.bed > RefSeq_CDS.hg19-chr20.bed
 grep -w chr20 RefSeq.all_features.hg19.bed > RefSeq.all_features.hg19-chr20.bed
 grep -w chr20 RefSeq_CDS_miRNA.all_features.hg19.canon.bed > RefSeq_CDS_miRNA.all_features.hg19-chr20.canon.bed
 
-# UK
+# UK:
 cp ~/Dropbox/az/reference_data/Exons/RefSeq/*.hg19*.bed /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq
 cp ~/Dropbox/az/reference_data/Exons/RefSeq/*.hg38*.bed /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
+scp -r /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/*.bed cniclhpc003:/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq
+scp -r /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/*.bed cniclhpc003:/ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
 
-# US
-scp -r $uk:/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq
-scp -r $uk:/ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
+# US:
+scp -r $uk:/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/*.bed /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq
+scp -r $uk:/ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/*.bed /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq
 '''
 
 

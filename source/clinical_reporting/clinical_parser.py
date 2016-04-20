@@ -694,12 +694,14 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             reason = fs[reason_col] if reason_col is not None else None
 
             if sample_name == sample.name:
-                if (gname, chrom) not in key_gene_by_name_chrom:
-                    err('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutations')
-
                 if (chrom, start, ref, alt, transcript) in alts_met_before:
                     continue
                 alts_met_before.add((chrom, start, ref, alt, transcript))
+
+                if (gname, chrom) not in key_gene_by_name_chrom:
+                    err('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutation:')
+                    err('  ' + l)
+                    continue
 
                 mut = Mutation(chrom=chrom, chrom_ref_order=chr_order.get(chrom))
                 mut.gene = KeyGene(gname, chrom=chrom)
