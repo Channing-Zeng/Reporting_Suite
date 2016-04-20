@@ -419,7 +419,8 @@ class ClinicalExperimentInfo:
             self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
             info('Parsing TargQC ' + self.genes_collection_type + ' genes stats...')
             self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
-            self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
+            #self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
+            self.depth_cutoff = int(self.ave_depth / 2)
             self.sample.targetcov_detailed_tsv = verify_file(self.sample.targetcov_detailed_tsv)
             if self.sample.targetcov_detailed_tsv:
                 self.parse_targetseq_detailed_report()
@@ -541,9 +542,15 @@ class ClinicalExperimentInfo:
             return None
 
         info('Parsing coverage stats from ' + self.sample.targetcov_detailed_tsv)
+        depth_thresholds = self.cnf.coverage_reports.depth_thresholds
         with open(self.sample.targetcov_detailed_tsv) as f_inp:
             for l in f_inp:
                 if l.startswith('#'):
+                    def filter_digits(s):
+                        return ''.join(c for c in s if c.isdigit())
+                    fs = l.split('\t')
+                    if len(fs) > 13:
+                        depth_thresholds = [int(filter_digits(d)) for d in fs[13:]]
                     continue
 
                 fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
@@ -564,7 +571,7 @@ class ClinicalExperimentInfo:
 
                 start, end = int(start), int(end)
                 ave_depth = get_float_val(ave_depth)
-                cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(self.cnf.coverage_reports.depth_thresholds, pcnt_val_by_thresh))
+                cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(depth_thresholds, pcnt_val_by_thresh))
 
                 if feature in ['Whole-Gene', 'Gene-Exon']:
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))

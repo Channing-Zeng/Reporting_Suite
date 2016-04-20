@@ -46,7 +46,7 @@ $(function() {
             }
         }
     }
-    filterMutationsByAF($('#mut_af_slider')[0].value);
+    if ($('#mut_af_slider')[0]) filterMutationsByAF($('#mut_af_slider')[0].value);
 
     $('#variants_table_controls').width($('#report_table_mutations').width() - 5);
     $('#download_mut_table').show();

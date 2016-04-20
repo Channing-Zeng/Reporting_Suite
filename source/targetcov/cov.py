@@ -385,14 +385,15 @@ def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, fea
     summary_report = make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, output_dir, target_info)
 
     info()
+    avg_depth = depth_stats['ave_depth']
     per_gene_report = make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed,
-               features_no_genes_bed, output_dir, gene_by_name_and_chrom)
+               features_no_genes_bed, output_dir, gene_by_name_and_chrom, avg_depth=avg_depth)
 
     # key_genes_report = make_key_genes_reports(cnf, sample, gene_by_name, depth_stats['ave_depth'])
 
     info()
     info('-' * 70)
-    return depth_stats['ave_depth'], gene_by_name_and_chrom, [summary_report, per_gene_report]
+    return avg_depth, gene_by_name_and_chrom, [summary_report, per_gene_report]
 
 
 def get_records_by_metrics(records, metrics):
@@ -540,7 +541,8 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
     return report
 
 
-def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, features_no_genes_bed, output_dir, gene_by_name_and_chrom):
+def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, features_no_genes_bed, output_dir, gene_by_name_and_chrom,
+                         avg_depth=None):
     info('-' * 70)
     info('Detailed exon-level report')
 
@@ -590,8 +592,8 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, featu
     else:
         per_gene_report = None
         if features_bed or target_bed:
-            per_gene_report = _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no_genes_bed,
-                                                        target_bed, bam_fpath, gene_by_name_and_chrom)
+            per_gene_report = _generate_report_from_bam(cnf, sample, bam_fpath, target_bed, features_no_genes_bed,
+                                                        gene_by_name_and_chrom, avg_depth)
             #per_gene_report = _generate_report_from_regions(
             #        cnf, sample, output_dir, gene_by_name_and_chrom.values(), un_annotated_amplicons)
 
@@ -722,8 +724,11 @@ def _unique_longest_exons(cnf, exons_bed_fpath):
     return unique_bed_fpath
 
 
-def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no_genes_bed, target_bed, bam, gene_by_name_and_chrom):
+def _generate_report_from_bam(cnf, sample, bam, target_bed, features_no_genes_bed, gene_by_name_and_chrom, avg_depth):
     depth_thresholds = cnf.coverage_reports.depth_thresholds
+    if avg_depth:
+        depth_thresholds.append(int(avg_depth / 2))
+        depth_thresholds.sort()
     sample_name = sample.name
 
     report = PerRegionSampleReport(sample=sample, metric_storage=get_detailed_metric_storage(depth_thresholds))
@@ -747,7 +752,7 @@ def _generate_report_from_bam(cnf, sample, output_dir, features_bed, features_no
         info('Calculating coverage statistics for ' + ('CDS and miRNA exons...' if feature == 'exons' else 'the regions in the target BED file...'))
         regions = []
 
-        sambamba_depth_output_fpath = sambamba_depth(cnf, bed, bam)
+        sambamba_depth_output_fpath = sambamba_depth(cnf, bed, bam, depth_thresholds=depth_thresholds)
         if not sambamba_depth_output_fpath:
             continue
         read_count_col = None
