@@ -600,8 +600,13 @@ class ClinicalExperimentInfo:
 
                 else:
                     gene = self.key_gene_by_name_chrom.get((symbol, chrom))
-                    if gene and not gene.chrom:
-                        gene.chrom = chrom
+                    if gene:
+                        if gene.chrom is None:
+                            gene.chrom = chrom
+                        if gene.start is None:
+                            gene.start = start
+                        if gene.end is None:
+                            gene.end = end
 
         # Cleaning up records that are not found in the target gene panel,
         # so we don't know about them and don't even want to report them

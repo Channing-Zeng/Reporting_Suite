@@ -8,7 +8,7 @@ import re
 import source
 from source import info, verify_file
 from source.calling_process import call
-from source.logger import warn
+from source.logger import warn, err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.tools_from_cnf import get_script_cmdline
 from source.utils import get_chr_lengths, OrderedDefaultDict
@@ -437,9 +437,9 @@ class BaseClinicalReporting:
                 strands.append(gene.strand)
                 gene_ave_depths.append(gene.ave_depth)
                 covs_in_thresh.append(gene.cov_by_threshs.get(e.depth_cutoff))
-                # if not gene.start or not gene.end:
-                #     print gene.name, gene.chrom
-                #     continue
+                if not gene.start or not gene.end or not gene.chrom:
+                    err('Gene ' + gene.name + ': no chrom or start or end specified')
+                    continue
                 coord_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
                 cds_cov_by_gene[gene.name] = [dict(
                     start=cds.start,
@@ -564,14 +564,15 @@ class BaseClinicalReporting:
 
         val = OrderedDict()
 
-        if mut.dbsnp_id:
-            val[mut.dbsnp_id] = 'http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + \
-                                filter_digits(mut.dbsnp_id)
+        if mut.solvebio:
+            val[mut.solvebio.clinsig] = mut.solvebio.url
+
         if mut.cosmic_id:
             val[mut.cosmic_id] = 'http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + \
                                  filter_digits(mut.cosmic_id)
-        if mut.solvebio:
-            val[mut.solvebio.clinsig] = mut.solvebio.url
+        if mut.dbsnp_id:
+            val[mut.dbsnp_id] = 'http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + \
+                                filter_digits(mut.dbsnp_id)
 
         return dict(value=None, html_fpath=val)
 
