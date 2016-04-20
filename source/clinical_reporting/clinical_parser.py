@@ -372,6 +372,7 @@ class ClinicalExperimentInfo:
         self.project_name = project_name
         self.key_gene_by_name = GeneDict()
         self.key_gene_by_name_chrom = GeneDict()
+        self.key_genes_number = None
         self.genes_collection_type = ''
         self.genes_description = ''
         self.key = ''
@@ -409,6 +410,7 @@ class ClinicalExperimentInfo:
 
         for gene_name, chrom in key_gene_names_chroms:
             self.key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)
+        self.key_genes_number = len(self.key_gene_by_name_chrom)
 
         if self.sample.targqc_dirpath and verify_dir(self.sample.targqc_dirpath) \
                 and self.sample.targetcov_json_fpath and verify_file(self.sample.targetcov_json_fpath):
@@ -685,47 +687,49 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             reason = fs[reason_col] if reason_col is not None else None
 
             if sample_name == sample.name:
-                if (gname, chrom) in key_gene_by_name_chrom:
-                    if (chrom, start, ref, alt, transcript) in alts_met_before:
-                        continue
-                    alts_met_before.add((chrom, start, ref, alt, transcript))
+                if (gname, chrom) not in key_gene_by_name_chrom:
+                    err('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutations')
 
-                    mut = Mutation(chrom=chrom, chrom_ref_order=chr_order.get(chrom))
-                    mut.gene = KeyGene(gname, chrom=chrom)
-                    mut.transcript = transcript
-                    mut.is_canonical = transcript in canonical_transcripts if canonical_transcripts else True
-                    mut.codon_change = codon_change
-                    mut.cdna_change = cdna_change
-                    mut.aa_change = aa_change
-                    mut.aa_len = aa_len
-                    mut.pos = int(start)
-                    mut.ref = ref
-                    mut.alt = alt
-                    if depth:
-                        mut.depth = int(depth)
-                    else:
-                        mut.depth = None
-                    if af:
-                        mut.freq = float(af)
-                    else:
-                        mut.freq = None
-                    mut.dbsnp_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('rs')), None)
-                    mut.cosmic_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('COS')), None)
-                    mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
-                    mut.var_type = var_type
-                    mut.var_class = var_class
-                    mut.status = status
-                    mut.signif = signif
-                    if reason:
-                        reason = reason.replace('_', ' ')
-                        if reason == 'actionable somatic':
-                            reason = 'actionable som.'
-                        if reason == 'actionable germline':
-                            reason = 'actionable germ.'
-                        reason = reason.replace('change', 'chg.')
-                    mut.reason = reason
+                if (chrom, start, ref, alt, transcript) in alts_met_before:
+                    continue
+                alts_met_before.add((chrom, start, ref, alt, transcript))
 
-                    mutations.append(mut)
+                mut = Mutation(chrom=chrom, chrom_ref_order=chr_order.get(chrom))
+                mut.gene = KeyGene(gname, chrom=chrom)
+                mut.transcript = transcript
+                mut.is_canonical = transcript in canonical_transcripts if canonical_transcripts else True
+                mut.codon_change = codon_change
+                mut.cdna_change = cdna_change
+                mut.aa_change = aa_change
+                mut.aa_len = aa_len
+                mut.pos = int(start)
+                mut.ref = ref
+                mut.alt = alt
+                if depth:
+                    mut.depth = int(depth)
+                else:
+                    mut.depth = None
+                if af:
+                    mut.freq = float(af)
+                else:
+                    mut.freq = None
+                mut.dbsnp_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('rs')), None)
+                mut.cosmic_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('COS')), None)
+                mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
+                mut.var_type = var_type
+                mut.var_class = var_class
+                mut.status = status
+                mut.signif = signif
+                if reason:
+                    reason = reason.replace('_', ' ')
+                    if reason == 'actionable somatic':
+                        reason = 'actionable som.'
+                    if reason == 'actionable germline':
+                        reason = 'actionable germ.'
+                    reason = reason.replace('change', 'chg.')
+                mut.reason = reason
+
+                mutations.append(mut)
 
     info('Found ' + str(len(mutations)) + ' mutations in ' + str(len(key_gene_by_name_chrom)) + ' ' + key_collection_type + ' genes')
     return mutations

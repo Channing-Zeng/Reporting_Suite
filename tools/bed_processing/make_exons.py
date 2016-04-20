@@ -12,7 +12,8 @@ from source.utils import get_chr_lengths_from_seq, is_local
 us_syn_path = '/ngs/reference_data/genomes/Hsapiens/common/HGNC_gene_synonyms.txt'
 hg38_seq_fpath = '~/Dropbox/az/reference_data/hg38.fa' if is_local() else '/ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa'
 hg19_seq_fpath = '~/Dropbox/az/reference_data/hg19.fa' if is_local() else '/ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa'
-canonical_transcripts_fpath = '~/Dropbox/az/reference_data/common/canonical_transcripts.txt' if is_local() else '/ngs/reference_data/genomes/Hsapiens/common/canonical_transcripts.txt'
+canonical_hg38_transcripts_fpath = '~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt' if is_local() else '/ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt'
+canonical_hg19_transcripts_fpath = '~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt' if is_local() else '/ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt'
 
 ALL_EXONS = True
 # MIR_AND_CDS_ONLY = False
@@ -94,6 +95,7 @@ def main():
 
     genome_name = sys.argv[1]
     seq_fpath = hg19_seq_fpath if genome_name == 'hg19' else hg38_seq_fpath
+    canonical_transcripts_fpath = canonical_hg19_transcripts_fpath if genome_name == 'hg19' else canonical_hg38_transcripts_fpath
     chr_lengths = get_chr_lengths_from_seq(seq_fpath)
     chr_order = {c: i for i, (c, l) in enumerate(chr_lengths)}
 
@@ -568,7 +570,7 @@ def _proc_ucsc(inp, output_fpath, chr_order):  #, approved_gene_by_name, approve
             transcript = Transcript(gene, transcript_id, txStart, txEnd, strand)
             gene.transcripts.append(transcript)
 
-            if gene_symbol == 'CCNYL2':
+            if gene_symbol == 'AKT1':
                 pass
 
             for exon_number, eStart, eEnd in zip(
@@ -581,9 +583,11 @@ def _proc_ucsc(inp, output_fpath, chr_order):  #, approved_gene_by_name, approve
                 if eEnd <= cdsStart or eStart > cdsEnd:  # usually it means cdsStart = 0,
                                                          # no CDS for this gene, thus reporting exons
                     if gene_symbol.startswith('MIR'):
-                        transcript.biotype = 'miRNA'
+                        if transcript.biotype != 'protein_coding':
+                            transcript.biotype = 'miRNA'
                     else:
-                        transcript.biotype = 'other'
+                        if transcript.biotype not in ['protein_coding', 'miRNA']:
+                            transcript.biotype = 'other'
                     exon = Exon(transcript, eStart, eEnd, 'Exon', exon_number)
 
                 else:

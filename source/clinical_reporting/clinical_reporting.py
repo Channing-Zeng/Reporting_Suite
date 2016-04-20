@@ -682,7 +682,7 @@ class ClinicalReporting(BaseClinicalReporting):
             'variants': self.__mutations_section(),
             'coverage': self.__coverage_section(),
             'actionable_genes': self.__actionable_genes_section(),
-            'total_key_genes': Metric.format_value(len(self.experiment.key_gene_by_name_chrom), is_html=True)
+            'total_key_genes': Metric.format_value(len(self.experiment.key_genes_number), is_html=True)
         }
         if self.sv_report:
             data['sv'] = {}
