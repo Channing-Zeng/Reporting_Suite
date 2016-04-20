@@ -18,7 +18,8 @@ from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path
-from source.bcbio.project_level_report import make_project_level_report, get_run_info, get_oncoprints_link
+from source.bcbio.project_level_report import make_project_level_report, get_run_info, get_oncoprints_link, \
+    create_rnaseq_qc_report
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
@@ -912,8 +913,13 @@ class BCBioRunner:
             if is_us():
                 oncoprints_link = get_oncoprints_link(self.cnf, self.bcbio_structure, self.bcbio_structure.project_name)
 
+            if self.bcbio_structure.is_rnaseq:
+                create_rnaseq_qc_report(self.cnf, self.bcbio_structure)
+
             html_report_fpath = make_project_level_report(
-                self.cnf, bcbio_structure=self.bcbio_structure, oncoprints_link=oncoprints_link)
+                self.cnf,
+                    bcbio_structure=self.bcbio_structure,
+                    oncoprints_link=oncoprints_link)
 
             html_report_url = None
             if html_report_fpath:

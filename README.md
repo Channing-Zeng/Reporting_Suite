@@ -30,9 +30,20 @@ virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
 pip install -r python_requirements.txt
 ```
 
+$R
+install.packages("DESeq2")
+install.packages("RColorBrewer")
+install.packages("gplots")
+install.packages("amap")
+install.packages("ggplot2")
+install.packages("pheatmap")
+install.packages("reshape2")
+
 <br>
 ####Usage (bcbio decoupling in progress)
 ```
+export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
+source $AZ_REPORTING/virtualenv/bin/activate
 az-reporting.py [/path/to/a/bcbio/directory] [--run-cnf run_info.yaml] [--sys-cnf system_info.yaml] [--bed target.bed]
 ```
 

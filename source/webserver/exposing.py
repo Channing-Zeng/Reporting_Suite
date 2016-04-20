@@ -48,7 +48,7 @@ sweden = Location('Sweden',
     csv_fpath='/home/klpf990/www/reports/NGS.Project.csv',
     dirpath='/home/klpf990/www/reports',
     reports_dirpath='/home/klpf990/www/reports',
-    proper_path_should_contain=['/ngs/projects/']
+    proper_path_should_contain=['/projects/NGS/projects/', '/home/klpf990/']
 )
 local = Location('Local',
     report_url_base='http://localhost/reports/',

@@ -559,7 +559,7 @@ class BaseProjectStructure:
     isoform_tpm_fname = 'annotated_' + isoform_tpm_unannotated_fname
     gene_counts_name  = 'expression'
     gene_counts_dir   = gene_counts_summary_dir = gene_counts_name
-    qc_report_name    = 'qc_report'
+    rnaseq_qc_report_name = 'qc_report'
     qualimap_rna_dir  = join('qc', qualimap_dir)
 
     fastqc_repr      = 'FastQC'
@@ -575,7 +575,8 @@ class BaseProjectStructure:
     varqc_dir                                  = join(varannotate_dir, 'qc',)
     varqc_after_dir                            = join(varfilter_dir, 'qc')
     targqc_dir       = targqc_summary_dir      = join('qc', targqc_name)
-    ngscat_dir                                 = join(targqc_dir, ngscat_name)
+
+
 
     flagged_dir = join(targqc_dir, flag_regions_name)
 
@@ -1122,7 +1123,6 @@ class BCBioStructure(BaseProjectStructure):
                             BCBioStructure.varfilter_dir,
                             BCBioStructure.varqc_dir,
                             BCBioStructure.varqc_after_dir,
-                            BCBioStructure.ngscat_dir,
                             BCBioStructure.qualimap_dir,
                             BCBioStructure.targqc_dir,
                             BCBioStructure.var_dir]:

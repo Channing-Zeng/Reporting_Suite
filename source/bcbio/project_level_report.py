@@ -12,10 +12,10 @@ from scripts.post.create_oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.logger import info, step_greetings, warn
-from source.file_utils import verify_file, add_suffix, verify_dir
+from source.file_utils import verify_file, add_suffix, verify_dir, file_transaction
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
-from source.tools_from_cnf import get_system_path
+from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_ext_tools_dirname
 
 BASECALLS_NAME        = 'BaseCalls'
@@ -79,7 +79,9 @@ metric_storage = MetricStorage(
     ])])
 
 
-def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None, dataset_project=None, oncoprints_link=None):
+def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None, dataset_project=None,
+                              oncoprints_link=None):
+
     step_greetings('Making the %s project-level report' % ('preproc' if bcbio_structure is None else 'postproc'))
 
     # if dataset_structure is None and bcbio_structure:
@@ -229,12 +231,10 @@ def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
     recs.append(_make_url_record(bcbio_structure.gene_tpm_report_fpath, general_section.find_metric(GENE_TPM_NAME), base_dirpath))
     recs.append(_make_url_record(bcbio_structure.isoform_tpm_report_fpath, general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
 
-    qc_report_fpath = create_qc_report(cnf, bcbio_structure)
-    if qc_report_fpath and isfile(qc_report_fpath):
-        recs.append(_make_url_record(qc_report_fpath, general_section.find_metric(QC_REPORT_NAME), base_dirpath))
-        info('RNASeq QC report saved in ' + qc_report_fpath)
-    else:
-        warn('RNASeq QC report was not created')
+    rnaseq_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
+    rnaseq_html_fpath = verify_file(rnaseq_html_fpath, is_critical=True)
+    recs.append(_make_url_record(rnaseq_html_fpath, general_section.find_metric(QC_REPORT_NAME), base_dirpath))
+
     return recs
 
 
@@ -253,27 +253,34 @@ def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
     return recs
 
 
-def create_qc_report(cnf, bcbio_structure):
+def create_rnaseq_qc_report(cnf, bcbio_structure):
     info('Making RNASeq QC report')
     csv_files_in_config_dir = [
         join(bcbio_structure.config_dir, fname)
         for fname in listdir(bcbio_structure.config_dir)
         if fname.endswith('.csv')]
     if not csv_files_in_config_dir:
+        info('No CSV file found in config dir ' + bcbio_structure.config_dir)
         return None
     report_rmd_template_fpath = get_system_path(cnf, join(get_ext_tools_dirname(is_common_file=True), 'qc_report.rmd'))
     report_template = open(report_rmd_template_fpath).read()
-    report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.qc_report_name + '.rmd')
-    report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.qc_report_name + '.html')
-    with open(report_rmd_fpath, 'w') as out_r_script_handle:
-        out_r_script_handle.write(report_template.format(bcbio_csv=csv_files_in_config_dir[0],
-                                  project_summary=bcbio_structure.project_summary_fpath, combined_counts=bcbio_structure.gene_counts_fpath))
+    report_rmd_fpath = join(cnf.work_dir, BCBioStructure.rnaseq_qc_report_name + '.rmd')
+    report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
 
-    render_rmd_r = get_system_path(cnf, 'Rscript', join('tools', 'render_rmd.R'), is_critical=True)
+    with file_transaction(None, report_rmd_fpath) as tx:
+        with open(tx, 'w') as f:
+            f.write(report_template.format(bcbio_csv=csv_files_in_config_dir[0],
+                project_summary=bcbio_structure.project_summary_fpath, combined_counts=bcbio_structure.gene_counts_fpath))
+
+    render_rmd_r = get_script_cmdline(cnf, 'Rscript', join('tools', 'render_rmd.R'), is_critical=True)
     render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath
-    call(cnf, render_rmd_cmdline, print_stderr=False)
-    os.remove(report_rmd_fpath)
-    return report_html_fpath
+    call(cnf, render_rmd_cmdline, output_fpath=report_rmd_fpath)
+    if verify_file(report_rmd_fpath):
+        info('Saved RNAseq QC report to ' + report_html_fpath)
+        return report_html_fpath
+    else:
+        info('Error making RNAseq QC report ' + report_html_fpath)
+        return None
 
 
 def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
