@@ -1,15 +1,17 @@
 from collections import OrderedDict, defaultdict
 from itertools import izip
 import json
-from os.path import join, abspath, dirname, relpath
+from os.path import join, abspath, dirname, relpath, basename
 from source import info
 from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Mutation, Patient
 from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
+from source.file_utils import safe_mkdir
 from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html, calc_cell_contents, make_cell_th, make_cell_td
 from source.reporting.reporting import ReportSection
 from source.utils import OrderedDefaultDict
+from tools.add_jbrowse_tracks import get_jbrowser_link
 
 
 def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dirpath):
@@ -29,12 +31,35 @@ def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dir
         info('')
         info('*' * 70)
         infos_by_key = {'Target': clin_trg_info, 'WGS': clin_wgs_info}
-        run_sample_clinreport_target2wgs(cnf, infos_by_key, output_dirpath)
+        run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath)
         info('*' * 70)
         info('Successfully finished.')
 
 
-def run_sample_clinreport_target2wgs(cnf, infos_by_key, output_dirpath):
+def run_combine_clinical_reports(cnf, bcbio_structures, shared_sample_names, output_dirpath):
+    info('Running clinical reporting comparison')
+
+    for sname in shared_sample_names:
+        info('Preparing ' + sname + '...')
+        bs_sample_names = {bs: [s.name for s in bs.samples] for bs in bcbio_structures}
+        bcbio_structures = [bs for bs in bs_sample_names if sname in bs_sample_names[bs]]
+        infos_by_key = dict()
+        for bs in bcbio_structures:
+            sample = next(s for s in bs.samples if s.name == sname)
+            info('-' * 70)
+            clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
+            infos_by_key[bs.project_name] = clin_info
+            info('')
+
+        info('*' * 70)
+        sample_output_dirpath = join(output_dirpath, sname)
+        safe_mkdir(sample_output_dirpath)
+        run_sample_combine_clinreport(cnf, infos_by_key, sample_output_dirpath)
+        info('*' * 70)
+        info('Successfully finished.')
+
+
+def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath):
     ComparisonClinicalReporting(cnf, infos_by_key).write_report(
         join(output_dirpath, 'clinical_report.html'))
 
@@ -56,18 +81,34 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         BaseClinicalReporting.__init__(self, cnf, *args)
 
         self.experiment_by_key = experiment_by_key
+
+        self.mutations_report = None
+        self.sv_report = None
+        self.actionable_genes_report = None
+        self.seq2c_plot_data = None
+        self.seq2c_reports = None
+        self.key_genes_report = None
+        self.cov_plot_data = None
+
         for k, e in experiment_by_key.items():
             e.key = k
         # self.patient = self.merge_patients(self.infos)
+        bed_fpaths = set(experiment.target.bed_fpath for experiment in experiment_by_key.values() if experiment.target.bed_fpath)
+        bed_fnames = [basename(bed_fpath).split('.')[0] + '.bed' for bed_fpath in bed_fpaths]
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_fnames)
 
         info('Preparing data...')
         # self.mut_by_key_by_exper = self.arrange_mutations({k: i.mutations for k, i in experiment_by_key.items()})
-        self.mutations_report = self.make_mutations_report({e: e.mutations for e in experiment_by_key.values()})
-        self.mutations_plot_data = self.make_mutations_json({e: e.mutations for e in experiment_by_key.values()})
-        self.substitutions_plot_data = self.make_substitutions_json({e: e.mutations for e in experiment_by_key.values()})
+        mutations_by_experiment = {e: e.mutations for e in experiment_by_key.values() if e.mutations}
+        if mutations_by_experiment:
+            self.mutations_report = self.make_mutations_report(mutations_by_experiment, jbrowser_link)
+            self.mutations_plot_data = self.make_mutations_json(mutations_by_experiment)
+            self.substitutions_plot_data = self.make_substitutions_json(mutations_by_experiment)
         # self.actionable_genes_report = self.make_actionable_genes_report(self.info.actionable_genes_dict)
-        self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
-        self.seq2c_reports = self.make_seq2c_report({e: e.seq2c_events_by_gene_name for e in experiment_by_key.values()})
+        seq2c_events = {e: e.seq2c_events_by_gene for e in experiment_by_key.values() if e.seq2c_events_by_gene}
+        if seq2c_events:
+            self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
+            self.seq2c_reports = self.make_seq2c_report(self.experiment_by_key)
         self.key_genes_report = self.make_key_genes_cov_report(self.experiment_by_key)
         self.cov_plot_data = self.make_key_genes_cov_json(self.experiment_by_key)
 
@@ -95,8 +136,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         info('')
 
         data = {
-            'key_or_target': self.experiment.key_or_target_genes,
-            'genes_description': self.experiment.genes_description,
+            'key_or_target': self.experiment_by_key.values()[0].genes_collection_type,
+            'genes_description': self.experiment_by_key.values()[0].genes_description,
             'sample': {
                 'experiments': [self.sample_section(e)
                                 for k, e in self.experiment_by_key.items()],
@@ -108,19 +149,21 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                 'experiments': [dict(header=k, key=k.lower()) for k in self.experiment_by_key.keys()],
                 'plot_data': self.seq2c_plot_data
             },
-            'coverage': self.__coverage_section(self.key_genes_report, self.cov_plot_data),
+            'coverage': self.__coverage_section(self, self.key_genes_report, self.cov_plot_data),
             # 'actionable_genes': self.__actionable_genes_section()
         }
 
         min_af = self.cnf.min_af or 0
         data['min_af'] = str(float(min_af) * 100)
-
-        for i in enumerate(self.experiment_by_key.keys()):
-            data['seq2c']['experiments'][i]['amp_del'] = self.__seq2c_section(self.seq2c_reports[i])
+        if self.seq2c_reports:
+            for i in enumerate(self.experiment_by_key.keys()):
+                data['seq2c']['experiments'][i]['amp_del'] = self.__seq2c_section(self.seq2c_reports[i])
         write_static_html_report(self.cnf, data, output_fpath,
-           tmpl_fpath=join(dirname(abspath(__file__)), 'template_target2wgs.html'),
+           tmpl_fpath=join(dirname(abspath(__file__)), 'template_combine.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
+                            join(dirname(abspath(__file__)), 'static', 'draw_mutations_plot.js'),
+                            join(dirname(abspath(__file__)), 'static', 'draw_substitutions_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_seq2c_plot.js')],
            extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.css'),
                              join(dirname(abspath(__file__)), 'static', 'header_picture.css')])
@@ -138,7 +181,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
 
     def __mutations_section(self, mutations_report, experiment_by_key):
         mutations_dict = dict()
-        if self.mutations_report.rows:
+        if self.mutations_report and self.mutations_report.rows:
             # if cnf.debug:
             #     mutations_report.regions = mutations_report.regions[::20]
             mutations_dict['table'] = build_report_html(mutations_report, sortable=True)
@@ -147,7 +190,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                 for k, e in experiment_by_key.items())
 
             mutations_dict['total_key_genes'] = '/'.join(
-                set(Metric.format_value(len(e.key_gene_by_name), is_html=True) + ' ' + k
+                set(Metric.format_value(len(e.key_gene_by_name_chrom.values()), is_html=True) + ' ' + k
                     for k, e in experiment_by_key.items()))
 
             mutations_dict['experiments'] = [dict(header=k, key=k.lower()) for k in self.experiment_by_key.keys()]
@@ -158,7 +201,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         return mutations_dict
 
     @staticmethod
-    def __coverage_section(key_genes_report, cov_plot_data):
+    def __coverage_section(self, key_genes_report, cov_plot_data):
         coverage_dict = dict(columns=[])
         GENE_COL_NUM = 2
         genes_in_col = [len(key_genes_report.rows) / GENE_COL_NUM] * GENE_COL_NUM
@@ -175,6 +218,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                     for region in key_genes_report.rows[printed_genes:printed_genes + genes_in_col[i]]]
             coverage_dict['columns'].append(column_dict)
             printed_genes += genes_in_col[i]
+        coverage_dict['experiments'] = [dict(header=k, key=k.lower()) for k in self.experiment_by_key.keys()]
         coverage_dict['plot_data'] = cov_plot_data
         return coverage_dict
 
@@ -219,7 +263,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
 
     def __seq2c_section(self, seq2c_report):
         seq2c_dict = dict()
-        rows = [r for r in seq2c_report.rows if not r.hidden]
+        rows = [r for r in seq2c_report.rows if not r.hidden] if seq2c_report else None
         if seq2c_report and rows:
             seq2c_dict = dict(columns=[])
             GENE_COL_NUM = min(2, len(rows))

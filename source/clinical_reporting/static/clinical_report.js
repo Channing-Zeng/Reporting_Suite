@@ -224,7 +224,7 @@ function filterMutationsByAF(thresholdValue) {
 
 function checkAF(row, minAF) {
       for (var c = 0, m = row.cells.length; c < m; c++) {
-        if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value == 'Freq') {
+        if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
             if (row.cells[c].attributes.number.value * 100 < minAF)
                 $(row).addClass('af_less_threshold');
             else $(row).removeClass('af_less_threshold');

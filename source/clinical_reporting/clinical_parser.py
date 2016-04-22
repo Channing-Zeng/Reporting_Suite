@@ -290,6 +290,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_com
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes=cnf.key_genes,
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, sv_fpath=sample.find_sv_fpath(),
+        sv_vcf_fpath=verify_file(cnf.sv_vcf_fpath, is_critical=False) if cnf.sv_vcf_fpath else None,
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
         project_report_path=bs.project_report_html_fpath, targqc_report_path=bs.targqc_summary_fpath,
@@ -396,7 +397,7 @@ class ClinicalExperimentInfo:
             key_gene_names_chroms, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes)
         else:
             use_custom_panel = False
-            key_gene_names_chroms = get_key_genes(key_genes)
+            key_gene_names_chroms, _ = get_key_or_target_bed_genes(None, key_genes)
 
         if use_custom_panel:
             self.genes_collection_type = 'target'
@@ -433,7 +434,7 @@ class ClinicalExperimentInfo:
 
         if mutations_fpath and verify_file(mutations_fpath):
             info('Parsing mutations from ' + str(mutations_fpath))
-            if varqc_json_fpath:
+            if varqc_json_fpath and verify_file(varqc_json_fpath):
                 self.total_variants = get_total_variants_number(self.sample, varqc_json_fpath)
             self.mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom, mutations_fpath, self.genes_collection_type)
             for mut in self.mutations:

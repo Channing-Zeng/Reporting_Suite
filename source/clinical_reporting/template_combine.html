@@ -68,10 +68,10 @@
                         {.end}
                         <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
                         <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
-                        <b>Sample type: </b>{sample_type}<br>
-                        <b>Target: </b><a href="{bed_path}">{panel}</a>,
+                        {.section sample_type}<b>Sample type: </b>{sample_type}<br>{.or}{.end}
+                        {.section target}<b>Target: </b><a href="{bed_path}">{panel}</a>,
                             covered {target_fraction} of all positions
-                            at {ave_depth} average coverage<br>
+                            at {ave_depth} average coverage<br>{.or}{.end}
                     </p>
                 </div>
                 {.end}
@@ -108,73 +108,83 @@
         <a name="variants"></a>
         <h1>Mutations in key genes</h1>
         {.section variants}
-            <div id="variants_div" style="width: 800px;">
+            <div id="variants_div">
                 <p style="margin-top: -5px;">
                     {total_variants} variants were
                     found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
                     These data were analyzed to identify previously reported and novel variants
                     in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
-                <p id="variants_switch">
-                    <span>known, likely</span>
-                    /
-                    <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
-                        + unknown</a>
-                </p>
+                <div id="variants_table_controls">
+                    <div style="float: left">
+                        <p id="variants_switch">
+                            <span>known, likely</span>
+                            /
+                            <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
+                                + unknown</a>
+                            /
+                            <a class="dotted-link" id="extend_link_silent_variants" onclick="extendClick($(this))">
+                                + silent</a>
+                        </p>
+                    </div>
+                        <div style="float: left; margin-top: 10px; padding-left: 110px;">
+                        Show only with freq ≥
+                        <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
+                               onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
+                        <input type="text" id="mut_af_textbox" min="0" max="100" value="{min_af}" maxlength="3" size="3"
+                               onchange="filterMutationsByAF(this.value)" oninput="mut_af_slider.value=this.value" style="text-align: right"/>&nbsp%
+                    </div>
+                    <div style="float: right; margin-top: -20px; margin-bottom: 0;">
+                        <p>
+                            <a class="btn" id="download_mut_table" style="display: none;">Download for Excel</a>
+                        </p>
+                    </div>
+                    <div style="clear: both"></div>
+                </div>
                 <div id="variants_table_div">
                     {table}
                 </div>
-                </div>
-                    <div style="float: left; margin-top: 10px; padding-left: 110px;">
-                    Show only with freq ≥
-                    <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
-                           onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
-                    <input type="text" id="mut_af_textbox" min="0" max="100" value="{min_af}" maxlength="3" size="3"
-                           onchange="filterMutationsByAF(this.value)" oninput="mut_af_slider.value=this.value" style="text-align: right"/>&nbsp%
-                </div>
-                {.repeated section experiments}
-                <div class="js_plot" id="mut_plot">
+            </div>
+            {.repeated section experiments}
+            <div class="js_plot" id="mut_plot" style="position: relative">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder mut_plot_placeholder' id="{key}_mut_plot_placeholder">
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class='legend_placeholder' id="{key}_mut_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="js_plot" id="substitutions_plot">
                     <table>
                         <tr>
                             <td colspan="2">
-                                <div class='plot_placeholder mut_plot_placeholder' id="{key}_mut_plot_placeholder">
+                                <div class='plot_placeholder substitutions_plot_placeholder' id="{key}_substitutions_plot_placeholder">
                                 </div>
                             </td>
                         </tr>
                         <tr>
                             <td>
-                                <div class='legend_placeholder' id="{key}_mut_plot_legend_placeholder"></div>
+                                <div class='legend_placeholder' id="{key}_substitutions_plot_legend_placeholder"></div>
                             </td>
                         </tr>
                     </table>
                 </div>
-                <h2>Substitutions</h2>
-                <div class="js_plot" id="substitutions_plot">
-                        <table>
-                            <tr>
-                                <td colspan="2">
-                                    <div class='plot_placeholder substitutions_plot_placeholder' id="{key}_substitutions_plot_placeholder">
-                                    </div>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <div class='legend_placeholder' id="{key}_substitutions_plot_legend_placeholder"></div>
-                                </td>
-                            </tr>
-                        </table>
-                    </div>
+            </div>
+            {.end}
+            <div class="json_code">
+                <div id="mut_plot_data_json">
+                    {plot_data}
                 </div>
-                {.end}
-                <div class="json_code">
-                    <div id="mut_plot_data_json">
-                        {plot_data}
-                    </div>
-                </div>
-                <div class="json_code">
-                    <div id="substitutions_plot_data_json">
-                        {substitutions_plot_data}
-                    </div>
+            </div>
+            <div class="json_code">
+                <div id="substitutions_plot_data_json">
+                    {substitutions_plot_data}
                 </div>
             </div>
         {.or}
@@ -203,46 +213,46 @@
                 <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
             <!--</div>-->
             {.repeated section experiments}
-            <div class="js_plot" id="seq2c_plot">
-                <table>
-                    <tr>
-                        <td colspan="2">
-                            <h3 id="{key}_seq2c_header">{header}</h3>
-                            <div class='plot_placeholder seq2c_plot_placeholder' id="{key}_seq2c_plot_placeholder"></div>
-                        </td>
-                    </tr>
-                </table>
-            </div>
                 {.section amp_del}
-                    <table width="100%">
-                        <tr style="vertical-align: top;">
-                        <!--<div class="multi-col-layout">-->
-                        {.repeated section columns}
-                            <td style="">
-                                <table class="report_table static_report"
-                                       style="margin-right: 40px;">
-                                    <thead>
-                                        <tr class="top_row_tr">
-                                            {.repeated section metric_names}
+                <div class="js_plot" id="seq2c_plot">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <h3 id="{key}_seq2c_header">{header}</h3>
+                                <div class='plot_placeholder seq2c_plot_placeholder' id="{key}_seq2c_plot_placeholder"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <table width="100%">
+                    <tr style="vertical-align: top;">
+                    <!--<div class="multi-col-layout">-->
+                    {.repeated section columns}
+                        <td style="">
+                            <table class="report_table static_report"
+                                   style="margin-right: 40px;">
+                                <thead>
+                                    <tr class="top_row_tr">
+                                        {.repeated section metric_names}
+                                            {@}
+                                        {.end}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {.repeated section rows}
+                                        <tr>
+                                            {.repeated section records}
                                                 {@}
                                             {.end}
                                         </tr>
-                                    </thead>
-                                    <tbody>
-                                        {.repeated section rows}
-                                            <tr>
-                                                {.repeated section records}
-                                                    {@}
-                                                {.end}
-                                            </tr>
-                                        {.end}
-                                    </tbody>
-                                </table>
-                            </td>
+                                    {.end}
+                                </tbody>
+                            </table>
+                        </td>
                         {.end}
                         <!--</div>-->
-                        </tr>
-                    </table>
+                    </tr>
+                </table>
                 {.or}
                     <p>No CNVs found in {key_or_target} genes.</p>
                 {.end}
@@ -263,15 +273,16 @@
                 Height indicates gene average coverage,
                 <span style="color: green;">green</span> means that > 90% gene is covered at half of global average coverage.
             </p>
+            {.repeated section experiments}
             <div class="js_plot" id="gene_plot">
                 <table>
                     <tr>
                         <td colspan="2">
-                            <div class='plot_placeholder gene_plot_placeholder' id="gene_plot_placeholder">
+                            <div class='plot_placeholder gene_plot_placeholder' id="{key}_gene_plot_placeholder">
                             </div>
                         </td>
                         <td>
-                            <div class='legend_placeholder' id="gene_plot_legend_placeholder"></div>
+                            <div class='legend_placeholder' id="{key}_gene_plot_legend_placeholder"></div>
                         </td>
                     </tr>
                 </table>
@@ -281,6 +292,7 @@
                     </div>
                 </div>
             </div>
+            {.end}
             <!--<div class="space_30px"></div>-->
         </div>
 

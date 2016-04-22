@@ -68,11 +68,9 @@ class BaseClinicalReporting:
             for e in mutations_by_experiment.keys():
                 ms.extend([
                     Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, unit='%',
-                           with_heatmap=False,
-                           td_style='background-color: white'),          # .19
+                           with_heatmap=False),          # .19
                     Metric(e.key + ' Depth', short_name='depth', max_width=48,
-                           med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False,
-                           td_style='background-color: white'),              # 658
+                           med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
                 ])
 
         clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
@@ -119,6 +117,8 @@ class BaseClinicalReporting:
             #     if len(mutations_by_experiment) > 1 and len(mut_by_experiment.keys()) == len(mutations_by_experiment.keys()):
             #         row.highlighted_green = True
 
+            if not mut.is_canonical:
+                continue
             row = report.add_row()
             row.add_record('Gene', mut.gene.name, show_content=mut.is_canonical)
             if mut.is_canonical:
@@ -154,7 +154,7 @@ class BaseClinicalReporting:
 
             if len(mut_by_experiment) > 1:
                 k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
-                row.color = 'hsl(100, 100%, ' + str(40 * (1 - k)) + '%)'
+                row.color = 'hsl(100, 100%, ' + str(60 + int(40 * (1 - k))) + '%)'
 
             row.class_ = row_class
 
@@ -329,6 +329,8 @@ class BaseClinicalReporting:
         data = dict()
 
         for k, e in experiment_by_key.items():
+            if not e.seq2c_events_by_gene:
+                continue
             # if len(e.seq2c_events_by_gene.values()) == 0:
             #     data[k.lower()] = None
             #     continue
@@ -413,7 +415,6 @@ class BaseClinicalReporting:
         gene_names = []
         transcript_names = []
         strands = []
-        coord_x = []
 
         ticks_x = [[(chr_cum_lens[i] + chr_cum_lens[i + 1])/2, self.chromosomes_by_name.values()[i].short_name]
                    for i in range(len(self.chromosomes_by_name.keys()))]
@@ -422,6 +423,7 @@ class BaseClinicalReporting:
         for key, e in experiment_by_key.items():
             gene_ave_depths = []
             covs_in_thresh = []
+            coords_x = []
             cds_cov_by_gene = defaultdict(list)
             mut_info_by_gene = dict()
 
@@ -440,7 +442,7 @@ class BaseClinicalReporting:
                 if not gene.start or not gene.end or not gene.chrom:
                     err('Gene ' + gene.name + ': no chrom or start or end specified')
                     continue
-                coord_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
+                coords_x.append(chr_cum_len_by_chrom[gene.chrom] + gene.start + (gene.end - gene.start) / 2)
                 cds_cov_by_gene[gene.name] = [dict(
                     start=cds.start,
                     end=cds.end,
@@ -449,6 +451,8 @@ class BaseClinicalReporting:
                 ) for cds in gene.cdss]
 
             hits.append(dict(
+                key=key.lower(),
+                coords_x=coords_x,
                 gene_ave_depths=gene_ave_depths,
                 covs_in_thresh=covs_in_thresh,
                 cds_cov_by_gene=cds_cov_by_gene,
@@ -456,7 +460,6 @@ class BaseClinicalReporting:
             ))
 
         data = dict(
-            coords_x=coord_x,
             gene_names=gene_names,
             transcript_names=transcript_names,
             strands=strands,
@@ -653,7 +656,7 @@ class ClinicalReporting(BaseClinicalReporting):
         self.cov_plot_data = None
 
         bed_fname = basename(clinical_experiment_info.target.bed_fpath).split('.')[0] + '.bed' if clinical_experiment_info.target.bed_fpath else None
-        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, bed_fname)
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.cnf.sample, [bed_fname])
 
         info('Preparing data...')
         if self.experiment.mutations:
