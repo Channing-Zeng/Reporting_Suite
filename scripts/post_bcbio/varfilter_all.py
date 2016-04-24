@@ -8,7 +8,7 @@ import os
 from traceback import format_exc
 from os.path import join, basename, islink, isdir, isfile
 
-from joblib import Parallel, delayed
+from ext_modules.joblib import Parallel, delayed
 
 from source.bcbio.bcbio_filtering import filter_bcbio_structure
 from source.config import defaults

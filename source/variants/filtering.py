@@ -6,7 +6,7 @@ from time import sleep
 import traceback
 import shutil
 
-from joblib import Parallel, delayed
+from ext_modules.joblib import Parallel, delayed
 import source
 from source.calling_process import call, call_check_output
 from source.config import defaults

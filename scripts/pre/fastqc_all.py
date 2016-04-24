@@ -11,7 +11,7 @@ from collections import OrderedDict, namedtuple
 import subprocess
 import traceback
 
-from joblib import Parallel, delayed
+from ext_modules.joblib import Parallel, delayed
 import source
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample

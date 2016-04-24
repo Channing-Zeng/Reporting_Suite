@@ -12,7 +12,7 @@ import subprocess
 import traceback
 import os.path, time
 
-from joblib import Parallel, delayed
+from ext_modules.joblib import Parallel, delayed
 import source
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample

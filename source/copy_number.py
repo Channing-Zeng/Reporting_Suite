@@ -8,7 +8,7 @@ from shutil import copyfile
 from time import sleep
 from traceback import format_exc
 
-from joblib import Parallel, delayed
+from ext_modules.joblib import Parallel, delayed
 
 import source
 from source.bcbio.bcbio_structure import BCBioStructure

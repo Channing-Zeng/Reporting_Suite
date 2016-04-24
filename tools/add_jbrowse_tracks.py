@@ -9,7 +9,7 @@ from source.file_utils import verify_dir, safe_mkdir, verify_file, splitext_plus
 from source.logger import warn, info
 from source.targetcov.bam_and_bed_utils import index_bam
 from source.utils import is_uk
-from joblib import Parallel, delayed
+from ext_modules.joblib import Parallel, delayed
 
 
 def add_project_files_to_jbrowse(cnf, bcbio_structure):
