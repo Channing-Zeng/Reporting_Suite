@@ -179,6 +179,7 @@ Two of the most widely used clustering methods are provided below:
 ## Hierarchical clustering
 
 The heatmap below shows the relationships between the different samples obtained by quantifying the dissimilarity between samples using the correlation distance metric.
+[See the high resolution image](clustering.png)
 
 ```{{r Corr_Heatmap, echo=FALSE, cache=FALSE}}
 sampleDists <- Dist(t(assay(rld)), method="correlation")
@@ -186,6 +187,10 @@ sampleDistMatrix <- as.matrix(sampleDists)
 colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)
 pheatmap(sampleDistMatrix, clustering_distance_rows=sampleDists, annotation_col=metax,
          clustering_distance_cols=sampleDists, col=colors,  main="Inter-sample Correlation distance")
+png("clustering.png", width=25, height=25, res=300, units='cm')
+pheatmap(sampleDistMatrix, fontsize = 8, clustering_distance_rows=sampleDists, annotation_col=metax,
+         clustering_distance_cols=sampleDists, col=colors,  main="Inter-sample Correlation distance")
+dev.off()
 
 ```
 
@@ -193,7 +198,7 @@ pheatmap(sampleDistMatrix, clustering_distance_rows=sampleDists, annotation_col=
 
 Principal Components Analysis (PCA) is a very popular method that is based on the principles of dimensional
 reduction. Below is a PCA plot of the samples within the space of the first two principal components that explain the most variation in the data. These were calculated using the read counts of the top 1000 most variable genes within the dataset.
-
+[See the high resolution image](pca.png)
 ```{{r PCA, echo=FALSE, cache=FALSE}}
 data <- plotPCA(rld, intgroup=c("condition"), returnData=TRUE, ntop=1000)
 percentVar <- round(100 * attr(data, "percentVar"))
@@ -201,7 +206,7 @@ ggplot(data, aes(PC1, PC2, color=condition, label=rownames(data))) +
   geom_point(size=3) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
   ylab(paste0("PC2: ",percentVar[2],"% variance")) + geom_text(size=2, color="black",hjust=-0, vjust=-0)
-
+ggsave("pca.png", width = 10, height = 10)
 ```
 
 
