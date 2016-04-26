@@ -277,7 +277,7 @@ class Target:
         self.targqc_link = targqc_link
 
 
-def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_comparison=False):
+def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wgs_comparison=False):
     clinical_report_caller = \
         bs.variant_callers.get('vardict') or \
         bs.variant_callers.get('vardict-java')
@@ -294,7 +294,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wqs_com
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
         project_report_path=bs.project_report_html_fpath, targqc_report_path=bs.targqc_summary_fpath,
-        is_target2wgs_comparison=is_target2wqs_comparison)
+        is_target2wgs_comparison=is_target2wgs_comparison)
 
 
 def clinical_sample_info_from_cnf(cnf):
@@ -388,6 +388,7 @@ class ClinicalExperimentInfo:
         self.seq2c_events_by_gene = None
         self.sv_fpath = sv_fpath
         self.sv_vcf_fpath = sv_vcf_fpath
+        self.is_target2wgs_comparison = is_target2wgs_comparison
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))

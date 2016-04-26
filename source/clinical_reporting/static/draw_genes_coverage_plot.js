@@ -3,7 +3,7 @@ $(function() {
     var colors = distinctColors();
 
     if (fullData != null) {
-        if (fullData.hasOwnProperty('mutations')) {
+        if (fullData.hasOwnProperty('coords_x')) {
             drawGeneCovPlot(fullData, fullData, $('#gene_plot_placeholder'), $('#gene_plot_legend_placeholder'));
         } else {
             var i = 0;
@@ -19,6 +19,7 @@ $(function() {
     }
 });
 
+var key = 'gene';
 function drawGeneCovPlot(data, fullData, placeholder_el, legend_placeholder_el) {
     if (data == null) return;
 

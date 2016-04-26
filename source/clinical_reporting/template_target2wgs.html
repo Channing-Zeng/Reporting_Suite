@@ -35,9 +35,6 @@
     <script type="text/javascript" src="draw_substitutions_plot.js"></script>
     <script type="text/javascript" src="draw_genes_coverage_plot.js"></script>
     <script type="text/javascript" src="draw_seq2c_plot.js"></script>
-    <script type="text/javascript" src="d3.min.js"></script>
-    <script type="text/javascript" src="venn.js"></script>
-    <script type="text/javascript" src="draw_venn_diagram.js"></script>
 </head>
 
 <body>
@@ -61,19 +58,23 @@
         {.section sample}
         <div style="width: 1127px">
             {.section experiments}
-                <div>
                 {.repeated section @}
-                    <p style="line-height: 1em;">
-                        <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>.
-                        <b>Sample: </b>{sample}.
+                <div style="float: left; width: 400px; margin-left: 30px;">
+                    <h3 style="margin-bottom: -10px">{key}</h3>
+                    <p style="line-height: 1.5em;">
+                        <b>Sample: </b>{sample}</p><br>
+                        {.section patient}
+                            <b>Patient: </b>{sex}<br>
+                        {.end}
+                        <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>, {genome_build}<br>
                         <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
-                        {.section sample_type}<b>Sample type: </b>{sample_type}.{.or}{.end}
+                        {.section sample_type}<b>Sample type: </b>{sample_type}<br>{.or}{.end}
                         {.section target}<b>Target: </b><a href="{bed_path}">{panel}</a>,
                             covered {target_fraction} of all positions
                             at {ave_depth} average coverage<br>{.or}{.end}
                     </p>
-                {.end}
                 </div>
+                {.end}
                 <div style="clear: left;"></div>
             {.end}
 
@@ -109,37 +110,12 @@
         {.section variants}
             <div id="variants_div">
                 <p style="margin-top: -5px;">
-                    Variants were
+                    {total_variants} variants were
                     found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
                     These data were analyzed to identify previously reported and novel variants
-                    that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
+                    in {total_key_genes} genes that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
                 <div id="variants_table_controls">
-                    <div>
-                        <p id="variants_group_switch_sens">
-                            <span>all mutations</span>
-                            /
-                            <a class="dotted-link" id="show_variants_sensitive" onclick="showVariantsBySensitivity($(this))">
-                                only sensitive samples</a>
-                            /
-                            <a class="dotted-link" id="show_variants_resistance" onclick="showVariantsBySensitivity($(this))">
-                                only resistant samples</a>
-                            /
-                            <a class="dotted-link" id="show_variants_common" onclick="showVariantsBySensitivity($(this))">
-                                only common mutations</a>
-
-                        </p>
-                        <p id="variants_group_switch_type">
-                            <span>all mutations</span>
-                            /
-                            <a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))">
-                                only plasma samples</a>
-                            /
-                            <a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))">
-                                only tissue samples</a>
-
-                        </p>
-                    </div>
                     <div style="float: left">
                         <p id="variants_switch">
                             <span>known, likely</span>
@@ -150,6 +126,13 @@
                             <a class="dotted-link" id="extend_link_silent_variants" onclick="extendClick($(this))">
                                 + silent</a>
                         </p>
+                    </div>
+                        <div style="float: left; margin-top: 10px; padding-left: 110px;">
+                        Show only with freq ≥
+                        <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
+                               onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
+                        <input type="text" id="mut_af_textbox" min="0" max="100" value="{min_af}" maxlength="3" size="3"
+                               onchange="filterMutationsByAF(this.value)" oninput="mut_af_slider.value=this.value" style="text-align: right"/>&nbsp%
                     </div>
                     <div style="float: right; margin-top: -20px; margin-bottom: 0;">
                         <p>
@@ -162,16 +145,48 @@
                     {table}
                 </div>
             </div>
-            {.section venn_diagram}
-                <div id="venn_placeholder">
+            {.repeated section experiments}
+            <div class="js_plot" id="mut_plot" style="position: relative">
+                <table>
+                    <tr>
+                        <td colspan="2">
+                            <div class='plot_placeholder mut_plot_placeholder' id="{key}_mut_plot_placeholder">
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <div class='legend_placeholder' id="{key}_mut_plot_legend_placeholder"></div>
+                        </td>
+                    </tr>
+                </table>
+                <div class="js_plot" id="substitutions_plot">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <div class='plot_placeholder substitutions_plot_placeholder' id="{key}_substitutions_plot_placeholder">
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class='legend_placeholder' id="{key}_substitutions_plot_legend_placeholder"></div>
+                            </td>
+                        </tr>
+                    </table>
                 </div>
-                <div class="json_code">
-                    <div id="venn_data_json">
-                        {diagram_data}
-                    </div>
-                </div>
-            {.or}
+            </div>
             {.end}
+            <div class="json_code">
+                <div id="mut_plot_data_json">
+                    {plot_data}
+                </div>
+            </div>
+            <div class="json_code">
+                <div id="substitutions_plot_data_json">
+                    {substitutions_plot_data}
+                </div>
+            </div>
         {.or}
             <p>No variants detected in key regions.</p>
         {.end}
@@ -188,121 +203,66 @@
         {.end}
 
         <a name="seq2c"></a>
-        <h1>Seq2C log2 ratios (CNV)</h1>
+        <h1>Seq2C log2 ratios (CNV) in {key_or_target} genes</h1>
         {.section seq2c}
             <p style="margin-top: -5px;">Gene coverage log ratios according to the Seq2C CNV caller.
-                <span style="color: red;">Red</span> means amplification in a {key_or_target} gene,
-                <span style="color: blue;">blue</span> means deletion in a {key_or_target} gene,
-                <b>black</b> means no event.
-                {.section description_for_whole_genomic_profile}
-                <br><br>For non-{key_or_target} genes:
-                <span style="color: #ff8080;">pink</span> means amplification,
-                <span style="color: #67ddff">light blue</span> means deletion,
-                <span style="color: gray;">gray</span> means no event.
-                {.end}</p>
+                <span style="color: green;">Green</span> means amplification,
+                <span style="color: red;">red</span> means deletion,
+                <b>black</b> means no event.</p>
             <!--<div class="seq2c_plot" style="margin-left: -20px;">-->
                 <!--<img src="seq2c_plot" width="1241px" alt="Seq2C log2 ratios"/>-->
             <!--</div>-->
-            {.section plot}
-            <div class="js_plot" id="seq2c_plot">
-                <table>
-                    <tr>
-                        <td colspan="2">
-                            <div class='plot_placeholder seq2c_plot_placeholder' id="seq2c_plot_placeholder">
-                            </div>
+            {.repeated section experiments}
+                {.section amp_del}
+                <div class="js_plot" id="seq2c_plot">
+                    <table>
+                        <tr>
+                            <td colspan="2">
+                                <h3 id="{key}_seq2c_header">{header}</h3>
+                                <div class='plot_placeholder seq2c_plot_placeholder' id="{key}_seq2c_plot_placeholder"></div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <table width="100%">
+                    <tr style="vertical-align: top;">
+                    <!--<div class="multi-col-layout">-->
+                    {.repeated section columns}
+                        <td style="">
+                            <table class="report_table static_report"
+                                   style="margin-right: 40px;">
+                                <thead>
+                                    <tr class="top_row_tr">
+                                        {.repeated section metric_names}
+                                            {@}
+                                        {.end}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {.repeated section rows}
+                                        <tr>
+                                            {.repeated section records}
+                                                {@}
+                                            {.end}
+                                        </tr>
+                                    {.end}
+                                </tbody>
+                            </table>
                         </td>
-                        <td>
-                            <div class='legend_placeholder' id="seq2c_plot_legend_placeholder"></div>
-                        </td>
+                        {.end}
+                        <!--</div>-->
                     </tr>
                 </table>
-                <div class="json_code">
-                    <div id="seq2c_plot_data_json">
-                        {plot_data}
-                    </div>
+                {.or}
+                    <p>No CNVs found in {key_or_target} genes.</p>
+                {.end}
+            {.end}
+            <div class="json_code">
+                <div id="seq2c_plot_data_json">
+                    {plot_data}
                 </div>
             </div>
-            {.or}
-            {.end}
-            {.section amp_del}
-                {.section seq2c_switch}
-                <p id="seq2c_switch">
-                    <span>{key_or_target} genes</span>
-                    /
-                    <a class="dotted-link" id="extend_link_seq2c" onclick="extendClick($(this))">
-                        all genes</a>
-                </p>
-                {.or}
-                {.end}
-                <div id="seq2c_table_div">
-                {.section short_table}
-                    <table width="100%" cellspacing="0" class="table_short">
-                        <tr style="vertical-align: top;">
-                        <!--<div class="multi-col-layout">-->
-                        {.repeated section columns}
-                            <td style="">
-                                <table class="report_table static_report"
-                                       style="margin-right: 40px;">
-                                    <thead>
-                                        <tr class="top_row_tr">
-                                            {.repeated section metric_names}
-                                                {@}
-                                            {.end}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {.repeated section rows}
-                                            <tr>
-                                                {.repeated section records}
-                                                    {@}
-                                                {.end}
-                                            </tr>
-                                        {.end}
-                                    </tbody>
-                                </table>
-                            </td>
-                        {.end}
-                        </tr>
-                    </table>
-                    {.or}
-                    <table width="100%" cellspacing="0" class="table_short">
-                    </table>
-                    {.end}
-                    {.section full_table}
-                    <table width="100%" cellspacing="0" class="table_full" style="display:none">
-                        <tr style="vertical-align: top;">
-                        <!--<div class="multi-col-layout">-->
-                        {.repeated section columns}
-                            <td style="">
-                                <table class="report_table static_report"
-                                       style="margin-right: 40px;">
-                                    <thead>
-                                        <tr class="top_row_tr">
-                                            {.repeated section metric_names}
-                                                {@}
-                                            {.end}
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {.repeated section rows}
-                                            <tr>
-                                                {.repeated section records}
-                                                    {@}
-                                                {.end}
-                                            </tr>
-                                        {.end}
-                                    </tbody>
-                                </table>
-                            </td>
-                        {.end}
-                        </tr>
-                    </table>
-                    {.or}
-                    {.end}
-                </div>
-            {.end}
         {.or}
-            <p>No Seq2C events found.</p>
         {.end}
 
         <a name="coverage"></a>

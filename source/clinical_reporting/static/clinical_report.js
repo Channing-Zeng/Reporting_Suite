@@ -98,6 +98,10 @@ function extendClick(switch_id) {
             $('.table_full#report_table_mutations tr').each(function() {
                 checkSilent(this, showSilent);
                 checkAF(this, minAF);
+                if ($('#show_variants_all')[0]) {
+                    showVariantsBySensitivity('show_variants_all');
+                    showVariantsByType('show_variants_all');
+                }
             });
         }
         $(table_full).show();
@@ -138,6 +142,10 @@ function reduceClick(switch_id) {
         $(table_short).css('height', '');
         $('.table_short#report_table_mutations tr').each(function() {
             checkAF(this, minAF);
+            if ($('#show_variants_all')[0]) {
+                showVariantsBySensitivity('show_variants_all');
+                showVariantsByType('show_variants_all');
+            }
         });
       }
       table_short.show();
@@ -224,14 +232,96 @@ function filterMutationsByAF(thresholdValue) {
 
 function checkAF(row, minAF) {
       for (var c = 0, m = row.cells.length; c < m; c++) {
-        if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
+        if (row.cells[c].attributes.metric && row.cells[c].attributes.number && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
             if (row.cells[c].attributes.number.value * 100 < minAF)
                 $(row).addClass('af_less_threshold');
             else $(row).removeClass('af_less_threshold');
         }
     }
 }
+function showVariantsByType(switch_id) {
+    if (switch_id[0].id) switch_id = switch_id[0].id;
+    // Showing full
+    switch_id = switch_id.split("_");
+    var switchValue = switch_id[switch_id.length-1];
+    var switch_el = $('#variants_group_switch_type');
+    var parameter = 'Type';
+    if (switchValue == 'all')
+        switchElContent = '<span>all mutations</span> / ';
+    else
+        switchElContent = '<a class="dotted-link" id="show_variants_all" onclick="showVariantsByType($(this))"> all mutations</a> / ';
+    if (switchValue == 'plasma')
+        switchElContent += '<span> only plasma samples</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))"> only plasma samples</a> / ';
+    if (switchValue == 'tissue')
+        switchElContent += '<span> only tissue samples</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))"> only tissue samples</a> / ';
 
+    switch_el.html(switchElContent);
+    checkVariantsTable(parameter, switchValue);
+}
+
+function showVariantsBySensitivity(switch_id) {
+    if (switch_id[0].id) switch_id = switch_id[0].id;
+    // Showing full
+    switch_id = switch_id.split("_");
+    var switchValue = switch_id[switch_id.length-1];
+    var switch_el = $('#variants_group_switch_sens');
+    var parameter = 'Sensitivity';
+    if (switchValue == 'all')
+        switchElContent = '<span>all mutations</span> / ';
+    else
+        switchElContent = '<a class="dotted-link" id="show_variants_all" onclick="showVariantsBySensitivity($(this))"> all mutations</a> / ';
+    if (switchValue == 'sensitive')
+        switchElContent += '<span> only sensitive samples</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_variants_sensitive" onclick="showVariantsBySensitivity($(this))"> only sensitive samples</a> / ';
+    if (switchValue == 'resistant')
+        switchElContent += '<span> only resistant samples</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_variants_resistant" onclick="showVariantsBySensitivity($(this))"> only resistant samples</a> / ';
+    if (switchValue == 'common')
+        switchElContent += '<span> only common mutations</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_variants_common" onclick="showVariantsBySensitivity($(this))"> only common mutations</a> / ';
+    if (switchValue == 'common') switchValue = 'resistant, sensitive';
+
+    switch_el.html(switchElContent);
+    checkVariantsTable(parameter, switchValue);
+}
+
+function checkVariantsTable(parameter, switchValue) {
+    var table_short = $('.table_short#report_table_mutations');
+    var table_full = $('.table_full#report_table_mutations');
+    if (table_full[0]) {
+        $(table_full).css('height', '');
+        $('.table_full#report_table_mutations tr').each(function() {
+            checkSamples(this, parameter, switchValue);
+        });
+    }
+    else {
+        $(table_short).css('height', '');
+        $('.table_short#report_table_mutations tr').each(function() {
+            checkSamples(this, parameter, switchValue);
+        });
+    }
+}
+
+function checkSamples(row, metric, value) {
+    for (var c = 0, m = row.cells.length; c < m; c++) {
+        var cell = row.cells[c];
+        if (value == 'all') $(row).removeClass('unselected_type');
+        else {
+            if (cell.attributes.metric && cell.attributes.metric.value == metric) {
+                if (cell.innerText.toLowerCase() != value)
+                    $(row).addClass('unselected_type');
+                else $(row).removeClass('unselected_type');
+            }
+        }
+    }
+}
 //function extendedClick() {
 //    //$('.row_to_hide').toggleClass('row_hidden');
 //

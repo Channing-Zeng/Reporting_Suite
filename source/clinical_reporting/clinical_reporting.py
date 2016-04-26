@@ -4,6 +4,7 @@ from genericpath import exists
 from os.path import join, dirname, abspath, relpath, basename
 
 import re
+import itertools
 
 import source
 from source import info, verify_file
@@ -56,15 +57,21 @@ class BaseClinicalReporting:
             Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Status', max_width=230, class_='long_line'),     # Likely
             Metric('Databases', class_='long_line'),                 # rs352343, COSM2123, SolveBio
+            Metric('Samples', with_heatmap=False),          # 128
             # Metric('ClinVar', short_name='SolveBio ClinVar'),
         ]
 
+        venn_sets = OrderedDefaultDict(int)
         if len(mutations_by_experiment) == 1:
             ms.extend([
                 Metric('Freq', short_name='Freq', max_width=55, unit='%', with_heatmap=False),          # .19
                 Metric('Depth', short_name='Depth', max_width=48, med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
             ])
         else:
+            ms.extend([
+                Metric('Type'),
+                Metric('Sensitivity')
+            ])
             for e in mutations_by_experiment.keys():
                 ms.extend([
                     Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, unit='%',
@@ -72,6 +79,7 @@ class BaseClinicalReporting:
                     Metric(e.key + ' Depth', short_name='depth', max_width=48,
                            med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
                 ])
+            samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment)
 
         clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
         report = PerRegionSampleReport(sample=mutations_by_experiment.keys()[0].sample,
@@ -146,19 +154,84 @@ class BaseClinicalReporting:
                 row.add_record('Freq', mut.freq if mut else None, show_content=mut.is_canonical)
                 row.add_record('Depth', mut.depth if mut else None, show_content=mut.is_canonical)
             else:
+                row.add_record('Samples', len(mut_by_experiment.keys()))
                 for e, m in mut_by_experiment.items():
                     row.add_record(e.key + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
                     row.add_record(e.key + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
+                if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
+                    samples = [e.sample.name.lower() for e in mut_by_experiment.keys()]
+                    sample_parameters = {'Sensitivity': ['Sensitive', 'Resistant'], 'Type': ['Plasma', 'Tissue', 'PBMC']}
+                    for parameter, values in sample_parameters.iteritems():
+                        cur_info = set()
+                        for value in values:
+                            if any(value.lower() in sample_name for sample_name in samples):
+                                cur_info.add(value)
+                        if cur_info:
+                            row.add_record(parameter, ', '.join(sorted(cur_info)))
 
             self._highlighting_and_hiding_mut_row(row, mut)
 
-            if len(mut_by_experiment) > 1:
-                k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
-                row.color = 'hsl(100, 100%, ' + str(60 + int(40 * (1 - k))) + '%)'
+            if len(mutations_by_experiment) > 1:
+                self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index)
+                if len(mut_by_experiment.keys()) > 1:
+                    k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
+                    row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
 
             row.class_ = row_class
 
+        if venn_sets:
+            venn_data = self.save_venn_diagram_data(venn_sets, set_labels)
+            return report, venn_data
+
         return report
+
+    def group_for_venn_diagram(self, mutations_by_experiment):
+        samples_by_index = dict()
+        set_labels = dict()
+        base_groups = [['plasma', 'sensitive'], ['plasma', 'resistant'], ['tissue', 'sensitive'], ['tissue', 'resistant'],
+                       ['sensitive'], ['resistant'], ['plasma'], ['tissue']]
+        used_samples = set()
+        set_index = 0
+        for e in mutations_by_experiment.keys():
+            sample_name = e.sample.name
+            for index, g in enumerate(base_groups):
+                if sample_name not in used_samples and all(type in sample_name.lower() for type in g):
+                    used_samples.add(sample_name)
+                    samples_by_index[sample_name] = index
+                    set_labels[index] = ' '.join(g)
+                    set_index = max(set_index, index)
+                    set_index += 1
+                    break
+
+        for e in mutations_by_experiment.keys():
+            sample_name = e.sample.name
+            if sample_name not in used_samples:
+                samples_by_index[sample_name] = set_index
+                set_labels[set_index] = sample_name
+                set_index += 1
+        return samples_by_index, set_labels
+
+    def update_venn_diagram_data(self, sets, mut_by_experiment, samples_by_index):
+        indexes = sorted(set([samples_by_index[k.sample.name] for k in mut_by_experiment.keys()]))
+        for index in indexes:
+            sets[index] += 1
+        for len_set in range(2, len(indexes) + 1):
+            for indexes_subset in itertools.combinations(indexes, len_set):
+                sets[indexes_subset] += 1
+
+    def save_venn_diagram_data(self, venn_sets, set_labels):
+        data = []
+        for venn_set, size in venn_sets.iteritems():
+            set_info = dict()
+            set_info['size'] = size
+            if isinstance(venn_set, tuple):
+                set_info['sets'] = list(venn_set)
+            else:
+                set_info['sets'] = [venn_set]
+            if isinstance(venn_set, int):
+                set_info['label'] = set_labels[venn_set]
+            data.append(set_info)
+        return json.dumps(sorted(data, key=lambda x: x['sets']))
 
     def make_mutations_json(self, mutations_by_experiment):
         data = dict()
@@ -371,7 +444,7 @@ class BaseClinicalReporting:
         else:
             return json.dumps(data) if all(d is not None for d in data.values()) else None
 
-    def make_seq2c_report(self, seq2c_by_experiment):
+    def make_seq2c_report(self, seq2c_by_experiments):
         ms = [
             Metric('Gene', align='left', sort_direction='ascending'),  # Gene
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
@@ -379,34 +452,41 @@ class BaseClinicalReporting:
             Metric('Amp/Del'),
             Metric('BP/Whole'),
         ]
+        if len(seq2c_by_experiments.values()) > 1:
+            ms.append(Metric('Samples', max_width=25, align='left'))
+        metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
 
-        reports = []
+        report = PerRegionSampleReport(sample=seq2c_by_experiments.keys()[0].sample,
+            metric_storage=metric_storage, expandable=True)
 
         # Writing records
-        for e, seq2c in seq2c_by_experiment.items():
-            report = None
-            if len(e.seq2c_events_by_gene.values()) > 0:
-                metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
-                report = PerRegionSampleReport(sample=seq2c_by_experiment.keys()[0].sample,
-                                               metric_storage=metric_storage, expandable=True)
-                seq2c_events = seq2c.values()
-                is_whole_genomic_profile = len(e.seq2c_events_by_gene.values()) > len(e.key_gene_by_name_chrom.values())
-                for event in sorted(seq2c_events, key=lambda e: e.gene.name):
-                    if event.is_amp() or event.is_del():
-                        row = report.add_row()
-                        row.add_record('Gene', event.gene.name)
-                        row.add_record('Chr', event.gene.chrom.replace('chr', ''))
-                        row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
-                        row.add_record('Amp/Del', event.amp_del)
-                        row.add_record('BP/Whole', event.fragment)
-                        if is_whole_genomic_profile and event.gene.key not in e.key_gene_by_name_chrom:
-                            row.hidden = True
-            reports.append(report)
+        seq2c_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
+        key_gene_by_name_chrom = []
+        for e, seq2c in seq2c_by_experiments.items():
+            key_gene_by_name_chrom = e.key_gene_by_name_chrom
+            is_whole_genomic_profile = len(e.seq2c_events_by_gene.values()) > len(key_gene_by_name_chrom.values())
+            events = seq2c.values()
+            for event in events:
+                seq2c_by_key_by_experiment[(event.gene.name, event.amp_del)][e] = event
 
-        if len(seq2c_by_experiment.keys()) == 1:
-            return reports[0]
-        else:
-            return reports
+        for seq2c_by_experiment_key, seq2c_by_experiment in seq2c_by_key_by_experiment.items():
+            event = next((e for e in seq2c_by_experiment.values() if e is not None), None)
+            if event.is_amp() or event.is_del():
+                row = report.add_row()
+                row.add_record('Gene', event.gene.name)
+                row.add_record('Chr', event.gene.chrom.replace('chr', ''))
+                if len(seq2c_by_experiments.values()) == 1:
+                    row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
+                row.add_record('Amp/Del', event.amp_del)
+                row.add_record('BP/Whole', event.fragment)
+                if is_whole_genomic_profile and event.gene.key not in key_gene_by_name_chrom:
+                    row.hidden = True
+
+                if len(seq2c_by_experiments.values()) > 1:
+                    num_samples = len(seq2c_by_experiment.keys())
+                    row.add_record('Samples', num_samples)
+
+        return report
 
     def make_key_genes_cov_json(self, experiment_by_key):
         chr_cum_lens = Chromosome.get_cum_lengths(self.chromosomes_by_name)
@@ -476,7 +556,7 @@ class BaseClinicalReporting:
 
         return json.dumps(data)
 
-    def sample_section(self, experiment):
+    def sample_section(self, experiment, use_abs_report_fpath=False):
         d = dict()
         d['patient'] = {'sex': 'unknown'}
         d['project_report_rel_path'] = 'not generated'
@@ -492,7 +572,10 @@ class BaseClinicalReporting:
             d['patient'] = {'sex': experiment.patient.gender}
         d['project_name'] = experiment.project_name.replace('_', ' ')
         if experiment.project_report_path:
-            d['project_report_rel_path'] = relpath(experiment.project_report_path, dirname(experiment.sample.clinical_html))
+            if use_abs_report_fpath:
+                d['project_report_rel_path'] = experiment.project_report_path
+            else:
+                d['project_report_rel_path'] = relpath(experiment.project_report_path, dirname(experiment.sample.clinical_html))
         if experiment.target:
             d['target_section'] = dict()
             d['target_section']['panel'] = experiment.target.type
@@ -519,6 +602,34 @@ class BaseClinicalReporting:
         if experiment.ave_depth is not None:
             d['ave_depth'] = Metric.format_value(experiment.ave_depth, is_html=True)
         return d
+
+    def seq2c_section(self):
+        seq2c_dict = dict()
+        seq2c_report = self.seq2c_report
+        if seq2c_report and seq2c_report.rows:
+            not_hidden_rows = [r for r in seq2c_report.rows if not r.hidden]
+            if not_hidden_rows:
+                seq2c_dict['short_table'] = self.seq2c_create_tables(not_hidden_rows)
+            seq2c_dict['full_table'] = self.seq2c_create_tables(seq2c_report.rows)
+        return seq2c_dict
+
+    def seq2c_create_tables(self, rows):
+        table_dict = dict(columns=[])
+        GENE_COL_NUM = min(3, len(rows))
+        genes_in_col = [len(rows) / GENE_COL_NUM] * GENE_COL_NUM
+        for i in range(len(rows) % GENE_COL_NUM):
+            genes_in_col[i] += 1
+        calc_cell_contents(self.seq2c_report, rows)
+        printed_genes = 0
+        for i in range(GENE_COL_NUM):
+            column_dict = dict()
+            column_dict['metric_names'] = [make_cell_th(m) for m in self.seq2c_report.metric_storage.get_metrics()]
+            column_dict['rows'] = [
+                dict(records=[make_cell_td(r) for r in region.records])
+                    for region in rows[printed_genes:printed_genes + genes_in_col[i]]]
+            table_dict['columns'].append(column_dict)
+            printed_genes += genes_in_col[i]
+        return table_dict
 
     @staticmethod
     def get_data_from_lims(cnf, project_name, sample_name):
@@ -696,7 +807,7 @@ class ClinicalReporting(BaseClinicalReporting):
         if self.seq2c_plot_data:
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
             if self.seq2c_report:
-                data['seq2c']['amp_del'] = self.__seq2c_section()
+                data['seq2c']['amp_del'] = self.seq2c_section()
                 if len(self.experiment.seq2c_events_by_gene.values()) > len(self.experiment.key_gene_by_name_chrom.values()):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
@@ -767,32 +878,6 @@ class ClinicalReporting(BaseClinicalReporting):
         else:
             return dict()
 
-    def __seq2c_section(self):
-        seq2c_dict = dict()
-        if self.seq2c_report and self.seq2c_report.rows:
-            not_hidden_rows = [r for r in self.seq2c_report.rows if not r.hidden]
-            if not_hidden_rows:
-                seq2c_dict['short_table'] = self.__seq2c_create_tables(not_hidden_rows)
-            seq2c_dict['full_table'] = self.__seq2c_create_tables(self.seq2c_report.rows)
-        return seq2c_dict
-
-    def __seq2c_create_tables(self, rows):
-        table_dict = dict(columns=[])
-        GENE_COL_NUM = min(3, len(rows))
-        genes_in_col = [len(rows) / GENE_COL_NUM] * GENE_COL_NUM
-        for i in range(len(rows) % GENE_COL_NUM):
-            genes_in_col[i] += 1
-        calc_cell_contents(self.seq2c_report, rows)
-        printed_genes = 0
-        for i in range(GENE_COL_NUM):
-            column_dict = dict()
-            column_dict['metric_names'] = [make_cell_th(m) for m in self.seq2c_report.metric_storage.get_metrics()]
-            column_dict['rows'] = [
-                dict(records=[make_cell_td(r) for r in region.records])
-                    for region in rows[printed_genes:printed_genes + genes_in_col[i]]]
-            table_dict['columns'].append(column_dict)
-            printed_genes += genes_in_col[i]
-        return table_dict
 
     def __actionable_genes_section(self):
         actionable_genes_dict = dict()
