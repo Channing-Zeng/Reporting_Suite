@@ -14,7 +14,7 @@ from source import verify_file
 from source.config import Config, defaults
 from source import logger
 from source.file_utils import adjust_path, verify_dir
-from source.logger import info, critical, err, warn
+from source.logger import info, critical, err, warn, debug
 from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resources, \
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.prepare_args_and_cnf import determine_sys_cnf
@@ -178,67 +178,50 @@ class Filtration:
                             'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
                             'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
 
+        def iter_lines(fpath):
+            with open(fpath) as f:
+                for l in f:
+                    l = l.replace('\n', '')
+                    if not l or l.startswith('#'):
+                        continue
+                    yield l
+
         self.splice_positions_by_gene = defaultdict(set)
-        with open(cnf.genome.splice) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                pos, g = l.split('\t')
-                self.splice_positions_by_gene[g].add(pos)
+        for l in iter_lines(cnf.genome.splice):
+            pos, g = l.split('\t')
+            self.splice_positions_by_gene[g].add(pos)
 
         self.last_critical_aa_pos_by_gene = dict()
-        with open(cnf.last_critical_aa) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                g, aa_pos, transcript = l.split('\t')
-                self.last_critical_aa_pos_by_gene[g] = int(aa_pos)
+        for l in iter_lines(cnf.last_critical_aa):
+            g, aa_pos, transcript = l.split('\t')
+            self.last_critical_aa_pos_by_gene[g] = int(aa_pos)
 
-        # Set up common SNP filter
         self.filter_snp = set()
-        with open(cnf.genome.filter_common_snp) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                fields = l.split('\t')
-                self.filter_snp.add('-'.join(fields[1:5]))
+        for l in iter_lines(cnf.genome.filter_common_snp):
+            fields = l.split('\t')
+            self.filter_snp.add('-'.join(fields[1:5]))
 
         self.snpeff_snp = set()
         self.snpeff_snp_rsids = set()
-        with open(cnf.snpeffect_export_polymorphic) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                fields = l.split('\t')
-                snpeff_aachg = fields[2]
-                snpeff_rsid = fields[5]
-                if len(fields) > 11 and fields[11]:
-                    snpeff_gene = fields[11]
-                    self.snpeff_snp.add('-'.join([snpeff_gene, snpeff_aachg]))
-                elif snpeff_rsid != '-':
-                    self.snpeff_snp_rsids.add(snpeff_rsid)
+        for l in iter_lines(cnf.snpeffect_export_polymorphic):
+            fields = l.split('\t')
+            snpeff_aachg = fields[2]
+            snpeff_rsid = fields[5]
+            if len(fields) > 11 and fields[11]:
+                snpeff_gene = fields[11]
+                self.snpeff_snp.add('-'.join([snpeff_gene, snpeff_aachg]))
+            elif snpeff_rsid != '-':
+                self.snpeff_snp_rsids.add(snpeff_rsid)
 
         self.filter_artifacts = set()
-        with open(cnf.genome.filter_common_artifacts) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                fields = l.split('\t')
-                self.filter_artifacts.add('-'.join(fields[1:5]))
+        for l in iter_lines(cnf.genome.filter_common_artifacts):
+            fields = l.split('\t')
+            self.filter_artifacts.add('-'.join(fields[1:5]))
 
         self.actionable_hotspots = defaultdict(set)
-        with open(cnf.actionable_hotspot) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                fields = l.split('\t')
-                self.actionable_hotspots[fields[0]].add(fields[1])
+        for l in iter_lines(cnf.actionable_hotspot):
+            fields = l.split('\t')
+            self.actionable_hotspots[fields[0]].add(fields[1])
 
         self.act_somatic = dict()
         self.act_germline = set()
@@ -248,52 +231,44 @@ class Filtration:
         # inframe_ins = 'inframe-ins'
         # self.rules[inframe_del] = {}
         # self.rules[inframe_ins] = {}
-        with open(cnf.genome.actionable) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                fields = l.split('\t')
-                if fields[7] == 'germline':
-                    key = '-'.join(fields[1:5])
-                    self.act_germline.add(key)
-                elif fields[7] == 'somatic':
-                    change = fields[8].strip()
-                    if fields[6] == 'rule':
-                        if fields[4] == '*' and len(fields[3]) == 1:
-                            key = '-'.join(fields[1:4])
-                            self.act_somatic[key] = change
-                        else:
-                            indel_type = fields[5]
-                            gene = fields[0]
-                            chrom = fields[1]
-                            start = int(fields[2])
-                            end = int(fields[3])
-                            n = int(fields[4])
-                            self.rules[indel_type][gene].append([chrom, start, end, n, change])
-                        # elif fields[5] == inframe_del:
-                        #     self.rules[inframe_del].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
-                        # elif fields[5] == inframe_ins:
-                        #     self.rules[inframe_ins].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
-
-                    else:
-                        key = '-'.join(fields[1:5])
+        for l in iter_lines(cnf.genome.actionable):
+            fields = l.split('\t')
+            if fields[7] == 'germline':
+                key = '-'.join(fields[1:5])
+                self.act_germline.add(key)
+            elif fields[7] == 'somatic':
+                change = fields[8].strip()
+                if fields[6] == 'rule':
+                    if fields[4] == '*' and len(fields[3]) == 1:
+                        key = '-'.join(fields[1:4])
                         self.act_somatic[key] = change
+                    else:
+                        indel_type = fields[5]
+                        gene = fields[0]
+                        chrom = fields[1]
+                        start = int(fields[2])
+                        end = int(fields[3])
+                        n = int(fields[4])
+                        self.rules[indel_type][gene].append([chrom, start, end, n, change])
+                    # elif fields[5] == inframe_del:
+                    #     self.rules[inframe_del].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
+                    # elif fields[5] == inframe_ins:
+                    #     self.rules[inframe_ins].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
+
+                else:
+                    key = '-'.join(fields[1:5])
+                    self.act_somatic[key] = change
 
         self.hotspot_nucleotides = set()
         self.hotspot_proteins = set()
-        with open(cnf.genome.compendia_ms7_hotspot) as f:
-            for l in f:
-                l = l.replace('\n', '')
-                if not l:
-                    continue
-                fields = l.split('\t')
-                if fields[5].startswith('g.'):
-                    continue
-                self.hotspot_nucleotides.add('-'.join(fields[1:5]))
-                if not fields[6]:
-                    continue
-                self.hotspot_proteins.add('-'.join([fields[0], fields[6]]))
+        for l in iter_lines(cnf.genome.compendia_ms7_hotspot):
+            fields = l.split('\t')
+            if fields[5].startswith('g.'):
+                continue
+            self.hotspot_nucleotides.add('-'.join(fields[1:5]))
+            if not fields[6]:
+                continue
+            self.hotspot_proteins.add('-'.join([fields[0], fields[6]]))
 
         self.tier_by_specific_mutations, \
         self.genes_with_generic_rules, \
@@ -520,6 +495,7 @@ class Filtration:
             self.no_transcript_counter[reason] += 1
 
     def apply_reject_counter(self, reason, is_canonical, no_transcript):
+        debug('Rejected: ' + reason)
         self.all_reject_counter[reason] += 1
         if is_canonical:
             self.canonical_reject_counter[reason] += 1
@@ -649,6 +625,8 @@ class Filtration:
                 fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], \
                 fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
             var_type = var_type.upper()
+
+            debug(chrom + ':' + pos + ' ' + ref + '>' + alt + ' ' + fields[func_col] + ' ' + aa_chg + ' ' + fields[headers.index('MSI')] + ' ' + str(allele_freq))
 
             if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
                 self.apply_reject_counter('PROTEIN_PROTEIN_CONTACT', is_canonical, no_transcript)
