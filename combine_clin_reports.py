@@ -61,16 +61,16 @@ def main():
     cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
     safe_mkdir(cnf.work_dir)
 
-    shared_sample_names = set(s.name for bs in bcbio_structures for s in bs.samples)
-    if not shared_sample_names:
-        sample_names = [bs.project_name + ': ' + ', '.join(s.name for s in bs.samples) for bs in bcbio_structures]
-        critical('Not shared samples in projects.\n' + '\n'.join(sample_names))
+    # shared_sample_names = set(s.name for bs in bcbio_structures for s in bs.samples)
+    # if not shared_sample_names:
+    #    sample_names = [bs.project_name + ': ' + ', '.join(s.name for s in bs.samples) for bs in bcbio_structures]
+    #    critical('Not shared samples in projects.\n' + '\n'.join(sample_names))
 
-    info('Shared samples: ' + ', '.join(shared_sample_names))
+    # info('Shared samples: ' + ', '.join(shared_sample_names))
 
     info('')
     info('*' * 70)
-    run_combine_clinical_reports(cnf, bcbio_structures, shared_sample_names, cnf.output_dir)
+    run_combine_clinical_reports(cnf, bcbio_structures)
 
 
 if __name__ == '__main__':
