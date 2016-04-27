@@ -112,7 +112,10 @@ def get_jbrowser_link(genome, sample, bed_fname=None):
     jbrowse_data_path, data_dirname, jbrowse_browser_path = set_folders(genome)
     bed = ''
     if bed_fname:
-        bed = ',' + bed_fname
+        if isinstance(bed_fname, list):
+            bed = ',' + ','.join([b for b in bed_fname if b])
+        else:
+            bed = ',' + bed_fname
     return '{jbrowse_browser_path}/?data={data_dirname}&tracks=DNA,' \
            '{sample}_bigwig,{sample}_vcf{bed},{sample}&highlight='.format(**locals())
 

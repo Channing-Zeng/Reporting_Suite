@@ -230,11 +230,7 @@ def main():
                                   cytoband=cytoband, mysample=sample_name,
                                   svsbed=svs_bed_fpath))
 
-    r_script = get_system_path(cnf, 'Rscript')
-    if is_us():
-        r_script = '/opt/az/local/R/R-3.2.2/installdir/bin/Rscript'
-    elif is_uk():
-        r_script = '/apps/R/3.2.0/rhel6-x64/bin/Rscript'
+    r_script = get_system_path(cnf, 'rscript')
     cmdline = '{r_script} {out_r_script}'.format(**locals())
     res = call(cnf, cmdline)
     #os.remove(modified_seq2c_fpath)

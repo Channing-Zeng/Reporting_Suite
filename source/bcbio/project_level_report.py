@@ -277,7 +277,7 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
                 project_summary=bcbio_structure.project_summary_fpath,
                 combined_counts=bcbio_structure.gene_counts_fpath))
 
-    render_rmd_r = get_script_cmdline(cnf, 'Rscript', join('tools', 'render_rmd.R'), is_critical=True)
+    render_rmd_r = get_script_cmdline(cnf, 'rscript', join('tools', 'render_rmd.R'), is_critical=True)
     render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath
     call(cnf, render_rmd_cmdline, output_fpath=report_html_fpath, stdout_to_outputfile=False)
     if verify_file(report_html_fpath):
