@@ -1004,7 +1004,7 @@ def make_circos_plot(cnf, output_fpath):
             return None
 
     vardict2mut_raw_fpath = cnf.mutations_fpath.replace(source.mut_pass_suffix + '.', '')
-    output_dir = dirname(output_fpath)
+    output_dirpath = dirname(output_fpath)
 
     if cnf.bed_fpath:
         cmdline += ' --bed ' + cnf.bed_fpath
@@ -1014,11 +1014,11 @@ def make_circos_plot(cnf, output_fpath):
 
     cmdline += ' --sample ' + cnf.sample
     cmdline += ' --genome ' + cnf.genome.name
-    cmdline += ' -o ' + output_dir
+    cmdline += ' -o ' + output_dirpath
 
     cmdline = cmdline.format(**locals())
     res = call(cnf, cmdline, stdout_to_outputfile=False, exit_on_error=False)
-    circos_plot_fpath = join(output_dir, cnf.sample + '.png')
+    circos_plot_fpath = join(output_dirpath, cnf.sample + '.png')
     if not exists(circos_plot_fpath):
         return None
 

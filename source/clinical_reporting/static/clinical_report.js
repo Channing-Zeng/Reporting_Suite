@@ -194,12 +194,12 @@ function write_to_excel(table) {
     attr("download", "mutations.xls");
 }
 
-//jQuery(function($) {
-//    $('#circos_zoom').easyZoom({
-//        parent: '#circos_plot_div',
-//        append: false
-//    });
-//});
+jQuery(function($) {
+    $('#circos_zoom').easyZoom({
+        parent: '#circos_plot_div',
+        append: false
+    });
+});
 
 function checkSilent(row, showSilent) {
     for (var c = 0, m = row.cells.length; c < m; c++) {
