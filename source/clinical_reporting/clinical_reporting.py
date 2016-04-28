@@ -514,11 +514,16 @@ class BaseClinicalReporting:
                         mut_info_by_gene[gene.name].append(se.amp_del + ', ' + se.fragment)
 
             for gene in e.key_gene_by_name_chrom.values():
+                if not gene.cov_by_threshs:
+                    err('Gene ' + gene.name + ' has no cov_by_threshs')
+                    continue
                 gene_names.append(gene.name)
                 transcript_names.append(gene.transcript_id)
                 strands.append(gene.strand)
                 gene_ave_depths.append(gene.ave_depth)
-                covs_in_thresh.append(gene.cov_by_threshs.get(e.depth_cutoff))
+                c = gene.cov_by_threshs.get(e.region_depth_cutoff)
+                assert c is not None
+                covs_in_thresh.append(c)
                 if not gene.start or not gene.end or not gene.chrom:
                     err('Gene ' + gene.name + ': no chrom or start or end specified')
                     continue
@@ -783,7 +788,7 @@ class ClinicalReporting(BaseClinicalReporting):
         if self.experiment.actionable_genes_dict and \
                 (self.experiment.mutations or self.experiment.seq2c_events_by_gene or self.experiment.sv_events):
             self.actionable_genes_report = self.make_actionable_genes_report(self.experiment.actionable_genes_dict)
-        if self.experiment.ave_depth and self.experiment.depth_cutoff and self.experiment.sample.targetcov_detailed_tsv:
+        if self.experiment.ave_depth is not None and self.experiment.depth_cutoff is not None and self.experiment.sample.targetcov_detailed_tsv:
             self.key_genes_report = self.make_key_genes_cov_report(self.experiment.key_gene_by_name_chrom, self.experiment.ave_depth)
             self.cov_plot_data = self.make_key_genes_cov_json({self.experiment.key: self.experiment})
 
@@ -1017,9 +1022,9 @@ def make_circos_plot(cnf, output_fpath):
     cmdline += ' -o ' + output_dirpath
 
     cmdline = cmdline.format(**locals())
-    res = call(cnf, cmdline, stdout_to_outputfile=False, exit_on_error=False)
     circos_plot_fpath = join(output_dirpath, cnf.sample + '.png')
-    if not exists(circos_plot_fpath):
+    res = call(cnf, cmdline, stdout_to_outputfile=False, output_fpath=circos_plot_fpath, exit_on_error=False)
+    if not verify_file(circos_plot_fpath):
         return None
 
     return circos_plot_fpath

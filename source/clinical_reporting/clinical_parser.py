@@ -381,6 +381,7 @@ class ClinicalExperimentInfo:
         self.target = Target(type_=target_type, bed_fpath=bed_fpath, targqc_link=targqc_report_path)
         self.ave_depth = None
         self.depth_cutoff = None
+        self.region_depth_cutoff = None
         self.actionable_genes_dict = None
         self.total_variants = None
         self.mutations = None
@@ -421,8 +422,8 @@ class ClinicalExperimentInfo:
             self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
             info('Parsing TargQC ' + self.genes_collection_type + ' genes stats...')
             self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
-            #self.depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
             self.depth_cutoff = int(self.ave_depth / 2)
+            self.region_depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
             self.sample.targetcov_detailed_tsv = verify_file(self.sample.targetcov_detailed_tsv)
             if self.sample.targetcov_detailed_tsv:
                 self.parse_targetseq_detailed_report()
