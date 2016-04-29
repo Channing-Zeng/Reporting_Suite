@@ -250,7 +250,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
             d['HTML report path'] = html_report_url
 
         if jira_case:
-            d['JIRA URL'] = jira_case
+            d['JIRA URL'] = jira_case.url
             # if 'Updated By' in d and __unquote(d['Updated By']):
             d['Updated By'] = getpass.getuser()
             if jira_case.description:
