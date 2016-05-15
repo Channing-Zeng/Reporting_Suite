@@ -526,6 +526,7 @@ class Batch:
         self.name = name
         self.normal = None
         self.tumor = []
+        self.variantcallers = []
 
     def __str__(self):
         return self.name
@@ -714,24 +715,52 @@ class BCBioStructure(BaseProjectStructure):
         info('-' * 70)
 
         # reading samples
-        for sample in [self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']]:
+        for sample in (self._read_sample_details(sample_info) for sample_info in bcbio_cnf['details']):
             if sample.dirpath is None:
                 err('For sample ' + sample.name + ', directory does not exist. Thus, skipping that sample.')
             else:
                 self.samples.append(sample)
+            info()
 
         if not self.samples:
             critical('No directory for any sample. Exiting.')
 
         # sorting samples
+        info('Sorting samples')
         self.samples.sort(key=lambda _s: _s.key_to_sort())
         for caller in self.variant_callers.values():
             caller.samples.sort(key=lambda _s: _s.key_to_sort())
 
+        for batch in self.batches.values():
+            if batch.normal and not batch.tumor:
+                info('Batch ' + batch.name + ' contain only normal, treating sample ' + batch.normal.name + ' as tumor')
+                batch.normal.phenotype = 'tumor'
+                batch.tumor = [batch.normal]
+                batch.normal = None
+
+        info()
+        info('Searching VCF files')
+        for batch in self.batches.values():
+            info('Batch ' + batch.name)
+            for caller_name in batch.variantcallers:
+                info(caller_name)
+                caller = self.variant_callers.get(caller_name)
+                if not caller:
+                    self.variant_callers[caller_name] = VariantCaller(caller_name, self)
+                vcf_fpath = self._set_vcf_file(caller_name, batch.name)
+                for sample in batch.tumor:
+                   if not vcf_fpath:  # in sample dir?
+                       vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample, silent=sample.phenotype == 'normal')
+                   if vcf_fpath:
+                       sample.vcf_by_callername[caller_name] = vcf_fpath
+                       self.variant_callers[caller_name].samples.append(sample)
+            info()
+        info('-' * 70)
+
         self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
-        self.flagged_regions_dirpath = join(self.date_dirpath, BCBioStructure.flagged_dir)
+        self.flagged_regions_dirpath =    join(self.date_dirpath, BCBioStructure.flagged_dir)
 
         self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
         self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
@@ -936,32 +965,24 @@ class BCBioStructure(BaseProjectStructure):
         # self.move_vcfs_to_var(sample)  # moved to filtering.py
 
         variantcallers = sample_info['algorithm'].get('variantcaller') or []
+        if isinstance(variantcallers, basestring):
+            variantcallers = [variantcallers]
         if 'ensemble' in sample_info['algorithm'] and len(variantcallers) >= 2:
             variantcallers.append('ensemble')
+        sample.variantcallers = variantcallers
+        for batch_name in batch_names:
+            if self.batches[batch_name].variantcallers:
+                assert self.batches[batch_name].variantcallers == variantcallers, 'batch ' + \
+                    batch_name + ' variantcallers ' + str(self.batches[batch_name].variantcallers) + ' != sample ' + \
+                    sample.name + ' variantcallers ' + str(variantcallers)
+            else:
+                self.batches[batch_name].variantcallers = variantcallers
 
         if len(batch_names) > 1:
             if sample.phenotype == 'tumor':
                 critical('Multiple batches for tumor sample ' + sample.name + ': ' + ', '.join(batch_names))
             return sample
 
-        batch_name = batch_names[0]
-
-        if isinstance(variantcallers, basestring):
-            variantcallers = [variantcallers]
-
-        for caller_name in variantcallers:
-            info(caller_name)
-            caller = self.variant_callers.get(caller_name)
-            if not caller:
-                self.variant_callers[caller_name] = VariantCaller(caller_name, self)
-            self.variant_callers[caller_name].samples.append(sample)
-
-            vcf_fpath = self._set_vcf_file(caller_name, batch_name, silent=sample.phenotype == 'normal')
-            if not vcf_fpath:  # in sample dir?
-                vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample, silent=sample.phenotype == 'normal')
-            if vcf_fpath:
-                sample.vcf_by_callername[caller_name] = vcf_fpath
-        info()
         return sample
 
     def _set_final_dir(self, bcbio_cnf, bcbio_project_dirpath, final_dirpath=None):

@@ -634,6 +634,7 @@ class BCBioRunner:
                 # Processing VCFs: QC, annotation
                 for caller in self.bcbio_structure.variant_callers.values():
                     vcf_fpath = sample.vcf_by_callername.get(caller.name)
+                    info()
                     if not vcf_fpath:
                         if sample.phenotype != 'normal':
                             err('VCF does not exist: sample ' + sample.name + ', caller ' + caller.name + '.')
