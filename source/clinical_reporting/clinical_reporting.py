@@ -177,7 +177,7 @@ class BaseClinicalReporting:
                     k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
                     row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
 
-            row.class_ = row_class
+            row.class_ += ' ' + row_class
 
         if venn_sets:
             venn_data = self.save_venn_diagram_data(venn_sets, set_labels)
@@ -684,7 +684,7 @@ class BaseClinicalReporting:
         val = OrderedDict()
 
         if mut.solvebio:
-            val[mut.solvebio.clinsig] = mut.solvebio.url
+            val['SolveBio'] = mut.solvebio.url
 
         if mut.cosmic_id:
             val[mut.cosmic_id] = 'http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + \
@@ -746,13 +746,13 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
-        if not mut.signif or mut.signif.lower() in ['unknown']:
+        if not mut.signif or mut.signif.lower() in ['unknown', 'crapome']:
             if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
                 warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
             row.hidden = True
         else:
-            if mut.signif and mut.signif.lower() == 'known':
-                row.highlighted = True
+            if mut.signif:
+                row.class_ += ' ' + mut.signif.lower()
         return row
 
 
@@ -955,7 +955,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            if mut.signif not in ['unknown'] and mut.is_canonical:
+                            if mut.signif not in ['unknown', 'crapome'] and mut.is_canonical:
                                 variants.append(mut.aa_change if mut.aa_change else '.')
                                 types.append(mut.var_type)
                                 frequencies.append(Metric.format_value(mut.freq, unit='%'))

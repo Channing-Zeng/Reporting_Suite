@@ -376,7 +376,7 @@ class BaseReport:
 
 
 class Row:
-    def __init__(self, parent_report, records=None, highlighted=False, color=None, class_ = None, hidden=False):
+    def __init__(self, parent_report, records=None, highlighted=False, color=None, class_='', hidden=False):
         self.__parent_report = parent_report
         self.records = records or []
         self.highlighted = highlighted

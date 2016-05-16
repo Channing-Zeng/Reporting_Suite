@@ -57,23 +57,22 @@ $(function() {
 
 function extendClick(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
-    var showSilent = switch_id.search('silent') != -1;
+    var showBlacklisted = switch_id.search('crapome') != -1;
     // Showing full
     switch_id = switch_id.split("_");
     var table_id = switch_id[switch_id.length - 1];
     var switch_el = $('#' + table_id + '_switch');
     if (table_id == 'seq2c') {
       switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">' + key_or_target + ' genes</a> / <span>all genes</span>')
-    }
-    else {
+    } else {
         switchElContent = '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / ';
-        if (showSilent) {
+        if (showBlacklisted) {
             switchElContent += '<a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a> / ';
-            switchElContent += '<span>+ silent</span>';
+            switchElContent += '<span>crapome</span>';
         }
         else {
             switchElContent += '<span>+ unknown</span> / ';
-            switchElContent += '<a class="dotted-link" id="extend_link_silent_' + table_id + '" onclick="extendClick($(this))">+ silent</a>';
+            switchElContent += '<a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>';
         }
         switch_el.html(switchElContent)
     }
@@ -96,7 +95,7 @@ function extendClick(switch_id) {
         if (table_id == 'variants') {
             $(table_full).css('height', '');
             $('.table_full#report_table_mutations tr').each(function() {
-                checkSilent(this, showSilent);
+                checkBlacklisted(this, showBlacklisted);
                 checkAF(this, minAF);
                 if ($('#show_variants_all')[0]) {
                     showVariantsBySensitivity('show_variants_all');
@@ -123,7 +122,7 @@ function reduceClick(switch_id) {
     }
     else {
       switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a> ' +
-          '/ <a class="dotted-link" id="extend_link_silent_' + table_id + '" onclick="extendClick($(this))">+ silent</a>')
+          '/ <a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>')
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
@@ -201,13 +200,21 @@ jQuery(function($) {
     });
 });
 
-function checkSilent(row, showSilent) {
+function checkBlacklisted(row, showBlacklisted) {
     for (var c = 0, m = row.cells.length; c < m; c++) {
         var cell = row.cells[c];
         if (cell.attributes.metric && cell.attributes.metric.value == 'VarDict status') {
-            if (!showSilent && cell.innerText.search('silent') != -1)
-                $(row).addClass('row_hidden');
-            else $(row).removeClass('row_hidden');
+            if (!showBlacklisted) {  // normal view, hide crapome, show else
+                if (cell.innerText.search('crapome') != -1)
+                    $(row).addClass('row_hidden');
+                else
+                    $(row).removeClass('row_hidden');
+            } else {  // crapome view, hide everything else
+                if (cell.innerText.search('crapome') == -1)
+                    $(row).addClass('row_hidden');
+                else
+                    $(row).removeClass('row_hidden');
+            }
         }
     }
 }
@@ -263,7 +270,7 @@ function showVariantsByType(switch_id) {
     checkVariantsTable(parameter, switchValue);
 }
 
-function showVariantsBySensitivity(switch_id) {
+function showVariantsBySensilenttivity(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
     // Showing full
     switch_id = switch_id.split("_");

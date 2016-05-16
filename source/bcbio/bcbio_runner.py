@@ -273,6 +273,7 @@ class BCBioRunner:
             basic_params + \
             ' -t ' + str(self.threads_per_sample) + \
            (' --reuse ' if self.cnf.reuse_intermediate else '') + \
+           (' --debug ' if self.cnf.debug else '') + \
             ' --log-dir -' + \
             ' --genome {cnf.genome.name}'
 

@@ -128,14 +128,14 @@ def parse_gene_blacklists(cnf):
         _d['incidentalome'] = 'published/incidentalome.txt'
         _d['mutSigCV'] = 'published/mutsigcv.txt'
     if cnf.variant_filtering.blacklist.genes.low_complexity:
-        _d['low complexity'] = 'low_complexity/low_complexity_entire_gene.txt'
+        _d['low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
     if cnf.variant_filtering.blacklist.genes.repetitive_single_exome:
         _d['repetitive single exon gene'] = 'low_complexity/repetitive_single_exon_gene.txt'
     if cnf.variant_filtering.blacklist.genes.abnormal_gc:
-        _d['low GC'] = 'low_complexity/low_gc.txt'
-        _d['high GC'] = 'low_complexity/high_gc.txt'
+        _d['low GC gene'] = 'low_complexity/low_gc.txt'
+        _d['high GC gene'] = 'low_complexity/high_gc.txt'
     if cnf.variant_filtering.blacklist.genes.too_many_cosmic_mutations:
-        _d['too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
+        _d['gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
 
     d = OrderedDefaultDict(list)
     for reason, fn in _d.items():
@@ -148,14 +148,14 @@ def parse_gene_blacklists(cnf):
 def load_region_blacklists(cnf):
     _d = OrderedDict()
     if cnf.variant_filtering.blacklist.regions.low_complexity:
-        _d['low complexity'] = 'low_complexity.bed.gz'
+        _d['low complexity region'] = 'low_complexity.bed.gz'
     if cnf.variant_filtering.blacklist.regions.abnormal_gc:
-        _d['low GC'] = 'low_gc.bed.gz'
-        _d['high GC'] = 'high_gc.bed.gz'
+        _d['low GC region'] = 'low_gc.bed.gz'
+        _d['high GC region'] = 'high_gc.bed.gz'
     if cnf.variant_filtering.blacklist.regions.hengs_universal_mask:
         _d['in Hengs universal mask'] = 'heng_um75-hs37d5.bed.gz'
     if cnf.variant_filtering.blacklist.regions.repeats:
-        _d['repeats'] = 'repeats.bed.gz'
+        _d['repetitive region'] = 'repeats.bed.gz'
 
     d = OrderedDict()
     for reason, fn in _d.items():
@@ -185,7 +185,7 @@ def load_region_blacklists(cnf):
 
 
 class Filtration:
-    statuses = ['', 'known', 'likely', 'unlikely', 'unknown']  # Tier 1, 2, 3, 3
+    statuses = ['', 'known', 'likely', 'unknown', 'crapome']  # Tier 1, 2, 3, 4
     sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
 
     def __init__(self, cnf):
@@ -528,7 +528,7 @@ class Filtration:
         elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
             self.update_status('known', 'act_exon_loss' + '_in_gene_' + gene)
             # status, reasons = self.update_status(status, reasons, 'known', ['exon_loss_in_gene_' + gene])
-        elif self.status != 'unlikely' and self.status != 'unknown':
+        elif Filtration.statuses.index(self.status) <= 2:
             info(str(gene) + ' ' + str(aa_chg) + ' is in general rules, but does not alter protein function.'
                  ' Keeping status as ' + str(self.status))
         #     status, reasons = update_status(status, reasons, 'unlikely', 'but_not_alter_protein_function', force=True)
@@ -540,31 +540,29 @@ class Filtration:
                     tier = types_by_region[region][type_]
                     self.update_status(Filtration.statuses[tier], 'act_' + type_ + '_in_gene_' + gene)
 
-    def print_mutations_for_one_gene(self, output_f, fm_output_f, all_transcripts_output_f, cur_gene_mutations, gene, sensitizations):
-        for cur_gene_mut_info in cur_gene_mutations:
-            fields, status, reasons, gene_aachg, fm_data, is_canonical, no_transcript = cur_gene_mut_info
-            for sensitization, sens_or_res in self.sensitizations_by_gene[gene]:
-                sensitization_aa_chg = Filtration.sensitization_aa_changes.keys()[Filtration.sensitization_aa_changes.values().index(sensitization)]
-
-                if sensitization in sensitizations:
-                    for s in Filtration.statuses:
-                        self.reason_by_status[s].add(sensitization + '_' + sens_or_res)
-                    # if status == 'likely':
-                    # self.update_status('known', reasons + [aa_chg + '_' + sens_or_res], force=True)
-                    # elif status in ['unlikely', 'unknown']:
-                    #     self.update_status('likely', [aa_chg + '_' + sens_or_res], force=True)
-
-                # if sensitization not in sensitizations and status == 'known':
-                #     self.update_status('likely', reasons + [sensitization_aa_chg + '_required'], force=True)
-                # elif sensitization not in sensitizations and status == 'likely':
-                #     self.update_status('unlikely', sensitization_aa_chg + '_required', force=True)
-            self.print_mutation(output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data=fm_data)
+    # def print_mutations_for_one_gene(self, output_f, fm_output_f, all_transcripts_output_f, cur_gene_mutations, gene, sensitizations):
+    #     for cur_gene_mut_info in cur_gene_mutations:
+    #         fields, status, reasons, gene_aachg, fm_data, is_canonical, no_transcript = cur_gene_mut_info
+    #         for sensitization, sens_or_res in self.sensitizations_by_gene[gene]:
+    #             sensitization_aa_chg = Filtration.sensitization_aa_changes.keys()[Filtration.sensitization_aa_changes.values().index(sensitization)]
+    #
+    #             if sensitization in sensitizations:
+    #                 for s in Filtration.statuses:
+    #                     self.reason_by_status[s].add(sensitization + '_' + sens_or_res)
+    #                 # if status == 'likely':
+    #                 # self.update_status('known', reasons + [aa_chg + '_' + sens_or_res], force=True)
+    #                 # elif status in ['unlikely', 'unknown']:
+    #                 #     self.update_status('likely', [aa_chg + '_' + sens_or_res], force=True)
+    #
+    #             # if sensitization not in sensitizations and status == 'known':
+    #             #     self.update_status('likely', reasons + [sensitization_aa_chg + '_required'], force=True)
+    #             # elif sensitization not in sensitizations and status == 'likely':
+    #             #     self.update_status('unlikely', sensitization_aa_chg + '_required', force=True)
+    #         self.print_mutation(output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data=fm_data)
 
     def print_mutation(self, output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data):
         self.apply_counter('lines_written', is_canonical, no_transcript)
-        if status == 'unknown': self.apply_counter('unknown', is_canonical, no_transcript)
-        if status == 'likely': self.apply_counter('likely', is_canonical, no_transcript)
-        if status == 'known': self.apply_counter('known', is_canonical, no_transcript)
+        self.apply_counter(status, is_canonical, no_transcript)
 
         if is_canonical or no_transcript:
             if fm_data and fm_output_f:
@@ -598,14 +596,15 @@ class Filtration:
     def apply_region_blacklist_counter(self, reason):
         self.region_blacklist_counter[reason] += 1
 
-    def fails_blacklist_genes(self, gene_name):
+    def check_blacklist_genes(self, gene_name):
+        reasons = []
         for reason, gene_names in self.gene_blacklists_by_reason.items():
             if gene_name in gene_names:
-                self.apply_gene_blacklist_counter(reason)
-                return True
-        return False
+                reasons.append(reason)
+        return reasons
 
-    def fails_blacklist_regions(self, chrom, start, end):
+    def check_blacklist_regions(self, chrom, start, end):
+        reasons = []
         for reason, tb in self.region_blacklists_by_reason.items():
             try:
                 records = list(tb.query(chrom, start, end))
@@ -613,9 +612,8 @@ class Filtration:
                 pass
             else:
                 if records:
-                    self.apply_region_blacklist_counter(reason)
-                    return True
-        return False
+                    reasons.append(reason)
+        return reasons
 
     def do_filtering(self, input_f, output_f, fm_output_f=None, all_transcripts_output_f=None):
         pass_col = None
@@ -904,16 +902,6 @@ class Filtration:
                     self.apply_reject_counter('not known and dbSNP', is_canonical, no_transcript)
                     continue
 
-                if self.fails_blacklist_genes(gene):
-                    if gene in self.gene_to_soft_filter:
-                        self.update_status('unknown', 'blacklist gene')
-                    else:
-                        self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
-                        continue
-                if self.fails_blacklist_regions(chrom=chrom, start=int(pos) - 1, end=int(pos) - 1 + len(ref)):
-                    self.apply_reject_counter('region blacklist', is_canonical, no_transcript)
-                    continue
-
             # Ignore any variants that occur after last known critical amino acid
             aa_chg_pos_pattern = re.compile('^[A-Z](\d+).*')
             if aa_chg_pos_pattern.match(aa_chg) and gene in self.last_critical_aa_pos_by_gene:
@@ -921,6 +909,23 @@ class Filtration:
                 if aa_pos >= self.last_critical_aa_pos_by_gene[gene]:
                     self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
                     continue
+
+            if self.status != 'known' and not is_act:
+                bl_gene_reasons = self.check_blacklist_genes(gene)
+                bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=int(pos) - 1, end=int(pos) - 1 + len(ref))
+                if bl_gene_reasons or bl_region_reasons:
+                    self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
+                    # if gene in self.gene_to_soft_filter:
+                    #     self.update_status('unknown', 'blacklist gene', force=True)
+                    # else:
+                    if bl_gene_reasons:
+                        self.update_status('crapome', bl_gene_reasons, force=True)
+                    if bl_region_reasons:
+                        self.update_status('crapome', bl_region_reasons, force=True)
+                    if bl_gene_reasons:
+                        self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
+                    elif bl_region_reasons:
+                        self.apply_reject_counter('region blacklist', is_canonical, no_transcript)
 
                     # if float(fields[pcnt_sample_col]) > self.max_ratio:
                     # if self.freq_in_sample_by_vark:
@@ -960,18 +965,18 @@ class Filtration:
         for title, counter, reject_counter, gene_blacklist_counter, region_blacklist_counter in counters:
             info(title + ':')
             info('    Written ' + str(counter['lines_written']) + ' lines')
-            info('    Kept unknown: ' + str(counter['unknown']))
-            info('    Set likely: ' + str(counter['likely']))
             info('    Set known: ' + str(counter['known']))
+            info('    Set likely: ' + str(counter['likely']))
+            info('    Kept unknown: ' + str(counter['unknown']))
+            info('    Crapome: ' + str(counter['crapome']))
+            for reason, count in gene_blacklist_counter.items():
+                info('        ' + str(count) + ' ' + reason)
             info('    Dropped: ' + str(sum(reject_counter.values())))
             for reason, count in reject_counter.items():
                 info('        ' + str(count) + ' ' + reason)
-            info('    Gene blacklist: ' + str(reject_counter['gene blacklist']))
-            for reason, count in gene_blacklist_counter.items():
-                info('        ' + str(count) + ' ' + reason)
-            info('    Region blacklist: ' + str(reject_counter['region blacklist']))
-            for reason, count in region_blacklist_counter.items():
-                info('        ' + str(count) + ' ' + reason)
+            # info('    Region blacklist: ' + str(reject_counter['region blacklist']))
+            # for reason, count in region_blacklist_counter.items():
+            #     info('        ' + str(count) + ' ' + reason)
             info()
 
 

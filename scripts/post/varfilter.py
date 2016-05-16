@@ -96,14 +96,14 @@ def main(args):
                                 out.write(l)
         info('Using vcf2txt from ' + vcf2txt_res_fpath)
 
-    if is_local():
-        vardict2mut_pl = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'))
-        info('Running vardict2mut perl')
-        res = run_vardict2mut(cnf, vcf2txt_res_fpath,
-            add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix + '_perl'),
-            vardict2mut_executable=vardict2mut_pl)
-        if not res:
-            critical('vardict2mut.pl run returned non-0')
+    # if is_local():
+    #     vardict2mut_pl = get_script_cmdline(cnf, 'perl', join('VarDict', 'vardict2mut.pl'))
+    #     info('Running vardict2mut perl')
+    #     res = run_vardict2mut(cnf, vcf2txt_res_fpath,
+    #         add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix + '_perl'),
+    #         vardict2mut_executable=vardict2mut_pl)
+    #     if not res:
+    #         critical('vardict2mut.pl run returned non-0')
 
     mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
     if not mut_fpath:
