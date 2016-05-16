@@ -2,13 +2,14 @@
 # noinspection PyUnresolvedReferences
 import bcbio_postproc
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 from optparse import OptionParser
 from os.path import join
 from os.path import exists
 import time
 import sys
 import re
+import tabix
 
 from source import verify_file
 from source.config import Config, defaults
@@ -18,6 +19,7 @@ from source.logger import info, critical, err, warn, debug
 from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resources, \
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.prepare_args_and_cnf import determine_sys_cnf
+from source.utils import OrderedDefaultDict
 
 
 def get_args():
@@ -92,6 +94,9 @@ def main():
     fm_output_f = open(adjust_path(cnf.fm_output_file), 'w') if cnf.fm_output_file else None
     all_transcripts_output_f = open(adjust_path(cnf.all_transcripts_output_file), 'w') if cnf.all_transcripts_output_file else None
 
+    info()
+    info('-' * 70)
+    info('Running filtering...')
     f.do_filtering(input_f, output_f, fm_output_f, all_transcripts_output_f)
 
     input_f.close()
@@ -114,22 +119,88 @@ def iter_lines(fpath):
             yield l
 
 
+def parse_gene_blacklists(cnf):
+    _d = OrderedDict()
+    if cnf.variant_filtering.blacklist.genes.published:
+        _d['flagged gene in HGMD'] = 'published/flags_in_hgmd.txt'
+        _d['flagged gene in OMIM'] = 'published/flags_in_omim.txt'
+        _d['flagged gene'] = 'published/flags.txt'
+        _d['incidentalome'] = 'published/incidentalome.txt'
+        _d['mutSigCV'] = 'published/mutsigcv.txt'
+    if cnf.variant_filtering.blacklist.genes.low_complexity:
+        _d['low complexity'] = 'low_complexity/low_complexity_entire_gene.txt'
+    if cnf.variant_filtering.blacklist.genes.repetitive_single_exome:
+        _d['repetitive single exon gene'] = 'low_complexity/repetitive_single_exon_gene.txt'
+    if cnf.variant_filtering.blacklist.genes.abnormal_gc:
+        _d['low GC'] = 'low_complexity/low_gc.txt'
+        _d['high GC'] = 'low_complexity/high_gc.txt'
+    if cnf.variant_filtering.blacklist.genes.too_many_cosmic_mutations:
+        _d['too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
+
+    d = OrderedDefaultDict(list)
+    for reason, fn in _d.items():
+        fpath = verify_file(join(cnf.crapomedir, fn), description=reason + ' blacklist genes file', is_critical=True)
+        for l in iter_lines(fpath):
+            d[reason].append(l.split('\t')[0])
+    return d
+
+
+def load_region_blacklists(cnf):
+    _d = OrderedDict()
+    if cnf.variant_filtering.blacklist.regions.low_complexity:
+        _d['low complexity'] = 'low_complexity.bed.gz'
+    if cnf.variant_filtering.blacklist.regions.abnormal_gc:
+        _d['low GC'] = 'low_gc.bed.gz'
+        _d['high GC'] = 'high_gc.bed.gz'
+    if cnf.variant_filtering.blacklist.regions.hengs_universal_mask:
+        _d['in Hengs universal mask'] = 'heng_um75-hs37d5.bed.gz'
+    if cnf.variant_filtering.blacklist.regions.repeats:
+        _d['repeats'] = 'repeats.bed.gz'
+
+    d = OrderedDict()
+    for reason, fn in _d.items():
+        fpath = verify_file(join(cnf.genome.tricky_regions, fn), description=reason + ' tricky regions file', is_critical=True)
+        # d[reason] = build_interval_tree(fpath)
+        d[reason] = tabix.open(fpath)
+    return d
+
+
+# def build_interval_tree(bed_fpath):
+#     # dictionary mapping chromosome names to interval trees
+#     info('Building interval tree for ' + bed_fpath + ': ', ending='')
+#     genome = defaultdict(IntervalTree)
+#
+#     # parse the BED file and build the interval trees
+#     for l in iter_lines(bed_fpath):
+#         fs = l.split('\t')[:3]
+#         chrom = fs[0]
+#         if chrom not in genome:
+#             info(chrom, ending=' ', print_date=False)
+#         start = int(fs[1])
+#         end = int(fs[2])
+#         genome[chrom].addi(start, end)
+#     info('', print_date=False)
+#
+#     return genome
+
+
 class Filtration:
     statuses = ['', 'known', 'likely', 'unlikely', 'unknown']  # Tier 1, 2, 3, 3
     sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
 
     def __init__(self, cnf):
-        self.canonical_reject_counter = defaultdict(int)
-        self.no_transcript_reject_counter = defaultdict(int)
-        self.all_reject_counter = defaultdict(int)
+        self.canonical_reject_counter = OrderedDefaultDict(int)
+        self.no_transcript_reject_counter = OrderedDefaultDict(int)
+        self.all_reject_counter = OrderedDefaultDict(int)
 
-        self.canonical_counter = defaultdict(int)
-        self.no_transcript_counter = defaultdict(int)
-        self.all_counter = defaultdict(int)
+        self.canonical_counter = OrderedDefaultDict(int)
+        self.no_transcript_counter = OrderedDefaultDict(int)
+        self.all_counter = OrderedDefaultDict(int)
 
-        self.canonical_blacklist_counter = defaultdict(int)
-        self.no_transcript_blacklist_counter = defaultdict(int)
-        self.all_blacklist_counter = defaultdict(int)
+        self.canonical_blacklist_counter = OrderedDefaultDict(int)
+        self.no_transcript_blacklist_counter = OrderedDefaultDict(int)
+        self.gene_blacklist_counter = OrderedDefaultDict(int)
+        self.region_blacklist_counter = OrderedDefaultDict(int)
 
         cnf.genome.compendia_ms7_hotspot    = verify_file(cnf.genome.compendia_ms7_hotspot, 'compendia_ms7_hotspot')
         cnf.genome.actionable               = verify_file(cnf.genome.actionable, 'actionable')
@@ -189,6 +260,7 @@ class Filtration:
         #             fs = l.replace('\n', '').split()
         #             self.freq_in_sample_by_vark[fs[0]] = float(fs[1])
 
+        info('Parsing filtering data...')
         self.tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'DNE.txt')),
                             'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
                             'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
@@ -277,23 +349,18 @@ class Filtration:
                 continue
             self.hotspot_proteins.add('-'.join([fields[0], fields[6]]))
 
-        self.blacklists_by_reason = defaultdict(list)
-        for reason, fn in [
-                ('Flagged gene',                 'published/flags.txt'),
-                ('Flagged gene in HGMD',         'published/flags_in_hgmd.txt'),
-                ('Flagged gene in OMIM',         'published/flags_in_omim.txt'),
-                ('Incidentalome',                'published/incidentalome.txt'),
-                ('MutSigCV',                     'published/mutsigcv.txt'),
-                ('High GC',                      'low_complexity/high_gc.txt'),
-                ('Low GC',                       'low_complexity/low_gc.txt'),
-                ('Low complexity',               'low_complexity/low_complexity_entire_gene.txt'),
-                ('Repetitive single exon gene.', 'low_complexity/repetitive_single_exon_gene.txt'),
-                ('Too many COSMIC mutations',    'low_complexity/too_many_cosmic_mutations.txt'),
-            ]:
-            fpath = verify_file(join(cnf.crapomedir, fn), description=reason + ' crapome file', is_critical=True)
-            for l in iter_lines(fpath):
-                self.blacklists_by_reason[reason].append(l.split('\t')[0])
+        info('Parsing gene blacklists...')
+        self.gene_blacklists_by_reason = parse_gene_blacklists(cnf)
+        for r in self.gene_blacklists_by_reason.keys():
+            self.gene_blacklist_counter[r] = 0
+        self.gene_to_soft_filter = list(iter_lines(join(cnf.crapomedir, 'soft_filter.txt')))
 
+        info('Parsing region blacklists...')
+        self.region_blacklists_by_reason = load_region_blacklists(cnf)
+        for r in self.region_blacklists_by_reason.keys():
+            self.region_blacklist_counter[r] = 0
+
+        info('Parsing spreadsheat with actionable rules...')
         self.tier_by_specific_mutations, \
         self.genes_with_generic_rules, \
         self.tier_by_type_by_region_by_gene, \
@@ -525,19 +592,30 @@ class Filtration:
         if no_transcript:
             self.no_transcript_reject_counter[reason] += 1
 
-    def apply_blacklist_counter(self, reason, is_canonical, no_transcript):
-        self.all_blacklist_counter[reason] += 1
-        if is_canonical:
-            self.canonical_blacklist_counter[reason] += 1
-        if no_transcript:
-            self.no_transcript_blacklist_counter[reason] += 1
+    def apply_gene_blacklist_counter(self, reason):
+        self.gene_blacklist_counter[reason] += 1
 
-    def check_blacklist_genes(self, gene_name):
-        reasons = []
-        for reason, gene_names in self.blacklists_by_reason.items():
+    def apply_region_blacklist_counter(self, reason):
+        self.region_blacklist_counter[reason] += 1
+
+    def fails_blacklist_genes(self, gene_name):
+        for reason, gene_names in self.gene_blacklists_by_reason.items():
             if gene_name in gene_names:
-                reasons.append(reason)
-        return reasons
+                self.apply_gene_blacklist_counter(reason)
+                return True
+        return False
+
+    def fails_blacklist_regions(self, chrom, start, end):
+        for reason, tb in self.region_blacklists_by_reason.items():
+            try:
+                records = list(tb.query(chrom, start, end))
+            except tabix.TabixError:
+                pass
+            else:
+                if records:
+                    self.apply_region_blacklist_counter(reason)
+                    return True
+        return False
 
     def do_filtering(self, input_f, output_f, fm_output_f=None, all_transcripts_output_f=None):
         pass_col = None
@@ -826,11 +904,14 @@ class Filtration:
                     self.apply_reject_counter('not known and dbSNP', is_canonical, no_transcript)
                     continue
 
-                blacklist_reasons = self.check_blacklist_genes(gene)
-                if blacklist_reasons:
-                    for r in blacklist_reasons:
-                        self.apply_blacklist_counter(r, is_canonical, no_transcript)
-                    self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
+                if self.fails_blacklist_genes(gene):
+                    if gene in self.gene_to_soft_filter:
+                        self.update_status('unknown', 'blacklist gene')
+                    else:
+                        self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
+                        continue
+                if self.fails_blacklist_regions(chrom=chrom, start=int(pos) - 1, end=int(pos) - 1 + len(ref)):
+                    self.apply_reject_counter('region blacklist', is_canonical, no_transcript)
                     continue
 
             # Ignore any variants that occur after last known critical amino acid
@@ -868,15 +949,15 @@ class Filtration:
                 self.status, self.reason_by_status[self.status], fields, is_canonical, no_transcript,
                 fm_data=[sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq])
 
-        info()
+        info('Done.')
 
-        counters = [['All', self.all_counter, self.all_reject_counter, self.all_blacklist_counter]]
-        if all_transcripts_output_f:
-            counters.extend([
-                ['No transcript', self.no_transcript_counter, self.no_transcript_reject_counter, self.no_transcript_blacklist_counter],
-                ['Canonical', self.canonical_counter, self.canonical_reject_counter, self.canonical_blacklist_counter]])
+        counters = [['All statistics', self.all_counter, self.all_reject_counter, self.gene_blacklist_counter, self.region_blacklist_counter]]
+        # if all_transcripts_output_f:
+        #     counters.extend([
+        #         ['No transcript', self.no_transcript_counter, self.no_transcript_reject_counter, self.no_transcript_blacklist_counter],
+        #         ['Canonical', self.canonical_counter, self.canonical_reject_counter, self.canonical_blacklist_counter]])
 
-        for title, counter, reject_counter, blacklist_counter in counters:
+        for title, counter, reject_counter, gene_blacklist_counter, region_blacklist_counter in counters:
             info(title + ':')
             info('    Written ' + str(counter['lines_written']) + ' lines')
             info('    Kept unknown: ' + str(counter['unknown']))
@@ -885,8 +966,11 @@ class Filtration:
             info('    Dropped: ' + str(sum(reject_counter.values())))
             for reason, count in reject_counter.items():
                 info('        ' + str(count) + ' ' + reason)
-            info('    Blacklisted: ' + str(reject_counter['gene blacklist']))
-            for reason, count in blacklist_counter.items():
+            info('    Gene blacklist: ' + str(reject_counter['gene blacklist']))
+            for reason, count in gene_blacklist_counter.items():
+                info('        ' + str(count) + ' ' + reason)
+            info('    Region blacklist: ' + str(reject_counter['region blacklist']))
+            for reason, count in region_blacklist_counter.items():
                 info('        ' + str(count) + ' ' + reason)
             info()
 

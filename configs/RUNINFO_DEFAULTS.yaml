@@ -40,13 +40,25 @@ variant_filtering:
   min_vd:       2       # VD.     -V   The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
 
   signal_noise: 1.5     # SN.     -o   Signal/noise value.
+  bias:         false   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
 
-  bias:         False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
+  blacklist:
+    genes:
+      published: true
+      abnormal_gc: true
+      low_complexity: true
+      repetitive_single_exome: true
+      too_many_cosmic_mutations: true
+    regions:
+      abnormal_gc: true
+      low_complexity: true
+      hengs_universal_mask: true
+      repeats: true
 
 
 annotation:
   dbnsfp:
-    skip-annotation: False
+    skip-annotation: false
     annotations:
     - SIFT_score
     - Polyphen2_HVAR_score

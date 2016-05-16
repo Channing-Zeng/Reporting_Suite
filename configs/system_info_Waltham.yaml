@@ -83,7 +83,7 @@ genomes:
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
-    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
@@ -113,7 +113,7 @@ genomes:
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
-    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
@@ -153,7 +153,7 @@ genomes:
 
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 
-    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
@@ -171,7 +171,7 @@ genomes:
       rptmk: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
       RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
 
-    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
 
   hg19-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/seq/hg19-noalt.fa
@@ -229,7 +229,7 @@ genomes:
 
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 
-    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
     filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
@@ -258,13 +258,13 @@ genomes:
 
 snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/snpeffect_export_Polymorphic.txt
 actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/actionable_hotspot.txt
-ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules
+ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules/
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
 key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
-crapomedir:                   /ngs/reference_data/genomes/Hsapiens/common/crapome
+crapomedir:                   /ngs/reference_data/genomes/Hsapiens/common/crapome/
 
 queue: batch.q
 

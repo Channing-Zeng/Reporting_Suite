@@ -76,7 +76,7 @@ genomes:
     bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg19.bed  # all regions
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
     ensembl: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.full.bed
-    all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
+    all_transcripts: ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 
   hg38:
     seq: ~/Dropbox/az/reference_data/hg38.fa
@@ -101,13 +101,13 @@ genomes:
 
 snpeffect_export_polymorphic: ~/Dropbox/az/reference_data/common/snpeffect_export_Polymorphic.txt
 actionable_hotspot:           ~/Dropbox/az/reference_data/common/actionable_hotspot.txt
-ruledir:                      ~/Dropbox/az/reference_data/common/rules
+ruledir:                      ~/Dropbox/az/reference_data/common/rules/
 key_genes:                    ~/Dropbox/az/reference_data/common/az_key_genes.txt
 suppressors:                  ~/Dropbox/az/reference_data/common/suppressors.txt
 oncogenes:                    ~/Dropbox/az/reference_data/common/oncogenes.txt
 specific_mutations:           ~/Dropbox/az/reference_data/common/specific_mutations.tsv
 last_critical_aa:             ~/Dropbox/az/reference_data/common/last_critical_aa.txt
-crapomedir:                   ~/Dropbox/az/reference_data/common/crapome
+crapomedir:                   ~/Dropbox/az/reference_data/common/crapome/
 
 queue: ngs.q
 
