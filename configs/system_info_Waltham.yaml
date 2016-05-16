@@ -264,6 +264,7 @@ key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key
 suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
+crapomedir:                   /ngs/reference_data/genomes/Hsapiens/common/crapome
 
 queue: batch.q
 

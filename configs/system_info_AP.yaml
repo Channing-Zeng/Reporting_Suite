@@ -199,6 +199,7 @@ suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppre
 oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
 specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
 last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
+crapomedir:                   /ngs/reference_data/genomes/Hsapiens/common/crapome
 
 queue: ngs.q
 

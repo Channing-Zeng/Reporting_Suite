@@ -619,8 +619,8 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                             if j > 0:
                                 fs = l.replace('\n', '').split('\t')
                                 vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
-                                if len(fs) < reason_col:
-                                    print l
+                                assert len(fs) > reason_col, 'len(fs)=' + str(len(fs)) + ' > reason_col=' + str(reason_col) + \
+                                                             ' in ' + sample.name + ', ' + vcf2txt_fpath + ' for line\n' + l
 
                                 freq = freq_in_cohort_by_vark[vark]
                                 cnt = count_in_cohort_by_vark[vark]
