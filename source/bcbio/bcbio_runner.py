@@ -746,44 +746,59 @@ class BCBioRunner:
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps)
 
-            # if self.varqc_summary in self.steps:
-            #     self._submit_job(
-            #         self.varqc_summary,
-            #         wait_for_steps=[
-            #             self.varannotate.job_name(s.name, v.name)
-            #             for v in self.bcbio_structure.variant_callers.values()
-            #             for s in v.samples
-            #             if self.varannotate in self.steps])
+            if is_uk() or is_us() and self.bw_converting in self.steps:
+                for sample in self.bcbio_structure.samples:
+                    if sample.bam and isfile(sample.bam):
+                        self._submit_job(self.bw_converting, sample.name,
+                            sample=sample.name, genome=sample.genome, bam=sample.bam,
+                            # wait_for_steps=[self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else [],
+                            mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
 
-            # if self.varqc_after in self.steps:
-            #     info('VarQC_postVarFilter:')
-            #     for caller in self.bcbio_structure.variant_callers.values():
-            #         for sample in caller.samples:
-            #             raw_vcf_fpath = sample.find_raw_vcf_by_callername(caller.name)
-            #             if not raw_vcf_fpath:
-            #                 if sample.phenotype != 'normal':
-            #                     err('Error: raw VCF does not exist: sample ' + sample.name + ', caller "' +
-            #                         caller.name + '". Phenotype = ' + sample.phenotype + '.')
-            #             else:
-            #                 filt_vcf_fpath = sample.get_filt_vcf_fpath_by_callername(caller.name, gz=True)
-            #                 if not self.varfilter and sample.phenotype != 'normal' and not verify_file(filt_vcf_fpath, silent=True):
-            #                     err('Error: filtered VCF does not exist: sample ' + sample.name + ', caller "' +
-            #                         caller.name + '". Phenotype = ' + sample.phenotype + '.' +
-            #                         ' Note that you need to run VarFilter first, and this step is not in config.')
-            #                 else:
-            #                     self._submit_job(
-            #                         self.varqc_after, sample.name, caller_suf=caller.name, threads=self.threads_per_sample,
-            #                         wait_for_steps=([self.varfilter.job_name(caller=caller.name)] if self.varfilter in self.steps else []),
-            #                         vcf=filt_vcf_fpath, sample=sample.name, caller=caller.name, genome=sample.genome)
+            if self.bcbio_structure.is_rnaseq and self.gene_expression in self.steps:
+                self._submit_job(self.gene_expression)
 
-            # if self.varqc_after_summary in self.steps:
-            #     self._submit_job(
-            #         self.varqc_after_summary,
-            #         wait_for_steps=[
-            #             self.varfilter.job_name(s.name, v.name)
-            #             for v in self.bcbio_structure.variant_callers.values()
-            #             for s in v.samples
-            #             if self.varfilter in self.steps])
+            if not self.cnf.verbose:
+                print ''
+            if self.cnf.verbose:
+                info('The following jobs were submitted:')
+
+            if not self.jobs_running:
+                info()
+                info('No jobs submitted.')
+            else:
+                msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name + '. '
+                       'Log files for each jobs to track:']
+                # lengths = []
+                # for job in self.jobs_running:
+                #     lengths.append(len(job.name))
+                # max_length = max(lengths)
+
+                for job in self.jobs_running:
+                    # msg += ' ' * (max_length - len(job.name)) + job.log_fpath)
+                    info('  ' + job.repr)
+
+            self.wait_for_jobs()
+            info('Finished. Jobs done: ' + str(len([j for j in self.jobs_running if j.is_done])) +
+                 ', jobs errored: ' + str(len([j for j in self.jobs_running if j.has_errored])) +
+                 ', jobs didn\'t run: ' + str(len([j for j in self.jobs_running if not j.is_done])) +
+                 ', total was: ' + str(len([j for j in self.jobs_running])))
+            info()
+
+            if any(s.fastqc_html_fpath and isfile(s.fastqc_html_fpath) for s in self.bcbio_structure.samples):
+                final_summary_report_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.fastqc_summary_dir, source.fastqc_name + '.html')
+                safe_mkdir(dirname(final_summary_report_fpath))
+                write_fastqc_combo_report(self.cnf, final_summary_report_fpath, self.bcbio_structure.samples)
+
+            if self.varannotate in self.steps:
+                info('Making varQC summary reports')
+                self._varqc_summary(BCBioStructure.varqc_dir, BCBioStructure.varqc_summary_dir, BCBioStructure.varqc_name)
+                info()
+
+            if self.varfilter in self.steps:
+                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
+                info('Making varQC-post-filtering summary reports')
+                self._varqc_summary(BCBioStructure.varqc_after_dir, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name)
+                info()
 
             if self.clin_report in self.steps:
                 clinical_report_caller = \
@@ -851,60 +866,12 @@ class BCBioRunner:
                             wait_for_steps=wait_for_steps,
                             threads=self.threads_per_sample)
 
-            if is_uk() or is_us() and self.bw_converting in self.steps:
-                for sample in self.bcbio_structure.samples:
-                    if sample.bam and isfile(sample.bam):
-                        self._submit_job(self.bw_converting, sample.name,
-                            sample=sample.name, genome=sample.genome, bam=sample.bam,
-                            # wait_for_steps=[self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else [],
-                            mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
-
-            if self.bcbio_structure.is_rnaseq and self.gene_expression in self.steps:
-                self._submit_job(self.gene_expression)
-
-            if not self.cnf.verbose:
-                print ''
-            if self.cnf.verbose:
-                info('The following jobs were submitted:')
-
-            if not self.jobs_running:
-                info()
-                info('No jobs submitted.')
-            else:
-                msg = ['Submitted jobs for the project ' + self.bcbio_structure.project_name + '. '
-                       'Log files for each jobs to track:']
-                # lengths = []
-                # for job in self.jobs_running:
-                #     lengths.append(len(job.name))
-                # max_length = max(lengths)
-
-                for job in self.jobs_running:
-                    # msg += ' ' * (max_length - len(job.name)) + job.log_fpath)
-                    info('  ' + job.repr)
-
             self.wait_for_jobs()
-            info('Finished. Jobs done: ' + str(len([j for j in self.jobs_running if j.is_done])) +
+            info('NGS oncology reports jobs finished. Jobs done: ' + str(len([j for j in self.jobs_running if j.is_done])) +
                  ', jobs errored: ' + str(len([j for j in self.jobs_running if j.has_errored])) +
                  ', jobs didn\'t run: ' + str(len([j for j in self.jobs_running if not j.is_done])) +
-                 ', total was: ' + str(len([j for j in self.jobs_running]))
-            )
+                 ', total was: ' + str(len([j for j in self.jobs_running])))
             info()
-
-            if any(s.fastqc_html_fpath and isfile(s.fastqc_html_fpath) for s in self.bcbio_structure.samples):
-                final_summary_report_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.fastqc_summary_dir, source.fastqc_name + '.html')
-                safe_mkdir(dirname(final_summary_report_fpath))
-                write_fastqc_combo_report(self.cnf, final_summary_report_fpath, self.bcbio_structure.samples)
-
-            if self.varannotate in self.steps:
-                info('Making varQC summary reports')
-                self._varqc_summary(BCBioStructure.varqc_dir, BCBioStructure.varqc_summary_dir, BCBioStructure.varqc_name)
-                info()
-
-            if self.varfilter in self.steps:
-                finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
-                info('Making varQC-post-filtering summary reports')
-                self._varqc_summary(BCBioStructure.varqc_after_dir, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name)
-                info()
 
             if is_us() or is_uk():
                 info('Exposing to jBrowse')

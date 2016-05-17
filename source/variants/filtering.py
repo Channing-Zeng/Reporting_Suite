@@ -520,19 +520,19 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
     if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
         info('Combined filtered results ' + variants_fpath + ' exist, reusing.')
     else:
-        for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+        for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
             if not verify_file(vcf2txt_fpath, description='variants file'):
                 not_existing_snames.append(sample.name)
         if not_existing_snames:
             critical('For some samples do not exist, variants file was not found: ' + ', '.join(not_existing_snames))
         with file_transaction(cnf.work_dir, variants_fpath) as tx:
             with open(tx, 'w') as out:
-                for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+                for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
                     with open(vcf2txt_fpath) as f:
-                        for j, l in enumerate(f):
-                            if j == 0 and i == 0:
+                        for line_i, l in enumerate(f):
+                            if line_i == 0 and sample_i == 0:
                                 out.write(l)
-                            if j > 0:
+                            if line_i > 0:
                                 out.write(l)
         verify_file(variants_fpath, is_critical=True, description='combined mutation calls')
         info('Saved vcf2txt variants to ' + variants_fpath)
@@ -544,7 +544,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
     if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
         info('Combined PASSed filtered results ' + pass_variants_fpath + ' exist, reusing.')
     else:
-        for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+        for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
             if not verify_file(add_suffix(vcf2txt_fpath, source.mut_pass_suffix), description='PASS variants file'):
                 not_existing_pass_snames.append(sample.name)
         if not_existing_pass_snames:
@@ -561,11 +561,11 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
         total_varks = 0
         total_duplicated_count = 0
         total_records_count = 0
-        for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+        for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
             met_in_this_sample = set()
             with open(add_suffix(vcf2txt_fpath, source.mut_pass_suffix)) as f:
-                for j, l in enumerate(f):
-                    if j > 0:
+                for line_i, l in enumerate(f):
+                    if line_i > 0:
                         fs = l.replace('\n', '').split()
                         vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
                         if vark in met_in_this_sample:
@@ -604,44 +604,49 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
             = None, None, None, None, None, None
         with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
             with open(tx, 'w') as out:
-                for i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
-                    with open(add_suffix(vcf2txt_fpath, source.mut_pass_suffix)) as f:
-                        for j, l in enumerate(f):
-                            fs = l.replace('\n', '').split('\t')
-                            if j == 0 and i == 0:
-                                out.write(l)
-                                status_col = fs.index('Significance')
-                                reason_col = status_col + 1
-                                n_samples_col = fs.index('N_samples')
-                                n_var_col = fs.index('N_Var')
-                                pcnt_sample_col = fs.index('Pcnt_sample')
-                                ave_af_col = fs.index('Ave_AF')
-                            if j > 0:
+                for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+                    mut_pass_fpath = add_suffix(vcf2txt_fpath, source.mut_pass_suffix)
+                    with file_transaction(cnf.work_dir, mut_pass_fpath) as fixed_mut_fpath_tx:
+                        with open(mut_pass_fpath) as f, open(fixed_mut_fpath_tx, 'w') as fixed_f_out:
+                            for line_i, l in enumerate(f):
                                 fs = l.replace('\n', '').split('\t')
-                                vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
-                                assert len(fs) > reason_col, 'len(fs)=' + str(len(fs)) + ' > reason_col=' + str(reason_col) + \
-                                                             ' in ' + sample.name + ', ' + vcf2txt_fpath + ' for line\n' + l
+                                if line_i == 0:
+                                    fixed_f_out.write(l)
+                                if line_i == 0 and sample_i == 0:
+                                    out.write(l)
+                                    status_col = fs.index('Significance')
+                                    reason_col = status_col + 1
+                                    n_samples_col = fs.index('N_samples')
+                                    n_var_col = fs.index('N_Var')
+                                    pcnt_sample_col = fs.index('Pcnt_sample')
+                                    ave_af_col = fs.index('Ave_AF')
+                                if line_i > 0:
+                                    fs = l.replace('\n', '').split('\t')
+                                    vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
+                                    assert len(fs) > reason_col, 'len(fs)=' + str(len(fs)) + ' > reason_col=' + str(reason_col) + \
+                                                                 ' in ' + sample.name + ', ' + vcf2txt_fpath + ' for line\n' + l
 
-                                freq = freq_in_cohort_by_vark[vark]
-                                cnt = count_in_cohort_by_vark[vark]
+                                    freq = freq_in_cohort_by_vark[vark]
+                                    cnt = count_in_cohort_by_vark[vark]
 
-                                if fs[status_col] == 'known':
-                                    known_variants_count += 1
-                                elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
-                                    act_variants_count += 1
-                                elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
-                                    skipped_variants_count += 1
-                                    continue
-                                else:
-                                    good_freq_variants_count += 1
+                                    if fs[status_col] == 'known':
+                                        known_variants_count += 1
+                                    elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
+                                        act_variants_count += 1
+                                    elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
+                                        skipped_variants_count += 1
+                                        continue
+                                    else:
+                                        good_freq_variants_count += 1
 
-                                fs[n_samples_col] = str(len(samples))
-                                fs[n_var_col] = str(cnt)
-                                fs[pcnt_sample_col] = str(freq)
-                                fs[ave_af_col] = ''
-                                l = '\t'.join(fs) + '\n'
-                                out.write(l)
-                                written_lines_count += 1
+                                    fs[n_samples_col] = str(len(samples))
+                                    fs[n_var_col] = str(cnt)
+                                    fs[pcnt_sample_col] = str(freq)
+                                    fs[ave_af_col] = ''
+                                    l = '\t'.join(fs) + '\n'
+                                    fixed_f_out.write(l)
+                                    out.write(l)
+                                    written_lines_count += 1
 
         if cnf.variant_filtering.max_ratio < 1.0:
             info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio) +
