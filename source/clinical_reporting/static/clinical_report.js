@@ -38,8 +38,7 @@ $(function() {
             table_short.remove();
             table_full.remove();
 
-            if (table_short.find('tr').length > 1 &&
-                table_full.find('tr').length > 15) {
+            if (table_short.find('tr').length > 0) {
                 reduceClick('extend_link_' + switch_id);
             } else {
                 extendClick('extend_link_' + switch_id);
@@ -67,11 +66,11 @@ function extendClick(switch_id) {
     } else {
         switchElContent = '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / ';
         if (showBlacklisted) {
-            switchElContent += '<a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a> / ';
-            switchElContent += '<span>crapome</span>';
+            switchElContent += '<a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a>';
+            switchElContent += '<span id="crapome_span">crapome</span>';
         }
         else {
-            switchElContent += '<span>+ unknown</span> / ';
+            switchElContent += '<span>+ unknown</span>';
             switchElContent += '<a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>';
         }
         switch_el.html(switchElContent)
@@ -121,8 +120,9 @@ function reduceClick(switch_id) {
       switch_el.html('<span>'  + key_or_target + ' genes</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">all genes</a>')
     }
     else {
-      switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a> ' +
-          '/ <a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>')
+      switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
+          'onclick="extendClick($(this))">+ unknown</a>' +
+          '<a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>')
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
@@ -205,12 +205,12 @@ function checkBlacklisted(row, showBlacklisted) {
         var cell = row.cells[c];
         if (cell.attributes.metric && cell.attributes.metric.value == 'VarDict status') {
             if (!showBlacklisted) {  // normal view, hide crapome, show else
-                if (cell.innerText.search('crapome') != -1)
+                if ($(cell).has(".span_status_crapome").length > 0)
                     $(row).addClass('row_hidden');
                 else
                     $(row).removeClass('row_hidden');
             } else {  // crapome view, hide everything else
-                if (cell.innerText.search('crapome') == -1)
+                if ($(cell).has(".span_status_crapome").length == 0)
                     $(row).addClass('row_hidden');
                 else
                     $(row).removeClass('row_hidden');

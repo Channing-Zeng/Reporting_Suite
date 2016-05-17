@@ -25,7 +25,7 @@ tr.unselected_type {
 .clinical_report table.report_table tr.known td {
   background-color: #f5ffa3; }
 .clinical_report table.table_full tr.likely td {
-  background-color: #f2ffbe; }
+  background-color: #f1ffce; }
 .clinical_report .multi-col-layout {
   column-count: 4;
   -moz-column-count: 4;
@@ -71,5 +71,11 @@ ol {
 .circos_image {
   width: 500px;
   height: 500px; }
+
+#extend_link_crapome_variants, #crapome_span {
+  margin-left: 20px; }
+
+.reason {
+  color: gray; }
 
 /*# sourceMappingURL=clinical_report.css.map */

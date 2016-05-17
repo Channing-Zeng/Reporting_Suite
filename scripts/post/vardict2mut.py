@@ -153,7 +153,7 @@ def load_region_blacklists(cnf):
         _d['low GC region'] = 'low_gc.bed.gz'
         _d['high GC region'] = 'high_gc.bed.gz'
     if cnf.variant_filtering.blacklist.regions.hengs_universal_mask:
-        _d['in Hengs universal mask'] = 'heng_um75-hs37d5.bed.gz'
+        _d['Hengs mask'] = 'heng_um75-hs37d5.bed.gz'
     if cnf.variant_filtering.blacklist.regions.repeats:
         _d['repetitive region'] = 'repeats.bed.gz'
 
@@ -922,10 +922,8 @@ class Filtration:
                     # if gene in self.gene_to_soft_filter:
                     #     self.update_status('unknown', 'blacklist gene', force=True)
                     # else:
-                    if bl_gene_reasons:
-                        self.update_status('crapome', bl_gene_reasons, force=True)
-                    if bl_region_reasons:
-                        self.update_status('crapome', bl_region_reasons, force=True)
+                    if bl_gene_reasons or bl_region_reasons:
+                        self.update_status('crapome', bl_gene_reasons + bl_region_reasons, force=True)
                     if bl_gene_reasons:
                         self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
                     elif bl_region_reasons:

@@ -739,10 +739,14 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _signif_field(mut):
-        signif = mut.signif
-        if mut.reason:
-            signif += gray(' (' + mut.reason + ')')
-        return dict(value=signif)
+        if mut.signif == 'crapome':
+            txt = mut.reason
+        else:
+            txt = mut.signif
+            if mut.reason:
+                txt += '<span class="reason"> (' + mut.reason + ') </span>'
+        txt = '<span class="span_status_' + mut.signif + '">' + txt + '</span>'
+        return dict(value=txt)
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
