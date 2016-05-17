@@ -914,6 +914,10 @@ class Filtration:
                 bl_gene_reasons = self.check_blacklist_genes(gene)
                 bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=int(pos) - 1, end=int(pos) - 1 + len(ref))
                 if bl_gene_reasons or bl_region_reasons:
+                    if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
+                        self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
+                        continue
+
                     self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
                     # if gene in self.gene_to_soft_filter:
                     #     self.update_status('unknown', 'blacklist gene', force=True)
