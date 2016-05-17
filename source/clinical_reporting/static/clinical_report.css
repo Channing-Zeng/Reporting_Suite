@@ -78,4 +78,19 @@ ol {
 .reason {
   color: gray; }
 
+.my_hover {
+  position: relative; }
+
+.my_tooltip {
+  display: none;
+  position: absolute;
+  background: #ffe;
+  border: 1px solid #eed;
+  border-radius: 4px;
+  padding: 2px 4px; }
+
+.my_hover:hover .my_tooltip {
+  display: block;
+  z-index: 500; }
+
 /*# sourceMappingURL=clinical_report.css.map */

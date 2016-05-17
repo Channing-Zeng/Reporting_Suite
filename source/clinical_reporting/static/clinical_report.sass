@@ -89,9 +89,29 @@ ol
     margin-left: 20px
 
 .reason
-    //.b:before
-    //    content: "( "
-    //.b:after
-    //    content: ") "
     color: gray
 
+//.tooltip {
+//    display: none;
+//    position: absolute;
+//    background: #ffe;
+//    border: 1px solid #eed;
+//    border-radius: 4px;
+//    padding: 2px 4px;
+//}
+
+.my_hover
+    position: relative
+
+.my_tooltip
+    display: none
+    position: absolute
+    background: #ffe
+    border: 1px solid #eed
+    border-radius: 4px
+    padding: 2px 4px
+
+.my_hover:hover .my_tooltip
+    display: block
+    z-index: 500
+//    color: black

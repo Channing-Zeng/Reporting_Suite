@@ -51,6 +51,7 @@ class Mutation(SortableByChrom):
     def __init__(self, chrom, chrom_ref_order):
         SortableByChrom.__init__(self, chrom, chrom_ref_order)
         self.gene = None
+        self.exon = None
         self.transcript = None
         self.codon_change = None
         self.cdna_change = None
@@ -659,6 +660,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
     aa_chg_col = None
     cdna_chg_col = None
     transcript_col = None
+    exon_col = None
     status_col = None
     signif_col = None
     reason_col = None
@@ -688,6 +690,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                 gene_col = header.index('Gene')
                 depth_col = header.index('Depth')
                 transcript_col = header.index('Transcript')
+                exon_col = header.index('Exon')
                 if 'Status' in header:
                     status_col = header.index('Status')
                 if 'Significance' in header:
@@ -700,7 +703,8 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             fs = l.replace('\n', '').split('\t')
             sample_name, chrom, start, ref, alt, gname, transcript = \
                 fs[sample_col], fs[chr_col], fs[pos_col], fs[ref_col], fs[alt_col], fs[gene_col], fs[transcript_col]
-            codon_change, cdna_change, aa_change, aa_len = fs[codon_chg_col], fs[cdna_chg_col], fs[aa_chg_col], fs[aa_len_col]
+            codon_change, cdna_change, aa_change, aa_len, exon = \
+                fs[codon_chg_col], fs[cdna_chg_col], fs[aa_chg_col], fs[aa_len_col], fs[exon_col]
             ids, type_, var_type, var_class = fs[ids_col], fs[type_col], fs[var_type_col], fs[class_col]
             depth, af = fs[depth_col], fs[allele_freq_col]
             status = fs[status_col] if status_col is not None else None
@@ -724,6 +728,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                 mut.cdna_change = cdna_change
                 mut.aa_change = aa_change
                 mut.aa_len = aa_len
+                mut.exon = exon
                 mut.pos = int(start)
                 mut.ref = ref
                 mut.alt = alt

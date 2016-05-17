@@ -1,5 +1,7 @@
 $(function() {
-    $("[rel=tooltip]").tooltip({animation: false});
+    //$("[rel=tooltip]").tooltip({animation: false});
+
+    $(".tooltip-link").tooltip({ show: { effect: "blind", duration: 0 } });
 
     if (msieversion() == 0) {
         //$('table.tableSorter').tableSort();

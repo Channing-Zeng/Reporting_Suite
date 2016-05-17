@@ -47,7 +47,6 @@ class BaseClinicalReporting:
     def make_mutations_report(self, mutations_by_experiment, jbrowser_link):
         ms = [
             Metric('Gene'),  # Gene & Transcript
-            Metric('Transcript'),  # Gene & Transcript
             Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
             Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
@@ -103,6 +102,7 @@ class BaseClinicalReporting:
 
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
+            row_class = ''
 
             # if mut.pos not in mut_positions:
             #     mut_positions.append(mut.pos)
@@ -128,20 +128,20 @@ class BaseClinicalReporting:
             if not mut.is_canonical:
                 continue
             row = report.add_row()
-            row.add_record('Gene', mut.gene.name, show_content=mut.is_canonical)
-            if mut.is_canonical:
-                row.add_record('Transcript', mut.transcript)
-                row_class = ' expandable_gene_row collapsed'
-            else:
-                row.add_record('Transcript', mut.transcript)
-                row_class = ' row_to_hide row_hidden'
+            row.add_record('Gene', **self._gene_recargs(mut))
+            # if mut.is_canonical:
+            #     row.add_record('Transcript', mut.transcript)
+            #     row_class = ' expandable_gene_row collapsed'
+            # else:
+            #     row.add_record('Transcript', mut.transcript)
+            #     row_class = ' row_to_hide row_hidden'
+            # row.add_record('AA len', )
             row.add_record('AA chg', **self._aa_chg_recargs(mut))
             row.add_record('Position', show_content=mut.is_canonical,
                **self._pos_recargs(mut.chrom, mut.get_chrom_key(), mut.pos, None, jbrowser_link))
             row.add_record('Change', show_content=mut.is_canonical, **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
-            row.add_record('AA len', mut.aa_len)
             if mut.status:
                 row.add_record('Status', mut.status)
             row.add_record('Effect', mut.eff_type)
@@ -699,6 +699,17 @@ class BaseClinicalReporting:
     def _aa_chg_recargs(mut):
         aa_chg = ''.join([gray(c) if c.isdigit() else c for c in (mut.aa_change or '')])
         return dict(value=aa_chg)
+
+    @staticmethod
+    def _gene_recargs(mut):
+        t = mut.gene.name
+        if mut.transcript:
+            tooltip = ('Protein length: ' + str(mut.aa_len) + '<br>' +
+                       'Exon altered: ' + str(mut.exon) + '')
+            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>'\
+                 + gray(mut.transcript) + '</span>'
+            str(mut.aa_len)
+        return dict(value=t, show_content=mut.is_canonical)
 
     @staticmethod
     def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None):
