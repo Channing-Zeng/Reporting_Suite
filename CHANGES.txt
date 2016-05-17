@@ -1,3 +1,10 @@
+v1.4.0, 17 May 2016
+Features
+- Variant filtering: added gene blacklist. Added region blacklist.
+
+Bug fixing
+- Fixed issue when artefact filtering was perfomered before the NGS reports are generated. Thanks Sally Luke.
+
 v1.3.0, 21 Apr 2016
 Features
 - RNA-seq bcbio workflow support. QC reporting, counts heatmaps, RNA-seq Qualimap
