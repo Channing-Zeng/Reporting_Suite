@@ -1,9 +1,11 @@
-v1.4.0, 17 May 2016
-Features
-- Variant filtering: added gene blacklist. Added region blacklist.
+v1.4.0, 19 May 2016
+Filtering
+- Variant filtering: added gene blacklist. Added region blacklist
+- Checking if ClinVar gene matches SnpEff gene
+- Fixed issue when artefact filtering was perfomered before the NGS reports are generated. Thanks Sally Luke
 
-Bug fixing
-- Fixed issue when artefact filtering was perfomered before the NGS reports are generated. Thanks Sally Luke.
+NGS Reports
+- Unique color scheme for Seq2C report and plot
 
 v1.3.0, 21 Apr 2016
 Features

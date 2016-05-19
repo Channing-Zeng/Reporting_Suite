@@ -126,7 +126,7 @@ def parse_gene_blacklists(cnf):
         _d['freq mut gene in OMIM'] = 'published/flags_in_omim.txt'
         _d['freq mut gene'] = 'published/flags.txt'
         _d['incidentalome gene'] = 'published/incidentalome.txt'
-        _d['mutSigCV'] = 'published/mutsigcv.txt'
+        _d['mutSigCV gene'] = 'published/mutsigcv.txt'
     if cnf.variant_filtering.blacklist.genes.low_complexity:
         _d['low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
     if cnf.variant_filtering.blacklist.genes.repetitive_single_exome:
@@ -137,11 +137,14 @@ def parse_gene_blacklists(cnf):
     if cnf.variant_filtering.blacklist.genes.too_many_cosmic_mutations:
         _d['gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
 
-    d = OrderedDefaultDict(list)
+    d = OrderedDefaultDict(dict)
     for reason, fn in _d.items():
         fpath = verify_file(join(cnf.crapomedir, fn), description=reason + ' blacklist genes file', is_critical=True)
         for l in iter_lines(fpath):
-            d[reason].append(l.split('\t')[0])
+            fs = l.split('\t')
+            gene_name = l.split('\t')[0]
+            meta_info = l.split('\t')[1] if len(fs) == 2 else ''
+            d[reason][gene_name] = meta_info
     return d
 
 
@@ -596,11 +599,19 @@ class Filtration:
     def apply_region_blacklist_counter(self, reason):
         self.region_blacklist_counter[reason] += 1
 
-    def check_blacklist_genes(self, gene_name):
+    def check_blacklist_genes(self, gene_name, aa_pos=None):
         reasons = []
-        for reason, gene_names in self.gene_blacklists_by_reason.items():
-            if gene_name in gene_names:
-                reasons.append(reason)
+        for reason, data in self.gene_blacklists_by_reason.items():
+            if gene_name in data:
+                meta_info = data[gene_name]
+                if meta_info == '':
+                    reasons.append(reason)
+                elif aa_pos is not None:
+                    fs = meta_info.split(':')  # regions in form of :232, 553:, 42:111
+                    if fs[0] and aa_pos >= int(fs[0]):
+                        reasons.append(reason)
+                    if fs[1] and aa_pos < int(fs[1]):
+                        reasons.append(reason)
         return reasons
 
     def check_blacklist_regions(self, chrom, start, end):
@@ -904,14 +915,15 @@ class Filtration:
 
             # Ignore any variants that occur after last known critical amino acid
             aa_chg_pos_pattern = re.compile('^[A-Z](\d+).*')
-            if aa_chg_pos_pattern.match(aa_chg) and gene in self.last_critical_aa_pos_by_gene:
+            aa_pos = None
+            if aa_chg_pos_pattern.match(aa_chg):
                 aa_pos = int(aa_chg_pos_pattern.findall(aa_chg)[0])
-                if aa_pos >= self.last_critical_aa_pos_by_gene[gene]:
+                if gene in self.last_critical_aa_pos_by_gene and aa_pos >= self.last_critical_aa_pos_by_gene[gene]:
                     self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
                     continue
 
             if self.status != 'known' and not is_act:
-                bl_gene_reasons = self.check_blacklist_genes(gene)
+                bl_gene_reasons = self.check_blacklist_genes(gene, aa_pos)
                 bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=int(pos) - 1, end=int(pos) - 1 + len(ref))
                 if bl_gene_reasons or bl_region_reasons:
                     if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
@@ -923,7 +935,7 @@ class Filtration:
                     #     self.update_status('unknown', 'blacklist gene', force=True)
                     # else:
                     if bl_gene_reasons or bl_region_reasons:
-                        self.update_status('blacklist_gene', bl_gene_reasons + bl_region_reasons, force=True)
+                        self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
                     if bl_gene_reasons:
                         self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
                     elif bl_region_reasons:
