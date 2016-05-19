@@ -592,7 +592,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
             if f > max_freq:
                 max_freq = f
                 max_freq_vark = vark
-        info('Maximum frequency in cohort is ' + str(max_freq) + ' of ' + max_freq_vark)
+        info('Maximum frequency in cohort is ' + str(max_freq) + ' of ' + str(max_freq_vark))
         info()
 
         known_variants_count = 0
