@@ -64,6 +64,7 @@ class Mutation(SortableByChrom):
         self.eff_type = None
         self.status = None
         self.reason = None
+        self.silent = None
         self.cosmic_id = None
         self.dbsnp_id = None
         self.solvebio = None
@@ -754,6 +755,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                     if reason == 'actionable germline':
                         reason = 'actionable germ.'
                     reason = reason.replace('change', 'chg.')
+                    mut.silent = 'silent' in reason.split()
                 mut.reason = reason
 
                 mutations.append(mut)

@@ -9,7 +9,7 @@ import itertools
 import source
 from source import info, verify_file
 from source.calling_process import call
-from source.logger import warn, err
+from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.tools_from_cnf import get_script_cmdline
 from source.utils import get_chr_lengths, OrderedDefaultDict
@@ -126,6 +126,8 @@ class BaseClinicalReporting:
             #         row.highlighted_green = True
 
             if not mut.is_canonical:
+                continue
+            if mut.is_silent:
                 continue
             row = report.add_row()
             row.add_record('Gene', **self._gene_recargs(mut))
@@ -750,9 +752,12 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _signif_field(mut):
+        debug('_signif_field: ' + mut.signif)
         if mut.signif == 'incidentalome':
+            debug('   _signif_field = incidentalome, txt is ' + mut.reason)
             txt = mut.reason
         else:
+            debug('   _signif_field != incidentalome, txt is ' + mut.signif)
             txt = mut.signif
             if mut.reason:
                 txt += '<span class="reason"> (' + mut.reason + ') </span>'
@@ -762,8 +767,8 @@ class BaseClinicalReporting:
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
         if not mut.signif or mut.signif.lower() in ['unknown', 'incidentalome']:
-            if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
-                warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
+            # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
+            #     warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio as Pathogenic')
             row.hidden = True
         else:
             if mut.signif:

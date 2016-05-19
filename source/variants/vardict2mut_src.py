@@ -56,7 +56,7 @@ def load_region_blacklists(cnf):
         _d['low GC region'] = 'low_gc.bed.gz'
         _d['high GC region'] = 'high_gc.bed.gz'
     if cnf.variant_filtering.blacklist.regions.hengs_universal_mask:
-        _d['Hengs mask'] = 'heng_um75-hs37d5.bed.gz'
+        _d['Heng\'s mask'] = 'heng_um75-hs37d5.bed.gz'
     if cnf.variant_filtering.blacklist.regions.repeats:
         _d['repetitive region'] = 'repeats.bed.gz'
 
@@ -836,10 +836,6 @@ class Filtration:
                     # else:
                     if bl_gene_reasons or bl_region_reasons:
                         self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
-                    if bl_gene_reasons:
-                        self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
-                    elif bl_region_reasons:
-                        self.apply_reject_counter('region blacklist', is_canonical, no_transcript)
 
                     # if float(fields[pcnt_sample_col]) > self.max_ratio:
                     # if self.freq_in_sample_by_vark:
@@ -918,7 +914,7 @@ def is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
             alt = alt[1:]
         else:
             alt = '-'
-    elif len(alt) > len(ref) and ref != "-":
+    elif len(alt) > len(ref) and ref != '-':
         alt = alt[1:]
         if len(ref) > 1:
             ref = ref[1:]
