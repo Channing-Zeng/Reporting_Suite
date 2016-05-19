@@ -293,12 +293,12 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
 
 def targetcov_details_to_seq2cov(cnf, targetcov_detials_fpath, output_fpath, sample_name, is_wgs=False):
     info('Parsing coverage from targetcov per-regions: ' + targetcov_detials_fpath + ' -> ' + output_fpath)
-    if not is_wgs:
-        info('Filtering by "Capture" tag')
-        fn_keep_only = lambda l: 'Capture' in l
-    else:
+    if is_wgs:
         info('Filtering by "CDS" tag')
         fn_keep_only = lambda l: 'CDS' in l
+    else:
+        info('Filtering by "Capture" tag')
+        fn_keep_only = lambda l: 'Capture' in l
 
     convert_to_seq2cov(cnf, targetcov_detials_fpath, output_fpath, sample_name,
                        chrom_col=0, start_col=1, end_col=2, gene_col=4, ave_depth_col=10,

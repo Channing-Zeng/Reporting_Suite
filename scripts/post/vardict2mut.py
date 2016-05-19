@@ -122,10 +122,10 @@ def iter_lines(fpath):
 def parse_gene_blacklists(cnf):
     _d = OrderedDict()
     if cnf.variant_filtering.blacklist.genes.published:
-        _d['flagged gene in HGMD'] = 'published/flags_in_hgmd.txt'
-        _d['flagged gene in OMIM'] = 'published/flags_in_omim.txt'
-        _d['flagged gene'] = 'published/flags.txt'
-        _d['incidentalome'] = 'published/incidentalome.txt'
+        _d['freq mut gene in HGMD'] = 'published/flags_in_hgmd.txt'
+        _d['freq mut gene in OMIM'] = 'published/flags_in_omim.txt'
+        _d['freq mut gene'] = 'published/flags.txt'
+        _d['incidentalome gene'] = 'published/incidentalome.txt'
         _d['mutSigCV'] = 'published/mutsigcv.txt'
     if cnf.variant_filtering.blacklist.genes.low_complexity:
         _d['low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
@@ -185,7 +185,7 @@ def load_region_blacklists(cnf):
 
 
 class Filtration:
-    statuses = ['', 'known', 'likely', 'unknown', 'crapome']  # Tier 1, 2, 3, 4
+    statuses = ['', 'known', 'likely', 'unknown', 'incidentalome']  # Tier 1, 2, 3, 4
     sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
 
     def __init__(self, cnf):
@@ -923,7 +923,7 @@ class Filtration:
                     #     self.update_status('unknown', 'blacklist gene', force=True)
                     # else:
                     if bl_gene_reasons or bl_region_reasons:
-                        self.update_status('crapome', bl_gene_reasons + bl_region_reasons, force=True)
+                        self.update_status('blacklist_gene', bl_gene_reasons + bl_region_reasons, force=True)
                     if bl_gene_reasons:
                         self.apply_reject_counter('gene blacklist', is_canonical, no_transcript)
                     elif bl_region_reasons:
@@ -970,7 +970,7 @@ class Filtration:
             info('    Set known: ' + str(counter['known']))
             info('    Set likely: ' + str(counter['likely']))
             info('    Kept unknown: ' + str(counter['unknown']))
-            info('    Crapome: ' + str(counter['crapome']))
+            info('    Incidentalome: ' + str(counter['incidentalome']))
             for reason, count in gene_blacklist_counter.items():
                 info('        ' + str(count) + ' ' + reason)
             info('    Dropped: ' + str(sum(reject_counter.values())))

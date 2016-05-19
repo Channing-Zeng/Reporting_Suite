@@ -58,7 +58,7 @@ $(function() {
 
 function extendClick(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
-    var showBlacklisted = switch_id.search('crapome') != -1;
+    var showBlacklisted = switch_id.search('incidentalome') != -1;
     // Showing full
     switch_id = switch_id.split("_");
     var table_id = switch_id[switch_id.length - 1];
@@ -69,11 +69,11 @@ function extendClick(switch_id) {
         switchElContent = '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / ';
         if (showBlacklisted) {
             switchElContent += '<a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a>';
-            switchElContent += '<span id="crapome_span">crapome</span>';
+            switchElContent += '<span id="incidentalome_span">incidentalome</span>';
         }
         else {
             switchElContent += '<span>+ unknown</span>';
-            switchElContent += '<a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>';
+            switchElContent += '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>';
         }
         switch_el.html(switchElContent)
     }
@@ -124,7 +124,7 @@ function reduceClick(switch_id) {
     else {
       switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
           'onclick="extendClick($(this))">+ unknown</a>' +
-          '<a class="dotted-link" id="extend_link_crapome_' + table_id + '" onclick="extendClick($(this))">crapome</a>')
+          '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>')
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
@@ -206,13 +206,13 @@ function checkBlacklisted(row, showBlacklisted) {
     for (var c = 0, m = row.cells.length; c < m; c++) {
         var cell = row.cells[c];
         if (cell.attributes.metric && cell.attributes.metric.value == 'VarDict status') {
-            if (!showBlacklisted) {  // normal view, hide crapome, show else
-                if ($(cell).has(".span_status_crapome").length > 0)
+            if (!showBlacklisted) {  // normal view, hide incidentalome, show else
+                if ($(cell).has(".span_status_incidentalome").length > 0)
                     $(row).addClass('row_hidden');
                 else
                     $(row).removeClass('row_hidden');
-            } else {  // crapome view, hide everything else
-                if ($(cell).has(".span_status_crapome").length == 0)
+            } else {  // incidentalome view, hide everything else
+                if ($(cell).has(".span_status_incidentalome").length == 0)
                     $(row).addClass('row_hidden');
                 else
                     $(row).removeClass('row_hidden');

@@ -750,7 +750,7 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _signif_field(mut):
-        if mut.signif == 'crapome':
+        if mut.signif == 'incidentalome':
             txt = mut.reason
         else:
             txt = mut.signif
@@ -761,7 +761,7 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
-        if not mut.signif or mut.signif.lower() in ['unknown', 'crapome']:
+        if not mut.signif or mut.signif.lower() in ['unknown', 'incidentalome']:
             if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
                 warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio')
             row.hidden = True
@@ -970,7 +970,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            if mut.signif not in ['unknown', 'crapome'] and mut.is_canonical:
+                            if mut.signif not in ['unknown', 'incidentalome'] and mut.is_canonical:
                                 variants.append(mut.aa_change if mut.aa_change else '.')
                                 types.append(mut.var_type)
                                 frequencies.append(Metric.format_value(mut.freq, unit='%'))

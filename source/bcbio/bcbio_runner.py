@@ -916,7 +916,7 @@ class BCBioRunner:
         finally:
             info('Deleting running jobs...')
             del_jobs(self.cnf, self.jobs_running)
-            info('Changing permissions...')
+            info('Finishing...')
             if isdir(self.bcbio_structure.final_dirpath):
                 change_permissions(self.cnf, self.bcbio_structure.final_dirpath)
             if isdir(self.bcbio_structure.work_dir):
