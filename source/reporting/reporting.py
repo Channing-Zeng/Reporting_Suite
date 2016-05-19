@@ -1496,11 +1496,11 @@ def calc_cell_contents(report, rows):
                     rec.text_color = 'black'
 
                     # Low outliers
-                    if rec.num < heatmap_stats.low_outer_fence:
+                    if rec.num < heatmap_stats.low_outer_fence and rec.num < heatmap_stats.med:
                         rec.color = get_color(low_hue, outer_low_brt)
                         rec.text_color = 'white'
 
-                    elif rec.num < heatmap_stats.low_inner_fence:
+                    elif rec.num < heatmap_stats.low_inner_fence and rec.num < heatmap_stats.med:
                         rec.color = get_color(low_hue, inner_low_brt)
 
                     # Normal values
@@ -1513,10 +1513,10 @@ def calc_cell_contents(report, rows):
                         rec.color = get_color(low_hue, brt)
 
                     # High outliers
-                    elif rec.num > heatmap_stats.top_inner_fence:
+                    elif rec.num > heatmap_stats.top_inner_fence and rec.num > heatmap_stats.med:
                         rec.color = get_color(top_hue, inner_top_brt)
 
-                    elif rec.num > heatmap_stats.top_outer_fence:
+                    elif rec.num > heatmap_stats.top_outer_fence and rec.num > heatmap_stats.med:
                         rec.color = get_color(top_hue, outer_top_brt)
                         rec.text_color = 'white'
 
@@ -1579,7 +1579,7 @@ def calc_heatmap_stats(metric):
     metric.min = numbers[0]
     metric.max = numbers[l - 1]
     metric.all_values_equal = metric.min == metric.max
-    if not metric.med or metric.med is None:
+    if metric.med is None:
         metric.med = numbers[(l - 1) / 2] if l % 2 != 0 else mean([numbers[l / 2], numbers[(l / 2) - 1]])
     q1 = numbers[int(floor((l - 1) / 4))]
     q3 = numbers[int(floor((l - 1) * 3 / 4))]

@@ -448,7 +448,7 @@ class BaseClinicalReporting:
         ms = [
             Metric('Gene', align='left', sort_direction='ascending'),  # Gene
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
-            Metric('Log ratio'),
+            Metric('Log ratio', med=0, quality='Less is better'),  # for consistency with plot: red for amplifications, blue for deletions
             Metric('Amp/Del'),
             Metric('BP/Whole'),
         ]
