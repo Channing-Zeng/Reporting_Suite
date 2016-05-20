@@ -1,16 +1,34 @@
-Target and WGS sequencing coverage analysis, variant annotation and quality control after alignment and variant calling.
+AZ post-processing pipeline for [link](https://github.com/chapmanb/bcbio-nextgen "BCBio-nextgen"): coverage QC, variant annotation, variant filtration, clinical reporting.
 
 Includes:
-- Read and alignment quality via Qualimap, NGSCat, AZ TargQC and FASTQC at probe, exon and CDS level
-- variant (SNP, Indel and SV) annotation
-- variant (SNP, Indel and SV) quality control
-- variant (SNP, Indel and SV) filtration and prioritization
+- Read and alignment quality via Qualimap, AZ TargQC and FastQC at capture, exon and CDS level
+- Variant (SNP, Indel and SV) annotation
+- Variant (SNP, Indel and SV) quality control
+- Variant (SNP, Indel and SV) filtration and prioritization
 - CNV caller Seq2C
 - Variant, CNV, Coverage reporting via single, easy to interpret HTML Report
 
 <br>
 ####Installation
 ```
+python 2.7 required
+bcbio required
+virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
+Clone repo https://github.com/AstraZeneca-NGS/Reporting_Suite.git into $AZ_REPORTING
+export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
+cd $AZ_REPORTING
+source activate virtualenv/bin/activate
+pip install -r python_requirements.txt
+R packages:
+install.packages("DESeq2")
+install.packages("RColorBrewer")
+install.packages("gplots")
+install.packages("amap")
+install.packages("ggplot2")
+install.packages("pheatmap")
+install.packages("reshape2")
+```
+
 #US:
 BCBIO=/group/ngs/src/bcbio-nextgen
 AZ_REPORTING=/group/ngs/src/az.reporting
@@ -20,31 +38,12 @@ AZ_REPORTING=/ngs/RDI/SCRIPTS/az.reporting
 #Sweden:
 BCBIO=/ngs/apps/bcbio-nextgen
 AZ_REPORTING=/ngs/apps/az.reporting
-#
-#
-git clone https://github.com/AstraZeneca-NGS/Reporting_Suite.git
-cd $AZ_REPORTING
-export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
-module load virtualenv
-virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
-pip install -r python_requirements.txt
-```
-
-$R
-install.packages("DESeq2")
-install.packages("RColorBrewer")
-install.packages("gplots")
-install.packages("amap")
-install.packages("ggplot2")
-install.packages("pheatmap")
-install.packages("reshape2")
 
 <br>
 ####Usage (bcbio decoupling in progress)
 ```
-export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
-source $AZ_REPORTING/virtualenv/bin/activate
-az-reporting.py [/path/to/a/bcbio/directory] [--run-cnf run_info.yaml] [--sys-cnf system_info.yaml] [--bed target.bed]
+module load bcbio-nextgen
+az-reporting.py [/path/to/a/bcbio/directory] [--run-cnf run_info.yaml] [--bed target.bed]
 ```
 
 Instead of specifying the first argument, you can change to bcbio-nextgen project directory:
@@ -86,16 +85,9 @@ The default SMTP server address is ```localhost``` and can be modified in the bo
 <br>
 ####Altering the step list
 For each sample in the list, the tools runs the following steps:
-- [VarAnnotate]
-- [VarQC]
-- [VarFilter]
-- VarQC_postVarFilter (VarQC for the variants passed filters)
-- [TargetCov]
+- [Variants]
+- [TargQC]
 - [Seq2C] (copy number estimates)
-- [ngsCAT]
-- [QualiMap]
-- MongoLoader (disabled by default, turned on with the \--load-mongo option)
-- AbnormalCovReport (disabled by default)
 
 Afterwards, the tool generates project-level summary reports located in a ```final/YYYY-MM-DD/qc``` directory:
 - VarQC summary (based on VarQC),
@@ -106,26 +98,13 @@ Afterwards, the tool generates project-level summary reports located in a ```fin
 The step list is customisable at ```run_info.yaml```. For example,
 ```
 steps:
-#- VarAnnotate
-#- VarQC
-#- VarFilter
-#- VarQC_postVarFilter
-#- TargetCov
+#- Variants
+- VarFilter
+#- TargQC
 #- Seq2C
-- ngsCAT
-#- QualiMap
-#- MongoLoader
-#- AbnormalCovReport
 ```
 
-will run only ngsCAT for each sample, and afterwards generate summary.
-
-<br>
-The ```--load-mongo``` option adds the MongoLoader step - in Waltham, it loads final filtered variants into Mongo database:
-
-```
-az-reporting.py --load-mongo
-```
+will run only filtering for each sample, and afterwards generate summary.
 
 <br>
 ####Custom BED file
@@ -136,11 +115,16 @@ You can specify a custom BED file for target QC (TargetCov, ngsCAT, QualiMap), a
 az-reporting.py --bed /ngs/reference_data/genomes/Hsapiens/hg19/bed/Agilent/SureSelect_Human_AllExon_V5.bed
 ````
 
+<br>
+####Workflow
+
+
 [bcbio-nextgen]:bcbio-nextgen.readthedocs.org
-[ngsCAT]:www.bioinfomgp.org/ngscat
 [Qualimap]:qualimap.bioinfo.cipf.es
 [VarAnnotate]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+Annotation
 [VarQC]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+QC
 [VarFilter]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+Filtration
-[TargetCov]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Targeted+Reseq+Reports
+[TargQC]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Targeted+Reseq+Reports
 [Seq2C]:http://wiki.rd.astrazeneca.net/display/caninfra/Seq2C+for+copy+number+analysis
+
+
