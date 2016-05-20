@@ -122,7 +122,7 @@ function drawSeq2cPlot(key, data, placeholder_el) {
             var firstLabel = placeholder_el.find('.yAxis .tickLabel').last();
             firstLabel.prepend('Log ratio' + '<span class="rhs">&nbsp;</span>=<span class="rhs">&nbsp;</span>');
 
-            bindTip(placeholder_el, key, showTip, plot, 'top right', {key: key});
+            bindTip(placeholder_el, key, showSeq2cTip, plot, 'top right', {key: key});
         };
 
         info.isInitialized = true;
@@ -131,7 +131,7 @@ function drawSeq2cPlot(key, data, placeholder_el) {
     showPlotWithInfo(info);
 }
 
-function showTip(key, item, plot, direction, generalData) {
+function showSeq2cTip(key, item, plot, direction, generalData) {
     var LINE_HEIGHT = 16; // pixels
 
     direction = ((direction != null) ? direction : 'bottom right');

@@ -117,7 +117,7 @@ function drawGeneCovPlot(data, fullData, placeholder_el, legend_placeholder_el) 
             var firstLabel = placeholder_el.find('.yAxis .tickLabel').last();
             firstLabel.prepend('Ave depth' +
                 '<span class="rhs">&nbsp;</span>=<span class="rhs">&nbsp;</span>');
-            bindTip(placeholder_el, key, showTip, plot, 'top right', {maxDepth: maxDepth}, drawDetailedCovPlot);
+            bindTip(placeholder_el, key, showCovTip, plot, 'top right', {maxDepth: maxDepth}, drawDetailedCovPlot);
         };
 
         info.isInitialized = true;
@@ -151,7 +151,7 @@ function getColorFromPercentCovered(percentCovered) {
 //};
 
 
-function showTip(key, item, plot, direction, generalData) {
+function showCovTip(key, item, plot, direction, generalData) {
     var LINE_HEIGHT = 16; // pixels
 
     direction = ((direction != null) ? direction : 'bottom right');
@@ -166,7 +166,7 @@ function showTip(key, item, plot, direction, generalData) {
     var cdsDetails = item.series.cdsDetails;
     var mutations = item.series.mutations;
 
-    if (!showTip.tipElementExists) {
+    if (!showCovTip.tipElementExists) {
         $('<div id="' + key + '_plot_tip" class="white_stroked plot_tip"></div>')
             .appendTo('body')
             .css({'pointer-events': 'none'});
@@ -179,7 +179,7 @@ function showTip(key, item, plot, direction, generalData) {
             .css({width: plot.width()})
             .appendTo('body');
 
-        showTip.tipElementExists = true;
+        showCovTip.tipElementExists = true;
     }
 
     $('#' + key + '_plot_tip')
@@ -430,7 +430,7 @@ function showExonTip(key, item, plot, direction, generalData) {
      var aveDepth = item.series.aveDepth;
      var numExon = item.series.numExon;
 
-     if (!showTip.tipElementExists) {
+     if (!showExonTip.tipElementExists) {
          $('<div id="' + key + '_plot_tip" class="white_stroked plot_tip"></div>')
              .appendTo('body')
              .css({'pointer-events': 'none'});
@@ -443,7 +443,7 @@ function showExonTip(key, item, plot, direction, generalData) {
              .css({width: plot.width()})
              .appendTo('body');
 
-         showTip.tipElementExists = true;
+         showExonTip.tipElementExists = true;
      }
 
      $('#' + key + '_plot_tip')

@@ -727,7 +727,8 @@ def _unique_longest_exons(cnf, exons_bed_fpath):
 def _generate_report_from_bam(cnf, sample, bam, target_bed, features_no_genes_bed, gene_by_name_and_chrom, avg_depth):
     depth_thresholds = cnf.coverage_reports.depth_thresholds
     if avg_depth:
-        depth_thresholds.append(int(avg_depth / 2))
+        key_gene_cov_threshold = max(1, int(avg_depth / 2))
+        depth_thresholds.append(key_gene_cov_threshold)
         depth_thresholds.sort()
     sample_name = sample.name
 
