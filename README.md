@@ -6,7 +6,7 @@
 - RNAseq QC, expression reporting
 - Variant, SV, CNV, coverage reporting via single, easy to interpret HTML Report
 
-### Installation
+#### Installation
 Requirements:
 - python 2.7
 - bcbio
@@ -131,7 +131,7 @@ steps:
 #- Seq2C
 ```
 
-### Email notification
+#### Email notification
 When all jobs are finished, an email will be sent with the path to the project HTML report, and list of all errors appeared during the processing. You can provide your email-address with the `--email` option, e.g.:
 ```
 az-reporting.py --email Vlad.Saveliev@astrazeneca.com
@@ -150,15 +150,20 @@ By default, the project name for reports, email notifications, and the NGS webse
 ```
 bcbio_postproc.py --project Dev_0123_WGS_MiSeq_13_BN
 ```
-### Output
+#### Output
 ###### Mutations
 In `final/YYYY-MM-DD_projectname/`, you can find *.PASS.txt files with all prioritized mutations passed the filtering.
-The annotated VCF variant files can be found in the individual sample folders `final/<sample>/` as `*.anno.filt.vcf.gz`
+The annotated VCF variant files can be found in the individual sample folders `final/<sample>/` as `<sample>-vardict.anno.filt.vcf.gz`
+
+You can find detailed information on mutation filtering/prioritization/classification in [this article](https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/source/variants/variant_filtering.md).
+
 ###### CNV
 CNV
 Seq2C CNV calls are located in the `final/YYYY-MM-DD_projectname/cnv/` folder.
+
 ###### Coverage
 The per-gene, per-exons and per-amplicon coverage reports can be found in the individual sample folders under `final/<sample>/targetSeq/<sample>.targetSeq.details.gene.tsv`
+
 ###### QC
 The folder `final/YYYY-MM-DD_projectname/` contains the project-level summary HTML landing page `<projectname>.html` that contains links to the following reports:
   - NGS oncology reports with mutations, CNV, SV, and coverage stats and visualizations
@@ -167,7 +172,7 @@ The folder `final/YYYY-MM-DD_projectname/` contains the project-level summary HT
   - FastQC (reads stats)
   - RNAseq QC and expression heatmaps (for RNAseq projects only)
 
-### Troubleshooting
+#### Troubleshooting
 Logs are stored in `final/<datestamp>/log/reporting/`. The main log is called `log.txt`
 - Issues with TargQC reports? May be caused by BAM files located under `final/<sample>/<sample>-ready.bam`, or a BED file, or memory issues. Look at TargQC reports logs: `final/<datestamp>/log/reporting/<sample>/targQC.log`
 - Issues with variants? Look at the VCF files located under `final/<datestamp>/var/raw/`, also check annotation logs `final/<datestamp>/log/reporting/<sample>/varAnnotate-<caller>.log` and filtering logs `final/<datestamp>/log/reporting/<sample>/varFilter-<caller>.log`.
