@@ -550,6 +550,7 @@ class BaseProjectStructure:
     flag_regions_name = 'flaggedRegions'
 
     ## RNAseq
+    program_versions_fname = 'programs.txt'
     gene_counts_unannotated_fname = 'combined.counts'
     exon_counts_unannotated_fname = 'combined.dexseq'
     gene_tpm_unannotated_fname    = 'combined.gene.sf.tpm'
@@ -710,6 +711,7 @@ class BCBioStructure(BaseProjectStructure):
                 info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
                 _extract_project_summary(project_summary_fpath, dst_fpath)
                 self.project_summary_fpath = dst_fpath
+            self.program_versions_fpath = join(dirname(self.log_dirpath), BCBioStructure.program_versions_fname)
 
         info()
         info('-' * 70)

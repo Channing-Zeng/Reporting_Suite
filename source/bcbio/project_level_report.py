@@ -131,7 +131,7 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
 
     _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure,
                       additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
-                      oncoprints_link=oncoprints_link)
+                      oncoprints_link=oncoprints_link, dataset_project=dataset_project)
 
     info()
     info('*' * 70)
@@ -189,15 +189,17 @@ def _make_url_record(html_fpath_value, metric, base_dirpath):
         return Record(metric=metric, value=metric.name, url=url)
 
 
+def get_base_dirpath(bcbio_structure, dataset_project):
+    if bcbio_structure:
+        return bcbio_structure.date_dirpath
+    return dirname(dataset_project.project_report_html_fpath)
+
 def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     """ We want links to be relative, so we make paths relative to the project-level-report parent directory.
         - If the bcbio_structure is set, project-level report is located at bcbio_structure.date_dirpath
         - If dataset_dirpath is set, project-level report is located right at dataset_dirpath
     """
-    if bcbio_structure:
-        base_dirpath = bcbio_structure.date_dirpath
-    else:
-        base_dirpath = dirname(dataset_project.project_report_html_fpath)
+    base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
 
     recs = []
 
@@ -289,12 +291,7 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
 
 
 def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
-    base_dirpath = None
-    if dataset_project:
-        base_dirpath = dirname(dataset_project.project_report_html_fpath)
-
-    if bcbio_structure:
-        base_dirpath = dirname(bcbio_structure.project_report_html_fpath)
+    base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
 
     sample_reports_records = defaultdict(list)
 
@@ -477,7 +474,7 @@ def _relpath_all(value, base_dirpath):
 
 
 def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure,
-                      additional_data=None, oncoprints_link=None):
+                      additional_data=None, oncoprints_link=None, dataset_project=None):
     # metric name in FullReport --> metric name in Static HTML
     # metric_names = OrderedDict([
     #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
@@ -518,7 +515,7 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
     for rec in common_records:
         if rec.value:
             common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
-    common_dict['run_section'] = get_run_info(cnf, bcbio_structure)
+    common_dict['run_section'] = get_run_info(cnf, bcbio_structure, dataset_project)
 
     if oncoprints_link:
         common_dict['oncoprints'] = {'oncoprints_link': '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
@@ -563,7 +560,7 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
 
     return write_static_html_report(cnf, data, html_fpath)
 
-def get_run_info(cnf, bcbio_structure):
+def get_run_info(cnf, bcbio_structure, dataset_project):
     info('Getting run and codebase information...')
     run_info_dict = dict()
     cur_fpath = abspath(getsourcefile(lambda: 0))
@@ -601,6 +598,12 @@ def get_run_info(cnf, bcbio_structure):
         if last_modified_datestamp:
             version_text += 'last modified ' + last_modified_datestamp
         run_info_dict['suite_version'] = version_text
+
+    # if bcbio_structure.is_rnaseq:
+    base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
+    programs_url = relpath(bcbio_structure.program_versions_fpath, base_dirpath) if verify_file(bcbio_structure.program_versions_fpath) else None
+    if programs_url:
+        run_info_dict['program_versions'] = '<a href="{programs_url}">Program versions</a>'.format(**locals())
 
     # var_filtering_params = []
     # set_filtering_params(cnf, bcbio_structure=bcbio_structure)  # get variant filtering parameters from run_info yaml
