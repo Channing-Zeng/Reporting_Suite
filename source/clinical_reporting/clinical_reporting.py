@@ -12,7 +12,7 @@ from source.calling_process import call
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.tools_from_cnf import get_script_cmdline
-from source.utils import get_chr_lengths, OrderedDefaultDict
+from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
 
@@ -704,7 +704,11 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _gene_recargs(mut):
-        t = mut.gene.name
+        t = ''
+        if is_us() or is_uk():  # add button to comment mutation
+            t += '<div style="position:relative"><div class="comment_div" onclick="commentMutation($(this))">' \
+                 'Comment</div></div> '
+        t += mut.gene.name
         if mut.transcript:
             tooltip = ('Protein length: ' + str(mut.aa_len) + '<br>' +
                        'Exon altered: ' + str(mut.exon) + '')

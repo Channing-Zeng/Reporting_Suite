@@ -331,6 +331,32 @@ function checkSamples(row, metric, value) {
         }
     }
 }
+
+function commentMutation(caller) {
+    var row = $(caller).parents("tr")[0];
+    var gene, mut, pos;
+    for (var c = 0; c < row.cells.length; c++) {
+        var cell = row.cells[c];
+        if (cell.attributes.metric && cell.attributes.metric.value == "Gene")
+            gene = cell.innerText.replace("Comment", "");
+        else if (cell.attributes.metric && cell.attributes.metric.value == "AA chg")
+            mut = cell.textContent;
+        else if (cell.attributes.metric && cell.attributes.metric.value == "Position")
+            pos = cell.textContent;
+    }
+    var comment = prompt("Enter your comment about mutation " + mut + " in " + gene + ", position " + pos, "");
+    if (comment) {
+        var data = gene + "," + mut + "," + pos + "," + comment + "\n";
+        var php_path = '/save_comment.php';
+        $.post(php_path, {data: data})
+         .done(function () {
+             alert('Comment was successfully saved!');
+         })
+         .error(function () {
+             alert('Error! Comment was not saved.');
+         });
+    }
+}
 //function extendedClick() {
 //    //$('.row_to_hide').toggleClass('row_hidden');
 //

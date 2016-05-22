@@ -93,4 +93,16 @@ ol {
   display: block;
   z-index: 500; }
 
+.comment_div {
+  position: absolute;
+  left: -65px;
+  font-size: 10px;
+  border: 1px solid #eed;
+  border-radius: 4px;
+  padding: 1px 4px;
+  cursor: pointer; }
+
+.comment_div:hover {
+  background: #ccc; }
+
 /*# sourceMappingURL=clinical_report.css.map */
