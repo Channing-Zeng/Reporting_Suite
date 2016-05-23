@@ -1,10 +1,16 @@
 ## Mutation prioritization in [AZ post-processing pipeline](https://github.com/AstraZeneca-NGS/Reporting_Suite) for BCBio-nextgen
 
 ### Variant calling
-Variant calling is performed by [VarDict](https://github.com/AstraZeneca-NGS/VarDict) ([Lai Z, 2016](http://www.ncbi.nlm.nih.gov/pubmed/27060149)) in BCBio-nextgen, using the allele frequency threshold of 1% for exomes, hybrid capture, and whole genome sequencing, or .1% for targeted deep sequencing. Samples analysed either in paired (tumor vs. normal) or single sample mode.
+Variant calling is performed by [VarDict](https://github.com/AstraZeneca-NGS/VarDict) ([Lai Z, 2016](http://www.ncbi.nlm.nih.gov/pubmed/27060149)) that calls SNV, MNV, indels, complex and structural variants, and differences in somatic and LOH variants when processed in paired mode. 
+
+##### Allele frequency threshold
+The allele frequency threshold defaults to 1% for exomes, hybrid capture, and whole genome sequencing, and .1% for deep sequencing. 
+
+##### Target regions
+In exomes, The variant are called in a special target called AZ exome, that combines all Ensembl CDS regions, UTR, plus regions from commonly used panels, padded by 50pb. Also, BCBio-nextgen doesn't call variants in complicated regions like centromers.
 
 ### Annotation
-Variants are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on proteins with the reference to the RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
+Variants are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on proteins according to RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
 ```
 FANCL   NM_018062.3
 MET     NM_000245.2
@@ -31,13 +37,13 @@ SnpEff assigns:
 - codon change
 - aminoacid change
 
-Variants are also searched against:
+Variants are also searched against the following mutation databases:
 - [COSMIC](http://cancer.sanger.ac.uk/cosmic) - cancer somatic mutations database, assigns ID and hits count
 - [dbSNP](http://www.ncbi.nlm.nih.gov/SNP/) - assigns rsID and CAF (global allele frequencies)
 - [ClinVar](http://www.ncbi.nlm.nih.gov/clinvar/) - assigns CLNSIG (clinical significance)
 
-### First step filtering: vardict.txt
-First step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex)
+### Raw filtering: vardict.txt
+The first filtering step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex)
 
 Hard filtering - the variants are discarded - is performed based on the following parameters:
 - Locus total depth (5x for exomes, hybrid capture, and targeted)
@@ -53,14 +59,14 @@ The thresholds are specified in the run_info.yaml configuration file. Depending 
 
 Mutation class (Var_Class) is assigned in the following order:
 - _COSMIC_ - any mutation found in COSMIC
-- _ClnSNP_known_ - any other mutation, significant according to ClinVar (3 < CLNSIG < 7)
-- _dbSNP_del_ - any other dbSNP deletion
+- _ClnSNP_known_ - any other mutation, labeled significant in ClinVar (3 < CLNSIG < 7)
+- _dbSNP_del_ - deletion found in dbSNP
 - _dbSNP_ - the remaining dbSNP variants
 - _Novel_ - all remaining variants
 
 The results of the script are saved under `final/YYYY-MM-DD_projectname/var/vardict.txt`
 
-### Second step filtering: vardict.PASS.txt
+### Cancer mutation filtering: vardict.PASS.txt
 This step is partly based on [vardict2mut.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vardict2mut.pl) script from the VarDict package, and partly on Rob McEven, Hedley Carr, and Brian Dougherty knowledge.
 
 #### Classification

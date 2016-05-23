@@ -1,54 +1,63 @@
-v1.4.0, 19 May 2016
+#### v1.4.0, 19 May 2016
 Filtering
-- Variant filtering: added gene blacklist. Added region blacklist
+- Added gene and region blacklist.
 - Checking if ClinVar gene matches SnpEff gene
 - Fixed issue when artefact filtering was perfomered before the NGS reports are generated. Thanks Sally Luke
+- Cohort frequency default threshold 1.0 changed to 0.4
+- Germline default AF is 15%
+- Actionable freq default 1%
+- MSI check constant changed
+- Changed default filtering parameters:
+  - Exome
+  - DeepSeq
+  - WGS
+
 
 NGS Reports
 - Unique color scheme for Seq2C report and plot
 
-v1.3.0, 21 Apr 2016
+#### v1.3.0, 21 Apr 2016
 Features
 - RNA-seq bcbio workflow support. QC reporting, counts heatmaps, RNA-seq Qualimap
 - Support Sweden HPC
 - Updated Vardict2mut filtering:
--- Keeping silent mutations
--- Filtering by MSI
--- Filtering by GMAF, AF, cohort frequency, depth after actionable filtering
--- Ignoring variants occurring after last known critical amino acid
+  - Keeping silent mutations
+  - Filtering by MSI
+  - Filtering by GMAF, AF, cohort frequency, depth after actionable filtering
+  - Ignoring variants occurring after last known critical amino acid
 - Using virtualenv to handle python dependencies
 - More advanced BED annotation based on RefSeq
 - NGS reports:
--- Separate tab for silent mutations
--- Key genes coverage theshold for NGS reports is set exactly as half mean coverage
--- SolveBio integration
--- Dynamic AF filtration slider
+  - Separate tab for silent mutations
+  - Key genes coverage theshold for NGS reports is set exactly as half mean coverage
+  - SolveBio integration
+  - Dynamic AF filtration slider
 - Preproc: samblaster to deduplicate
 - Add script to prepare canonical transcript list from SnpEff output
 - Update script for making RefSeq BED reference data
 - VarQC reports: showing cosmic and dbsnp version in tooltips
 - Support normal sample only configurations
 
-v1.2.0, 28 Mar 2016
+#### v1.2.0, 28 Mar 2016
 Features
 - Circos plots integrated with all mutations visualized by frequency accorss the genome
 - SV in NGS oncology reports: more consise, highlighting known fusion, linking to jBrowse.
 
 Optimization
 - New filtration features (vardict2mut):
--- more effective cohort filtering
--- cohort filtering performed only in the final step, so known and actionable mutations are not affected
--- filtering by MSI
--- more comprehensive splice site mutation detection
--- filter_artifacts hits AF threshold reduced 50% -> 20%
+  - more effective cohort filtering
+  - cohort filtering performed only in the final step, so known and actionable mutations are not affected
+  - filtering by MSI
+  - more comprehensive splice site mutation detection
+  - filter_artifacts hits AF threshold reduced 50% -> 20%
 
 
-v1.1.0, 24 Mar 2016
+#### v1.1.0, 24 Mar 2016
 Features
 - Oncoptints integration
 - jBrowse integration with UK
 - New sex determining functionality
-- TargQC.py can be fed with fastqc files, and accepts the --downsample-to option
+- TargQC.py can be fed with fastqc files, and accepts the   -downsample-to option
 
 Optimization
 - Seq2C optimized, more time and memory efficient. Using "sambamba depth" to call coverage
@@ -58,7 +67,7 @@ Other
 - Vardict2mut filtering updated, reporting more comprehensive rationale
 
 
-v1.0.1, 2 Mar 2016
+#### v1.0.1, 2 Mar 2016
 - Stanalone variants.py - handling incorrect input
 - BED processing scripts updates: annotate_bed.py, sort_bed.py, standardize_bed.py
 - Using all transcripts for bed annotation, canonical only for reports and CNV. make_exons.py udpated to make both canon and all
@@ -72,7 +81,7 @@ Fixes
 - TargQC standalone fix - thanks Sally Luke (https://github.com/AstraZeneca-NGS/Reporting_Suite/issues/19)
 
 
-v1.0.0, 29 Feb 2016
+#### v1.0.0, 29 Feb 2016
 New features:
 - New mutation filtering: using rules and manual curations by Robert McEwen and Hedley Carr. Reporting clasification assignment rationale.
 - Standalone script for variant annotation and filtration - variants.py
