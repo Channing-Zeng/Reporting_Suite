@@ -1,3 +1,6 @@
+## The file is collection of known function mutations or known polymorphism
+## Those genes start with ^ will be considered as common variants and filtered
+## out.  Those genes start with "#" will be treated as VUS
 AKT1	E17K	somatic
 AKT2	E17K	somatic
 AKT3	E17K	somatic
@@ -32,10 +35,12 @@ EGFR	L861Q	somatic
 EGFR	T790M	somatic
 EGFR	C797S	somatic
 PIK3CA	E542K	somatic
+PIK3CA	E453K	somatic
 PIK3CA	E545	somatic
 PIK3CA	Q546	somatic
 PIK3CA	H1047R	somatic
 PIK3CA	H1047L	somatic
+^PIK3CA	K733R	1	common germline SNP
 ERBB2	S310F	somatic
 ERBB2	L755	somatic
 ERBB2	R678Q	somatic
@@ -43,24 +48,63 @@ ERBB2	V842I	somatic
 PTEN	R130Q	somatic
 PTEN	R130G	somatic
 PTEN	R130L	somatic
+ATM	M1T	somatic ClinVar
 ATM	R337C	somatic
 ATM	R337H	somatic
-ATM	G2695S	somatic
-ATM	S2592C	somatic
-ATM	SRI2546del	germline
-ATM	V2716A	germline
-ATM	R2849P	germline
-ATM	G2867R	germline
+ATM	R337S	somatic
+ATM	R2032K	germline	ClinVar
+ATM	R2227C	germline	ClinVar
+ATM	V2424G	germline	ClinVar
+ATM	G2695S	somatic	PMID: 11805335
+ATM	S2592C	somatic	PMID:18568480
+ATM	SRI2546del	germline	PMID:18568480,11805335
+ATM	S2546_I2548del	germline	PMID:18568480,11805335
+ATM	RIS2547del	germline	PMID:18568480,11805335
+ATM	R2547_S2549del	germline	PMID:18568480,11805335
+ATM	G2765S	germline	ClinVar
+ATM	V2716A	germline	PMID: 11805335
+ATM	R2832C	germline	ClinVar
+ATM	R2849P	germline	PMID: 11805335
+ATM	S2855_V2856delinsRI	germline	ClinVar
+ATM	SV2855RI	germline	ClinVar
+ATM	G2867R	germline	PMID: 11805335
+ATM	G2867E	germline	https://ash.confex.com/ash/2010/webprogram/Paper30544.html
 ATM	D2016G	germline
 ATM	Y2470D	germline
-ATM	R3008C	germline
+ATM	R3008C	germline	ClinVar
+ATM	R3008H	germline	ClinVar
 ATM	V2662del	germline
 ATM	R250Q	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
-ATM	G2023R	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+#ATM	G2023R	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy, G2023 is not conserved
 ATM	T2396S	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
 ATM	N2435K	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
 ATM	R2854C	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
 ATM	R3008H	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	P292L	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	H1083R	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	T1953I	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	D2016G	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	R2227C	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	V2424G	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	L2656P	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	Y2677C	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	R2832C	germline	PMID: 18634022 http://www.ncbi.nlm.nih.gov/pmc/articles/PMC2776735/
+ATM	A2622V	germline	PMID: 10330348
+ATM	K750K	germline	PMID: 10330348
+ATM	K1192K	germline	PMID: 10330348
+ATM	A2067D	germline	PMID: 25077176
+ATM	P292L	germline	PMID: 9463314
+#ATM	N768D	germline	PMID: 9463314, N768 is not conserved
+ATM	L1001Q	germline	PMID: 9463314
+#ATM	S1691R	germline	PMID: 9463314, S1691 is not conserved
+ATM	T1743I	germline	PMID: 9463314
+ATM	LR2427del	germline	PMID: 9463314
+ATM	AF1812delinsV	germline	PMID: 9463314
+#ATM	H2554D	germline	PMID: 9463314, H2554 is not conserved
+ATM	E2668G	germline	PMID: 9463314
+ATM	F2827C	germline	PMID: 9463314
+ATM	R2642S	germline	PMID: 9443866
+ATM	T2666N	germline	ClinVar.  Only submission as likely pathogenic.  T2666 is conserved.
 FGFR2	S252W	somatic
 FGFR2	N549H	somatic
 FGFR2	N549K	somatic
@@ -77,6 +121,9 @@ FGFR2	C382R	somatic
 FGFR3	S249C	somatic	http://www.nature.com/onc/journal/v19/n48/full/1203934a.html
 ESR1	Y537	somatic
 ESR1	D538G	somatic
+ESR1	L536	somatic
+ESR1	P535H	somatic
+ESR1	V534E	somatic
 GNA11	Q209P	somatic
 GNA11	Q209L	somatic
 BRCA2	E2663K	5
@@ -165,3 +212,53 @@ BRCA1	G1706E	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
 BRCA1	H1746N	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
 BRCA1	W1837G	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
 BRCA1	A1843P	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA2	G2609D	4	http://europepmc.org/articles/PMC3537884
+BRCA2	W2626C	5	http://europepmc.org/articles/PMC3537884
+BRCA2	I2627F	5	http://europepmc.org/articles/PMC3537884
+BRCA2	L2647P	4	http://europepmc.org/articles/PMC3537884
+BRCA2	L2653P	5	http://europepmc.org/articles/PMC3537884
+BRCA2	L2688P	4	http://europepmc.org/articles/PMC3537884
+BRCA2	T2722R	5	http://europepmc.org/articles/PMC3537884
+BRCA2	D2723G	5	http://europepmc.org/articles/PMC3537884
+BRCA2	D2723H	5	http://europepmc.org/articles/PMC3537884
+BRCA2	G2748D	5	http://europepmc.org/articles/PMC3537884
+BRCA2	R3052W	5	http://europepmc.org/articles/PMC3537884
+BRCA2	D3095E	4	http://europepmc.org/articles/PMC3537884
+BRCA2	N3124I	4	http://europepmc.org/articles/PMC3537884
+BRCA1	C44F	5	http://www.kconfab.org/Progress/Mutations.aspx
+BRCA1	R1495T	5	http://www.kconfab.org/Progress/Mutations.aspx
+BRCA1	C64R	5	http://www.ganjoho.org/knowledge/oncoloplan/breast/14th_Nakamura.pdf
+BRCA1	C24Y	5	http://www.ganjoho.org/knowledge/oncoloplan/breast/14th_Nakamura.pdf
+BRCA1	A1623G	4	http://www.sciencedirect.com/science/article/pii/S0002929707638658; CLINVITAE_BRCA1
+BRCA1	G1803A	4	http://www.plosone.org/article/fetchObject.action?uri=info:doi/10.1371/journal.pone.0050800&representation=PDF
+CDKN2A	H83	somatic	Hotspot
+CDKN2A	D83	somatic	Hotspot
+CDKN2A	D108	somatic	Hotspot
+CDKN2A	P114	somatic	Hotspot
+KIT	W557	somatic	Hotspot
+KIT	V559	somatic	Hotspot
+KIT	V560	somatic	Hotspot
+KIT	L576P	somatic	Hotspot
+^DPYD	R29C	1	Common germline SNP
+^IL7R	V138I	1	Common germline SNP
+^IL7R	I66T	1	Common germline SNP
+^CYP2D6	C296R	1	Common germline SNP
+^CYP2D6	P34S	1	Common germline SNP
+^FGFR4	G388R	1	Common germline SNP
+^NQO1	P187S	1	Common germline SNP
+^CASP8	D344H	1	Common germline SNP
+^KDM6A	T778K	1	Common germline SNP
+^BRD4	P759P	1	Artifact in high GC region
+^ERCC5	G1080R	1	Common germline SNP
+^PRSS1	A16V	1	Artifact in low complexity region
+^PRSS1	N54S	1	Artifact in low complexity region
+^PCSK9	L22dup	1	Common in a stretch of 8 CTG repeats
+^PCSK9	L22del	1	Common in a stretch of 8 CTG repeats
+^RBMX	G356W	1	Artifact in low complexity
+^RBMX	G196E	1	Artifact in low complexity
+^RBMX	Y214*	1	Artifact in low complexity
+^NCOR1	R190*	1	Artifact from pseudogene resolved in hg38
+^NCOR1	E191K	1	Artifact from pseudogene resolved in hg38
+^NCOR1	K178N	1	Artifact from pseudogene resolved in hg38
+^NCOR1	G5V	1	Artifact from pseudogene resolved in hg38
+^NCOR1	Y20S	1	Artifact from pseudogene resolved in hg38

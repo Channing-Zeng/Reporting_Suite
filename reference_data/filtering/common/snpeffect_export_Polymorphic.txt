@@ -31781,7 +31781,7 @@ VAR_038352	TADA1_HUMAN	R198Q	-	Polymorphism	rs2272792	-1.36	0.066	13.08	N.A.	117
 VAR_045656	TADBP_HUMAN	A90V	-	Polymorphism	-	1.51	0.006	0	N.A.	23435	TARDBP
 VAR_013706	TAF10_HUMAN	I92T	-	Polymorphism	rs3176311	0.951	0.0007	33.16	N.A.	6881	TAF10
 VAR_052261	TAF11_HUMAN	S155F	-	Polymorphism	rs11537996	661.30799999999999	-7.3769	0.74	5.01893	6882	TAF11
-VAR_016333	TAF11_HUMAN	T68R	-	Polymorphism	rs15922	0.97	0.0329	0.36	N.A.	6882	111
+VAR_016333	TAF11_HUMAN	T68R	-	Polymorphism	rs15922	0.97	0.0329	0.36	N.A.	6882	TAF11
 VAR_052253	TAF1A_HUMAN	I98M	-	Polymorphism	rs17163271	-100.63	2.57	0	N.A.	9015	TAF1A
 VAR_029381	TAF1B_HUMAN	E462D	-	Polymorphism	rs1820965	0.22	0.02	0	N.A.	9014	TAF1B
 VAR_029380	TAF1B_HUMAN	T351A	-	Polymorphism	rs1054565	0	0.633	0	N.A.	9014	TAF1B
@@ -36921,3 +36921,21 @@ BRCA2	HUMAN	Y2222C		Polymorphism							BRCA2
 BRCA2	HUMAN	Y3092C		Polymorphism							BRCA2
 BRCA2	HUMAN	Y3098H		Polymorphism							BRCA2
 BRCA2	HUMAN	Y42C		Polymorphism							BRCA2
+BRCA2	HUMAN	K2411T		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	S2414L		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	A2466V		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	P2589H		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	D2665G		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	M2676T		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	K2729N		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	R2787H		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	E2856A		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	V2908G		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	A2951T		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	D2965H		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	R2973C		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	T3013I		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	S3020C		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	P3063S		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	Y3092C		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
+BRCA2	HUMAN	Y3098H		Polymorphism							BRCA2	http://europepmc.org/articles/PMC3537884
