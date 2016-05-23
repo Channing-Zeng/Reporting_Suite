@@ -51,24 +51,24 @@ genomes:
 
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
-    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            ~/Dropbox/az/reference_data/filtering/filter_common_snp.txt
-    filter_common_artifacts:      ~/Dropbox/az/reference_data/filtering/filter_common_artifacts.txt
-    actionable:                   ~/Dropbox/az/reference_data/filtering/actionable.txt
-    compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering/Compendia.MS7.Hotspot.txt
-    splice:                       ~/Dropbox/az/reference_data/filtering/SPLICE.txt
+    filter_common_snp:            reference_data/filtering/hg19/filter_common_snp.txt
+    filter_common_artifacts:      reference_data/filtering/hg19/filter_common_artifacts.txt
+    actionable:                   reference_data/filtering/hg19/actionable.txt
+    compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
+    splice:                       reference_data/filtering/hg19/SPLICE.txt
 
   hg19:
     seq: ~/Dropbox/az/reference_data/hg19.fa
 
     snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
-    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            ~/Dropbox/az/reference_data/filtering/filter_common_snp.txt
-    filter_common_artifacts:      ~/Dropbox/az/reference_data/filtering/filter_common_artifacts.txt
-    actionable:                   ~/Dropbox/az/reference_data/filtering/actionable.txt
-    compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering/Compendia.MS7.Hotspot.txt
-    splice:                       ~/Dropbox/az/reference_data/filtering/SPLICE.txt
+    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/dbSNP_multi_mafs_latest.txt
+
+    filter_common_snp:            reference_data/filtering/hg19/filter_common_snp.txt
+    filter_common_artifacts:      reference_data/filtering/hg19/filter_common_artifacts.txt
+    actionable:                   reference_data/filtering/hg19/actionable.txt
+    compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
+    splice:                       reference_data/filtering/hg19/SPLICE.txt
 
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
@@ -92,22 +92,13 @@ genomes:
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
 #    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering.hg38/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            ~/Dropbox/az/reference_data/filtering.hg38/filter_common_snp.txt
-    filter_common_artifacts:      ~/Dropbox/az/reference_data/filtering.hg38/filter_common_artifacts.txt
-    actionable:                   ~/Dropbox/az/reference_data/filtering.hg38/actionable.txt
-    compendia_ms7_hotspot:        ~/Dropbox/az/reference_data/filtering.hg38/Compendia.MS7.Hotspot.txt
-    splice:                       ~/Dropbox/az/reference_data/filtering.hg38/SPLICE.txt
-    all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
+    filter_common_snp:            reference_data/filtering/hg38/filter_common_snp.txt
+    filter_common_artifacts:      reference_data/filtering/hg38/filter_common_artifacts.txt
+    actionable:                   reference_data/filtering/hg38/actionable.txt
+    compendia_ms7_hotspot:        reference_data/filtering/hg38/Compendia.MS7.Hotspot.txt
+    splice:                       reference_data/filtering/hg38/reference_data/filtering/SPLICE.txt
 
-snpeffect_export_polymorphic: ~/Dropbox/az/reference_data/common/snpeffect_export_Polymorphic.txt
-actionable_hotspot:           ~/Dropbox/az/reference_data/common/actionable_hotspot.txt
-ruledir:                      ~/Dropbox/az/reference_data/common/rules/
-key_genes:                    ~/Dropbox/az/reference_data/common/az_key_genes.txt
-suppressors:                  ~/Dropbox/az/reference_data/common/suppressors.txt
-oncogenes:                    ~/Dropbox/az/reference_data/common/oncogenes.txt
-specific_mutations:           ~/Dropbox/az/reference_data/common/specific_mutations.tsv
-last_critical_aa:             ~/Dropbox/az/reference_data/common/last_critical_aa.txt
-crapomedir:                   ~/Dropbox/az/reference_data/common/crapome/
+    all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 
 queue: ngs.q
 
