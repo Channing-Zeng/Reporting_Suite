@@ -40,13 +40,14 @@ def run_combine_clinical_reports(cnf, bcbio_structures):
     info('Running clinical reporting comparison')
 
     infos_by_key = dict()
-    for bs in bcbio_structures:
+    for i, bs in enumerate(bcbio_structures):
         for sample in bs.samples:
-            info('Preparing ' + sample.name + '...')
-            info('-' * 70)
-            clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
-            infos_by_key[sample.name] = clin_info
-            info('')
+            if not cnf.sample_names or (cnf.sample_names and sample.name == cnf.sample_names[i]):
+                info('Preparing ' + sample.name + '...')
+                info('-' * 70)
+                clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
+                infos_by_key[sample.name] = clin_info
+                info('')
 
     info('*' * 70)
     run_sample_combine_clinreport(cnf, infos_by_key, cnf.output_dir)

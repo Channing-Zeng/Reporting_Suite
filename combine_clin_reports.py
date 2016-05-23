@@ -28,11 +28,14 @@ def main():
     parser.add_option('--jira', dest='jira', help='JIRA case path')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
+    parser.add_option('--sample-names', dest='sample_names', help='Names of analyzed samples.')
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
     is_wgs = cnf.is_wgs = cnf.is_wgs or is_wgs_in_bcbio
+    if cnf.sample_names:
+        cnf.sample_names = cnf.sample_names.split(',')
 
     if len(bcbio_project_dirpaths) < 2:
         critical('Usage: ' + __file__ + ' project_bcbio_path [project_bcbio_path] [-o output_dir]')
