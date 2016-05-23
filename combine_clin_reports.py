@@ -24,6 +24,7 @@ def main():
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
 
+    parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
     parser.add_option('--jira', dest='jira', help='JIRA case path')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')

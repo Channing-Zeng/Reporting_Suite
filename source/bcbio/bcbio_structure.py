@@ -120,11 +120,11 @@ def process_post_bcbio_args(parser):
 
         _is_wgs = any('variant_regions' not in d['algorithm'] for d in bcbio_cnf['details'])
         if is_wgs is not None and is_wgs != _is_wgs:
-            critical('Projects are incompatible: WGS and non-WGA projects are mixed')
+            warn('WGS and non-WGA projects are mixed')
         is_wgs = _is_wgs
         if is_wgs:
             if not all('variant_regions' not in d['algorithm'] for d in bcbio_cnf['details']):
-                critical('Some of the samples are WGS (no variant_regions specified), but not all')
+                warn('Some of the samples are WGS (no variant_regions specified), but not all')
 
         bcbio_analysis_type = None
         bcbio_analysis_types = set([d.get('analysis') for d in bcbio_cnf['details']])
