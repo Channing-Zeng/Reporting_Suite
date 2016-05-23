@@ -7,6 +7,7 @@ Filtering
 - Germline default AF is 15%
 - Actionable freq default 1%
 - MSI check constant changed
+- If low ClinVar significance, filter even if COSMIC
 - Changed default filtering parameters:
   - Exome
   - DeepSeq

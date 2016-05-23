@@ -89,13 +89,14 @@ def load_region_blacklists(cnf):
 
 
 class Rule:
-    def __init__(self, gene, chrom=None, start=None, end=None, length=None,
+    def __init__(self, gene, chrom=None, start=None, end=None, length=None, ref=None,
                  required_inframe=None, indel_type=None, change=None, action=None):
         self.gene = gene
         self.chrom = chrom
         self.start = start
         self.end = end
         self.length = length
+        self.ref = ref
         self.required_inframe = required_inframe
         self.indel_type = indel_type
         self.change = change
@@ -220,24 +221,33 @@ class Filtration:
         self.filter_rules_by_gene = defaultdict(list)
         for l in iter_lines(cnf.genome.filter_common_artifacts):
             fields = l.split('\t')
-            gene = fields[0]
+            gene, chrom, start, ref = fields[:4]
             if fields[5] == 'rule':
-                rule = Rule(gene, chrom=fields[1], start=fields[2], end=fields[3], action=fields[4])
+                action = fields[4]
+                rule = Rule(gene, chrom=chrom, start=start, ref=ref, action=action)
                 self.filter_rules_by_gene[gene].append(rule)
             else:
-                self.filter_artifacts.add('-'.join(fields[1:5]))
+                alt = fields[4]
+                self.filter_artifacts.add('-'.join([gene, chrom, start, ref, alt]))
 
         self.actionable_hotspot_by_gene = defaultdict(dict)
         self.common_snps_by_gene = defaultdict(set)
-        for l in iter_lines(cnf.actionable_hotspot):
-            fields = l.split('\t')
-            gene = fields[0]
-            prot_change = fields[1]
-            if gene.startswith('^'):
-                self.common_snps_by_gene[gene].add(prot_change)
-            else:
-                is_somatic = fields[2] == 'somatic'
-                self.actionable_hotspot_by_gene[gene][prot_change] = 'somatic' if is_somatic else 'germline'
+        with open(cnf.actionable_hotspot) as f:
+            for l in f:
+                l = l.replace('\n', '')
+                if not l or l.startswith('##'):
+                    continue
+                fields = l.split('\t')
+                gene = fields[0]
+                prot_change = fields[1]
+                if gene.startswith('#'):  # VUS, No special treatment for now
+                    gene = gene[1:]
+                elif gene.startswith('^'):
+                    gene = gene[1:]
+                    self.common_snps_by_gene[gene].add(prot_change)
+                else:
+                    is_somatic = fields[2] == 'somatic'
+                    self.actionable_hotspot_by_gene[gene][prot_change] = 'somatic' if is_somatic else 'germline'
 
         self.act_somatic = dict()
         self.act_germline = set()
@@ -701,7 +711,7 @@ class Filtration:
                 fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
                 float(fields[depth_col])
 
-            if pos == 1734812:
+            if pos == 210591913:
                 pass
 
             # gene_aachg = '-'.join([gene, aa_chg])
@@ -764,12 +774,13 @@ class Filtration:
                 if gmaf and all(not g or float(g) == 0 or float(g) > self.min_gmaf for g in gmaf.split(',')):
                     self.apply_reject_counter('not act and all GMAF > ' + str(self.min_gmaf) + ' or zero', is_canonical, no_transcript)
                     continue
-                # my $clncheck = checkCLNSIG($a[$hdrs{CLNSIG}]);
-                # next if ( $clncheck eq "dbSNP" );
-                # next if ( $snpeff_snp{ "$a[$hdrs{Gene}]-$a[$hdrs{Amino_Acid_Change}]" } && $clncheck ne "ClnSNP_known" );
-                # if '-'.join([gene, aa_chg]) in self.snpeff_snp:
-                #     self.apply_reject_counter('not act and in snpeff_snp', is_canonical, no_transcript)
-                #     continue
+                clncheck = check_clnsig(fields[clnsig_col])
+                if clncheck == 'dbSNP':  # Even if it's COSMIC in status, it's going to be filtered in case of low ClinVar significance
+                    self.apply_reject_counter('clnsig', is_canonical, no_transcript)
+                    continue
+                if '-'.join([gene, aa_chg]) in self.snpeff_snp and clncheck != 'ClnSNP_known':
+                    self.apply_reject_counter('not act and not ClnSNP_known and in snpeff_snp', is_canonical, no_transcript)
+                    continue
 
             if depth < self.filt_depth:
                 self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
@@ -1065,3 +1076,36 @@ def parse_genes_list(fpath):
     return genes
 
 
+def check_clnsig(clnsig):
+    if not clnsig:
+        return None
+    flag255 = 0
+    flagno = 0
+    flagyes = 0
+    flags = 0
+    for cl in re.split('\||,', clnsig):
+        cl = int(cl)
+        if 3 < cl < 7:
+            flagyes += 1
+        if 2 <= cl <= 3:
+            flagno += 1
+        if cl == 255 or cl < 1:
+            flag255 += 1
+        if cl == 1:
+            flags += 1
+
+    if flagyes:
+        if flagyes > 1:
+            return 'ClnSNP_known'
+        if flagyes > 0 and flagno == 0:
+            return 'ClnSNP_known'
+        if flagyes >= flagno and flagno <= 1 and flagyes / flags >= 0.5:
+            return 'ClnSNP_known'
+        else:
+            return 'ClnSNP_unknown'
+
+    if flagno > 1 and flagno >= flag255:
+        return 'dbSNP'
+    if flag255 > 0:
+        return 'ClnSNP_unknown'  # Keep unknown significant variants
+    return 'dbSNP'
