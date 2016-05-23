@@ -8,40 +8,20 @@ steps:
 
 
 variant_filtering:
-  # If a variant is present in > [max_ratio] fraction AND > [max_sample_cnt] number of samples, AND not known,
-  # it will be to be considered too common to be functional and filtered out.
+  # If a variant is present in > [max_ratio] fraction AND > [max_sample_cnt] number of samples,
+  # AND not actionable, it will be to be considered too common to be functional and filtered out.
   # Don't use it if the cohort is homogeneous! Use only for heterogeneous cohorts.
-#  max_ratio:      1.0
-#  max_sample_cnt: 5
+  max_ratio:      0.4
+  max_sample_cnt: 5
 
   ###################
   ### vardict2mut ###
-#  min_freq_vardict2mut:  0.05 # -f
-#                              # When individual allele frequency (AF) is less than [min_freq], the variant is considered
-#                              # likely false poitive, unless it is actionable.
-#  min_hotspot_freq:   default # -F
-#                              # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
-#                              # Default: 0.01 or half [min_freq], whichever is less.
-#
-#  min_gmaf:            0.0025 # --gmaf
-#                              # When the GMAF is greater than specified, it's considered common SNP and filtered out.
-
+  min_freq:       0.075  # -f
+                         # When individual allele frequency (AF) is less than [min_freq], the variant is considered
+                         # likely false poitive, unless it is actionable.
+  act_min_freq:   0.01   # -F
+                         # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
+                         # Default: 0.01 or half [min_freq], whichever is less.
   ###################
   ##### vcf2txt #####
-#  min_freq:     0.05    # -f
-#                        # When individual allele frequency (AF) is less than [min_freq], the variant is considered
-#                        # likely false poitive.
-#
-#  min_p_mean:   5       # PMEAN.  -p   The minimum mean position in reads for variants.
-#  min_q_mean:   25      # QUAL.   -q   The minimum mean base quality phred score for variant.
-#
-  filt_depth:   5       # DP.     -D   The filtering total depth. The raw variant will be filtered on first place if the total depth is less then [filt_depth].
-#  filt_q_mean:  0       # QUAL.   -Q   The filtering mean position in reads for variants. The raw variant will be filtered on first place if the mean posititon is less then [filt_p_mean].
-#  filt_p_mean:  0       # PMEAN.  -P   The filtering mean base quality phred score for variants. The raw variant will be filtered on first place if the mean quality is less then [filt_q_mean].
-#
-#  min_mq:       10      # MQ.     -M   The filtering mean mapping quality score for variants. The raw variant will be filtered if the mean mapping quality score is less then specified.
-  min_vd:       3       # VD.     -V   The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.
-#
-#  signal_noise: 1.5     # SN.     -o   Signal/noise value.
-#
-#  bias:         False   #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
+  min_vd:         4      # VD.     -V   The filtering variant depth. Variants with depth < [min_vd] will be considered false positive.

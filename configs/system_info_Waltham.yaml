@@ -51,9 +51,7 @@ resources:
   bwa:
     path: /opt/az/local/bwa/0.7.12/bwa-0.7.12/bwa
   seqtk:
-    path: /group/ngs/src/bcbio-nextgen/0.9.5/rhel6-x64/bin/seqtk
-  bamtools:
-    path: /opt/az/local/bamtools/bamtools-master/bin/bamtools
+    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/seqtk
   bammarkduplicates:
     path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/bammarkduplicates
   bamdownsamplerandom:
@@ -86,11 +84,6 @@ genomes:
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_snp.txt
-    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/filter_common_artifacts.txt
-    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/actionable.txt
-    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
-    splice:                       /ngs/reference_data/genomes/Hsapiens/hg38/variation/cancer_informatics/SPLICE.txt
 
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
 
@@ -116,11 +109,6 @@ genomes:
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_snp.txt
-    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/filter_common_artifacts.txt
-    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/actionable.txt
-    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
-    splice:                       /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/cancer_informatics/SPLICE.txt
 
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
 
@@ -156,11 +144,6 @@ genomes:
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
-    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
-    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
-    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
-    splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
@@ -194,11 +177,6 @@ genomes:
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exome-AZ.bed
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/cancer_informatics/filter_common_snp.txt
-    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/cancer_informatics/filter_common_artifacts.txt
-    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/cancer_informatics/actionable.txt
-    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
-    splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
@@ -232,11 +210,6 @@ genomes:
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_snp.txt
-    filter_common_artifacts:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/filter_common_artifacts.txt
-    actionable:                   /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
-    compendia_ms7_hotspot:        /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/Compendia.MS7.Hotspot.txt
-    splice:                       /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/SPLICE.txt
 
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
@@ -246,24 +219,6 @@ genomes:
       genomicSuperDups: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/genomicSuperDups.bed   ## Segmental Duplications
       rptmk: /ngs/reference_data/genomes/Hsapiens/hg19/tracks/rptmk.bed              ## Repeats
       RNA_editing_AG: /ngs/reference_data/genomes/Hsapiens/hg19/variation/RNA_editing_AG.bed ## RNA Editing (RNA-Seq data)
-
-  GRCh37:
-    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
-    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
-
-    features:                 /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.canon.bed
-    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.bed
-    cds:                      /ngs/reference_data/genomes/Hsapiens/GRCh37/bed/Exons/RefSeq/RefSeq_CDS.bed
-
-
-snpeffect_export_polymorphic: /ngs/reference_data/genomes/Hsapiens/common/snpeffect_export_Polymorphic.txt
-actionable_hotspot:           /ngs/reference_data/genomes/Hsapiens/common/actionable_hotspot.txt
-ruledir:                      /ngs/reference_data/genomes/Hsapiens/common/rules/
-specific_mutations:           /ngs/reference_data/genomes/Hsapiens/common/specific_mutations.csv
-key_genes:                    /ngs/reference_data/genomes/Hsapiens/common/az_key_genes.txt
-suppressors:                  /ngs/reference_data/genomes/Hsapiens/common/suppressors.txt
-oncogenes:                    /ngs/reference_data/genomes/Hsapiens/common/oncogenes.txt
-last_critical_aa:             /ngs/reference_data/genomes/Hsapiens/common/last_critical_aa.txt
 
 queue: batch.q
 

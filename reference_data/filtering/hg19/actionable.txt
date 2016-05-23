@@ -1,0 +1,70 @@
+Gene 	Chr	Start	Ref	Alt	SNV	genotype	germline	Protein_Change	dbSNP	COSMIC	Note
+BRCA1	chr17	41197859	A	T	SNV	genotype	germline	 	rs80358151	 	Intronic. Source: BIC.
+BRCA1	chr17	41215888	T	G	SNV	genotype	germline	 	rs80358124	 	Intronic. Source: BIC.
+BRCA1	chr17	41222939	A	G	SNV	genotype	germline	 	rs80358086	 	Intronic. Source: BIC.
+BRCA1	chr17	41222939	A	C	SNV	genotype	germline	 	rs80358086	 	Intronic. Source: BIC.
+BRCA1	chr17	41222941	T	G	SNV	genotype	germline	 	rs80358087	 	Intronic. Source: BIC.
+BRCA1	chr17	41222941	T	A	SNV	genotype	germline	 	rs80358087	 	Intronic. Source: BIC.
+BRCA1	chr17	41222942	C	G	SNV	genotype	germline	 	rs80358023	 	Intronic. Source: BIC.
+BRCA1	chr17	41226345	T	A	SNV	genotype	germline	 	rs80358082	 	Intronic. Source: BIC.
+BRCA1	chr17	41256281	G	C	SNV	genotype	germline	 	rs80358051	 	Intronic. Source: BIC.
+BRCA1	chr17	41256976	G	C	SNV	genotype	germline	 	rs80358119	 	Intronic. Source: BIC.
+BRCA1	chr17	41256984	A	C	SNV	genotype	germline	 	rs80358061	 	Intronic. Source: BIC.
+BRCA1	chr17	41256985	T	C	SNV	genotype	germline	 	rs80358163	 	Intronic. Source: BIC.
+BRCA1	chr17	41258470	T	C	SNV	genotype	germline	 	rs80358083	 	Intronic. Source: BIC.
+BRCA1	chr17	41209069	C	T	SNV	genotype	germline	K1759K	rs80356854	 	Silent. Source: BIC. Exon edge splicing
+BRCA1	chr17	41242961	C	T	SNV	genotype	germline	Q1395Q	rs80356857	 	Silent. Source: BIC. Exon edge splicing
+BRCA1	chr17	41199660	C	T	SNV	genotype	germline	A1823T	rs80357212	 	Missense. Source: BIC.
+BRCA1	chr17	41201181	C	A	SNV	genotype	germline	G1788V	rs80357069	 	Missense. Source: BIC.
+BRCA1	chr17	41201181	C	T	SNV	genotype	germline	G1788D	rs80357069	 	Missense. Source: BIC.
+BRCA1	chr17	41215920	G	T	SNV	genotype	germline	A1708E	rs28897696	 	Missense. Source: BIC.
+BRCA1	chr17	41215948	G	A	SNV	genotype	germline	R1699W	rs55770810	 	Missense. Source: BIC.
+BRCA1	chr17	41219625	C	T	SNV	genotype	germline	D1692N	rs80187739	 	Missense. Source: BIC.
+BRCA1	chr17	41219625	C	A	SNV	genotype	germline	D1692Y	rs80187739	 	Missense. Source: BIC.
+BRCA1	chr17	41219625	C	G	SNV	genotype	germline	D1692H	rs80187739	 	Missense. Source: BIC.
+BRCA1	chr17	41226348	C	T	SNV	genotype	germline	E1559K	rs80356988	 	Missense. Source: BIC.
+BRCA1	chr17	41226348	C	G	SNV	genotype	germline	E1559Q	rs80356988	 	Missense. Source: BIC.
+BRCA1	chr17	41228505	C	A	SNV	genotype	germline	R1495M	rs80357389	 	Missense. Source: BIC.
+BRCA1	chr17	41228505	C	T	SNV	genotype	germline	R1495K	rs80357389	 	Missense. Source: BIC.
+BRCA1	chr17	41258473	C	T	SNV	genotype	germline	R71K	rs80356913	 	Missense. Source: BIC.
+BRCA1	chr17	41258474	T	C	SNV	genotype	germline	R71G	rs80357382	 	Missense. Source: BIC.
+BRCA1	chr17	41258494	C	T	SNV	genotype	germline	C64Y	rs55851803	 	Missense. Source: BIC.
+BRCA1	chr17	41258504	A	C	SNV	genotype	germline	C61G	rs28897672	 	Missense. Source: BIC.
+BRCA1	chr17	41276111	C	A	SNV	genotype	germline	M1I	rs80357475	 	Missense. Source: BIC.
+BRCA1	chr17	41276112	A	G	SNV	genotype	germline	M1T	rs80357111	 	Missense. Source: BIC.
+BRCA1	chr17	41276112	A	C	SNV	genotype	germline	M1R	rs80357111	 	Missense. Source: BIC.
+BRCA1	chr17	41276113	T	C	SNV	genotype	germline	M1V	rs80357287	 	Missense. Source: BIC.
+BRCA2	chr13	32953884	C	G	SNV	genotype	germline	 	rs81002844	 	Intronic. Source: BIC.
+BRCA2	chr13	32953884	C	T	SNV	genotype	germline	 	rs81002844	 	Intronic. Source: BIC.
+BRCA2	chr13	32890599	T	G	SNV	genotype	germline	M1R	rs80358547	 	Missense. Source: BIC.
+BRCA2	chr13	32890600	G	T	SNV	genotype	germline	M1I	rs80358650	 	Missense. Source: BIC.
+BRCA2	chr13	32890600	G	A	SNV	genotype	germline	M1I	rs80358650	 	Missense. Source: BIC.
+BRCA2	chr13	32900287	G	A	SNV	genotype	germline	V159M	rs80358702	 	Missense. Source: BIC.
+BRCA2	chr13	32900750	G	A	SNV	genotype	germline	V211I	rs80358871	 	Missense. Source: BIC.
+BRCA2	chr13	32900750	G	C	SNV	genotype	germline	V211L	rs80358871	 	Missense. Source: BIC.
+BRCA2	chr13	32921033	G	A	SNV	genotype	germline	R2336H	rs28897743	 	Missense. Source: BIC.
+BRCA2	chr13	32921033	G	C	SNV	genotype	germline	R2336P	rs28897743	 	Missense. Source: BIC.
+BRCA2	chr13	32921033	G	T	SNV	genotype	germline	R2336L	rs28897743	 	Missense. Source: BIC.
+BRCA2	chr13	32937348	C	T	SNV	genotype	germline	S2670L	rs80359035	 	Missense. Source: BIC.
+BRCA2	chr13	32950928	G	A	SNV	genotype	germline	E2918E	rs80359803	 	Silent. Source: BIC. Exon edge splicing
+BRCA2	chr13	32954050	G	A	SNV	genotype	germline	P3039P	rs28897756	 	Silent. Source: BIC. Exon edge splicing
+BRCA2	chr13	32969070	G	A	SNV	genotype	germline	E3167E	rs80359808	 	Silent. Source: BIC. Exon edge splicing
+EZH2	chr7	148508727	T	A	SNV	genotype	somatic	Y646F	rs267601394	COSM220731	255 in ClnSNP
+EZH2	chr7	148508727	T	C	SNV	genotype	somatic	Y646C	 	COSM37032	Not in ClnSNP
+EZH2	chr7	148508728	A	T	SNV	genotype	somatic	Y646N	 	COSM37031	Not in ClnSNP
+MYD88	chr3	38182032	C	G	SNV	genotype	somatic	S219C	 	COSM85944	Missed by Compendia's Hotspot
+MYD88	chr3	38182641	T	C	SNV	genotype	somatic	L265P	rs387907272	COSM85940	255 in ClnSNP
+KRAS	chr12	25398281	C	*	SNV	rule	somatic	G13			KRAS G13 mutations
+KRAS	chr12	25398282	C	*	SNV	rule	somatic	G13			KRAS G13 mutations
+KRAS	chr12	25398284	C	*	SNV	rule	somatic	G12			KRAS G12 mutations
+KRAS	chr12	25398285	C	*	SNV	rule	somatic	G12			KRAS G12 mutations
+KRAS	chr12	25380271	C	T	SNV	genotype	somatic	E63K			KRAS E63K mutations
+KRAS	chr12	25380275	T	G	SNV	genotype	somatic	Q61H			KRAS Q61H mutations
+KRAS	chr12	25380275	T	A	SNV	genotype	somatic	Q61H			KRAS Q61H mutations
+KRAS	chr12	25380276	T	*	SNV	rule	somatic	Q61			KRAS Q61 mutations
+KRAS	chr12	25380277	G	C	SNV	genotype	somatic	Q61E			KRAS Q61E mutations
+KRAS	chr12	25380277	G	T	SNV	genotype	somatic	Q61K			KRAS Q61K mutations
+EGFR	chr7	55242454	55242510	3	inframe-del	rule	somatic	Exon19-del			EGFR Exon19 deletion
+EGFR	chr7	55242436	55242510	6	inframe-ins	rule	somatic	Exon19-ins			EGFR Exon19 insertion
+EGFR	chr7	55248989	55249063	3	inframe-ins	rule	somatic	Exon20-ins			EGFR Exon20 insertion
+ERBB2	chr17	37880978	37881029	3	inframe-ins	rule	somatic	Exon20-ins			ERBB2 Exon20 insertion

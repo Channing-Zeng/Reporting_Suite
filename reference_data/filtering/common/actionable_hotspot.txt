@@ -1,0 +1,167 @@
+AKT1	E17K	somatic
+AKT2	E17K	somatic
+AKT3	E17K	somatic
+JAK1	S703I	somatic
+JAK1	S729C	somatic
+JAK2	V617F	somatic
+JAK2	D319N	somatic
+FLT3	D835	somatic
+BRAF	V600E	somatic
+KRAS	G12	somatic
+KRAS	G13	somatic
+KRAS	Q61	somatic
+KRAS	Q63K	somatic
+KRAS	K117N	somatic
+KRAS	A146P	somatic
+KRAS	A146T	somatic
+KRAS	A146V	somatic
+NRAS	G12	somatic
+NRAS	G13	somatic
+NRAS	Q61	somatic
+NRAS	Q63K	somatic
+HRAS	G12	somatic
+HRAS	G13	somatic
+HRAS	Q61	somatic
+HRAS	Q63K	somatic
+EGFR	A289	somatic
+EGFR	G598V	somatic
+EGFR	S492R	somatic
+EGFR	G719	somatic
+EGFR	L858R	somatic
+EGFR	L861Q	somatic
+EGFR	T790M	somatic
+EGFR	C797S	somatic
+PIK3CA	E542K	somatic
+PIK3CA	E545	somatic
+PIK3CA	Q546	somatic
+PIK3CA	H1047R	somatic
+PIK3CA	H1047L	somatic
+ERBB2	S310F	somatic
+ERBB2	L755	somatic
+ERBB2	R678Q	somatic
+ERBB2	V842I	somatic
+PTEN	R130Q	somatic
+PTEN	R130G	somatic
+PTEN	R130L	somatic
+ATM	R337C	somatic
+ATM	R337H	somatic
+ATM	G2695S	somatic
+ATM	S2592C	somatic
+ATM	SRI2546del	germline
+ATM	V2716A	germline
+ATM	R2849P	germline
+ATM	G2867R	germline
+ATM	D2016G	germline
+ATM	Y2470D	germline
+ATM	R3008C	germline
+ATM	V2662del	germline
+ATM	R250Q	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	G2023R	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	T2396S	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	N2435K	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	R2854C	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+ATM	R3008H	germline	http://www.researchgate.net/publication/24379508_ATM_germline_mutations_in_women_with_familial_breast_cancer_and_a_relative_with_haematological_malignancy
+FGFR2	S252W	somatic
+FGFR2	N549H	somatic
+FGFR2	N549K	somatic
+FGFR3	S249C	somatic
+FGFR3	R248C	somatic
+FGFR3	G370C	somatic
+FGFR3	Y373C	somatic
+FGFR3	S371C	somatic
+FGFR3	G380R	somatic
+IDH1	R132	somatic
+IDH2	R140	somatic
+IDH2	R172	somatic
+FGFR2	C382R	somatic
+FGFR3	S249C	somatic	http://www.nature.com/onc/journal/v19/n48/full/1203934a.html
+ESR1	Y537	somatic
+ESR1	D538G	somatic
+GNA11	Q209P	somatic
+GNA11	Q209L	somatic
+BRCA2	E2663K	5
+BRCA1	M18T	4
+BRCA1	L22S	5
+BRCA1	T37K	5
+BRCA1	C39R	5
+BRCA1	C44S	5
+BRCA1	C44Y	5
+BRCA1	C61G	5
+BRCA1	R1495M	5
+BRCA1	T1685A	5
+BRCA1	T1685I	5
+BRCA1	V1688del	5
+BRCA1	M1689R	4
+BRCA1	R1699Q	5
+BRCA1	R1699W	5
+BRCA1	G1706E	5
+BRCA1	A1708E	5
+BRCA1	S1715R	5
+BRCA1	G1738R	5
+BRCA1	L1764P	5
+BRCA1	I1766S	5
+BRCA1	M1775K	5
+BRCA1	M1775R	5
+BRCA1	C1787S	5
+BRCA1	G1788V	5
+BRCA1	V1838E	5
+BRCA2	W2626C	5
+BRCA2	I2627F	5
+BRCA2	L2647P	4
+BRCA2	L2653P	5
+BRCA2	R2659K	5
+BRCA2	E2663V	5
+BRCA2	T2722R	5
+BRCA2	D2723H	5
+BRCA2	D2723G	5
+BRCA2	G2748D	5
+BRCA2	R3052W	5
+BRCA2	D3095E	4
+BRCA1	T1685I	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1685A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	M1689R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1691K	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1691I	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1708V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1708E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1714G	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1715R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1715N	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1718C	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1718S	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1722F	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1736G	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1738E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1738R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739Y	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	D1739G	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	P1749R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	R1751P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1752P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	R1753T	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	F1761S	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1763V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	L1764P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	I1766S	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	L1780P	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1788V	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1837R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1837C	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1838E	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1841N	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1841R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	Y1853C	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	T1700A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1713A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	M1775R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	M1775K	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1656D	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	S1655F	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	R1699L	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	V1696L	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	G1706E	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	H1746N	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	W1837G	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
+BRCA1	A1843P	4	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion

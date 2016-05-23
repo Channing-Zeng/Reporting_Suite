@@ -1,0 +1,23 @@
+Gene 	Chr	Start	Ref	Alt	Protein_Change	dbSNP	COSMIC	Note
+BRCA2	chr13	32954022	C	CA	-3030fs	rs67201695	 	8 poly-A
+BRCA2	chr13	32954022	CA	C	-3030fs	 	 	8 poly-A
+CHEK2	chr22	29091840	TG	CA	SK415SE	 	 	Repetitive region
+FANCD2	chr3	10108913	G	T	Q802H	rs80258959	COSM1130392	Common DNA sequencing artifact in exome, but not RNA-seq
+FANCD2	chr3	10088408	GTAAG	T	splice	 	 	Repetitive region
+PARP4	chr13	25021323	A	G	I1039T	rs73172125	COSM147647	Common DNA sequencing artifact in exome, but not RNA-seq. Repeats?
+RAD50	chr5	131931451	TA	T	-719fs	 	COSM1433046	9 poly-A
+CRIPAK	chr4	1388504	CGTGT	TGC	R69fs		A misalignment of homolog sequence
+CRIPAK	chr4	1388319	GTGCCAATGTGGAGTGCCCGCCTGCTCACACGTGCCCATGTGGAGTGCCCGCCTGCTCATGTGCCCATGTGGAGTGCCCGCCTGCTCACACATGTCGATGCGGAGTGCCCGCCTGCTCACACA	G	N9fs		A misalignment of homolog sequence
+CRIPAK	chr4	1388504	CGTGT	TGC	R69fs		A misalignment of homolog sequence
+MSH6	chr2	48030639	A	AC	rs267608087	COSM308681	8 poly-C
+PIK3C2B	chr1	204438071	C	CG		COSM1338089	7 poly-G
+PIK3CB	chr3	138413709	C	CG		COSM1484672	7 poly-G flanked by Cs
+FANCE	chr6	35425714	G	GC		COSM1444011	7 poly-C flanked by Cs
+TGFBR2	chr3	30691871	GA	G	K153fs	 rs79375991	COSM1180952	10 poly-A
+EP300	chr22	41574678	G	GC	H2324fs	 		7 poly-C
+JAK1	chr1	65325832	C	CG	L431fs	 		7 poly-G
+FANCD2	chr3	10088404	CTTAGTAAG	TTTAT		Misalignment of homolog sequence
+PRKDC	chr8	48866909	A	AT		10 poly-T
+PRKDC	chr8	48866909	AT	A		10 poly-T
+GNAQ	chr9	80537112	T	A		Misalignment of homolog sequence
+CHEK2	chr22	29083962	G	C	rs200432447	COSM478842	No clear explanation, maybe in the neighborhood of high GC region
