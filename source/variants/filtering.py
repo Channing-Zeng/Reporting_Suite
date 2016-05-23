@@ -361,9 +361,7 @@ def write_vcfs(cnf, var_samples, output_dirpath,
 
 def make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample):
     c = cnf.variant_filtering
-    min_freq = c.min_freq
-    if min_freq is None:
-        min_freq = defaults['default_min_freq']
+    min_freq = c.act_min_freq
 
     cmdline = \
         '-r 1.0 -R 1.0 -P {c.filt_p_mean} -Q {c.filt_q_mean} -D {c.filt_depth} -V {c.min_vd} ' \
@@ -578,21 +576,20 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                         total_records_count += 1
         info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
              'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
-        info('Duplicated variants: ' + str(total_duplicated_count) + ' out of total ' + str(total_records_count) + ' records')
+        info('Duplicated varks for this sample: ' + str(total_duplicated_count) + ' out of total '
+             + str(total_records_count) + ' records. Duplicated were not counted into cohort frequencies.')
         if cnf.variant_filtering.max_ratio < 1.0:
             info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio) +
                  ' to ' + pass_variants_fpath)
 
         freq_in_cohort_by_vark = dict()
         max_freq = 0
-        max_freq_vark = 0
         for vark, count in count_in_cohort_by_vark.items():
             f = float(count) / len(samples)
             freq_in_cohort_by_vark[vark] = f
             if f > max_freq:
                 max_freq = f
-                max_freq_vark = vark
-        info('Maximum frequency in cohort is ' + str(max_freq) + ' of ' + str(max_freq_vark))
+        info('Maximum frequency in cohort is ' + str(max_freq))
         info()
 
         known_variants_count = 0
@@ -629,11 +626,9 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                     freq = freq_in_cohort_by_vark[vark]
                                     cnt = count_in_cohort_by_vark[vark]
 
-                                    if fs[status_col] == 'known':
-                                        known_variants_count += 1
-                                    elif 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
+                                    if fs[status_col] == 'known' or 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
                                         act_variants_count += 1
-                                    elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
+                                    elif freq > cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
                                         skipped_variants_count += 1
                                         continue
                                     else:
@@ -649,10 +644,9 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                     written_lines_count += 1
 
         if cnf.variant_filtering.max_ratio < 1.0:
-            info('Skipped variants with cohort freq >= ' + str(cnf.variant_filtering.max_ratio) +
+            info('Skipped variants with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
                  ': ' + str(skipped_variants_count))
-        info('Actionable records: ' + str(act_variants_count))
-        info('Not actionable, but known records: ' + str(known_variants_count))
+        info('Actionable and known records: ' + str(act_variants_count))
         if cnf.variant_filtering.max_ratio < 1.0:
             info('Unknown and not actionable records with freq < ' +
                  str(cnf.variant_filtering.max_ratio) + ': ' + str(good_freq_variants_count))

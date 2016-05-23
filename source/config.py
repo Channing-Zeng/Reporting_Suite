@@ -40,8 +40,6 @@ defaults = dict(
     load_mongo = False,  # 'True' adds 'LoadMongo' to steps
     qsub_runner = 'runner_Waltham.sh',
 
-    default_min_freq = 0.05,
-
     threads = 1,
     bcbio_postproc_threads = 30
 )

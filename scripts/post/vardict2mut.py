@@ -38,9 +38,8 @@ def get_args():
     parser.add_option('-V', '--min-vd', dest='min_vd', type='int', help='The minimum reads supporting variant')
     parser.add_option('--gmaf', dest='min_gmaf', type='float',
                       help='When the GMAF is greater than specified, it\'s considered common SNP and filtered out.')
-    parser.add_option('-f', '--min-freq', dest='min_freq', type='float',
-                      help='The minimum allele frequency for regular variants. Default: 0.05')
-    parser.add_option('-F', '--min-freq-hs', dest='min_hotspot_freq', type='float',
+    parser.add_option('-f', '--min-freq', dest='min_freq', type='float', help='The minimum allele frequency for regular variants.')
+    parser.add_option('-F', '--min-freq-hs', '--act-min-freq', dest='act_min_freq', type='float',
                       help='The minimum allele frequency hotspot somatic mutations, typically lower then -f. '
                            'Default: 0.01 or half -f, whichever is less')
     parser.add_option('-N', '--keep-utr-intronic', dest='keep_utr_intronic', action='store_true',

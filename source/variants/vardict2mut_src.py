@@ -5,8 +5,9 @@ import re
 import tabix
 
 from source import verify_file
-from source.file_utils import adjust_path, verify_dir
+from source.file_utils import adjust_path, verify_dir, adjust_system_path
 from source.logger import info, critical, err, warn, debug
+from source.tools_from_cnf import get_system_path
 from source.utils import OrderedDefaultDict
 
 
@@ -39,7 +40,7 @@ def parse_gene_blacklists(cnf):
 
     d = OrderedDefaultDict(dict)
     for reason, fn in _d.items():
-        fpath = verify_file(join(cnf.crapomedir, fn), description=reason + ' blacklist genes file', is_critical=True)
+        fpath = verify_file(join(cnf.incidentalome_dir, fn), description=reason + ' blacklist genes file', is_critical=True)
         for l in iter_lines(fpath):
             fs = l.split('\t')
             gene_name = l.split('\t')[0]
@@ -87,6 +88,20 @@ def load_region_blacklists(cnf):
 #     return genome
 
 
+class Rule:
+    def __init__(self, gene, chrom=None, start=None, end=None, length=None,
+                 required_inframe=None, indel_type=None, change=None, action=None):
+        self.gene = gene
+        self.chrom = chrom
+        self.start = start
+        self.end = end
+        self.length = length
+        self.required_inframe = required_inframe
+        self.indel_type = indel_type
+        self.change = change
+        self.action = action
+
+
 class Filtration:
     statuses = ['', 'known', 'likely', 'unknown', 'incidentalome']  # Tier 1, 2, 3, 4
     sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
@@ -105,19 +120,20 @@ class Filtration:
         self.gene_blacklist_counter = OrderedDefaultDict(int)
         self.region_blacklist_counter = OrderedDefaultDict(int)
 
-        cnf.genome.compendia_ms7_hotspot    = verify_file(cnf.genome.compendia_ms7_hotspot, 'compendia_ms7_hotspot')
-        cnf.genome.actionable               = verify_file(cnf.genome.actionable, 'actionable')
-        cnf.genome.filter_common_snp        = verify_file(cnf.genome.filter_common_snp, 'filter_common_snp')
-        cnf.genome.filter_common_artifacts  = verify_file(cnf.genome.filter_common_artifacts, 'filter_common_artifacts')
-        cnf.genome.splice                   = verify_file(cnf.genome.splice, 'splice')
-        cnf.suppressors                     = verify_file(cnf.suppressors, 'suppressors')
-        cnf.oncogenes                       = verify_file(cnf.oncogenes, 'oncogenes')
-        cnf.ruledir                         = verify_dir(cnf.ruledir, 'ruledir')
-        cnf.snpeffect_export_polymorphic    = verify_file(cnf.snpeffect_export_polymorphic, 'snpeffect_export_polymorphic')
-        cnf.actionable_hotspot              = verify_file(cnf.actionable_hotspot, 'actionable_hotspot')
-        cnf.specific_mutations              = verify_file(cnf.specific_mutations, 'specific_mutations')
-        cnf.last_critical_aa                = verify_file(cnf.last_critical_aa, 'last_critical_aa')
-        cnf.crapomedir                      = verify_dir(join(dirname(abspath(__file__)), 'incidentalome'), 'incidentalome')
+        cnf.genome.compendia_ms7_hotspot    = verify_file(adjust_system_path(cnf.genome.compendia_ms7_hotspot), 'compendia_ms7_hotspot')
+        cnf.genome.actionable               = verify_file(adjust_system_path(cnf.genome.actionable), 'actionable')
+        cnf.genome.filter_common_snp        = verify_file(adjust_system_path(cnf.genome.filter_common_snp), 'filter_common_snp')
+        cnf.genome.filter_common_artifacts  = verify_file(adjust_system_path(cnf.genome.filter_common_artifacts), 'filter_common_artifacts')
+        cnf.genome.splice                   = verify_file(adjust_system_path(cnf.genome.splice), 'splice')
+        cnf.suppressors                     = verify_file(adjust_system_path(cnf.suppressors), 'suppressors')
+        cnf.oncogenes                       = verify_file(adjust_system_path(cnf.oncogenes), 'oncogenes')
+        cnf.ruledir                         = verify_dir(adjust_system_path(cnf.ruledir), 'ruledir')
+        cnf.snpeffect_export_polymorphic    = verify_file(adjust_system_path(cnf.snpeffect_export_polymorphic), 'snpeffect_export_polymorphic')
+        cnf.actionable_hotspot              = verify_file(adjust_system_path(cnf.actionable_hotspot), 'actionable_hotspot')
+        cnf.specific_mutations              = verify_file(adjust_system_path(cnf.specific_mutations), 'specific_mutations')
+        cnf.last_critical_aa                = verify_file(adjust_system_path(cnf.last_critical_aa), 'last_critical_aa')
+        cnf.incidentalome_dir               = verify_dir(adjust_system_path(cnf.incidentalome_dir), 'incidentalome')
+        cnf.genome.tricky_regions           = verify_dir(cnf.genome.tricky_regions, 'tricky regions')
         if not all([cnf.genome.compendia_ms7_hotspot,
                     cnf.genome.actionable,
                     cnf.genome.filter_common_snp,
@@ -130,7 +146,8 @@ class Filtration:
                     cnf.actionable_hotspot,
                     cnf.specific_mutations,
                     cnf.last_critical_aa,
-                    cnf.crapomedir
+                    cnf.incidentalome_dir,
+                    cnf.genome.tricky_regions,
                     ]):
             critical('Critical: some of the required files are not found or empty (see above)')
 
@@ -145,15 +162,19 @@ class Filtration:
         with open(canon_tr_fpath) as f:
             self.canonical_transcripts = [tr.strip().split('.')[0] for tr in f]
 
-        self.max_ratio = cnf.max_ratio or cnf.variant_filtering.max_ratio
-        self.max_sample_cnt = cnf.max_sample_cnt or cnf.variant_filtering.max_sample_cnt
-        self.min_freq = cnf.min_freq or cnf.variant_filtering.min_freq_vardict2mut
-        self.min_hotspot_freq = cnf.min_hotspot_freq or cnf.variant_filtering.min_hotspot_freq
-        if self.min_hotspot_freq is None or self.min_hotspot_freq == 'default':
-            self.min_hotspot_freq = min(0.01, self.min_freq / 2)
-        self.filt_depth = cnf.variant_filtering.filt_depth
-        self.min_vd = cnf.variant_filtering.min_vd
-        self.min_gmaf = cnf.variant_filtering.min_gmaf
+        c = cnf.variant_filtering
+        self.max_ratio = cnf.max_ratio or c.max_ratio
+        self.max_sample_cnt = cnf.max_sample_cnt or c.max_sample_cnt
+
+        self.min_freq = cnf.min_freq or c.min_freq  # for all variants
+        self.act_min_freq = cnf.act_min_freq or c.act_min_freq
+        if self.act_min_freq is None or self.act_min_freq == 'default':
+            self.act_min_freq = min(0.01, self.min_freq / 2)
+        self.germline_min_freq = c.germline_min_freq
+
+        self.filt_depth = c.filt_depth
+        self.min_vd = c.min_vd
+        self.min_gmaf = c.min_gmaf
 
         # self.freq_in_sample_by_vark = dict()
         # if cnf.cohort_freqs_fpath:
@@ -196,28 +217,38 @@ class Filtration:
                 self.snpeff_snp_rsids.add(snpeff_rsid)
 
         self.filter_artifacts = set()
+        self.filter_rules_by_gene = defaultdict(list)
         for l in iter_lines(cnf.genome.filter_common_artifacts):
             fields = l.split('\t')
-            self.filter_artifacts.add('-'.join(fields[1:5]))
+            gene = fields[0]
+            if fields[5] == 'rule':
+                rule = Rule(gene, chrom=fields[1], start=fields[2], end=fields[3], action=fields[4])
+                self.filter_rules_by_gene[gene].append(rule)
+            else:
+                self.filter_artifacts.add('-'.join(fields[1:5]))
 
-        self.actionable_hotspots = defaultdict(set)
+        self.actionable_hotspot_by_gene = defaultdict(dict)
+        self.common_snps_by_gene = defaultdict(set)
         for l in iter_lines(cnf.actionable_hotspot):
             fields = l.split('\t')
-            self.actionable_hotspots[fields[0]].add(fields[1])
+            gene = fields[0]
+            prot_change = fields[1]
+            if gene.startswith('^'):
+                self.common_snps_by_gene[gene].add(prot_change)
+            else:
+                is_somatic = fields[2] == 'somatic'
+                self.actionable_hotspot_by_gene[gene][prot_change] = 'somatic' if is_somatic else 'germline'
 
         self.act_somatic = dict()
         self.act_germline = set()
-
-        self.rules = defaultdict(lambda: defaultdict(list))
-        # inframe_del = 'inframe-del'
-        # inframe_ins = 'inframe-ins'
-        # self.rules[inframe_del] = {}
-        # self.rules[inframe_ins] = {}
+        self.rules = defaultdict(list)
         for l in iter_lines(cnf.genome.actionable):
             fields = l.split('\t')
+
             if fields[7] == 'germline':
                 key = '-'.join(fields[1:5])
                 self.act_germline.add(key)
+
             elif fields[7] == 'somatic':
                 change = fields[8].strip()
                 if fields[6] == 'rule':
@@ -225,13 +256,19 @@ class Filtration:
                         key = '-'.join(fields[1:4])
                         self.act_somatic[key] = change
                     else:
-                        indel_type = fields[5]
-                        gene = fields[0]
-                        chrom = fields[1]
-                        start = int(fields[2])
-                        end = int(fields[3])
-                        n = int(fields[4])
-                        self.rules[indel_type][gene].append([chrom, start, end, n, change])
+                        indel_type = ''
+                        if 'indel' in fields[5]: indel_type = 'indel'
+                        elif 'ins' in fields[5]: indel_type = 'ins'
+                        elif 'del' in fields[5]: indel_type = 'del'
+                        rule = Rule(gene=fields[0],
+                                    chrom=fields[1],
+                                    start=int(fields[2]),
+                                    end=int(fields[3]),
+                                    length=int(fields[4]),
+                                    required_inframe='inframe' in fields[5],
+                                    indel_type=indel_type,
+                                    change=change)
+                        self.rules[rule.gene].append(rule)
                     # elif fields[5] == inframe_del:
                     #     self.rules[inframe_del].setdefault(fields[0], []).append([fields[1]] + [int (f) for f in fields[2:5]])
                     # elif fields[5] == inframe_ins:
@@ -256,7 +293,7 @@ class Filtration:
         self.gene_blacklists_by_reason = parse_gene_blacklists(cnf)
         for r in self.gene_blacklists_by_reason.keys():
             self.gene_blacklist_counter[r] = 0
-        self.gene_to_soft_filter = list(iter_lines(join(cnf.crapomedir, 'soft_filter.txt')))
+        self.gene_to_soft_filter = list(iter_lines(join(cnf.incidentalome_dir, 'soft_filter.txt')))
 
         info('Parsing region blacklists...')
         self.region_blacklists_by_reason = load_region_blacklists(cnf)
@@ -268,9 +305,9 @@ class Filtration:
         self.genes_with_generic_rules, \
         self.tier_by_type_by_region_by_gene, \
         self.sensitizations_by_gene, \
-        self.spec_transcripts_by_aachg = parse_specific_mutations(cnf.specific_mutations)
+        self.specific_transcripts_by_aachg = parse_specific_mutations(cnf.specific_mutations)
 
-        if not all([self.rules, self.splice_positions_by_gene, self.act_somatic, self.act_germline, self.actionable_hotspots]):
+        if not all([self.rules, self.splice_positions_by_gene, self.act_somatic, self.act_germline, self.actionable_hotspot_by_gene]):
             if not self.rules:
                 err('No rules, cannot proceed')
             if not self.splice_positions_by_gene:
@@ -279,7 +316,7 @@ class Filtration:
                 err('No act_somatic, cannot proceed')
             if not self.act_germline:
                 err('No act_germline, cannot proceed')
-            if not self.actionable_hotspots:
+            if not self.actionable_hotspot_by_gene:
                 err('No actionable_hotspots, cannot proceed')
 
         self.status = None
@@ -297,6 +334,16 @@ class Filtration:
         else:
             self.status = new_status
         return self.status
+
+    platform_regexp = re.compile('[_-]([^_\d]+?)$')  # TODO: fix pattern
+    def parse_platform(self, sample):
+        platform = re.findall(Filtration.platform_regexp, sample)[0] \
+            if Filtration.platform_regexp.match(sample) else ''
+        if platform.lower() not in [p.lower() for p in ['WXS', 'RNA-Seq', 'VALIDATION', 'WGS']]:
+            platform = ''
+        if self.platform:
+            platform = self.platform
+        return platform
 
     def check_by_var_class(self, var_class, cosmic_aachg, cosmic_counts):
         if var_class == 'ClnSNP':
@@ -346,67 +393,71 @@ class Filtration:
         return aa_chg
 
     aa_chg_trim_pattern = re.compile('^([A-Z]\d+)[A-Z]$')
-    def check_actionable(self, chrom, pos, ref, alt, gene, aa_chg):
-        key = '-'.join([chrom, pos, ref, alt])
-        if key in self.act_somatic:
-            return aa_chg, self.update_status('known', 'act_somatic')
-        if key in self.act_germline:
-            return aa_chg, self.update_status('known', 'act_germline')
-        if len(ref) == 1 and len(ref) == len(alt):
-            key = '-'.join([chrom, pos, ref])
-            if key in self.act_somatic:
-                return aa_chg, self.update_status('known', 'act_somatic')
+    def check_actionable(self, chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, clnsig):
+        change_len = len(alt) - len(ref)
 
-        if Filtration.aa_chg_trim_pattern.match(aa_chg) and gene in self.actionable_hotspots:
-            act_hotspots = self.actionable_hotspots[gene]
-            if aa_chg in act_hotspots:
-                return aa_chg, self.update_status('known', 'act_hotspot')
+        key = '-'.join([chrom, str(pos), ref, alt])
+        if key in self.act_somatic: return self.update_status('known', 'act_somatic')
+        if key in self.act_germline and af >= self.germline_min_freq: return self.update_status('known', 'act_germline')
+
+        if len(ref) == 1 and change_len == 0:  # SNP
+            key = '-'.join([chrom, str(pos), ref])
+            if key in self.act_somatic:
+                return self.update_status('known', 'act_somatic')
+
+        if gene in self.actionable_hotspot_by_gene and Filtration.aa_chg_trim_pattern.match(aa_chg):
+            act_hotspot_by_aa_chg = self.actionable_hotspot_by_gene[gene]
             aa_chg_trim = re.findall(Filtration.aa_chg_trim_pattern, aa_chg)[0]
-            if aa_chg_trim in act_hotspots:
-                return aa_chg, self.update_status('known', 'act_hotspot')
+            status = act_hotspot_by_aa_chg.get(aa_chg_trim)
+            if status is not None:
+                if status == 'somatic' and af > self.act_min_freq:
+                    return self.update_status('known', 'act_hotspot_somatic')
+                elif status == 'germline' and af > self.germline_min_freq:
+                    return self.update_status('known', 'act_hotspot_germline')
+                else:
+                    return self.update_status('known', 'act_hotspot_' + status)
 
         if gene == 'TP53':
-            tp53_group = classify_tp53(aa_chg, pos, ref, alt, self.splice_positions_by_gene[gene], self.tp53_groups)
-            if tp53_group != 'NA':
-                return aa_chg, self.update_status('known', 'act_somatic_tp53_group_' + tp53_group.split(' ')[1])
+            tp53_group = self.classify_tp53(aa_chg, pos, ref, alt)
+            if tp53_group is not None:
+                return self.update_status('known', 'act_somatic_tp53_group_' + str(tp53_group))
 
-        if gene in self.rules['inframe-del'] and len(ref) > len(alt) and (len(ref) - len(alt)) % 3 == 0:
-            for r in self.rules['inframe-del'][gene]:
-                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(ref) - len(alt) >= r[3]:
-                    aa_chg = r[4]
-                    return aa_chg, self.update_status('known', 'act_somatic_inframe_del')
+        if gene in self.rules:
+            for r in self.rules[gene]:
+                if change_len >= r.length and r.start <= pos <= r.end:
+                    if r.required_inframe and change_len % 3 != 0:
+                        continue
+                    if any([r.indel_type == 'ins' and change_len > 0,
+                            r.indel_type == 'del' and change_len < 0,
+                            r.indel_type == 'indel' and change_len != 0]):
+                        return self.update_status('known', 'act_somatic_' + r.aa_chg)
+        return False
 
-        elif gene in self.rules['inframe-ins'] and len(ref) < len(alt) and (len(alt) - len(ref)) % 3 == 0:
-            for r in self.rules['inframe-ins'][gene]:
-                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(alt) - len(ref) >= r[3]:
-                    aa_chg = r[4]
-                    return aa_chg, self.update_status('known', 'act_somatic_inframe_ins')
-
-        elif gene in self.rules['indel'] and len(ref) != len(alt):
-            for r in self.rules['indel'][gene]:
-                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(alt) - len(ref) >= r[3]:
-                    aa_chg = r[4]
-                    return aa_chg, self.update_status('known', 'act_somatic_indel')
-
-        elif gene in self.rules['del'] and len(ref) > len(alt):
-            for r in self.rules['del'][gene]:
-                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(ref) - len(alt) >= r[3]:
-                    aa_chg = r[4]
-                    return aa_chg, self.update_status('known', 'act_somatic_del')
-
-        elif gene in self.rules['ins'] and len(ref) < len(alt):
-            for r in self.rules['ins'][gene]:
-                if r[0] == chrom and r[1] <= int(pos) <= r[2] and len(alt) - len(ref) >= r[3]:
-                    aa_chg = r[4]
-                    return aa_chg, self.update_status('known', 'act_somatic_ins')
-
-        return aa_chg, False
+    def classify_tp53(self, aa_chg, pos, ref, alt):
+        aa_chg = aa_chg.replace(' ', '')
+        if str(pos) in self.splice_positions_by_gene['TP53'] and len(ref) == 1 and len(alt) == 1:
+            return 6
+        aa_chg = aa_chg.replace('p.', '')
+        aa_num = 0
+        if aa_chg:
+            aa_num = int(re.sub('[^0-9]', '', aa_chg))
+        if aa_snp_chg_pattern.match(aa_chg):
+            for i in [1, 2, 3]:
+                if aa_chg in self.tp53_groups['Group ' + str(i)]:
+                    return i
+        elif stop_gain_pattern.match(aa_chg):
+            if aa_num < 359:
+                return 4
+        elif fs_pattern.match(aa_chg):
+            if aa_num < 359:
+                return 5
+        return None
 
     def check_rob_hedley_actionable(self, gene, aa_chg, effect, region, transcript):
         if aa_chg:
             gene_aachg = '-'.join([gene, aa_chg])
-            if transcript and gene_aachg in self.spec_transcripts_by_aachg:
-                if self.spec_transcripts_by_aachg[gene_aachg] != transcript:
+            if transcript and gene_aachg in self.specific_transcripts_by_aachg \
+                and self.specific_transcripts_by_aachg[gene_aachg] != transcript:
                     return None
             if gene_aachg in self.tier_by_specific_mutations:
                 tier = self.tier_by_specific_mutations[gene_aachg]
@@ -422,26 +473,35 @@ class Filtration:
                 self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
                 return True
 
-    def check_by_general_rules(self, var_type, aa_chg, is_lof, gene):
-        # if 'splice_site' in reasons:
-        #     status, reasons = self.update_status(status, reasons, 'known', ['general_rules'] + reasons)
-        if is_lof:
-            self.update_status('known', 'act_lof' + '_of_gene_' + gene)
-            # status, reasons = self.update_status(status, reasons, 'known', ['lof_in_gene_' + gene])
-        elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
-            self.update_status('known', 'act_exon_loss' + '_in_gene_' + gene)
-            # status, reasons = self.update_status(status, reasons, 'known', ['exon_loss_in_gene_' + gene])
-        elif Filtration.statuses.index(self.status) <= 2:
-            info(str(gene) + ' ' + str(aa_chg) + ' is in general rules, but does not alter protein function.'
-                 ' Keeping status as ' + str(self.status))
-        #     status, reasons = update_status(status, reasons, 'unlikely', 'but_not_alter_protein_function', force=True)
+    def check_by_general_rules(self, var_type, is_lof, gene):
+        if gene in self.genes_with_generic_rules:
+            # if 'splice_site' in reasons:
+            #     status, reasons = self.update_status(status, reasons, 'known', ['general_rules'] + reasons)
+            if is_lof:
+                self.update_status('known', 'act_lof' + '_of_gene_' + gene)
+                return True
+            elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
+                self.update_status('known', 'act_exon_loss' + '_in_gene_' + gene)
+                return True
+            else:
+                return False
+                # Is in general rules, but does not alter protein function
 
-    def check_by_mut_type(self, cdna_chg, region, types_by_region, gene):
-        if region in types_by_region:
-            for type_ in types_by_region[region]:
+    def check_by_type_and_region(self, cdna_chg, region, gene):
+        types_by_region = self.tier_by_type_by_region_by_gene.get(gene)
+        if types_by_region:
+            for type_ in types_by_region.get(region, []):
                 if type_ in cdna_chg:
                     tier = types_by_region[region][type_]
                     self.update_status(Filtration.statuses[tier], 'act_' + type_ + '_in_gene_' + gene)
+                    return True
+        return False
+
+    def fails_filters(self, chrom, pos, ref, alt, gene, aa_chg):
+        for r in self.filter_rules_by_gene.get(gene, []):
+            if r.action == 'ignore' and chrom == r.chrom and r.start <= pos <= r.end:
+                return 'ignore'
+        return None
 
     # def print_mutations_for_one_gene(self, output_f, fm_output_f, all_transcripts_output_f, cur_gene_mutations, gene, sensitizations):
     #     for cur_gene_mut_info in cur_gene_mutations:
@@ -553,6 +613,7 @@ class Filtration:
         status_col = None
         reason_col = None
         lof_col = None
+        clnsig_col = None
 
         headers = []
 
@@ -560,9 +621,8 @@ class Filtration:
         cur_gene_mutations = []
         prev_gene = ''
 
-        # platform_regexp = re.compile('-\d\d[_-]([^_\d]+?)$')  # TODO: fix pattern
-        platform_regexp = re.compile('[_-]([^_\d]+?)$')  # TODO: fix pattern
         sample_regexp = re.compile(self.reg_exp_sample) if self.reg_exp_sample else None
+        aa_chg_pos_regexp = re.compile('^[A-Z](\d+).*')
 
         if fm_output_f:
             fm_output_f.write('SAMPLE ID\tANALYSIS FILE LOCATION\tVARIANT-TYPE\tGENE\tSOMATIC STATUS/FUNCTIONAL IMPACT\tSV-PROTEIN-CHANGE\tSV-CDS-CHANGE\tSV-GENOME-POSITION\tSV-COVERAGE\tSV-PERCENT-READS\tCNA-COPY-NUMBER\tCNA-EXONS\tCNA-RATIO\tCNA-TYPE\tREARR-GENE1\tREARR-GENE2\tREARR-DESCRIPTION\tREARR-IN-FRAME?\tREARR-POS1\tREARR-POS2\tREARR-NUMBER-OF-READS\n')
@@ -595,6 +655,7 @@ class Filtration:
                 gene_coding_col = headers.index('Gene_Coding')
                 transcript_col = headers.index('Transcript')
                 exon_col = headers.index('Exon')
+                clnsig_col = headers.index('CLNSIG')
                 try:
                     reason_col = headers.index('Reason')
                 except ValueError:
@@ -636,22 +697,22 @@ class Filtration:
                 fields = fields[:-1]
 
             sample, chrom, pos, ref, alt, aa_chg, cosm_aa_chg, gene, depth = \
-                fields[sample_col], fields[chr_col], fields[pos_col], fields[ref_col], \
+                fields[sample_col], fields[chr_col], int(fields[pos_col]), fields[ref_col], \
                 fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
                 float(fields[depth_col])
 
+            if pos == 1734812:
+                pass
+
             # gene_aachg = '-'.join([gene, aa_chg])
             if 'chr' not in chrom: chrom = 'chr' + chrom
-            key = '-'.join([chrom, pos, ref, alt])
-            allele_freq = float(fields[allele_freq_col])
+            nt_chg_key = '-'.join([chrom, str(pos), ref, alt])
+            af = float(fields[allele_freq_col])
 
             var_class, var_type, fclass, gene_coding, effect, cdna_chg, transcript = \
                 fields[class_col], fields[type_col], fields[func_col], fields[gene_code_col], \
                 fields[effect_col], fields[cdna_chg_col], fields[transcript_col]
             var_type = var_type.upper()
-
-            # debug(chrom + ':' + pos + ' ' + ref + '>' + alt + ' ' + fields[func_col] +
-            #       ' ' + aa_chg + ' ' + fields[headers.index('MSI')] + ' ' + str(allele_freq))
 
             if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
                 self.apply_reject_counter('PROTEIN_PROTEIN_CONTACT', is_canonical, no_transcript)
@@ -671,53 +732,49 @@ class Filtration:
             #################################
             # Checking actionable mutations #
             #################################
-            aa_chg, is_act = self.check_actionable(chrom, pos, ref, alt, gene, aa_chg)
-            fields[aa_chg_col] = aa_chg
-            is_act = self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or is_act
+            is_act = self.check_actionable(chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, fields[clnsig_col]) or \
+                     self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or \
+                     self.check_by_type_and_region(cdna_chg, region, gene) or \
+                     self.check_by_general_rules(var_type, is_lof, gene)
 
-            if not is_act:
-                if gene in self.tier_by_type_by_region_by_gene:
-                    self.check_by_mut_type(cdna_chg, region, self.tier_by_type_by_region_by_gene[gene], gene)
-                elif gene in self.genes_with_generic_rules:  # it can be only either in tier_by_type_by_region_by_gene or genes_with_generic_rules
-                    self.check_by_general_rules(var_type, aa_chg, is_lof, gene)
+            fail_reason = self.fails_filters(chrom, pos, ref, alt, gene, aa_chg)
+            if fail_reason:
+                self.apply_reject_counter(fail_reason, is_canonical, no_transcript)
+                continue
+
+            if gene in self.common_snps_by_gene and aa_chg in self.common_snps_by_gene[gene]:
+                self.apply_reject_counter('common SNP', is_canonical, no_transcript)
+                continue
 
             if is_lof:
                 if gene in self.oncogenes:
-                    if is_act:
-                        warn(aa_chg + ' in ' + gene + ': LOF in a oncogoene, and actionable')
                     for s in Filtration.statuses:
                         self.reason_by_status[s].add('oncogene_lof')
-                    # self.update_status('unlikely', reasons + ['oncogene_lof'], force=True)
-                    # info('gene ' + gene + ' is an oncogene, and mutation is LOF. Updating status from ' + status + ' to unlikely')
                 elif gene in self.suppressors:
-                    # if not is_act:
-                    #     warn((aa_chg if aa_chg else effect) + ' in ' + gene + ': LOF in a suppressor, but not actionable')
-                    # is_act = True
                     self.update_status('likely', 'suppressor_lof')
-                    # for s in Filtration.statuses:
-                    #     self.reason_by_status[s].add('suppressor_lof')
-                    # info('gene ' + gene + ' is a suppressor, and mutation is LOF. Making actionable. Status was ' + self.status)
-                    # self.update_status(status, reasons, 'known', 'lof_in_suppressor')
 
             if not is_act:
-                if key in self.filter_snp:
+                if nt_chg_key in self.filter_snp:
                     self.apply_reject_counter('not act and in filter_common_snp', is_canonical, no_transcript)
                     continue
-                if '-'.join([gene, aa_chg]) in self.snpeff_snp:
-                    self.apply_reject_counter('not act and in snpeff_snp', is_canonical, no_transcript)
-                    continue
-                if key in self.filter_artifacts and allele_freq < 0.2:
+                if nt_chg_key in self.filter_artifacts and af < 0.35:
                     self.apply_reject_counter('not act and in filter_artifacts and AF < 0.5', is_canonical, no_transcript)
                     continue
                 gmaf = fields[headers.index('GMAF')]
                 if gmaf and all(not g or float(g) == 0 or float(g) > self.min_gmaf for g in gmaf.split(',')):
                     self.apply_reject_counter('not act and all GMAF > ' + str(self.min_gmaf) + ' or zero', is_canonical, no_transcript)
                     continue
+                # my $clncheck = checkCLNSIG($a[$hdrs{CLNSIG}]);
+                # next if ( $clncheck eq "dbSNP" );
+                # next if ( $snpeff_snp{ "$a[$hdrs{Gene}]-$a[$hdrs{Amino_Acid_Change}]" } && $clncheck ne "ClnSNP_known" );
+                # if '-'.join([gene, aa_chg]) in self.snpeff_snp:
+                #     self.apply_reject_counter('not act and in snpeff_snp', is_canonical, no_transcript)
+                #     continue
 
             if depth < self.filt_depth:
                 self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
                 continue
-            if fields[vd_col] < self.min_vd and allele_freq >= 0.5:
+            if fields[vd_col] < self.min_vd and af >= 0.5:
                 self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript)
                 continue
 
@@ -726,30 +783,23 @@ class Filtration:
                 self.apply_reject_counter('snp in snpeffect_export_polymorphic', is_canonical, no_transcript)
                 continue
 
-            platform = re.findall(platform_regexp, sample)[0] if platform_regexp.match(sample) else ''
-            if platform.lower() not in [p.lower() for p in ['WXS', 'RNA-Seq', 'VALIDATION', 'WGS']]:
-                platform = ''
-            if self.platform:
-                platform = self.platform
-
             if sample_regexp:
                 if sample_regexp.match(sample):
                     sample = re.findall(self.reg_exp_sample, sample)[0]
                 else:
-                    self.apply_reject_counter('sample not matching ' + self.reg_exp_sample, is_canonical, no_transcript)
                     continue
 
             # Filter low AF MSI
-            if abs(len(ref) - len(alt)) == 1:
-                msi = float(fields[msicol])
+            msi = float(fields[msicol])
+            if abs(len(ref) - len(alt)) == 1 and msi > 3:
                 msi_fail = any([
-                    msi <=  7 and allele_freq < 0.05,
-                    msi ==  8 and allele_freq < 0.07,
-                    msi ==  9 and allele_freq < 0.125,
-                    msi == 10 and allele_freq < 0.175,
-                    msi == 11 and allele_freq < 0.25,
-                    msi == 12 and allele_freq < 0.3,
-                    msi >  12 and allele_freq < 0.35])
+                    msi <=  7 and af < 0.03,
+                    msi ==  8 and af < 0.06,
+                    msi ==  9 and af < 0.125,
+                    msi == 10 and af < 0.175,
+                    msi == 11 and af < 0.25,
+                    msi == 12 and af < 0.3,
+                    msi >  12 and af < 0.35])
                 if msi_fail:
                     self.apply_reject_counter('MSI fail', is_canonical, no_transcript)
                     continue
@@ -764,8 +814,9 @@ class Filtration:
                 self.update_status('likely', 'hotspot_AA_change')
 
             if is_act:
-                if self.min_hotspot_freq is not None and allele_freq < self.min_hotspot_freq:
-                    self.apply_reject_counter('act and AF < ' + str(self.min_hotspot_freq) + ' (min_hotspot_freq)', is_canonical, no_transcript)
+                # check if germline
+                if af < self.act_min_freq:
+                    self.apply_reject_counter('act and AF < ' + str(self.act_min_freq) + ' (min_hotspot_freq)', is_canonical, no_transcript)
                     continue
             else:
                 if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
@@ -783,7 +834,7 @@ class Filtration:
                 if 'SPLICE' in var_type and not aa_chg and self.status == 'unknown':
                     self.apply_reject_counter('not act and SPLICE and no aa_ch\g and unknown', is_canonical, no_transcript)
                     continue
-                if self.min_freq and allele_freq < self.min_freq:
+                if self.min_freq and af < self.min_freq:
                     self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
                     continue
 
@@ -814,17 +865,17 @@ class Filtration:
                     continue
 
             # Ignore any variants that occur after last known critical amino acid
-            aa_chg_pos_pattern = re.compile('^[A-Z](\d+).*')
             aa_pos = None
-            if aa_chg_pos_pattern.match(aa_chg):
-                aa_pos = int(aa_chg_pos_pattern.findall(aa_chg)[0])
+            if aa_chg_pos_regexp.match(aa_chg):
+                aa_pos = int(aa_chg_pos_regexp.findall(aa_chg)[0])
+            if aa_pos is not None:
                 if gene in self.last_critical_aa_pos_by_gene and aa_pos >= self.last_critical_aa_pos_by_gene[gene]:
                     self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
                     continue
 
-            if self.status != 'known' and not is_act:
+            if not is_act:
                 bl_gene_reasons = self.check_blacklist_genes(gene, aa_pos)
-                bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=int(pos) - 1, end=int(pos) - 1 + len(ref))
+                bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=pos - 1, end=pos - 1 + len(ref))
                 if bl_gene_reasons or bl_region_reasons:
                     if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
                         self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
@@ -837,6 +888,7 @@ class Filtration:
                     if bl_gene_reasons or bl_region_reasons:
                         self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
 
+            # if not is_act:
                     # if float(fields[pcnt_sample_col]) > self.max_ratio:
                     # if self.freq_in_sample_by_vark:
                     #     vark = ':'.join([chrom, pos, ref, alt])
@@ -862,7 +914,7 @@ class Filtration:
             # if gene not in self.sensitizations_by_gene:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
             self.print_mutation(output_f, fm_output_f, all_transcripts_output_f,
                 self.status, self.reason_by_status[self.status], fields, is_canonical, no_transcript,
-                fm_data=[sample, platform, gene, pos, cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, allele_freq])
+                fm_data=[sample, self.parse_platform(sample), gene, str(pos), cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, af])
 
         info('Done.')
 
@@ -907,7 +959,7 @@ def parse_mut_tp53(mut_fpath):
     return mut_tp53
 
 
-def is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
+def is_hotspot_nt(chrom, pos, ref, alt, hotspot_nucleotides):
     if len(ref) > len(alt) and alt != '-':
         ref = ref[1:]
         if len(alt) > 1:
@@ -920,7 +972,7 @@ def is_hotspot_nt(chr, pos, ref, alt, hotspot_nucleotides):
             ref = ref[1:]
         else:
             ref = '-'
-    key = '-'.join([chr, pos, ref, alt])
+    key = '-'.join([chrom, str(pos), ref, alt])
     return key in hotspot_nucleotides
 
 
@@ -934,32 +986,6 @@ def is_hotspot_prot(gene, aa_chg, hotspot_proteins):
 stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
 fs_pattern = re.compile('^[A-Z]+(\d+)fs')
 aa_snp_chg_pattern = re.compile('^[A-Z]\d+[A-Z]$')
-
-def classify_tp53(aa_chg, pos, ref, alt, tp53_positions, tp53_groups):
-    ref = ref.replace(' ', '')
-    alt = alt.replace(' ', '')
-    pos = pos.replace(' ', '')
-    aa_chg = aa_chg.replace(' ', '')
-    if pos in tp53_positions and len(ref) == 1 and len(alt) == 1:
-        return 'Group 6'
-    aa_chg = aa_chg.replace('p.', '')
-    aa_num = 0
-    if aa_chg:
-        aa_num = int(re.sub('[^0-9]', '', aa_chg))
-    if aa_snp_chg_pattern.match(aa_chg):
-        if aa_chg in tp53_groups['Group 1']:
-            return 'Group 1'
-        if aa_chg in tp53_groups['Group 2']:
-            return 'Group 2'
-        if aa_chg in tp53_groups['Group 3']:
-            return 'Group 3'
-    elif stop_gain_pattern.match(aa_chg):
-        if aa_num < 359:
-            return 'Group 4'
-    elif fs_pattern.match(aa_chg):
-        if aa_num < 359:
-            return 'Group 5'
-    return 'NA'
 
 
 def parse_specific_mutations(specific_mut_fpath):
@@ -1037,4 +1063,5 @@ def parse_genes_list(fpath):
     if fpath and verify_file(fpath):
         genes = [line.strip() for line in open(fpath)]
     return genes
+
 

@@ -841,7 +841,7 @@ class ClinicalReporting(BaseClinicalReporting):
                     data['seq2c']['description_for_whole_genomic_profile'] = {'key_or_target': self.experiment.genes_collection_type}
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
 
-        min_freq = self.cnf.min_freq or self.cnf.variant_filtering.min_freq_vardict2mut or 0
+        min_freq = self.cnf.variant_filtering.min_freq
         data['min_af'] = str(float(min_freq) * 100)
 
         circos_plot_fpath = make_circos_plot(self.cnf, output_fpath)
