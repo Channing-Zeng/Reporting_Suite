@@ -83,7 +83,7 @@ ol {
 
 .my_tooltip {
   display: none;
-  position: absolute;
+  position: absoluteew comment for mutati;
   background: #ffe;
   border: 1px solid #eed;
   border-radius: 4px;
@@ -104,7 +104,7 @@ ol {
   opacity: 0.2;
   height: 18px;
   width: 18px;
-  padding: 2px; }
+  padding: 3px; }
 
 .comment_div:hover {
   color: #52524c;

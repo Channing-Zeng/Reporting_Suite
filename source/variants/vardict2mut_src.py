@@ -186,9 +186,9 @@ class Filtration:
         #             self.freq_in_sample_by_vark[fs[0]] = float(fs[1])
 
         info('Parsing filtering data...')
-        self.tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'DNE.txt')),
-                            'Group 2': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA0-25.txt')),
-                            'Group 3': parse_mut_tp53(join(cnf.ruledir, 'Rules', 'TA25-50_SOM_10x.txt'))}
+        self.tp53_groups = {'Group 1': parse_mut_tp53(join(cnf.ruledir, 'DNE.txt')),
+                            'Group 2': parse_mut_tp53(join(cnf.ruledir, 'TA0-25.txt')),
+                            'Group 3': parse_mut_tp53(join(cnf.ruledir, 'TA25-50_SOM_10x.txt'))}
 
         self.splice_positions_by_gene = defaultdict(set)
         for l in iter_lines(cnf.genome.splice):
