@@ -240,9 +240,18 @@ function filterMutationsByAF(thresholdValue) {
 }
 
 function checkAF(row, minAF) {
+      var isKnown = false;
+      var minActAF = $('#act_min_af')[0].innerText;
+      for (var c = 0, m = row.cells.length; c < m; c++) {
+          if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value.indexOf('status') != -1) {
+              if (row.cells[c].innerText.indexOf('known') == 0)
+                  isKnown = true;
+              break;
+          }
+      }
       for (var c = 0, m = row.cells.length; c < m; c++) {
         if (row.cells[c].attributes.metric && row.cells[c].attributes.number && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
-            if (row.cells[c].attributes.number.value * 100 < minAF)
+            if ((isKnown && row.cells[c].attributes.number.value * 100 < minActAF) || (!isKnown && row.cells[c].attributes.number.value * 100 < minAF))
                 $(row).addClass('af_less_threshold');
             else $(row).removeClass('af_less_threshold');
         }

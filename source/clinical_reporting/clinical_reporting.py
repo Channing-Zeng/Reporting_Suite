@@ -842,7 +842,9 @@ class ClinicalReporting(BaseClinicalReporting):
                     data['seq2c']['amp_del']['seq2c_switch'] = {'key_or_target': self.experiment.genes_collection_type}
 
         min_freq = self.cnf.variant_filtering.min_freq
+        act_min_freq = self.cnf.variant_filtering.act_min_freq
         data['min_af'] = str(float(min_freq) * 100)
+        data['act_min_af'] = str(float(act_min_freq) * 100)
 
         circos_plot_fpath = make_circos_plot(self.cnf, output_fpath)
         image_by_key = None
