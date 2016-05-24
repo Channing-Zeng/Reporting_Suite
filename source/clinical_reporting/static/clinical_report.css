@@ -105,4 +105,17 @@ ol {
 .comment_div:hover {
   background: #ccc; }
 
+#comment_window {
+  display: none;
+  position: fixed;
+  top: 17%;
+  left: 50%;
+  width: 500px;
+  margin-left: -260px;
+  background-color: #f5f5f5;
+  border: 1px solid #eed;
+  border-radius: 10px;
+  padding: 20px;
+  z-index: 100; }
+
 /*# sourceMappingURL=clinical_report.css.map */
