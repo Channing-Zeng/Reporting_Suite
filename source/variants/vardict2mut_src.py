@@ -407,30 +407,40 @@ class Filtration:
         change_len = len(alt) - len(ref)
 
         key = '-'.join([chrom, str(pos), ref, alt])
-        if key in self.act_somatic: return self.update_status('known', 'act_somatic')
-        if key in self.act_germline and af >= self.germline_min_freq: return self.update_status('known', 'act_germline')
+        if key in self.act_somatic:
+            self.update_status('known', 'act_somatic')
+            return 'somatic'
+        if key in self.act_germline and af >= self.germline_min_freq:
+            self.update_status('known', 'act_germline')
+            return 'germline'
 
         if len(ref) == 1 and change_len == 0:  # SNP
             key = '-'.join([chrom, str(pos), ref])
             if key in self.act_somatic:
-                return self.update_status('known', 'act_somatic')
+                self.update_status('known', 'act_somatic')
+                return 'somatic'
 
         if gene in self.actionable_hotspot_by_gene and Filtration.aa_chg_trim_pattern.match(aa_chg):
             act_hotspot_by_aa_chg = self.actionable_hotspot_by_gene[gene]
+            status = act_hotspot_by_aa_chg.get(aa_chg)
+            if status is not None:
+                if status == 'somatic' and af > self.act_min_freq:
+                    self.update_status('known', 'act_hotspot_somatic')
+                    return 'somatic'
+                elif status == 'germline' and af > self.germline_min_freq:
+                    self.update_status('known', 'act_hotspot_germline')
+                    return 'germline'
             aa_chg_trim = re.findall(Filtration.aa_chg_trim_pattern, aa_chg)[0]
             status = act_hotspot_by_aa_chg.get(aa_chg_trim)
             if status is not None:
-                if status == 'somatic' and af > self.act_min_freq:
-                    return self.update_status('known', 'act_hotspot_somatic')
-                elif status == 'germline' and af > self.germline_min_freq:
-                    return self.update_status('known', 'act_hotspot_germline')
-                else:
-                    return self.update_status('known', 'act_hotspot_' + status)
+                self.update_status('known', 'act_hotspot_' + status)
+                return status
 
         if gene == 'TP53':
             tp53_group = self.classify_tp53(aa_chg, pos, ref, alt)
             if tp53_group is not None:
-                return self.update_status('known', 'act_somatic_tp53_group_' + str(tp53_group))
+                self.update_status('known', 'act_somatic_tp53_group_' + str(tp53_group))
+                return 'somatic'
 
         if gene in self.rules:
             for r in self.rules[gene]:
@@ -440,8 +450,9 @@ class Filtration:
                     if any([r.indel_type == 'ins' and change_len > 0,
                             r.indel_type == 'del' and change_len < 0,
                             r.indel_type == 'indel' and change_len != 0]):
-                        return self.update_status('known', 'act_somatic_' + r.aa_chg)
-        return False
+                        self.update_status('known', 'act_somatic_' + r.aa_chg)
+                        return 'somatic'
+        return None
 
     def classify_tp53(self, aa_chg, pos, ref, alt):
         aa_chg = aa_chg.replace(' ', '')
@@ -742,10 +753,11 @@ class Filtration:
             #################################
             # Checking actionable mutations #
             #################################
-            is_act = self.check_actionable(chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, fields[clnsig_col]) or \
-                     self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or \
-                     self.check_by_type_and_region(cdna_chg, region, gene) or \
-                     self.check_by_general_rules(var_type, is_lof, gene)
+            actionability = \
+                self.check_actionable(chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, fields[clnsig_col]) or \
+                self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or \
+                self.check_by_type_and_region(cdna_chg, region, gene) or \
+                self.check_by_general_rules(var_type, is_lof, gene)
 
             fail_reason = self.fails_filters(chrom, pos, ref, alt, gene, aa_chg)
             if fail_reason:
@@ -763,7 +775,7 @@ class Filtration:
                 elif gene in self.suppressors:
                     self.update_status('likely', 'suppressor_lof')
 
-            if not is_act:
+            if not actionability:
                 if nt_chg_key in self.filter_snp:
                     self.apply_reject_counter('not act and in filter_common_snp', is_canonical, no_transcript)
                     continue
@@ -824,10 +836,12 @@ class Filtration:
             elif is_hotspot_prot(gene, aa_chg, self.hotspot_proteins):
                 self.update_status('likely', 'hotspot_AA_change')
 
-            if is_act:
-                # check if germline
+            if actionability:
+                if actionability == 'germline' and af < self.germline_min_freq:
+                    self.apply_reject_counter('act germline and AF < ' + str(self.act_min_freq), is_canonical, no_transcript)
+                    continue
                 if af < self.act_min_freq:
-                    self.apply_reject_counter('act and AF < ' + str(self.act_min_freq) + ' (min_hotspot_freq)', is_canonical, no_transcript)
+                    self.apply_reject_counter('act somatic and AF < ' + str(self.germline_min_freq), is_canonical, no_transcript)
                     continue
             else:
                 if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
@@ -849,7 +863,7 @@ class Filtration:
                     self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
                     continue
 
-            if self.status != 'known' and not is_act:
+            if self.status != 'known' and not actionability:
                 if var_type.startswith('UPSTREAM'):
                     self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
                     continue
@@ -884,7 +898,7 @@ class Filtration:
                     self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
                     continue
 
-            if not is_act:
+            if not actionability:
                 bl_gene_reasons = self.check_blacklist_genes(gene, aa_pos)
                 bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=pos - 1, end=pos - 1 + len(ref))
                 if bl_gene_reasons or bl_region_reasons:
