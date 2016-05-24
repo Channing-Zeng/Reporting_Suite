@@ -706,7 +706,7 @@ class BaseClinicalReporting:
     def _gene_recargs(mut):
         t = ''
         if is_us() or is_uk():  # add button to comment mutation
-            t += '<div style="position:relative"><div class="comment_div" onclick="commentMutation($(this))">' \
+            t += '<div style="position:relative;"><div class="comment_div" onclick="commentMutation($(this))">' \
                  'Comment</div></div> '
         t += mut.gene.name
         if mut.transcript:

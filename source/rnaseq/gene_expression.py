@@ -5,7 +5,7 @@ from os.path import join, dirname, abspath, basename
 import source
 from source import info, verify_file
 from source.clinical_reporting.clinical_parser import get_key_genes
-from source.file_utils import file_transaction
+from source.file_utils import file_transaction, adjust_system_path
 from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, BaseReport
 
@@ -32,7 +32,7 @@ class Counts:
 
 def make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, genes_dict, report_fpath, report_name=None,
                                   not_rename_genes=False):
-    key_gene_names = get_key_genes(cnf.key_genes)
+    key_gene_names = get_key_genes(verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
     if not verify_file(counts_fpath):
         annotate_gene_counts(cnf, counts_fpath, genes_dict, report_name)
 

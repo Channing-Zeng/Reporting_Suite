@@ -5,7 +5,7 @@ import os
 from os.path import join, splitext, basename, dirname, abspath
 
 from source.calling_process import call
-from source.file_utils import intermediate_fname, verify_file, add_suffix, safe_mkdir
+from source.file_utils import intermediate_fname, verify_file, add_suffix, safe_mkdir, adjust_system_path
 from source.logger import info, err, step_greetings
 from source.reporting.reporting import Metric, MetricStorage, ReportSection, PerRegionSampleReport, load_records
 import source
@@ -51,7 +51,7 @@ def generate_flagged_regions_report(cnf, output_dir, sample, ave_depth, gene_by_
     vcf_dbs = ['oncomine']
 
     from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes
-    key_genes, _ = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
+    key_genes, _ = get_key_or_target_bed_genes(cnf.bed, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
     depth_cutoff = get_depth_cutoff(ave_depth, depth_threshs)
     genes_sorted = sorted(gene_by_key.values())
     min_cov, max_cov = min_and_max_based_on_outliers(genes_sorted)

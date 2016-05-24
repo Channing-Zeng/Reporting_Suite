@@ -9,7 +9,7 @@ from os.path import join
 from source.calling_process import call
 from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes
 from source.config import Config
-from source.file_utils import file_transaction
+from source.file_utils import file_transaction, adjust_system_path, verify_file
 from source.logger import critical
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, determine_run_cnf, \
     determine_sys_cnf
@@ -219,7 +219,7 @@ def main():
 
     modified_seq2c_fpath = join(output_dir, sample_name + '_seq2c.tsv')
 
-    key_genes_chrom, _ = get_key_or_target_bed_genes(cnf.bed_fpath, cnf.key_genes)
+    key_genes_chrom, _ = get_key_or_target_bed_genes(cnf.bed_fpath, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
     modify_seq2c(cnf, key_genes_chrom, seq2c_tsv_fpath, modified_seq2c_fpath)
 
     out_r_script = join(output_dir, sample_name + '.R')

@@ -4,9 +4,10 @@ import bcbio_postproc
 
 import sys
 import shutil
-from source import BaseSample
+from source import BaseSample, verify_file
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.clinical_reporting.clinical_parser import parse_mutations, get_key_or_target_bed_genes
+from source.file_utils import adjust_system_path
 from source.prepare_args_and_cnf import check_system_resources
 from source.targetcov.summarize_targetcov import _generate_summary_flagged_regions_report
 from source.utils import info
@@ -38,7 +39,7 @@ def main(args):
 
 def process_all(cnf, bcbio_structure):
     samples = bcbio_structure.samples
-    key_gene_by_name, use_custom_panel = get_key_or_target_bed_genes(cnf.bed, cnf.key_genes)
+    key_gene_by_name, use_custom_panel = get_key_or_target_bed_genes(cnf.bed, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
     key_or_target_genes = 'target' if use_custom_panel else 'key'
     mutations = {}
     for sample in samples:

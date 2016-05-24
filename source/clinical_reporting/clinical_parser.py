@@ -8,7 +8,8 @@ import re
 import source
 from source import verify_file, info
 from source.clinical_reporting.known_sv import fusions as known_fusions
-from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path, verify_dir
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path, verify_dir, \
+    adjust_system_path
 from source.clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
@@ -17,6 +18,7 @@ from source.targetcov.bam_and_bed_utils import get_gene_keys
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 from source.targetcov.Region import get_chrom_order
+from source.tools_from_cnf import get_system_path
 
 ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
 
@@ -290,7 +292,7 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wgs_com
     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
 
     return ClinicalExperimentInfo(
-        cnf, sample=sample, key_genes=cnf.key_genes,
+        cnf, sample=sample, key_genes_fpath=verify_file(adjust_system_path(cnf.key_genes), 'key genes'),
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, sv_fpath=sample.find_sv_fpath(),
         sv_vcf_fpath=verify_file(cnf.sv_vcf_fpath, is_critical=False) if cnf.sv_vcf_fpath else None,
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
@@ -306,7 +308,7 @@ def clinical_sample_info_from_cnf(cnf):
         normal_match=cnf.match_sample_name)
 
     return ClinicalExperimentInfo(
-        cnf, sample=sample, key_genes=cnf.key_genes,
+        cnf, sample=sample, key_genes_fpath=verify_file(adjust_system_path(cnf.key_genes), 'key genes'),
         target_type=cnf.target_type,
         bed_fpath=verify_file(cnf.bed_fpath, is_critical=False) if cnf.bed_fpath else None,
         mutations_fpath=verify_file(cnf.mutations_fpath, is_critical=False) if cnf.mutations_fpath else None,
@@ -365,7 +367,7 @@ class GeneDict(dict):  # supports genes without specified chromosome
 
 
 class ClinicalExperimentInfo:
-    def __init__(self, cnf, sample, key_genes, target_type,
+    def __init__(self, cnf, sample, key_genes_fpath, target_type,
                  bed_fpath, mutations_fpath, sv_fpath, sv_vcf_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None, targqc_report_path=None,
                  is_target2wgs_comparison=False):
@@ -398,10 +400,10 @@ class ClinicalExperimentInfo:
         info()
 
         if not is_target2wgs_comparison:  # use all genes from bed instead of key genes if bed exists and number of genes < 2000
-            key_gene_names_chroms, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes)
+            key_gene_names_chroms, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes_fpath)
         else:
             use_custom_panel = False
-            key_gene_names_chroms, _ = get_key_or_target_bed_genes(None, key_genes)
+            key_gene_names_chroms, _ = get_key_or_target_bed_genes(None, key_genes_fpath)
 
         if use_custom_panel:
             self.genes_collection_type = 'target'
@@ -410,7 +412,7 @@ class ClinicalExperimentInfo:
         else:
             self.genes_collection_type = 'key'
             self.genes_description = 'genes that have been previously implicated in various cancers'
-            info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes) + ', sample ' + self.sample.name)
+            info('Preparing data for a clinical report for AZ 300 key genes ' + str(key_genes_fpath) + ', sample ' + self.sample.name)
         info()
 
         for gene_name, chrom in key_gene_names_chroms:
@@ -834,7 +836,7 @@ def get_total_variants_number(sample, varqc_json_fpath):
     return r.value if r else None
 
 
-def get_key_or_target_bed_genes(bed_fpath, key_genes):
+def get_key_or_target_bed_genes(bed_fpath, key_genes_fpath):
     use_custom_panel = False
     key_gene_names_chroms = None
     if bed_fpath:
@@ -842,7 +844,7 @@ def get_key_or_target_bed_genes(bed_fpath, key_genes):
         if len(key_gene_names_chroms) < 2000:
             use_custom_panel = True
     if not use_custom_panel:
-        key_gene_names = get_key_genes(key_genes)
+        key_gene_names = get_key_genes(key_genes_fpath)
         key_gene_names_chroms = [(gn, None) for gn in key_gene_names]
     key_gene_names_chroms = [(gn, c) for (gn, c) in key_gene_names_chroms if (gn and gn != '.')]
     return key_gene_names_chroms, use_custom_panel

@@ -238,7 +238,7 @@ annotation:
   - COMMON                        : CommonVariant
   - CLNSIG                        : ClinicalSignificance
   - G5                            : 5%MAFinPopulationsCAF
-#  - GMAF                          : GlobalMinorAlleleFrequency
+  # - GMAF                        : GlobalMinorAlleleFrequency
   # - CDA                         : InClinicalDiagnosticAssay
   - dbNSFP_SIFT_score             : SiftScore
   - dbNSFP_Polyphen2_HVAR_score   : PolyPhen2Score
@@ -267,9 +267,9 @@ quality_control:
   db_for_summary: cosmic
   variant_distribution_scale: 1000  ## in kilobases
   metrics: [
-      'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
-      'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
-      'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
+    'nEvalVariants', 'nSNPs', 'nInsertions', 'nDeletions',
+    'nVariantsAtComp', 'compRate', 'nConcordant', 'concordantRate',
+    'variantRate', 'variantRatePerBp', 'hetHomRatio', 'tiTvRatio']
 
 
 coverage_reports:
@@ -279,8 +279,8 @@ coverage_reports:
   saturation: 'n'
   depthlist: 'auto'
   availablefeatures: [
-     'percbases', 'saturation', 'specificity', 'coveragefreq',
-     'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
+    'percbases', 'saturation', 'specificity', 'coveragefreq',
+    'coveragedistr', 'coveragestd', 'gcbias', 'coveragecorr']
 
 
 verbose: True                 ## Prints tools' output

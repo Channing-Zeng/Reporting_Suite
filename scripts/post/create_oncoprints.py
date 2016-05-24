@@ -9,7 +9,7 @@ from os.path import join, basename, isdir
 
 import source
 from source import info
-from source.file_utils import verify_file, add_suffix, file_transaction
+from source.file_utils import verify_file, add_suffix, file_transaction, adjust_system_path
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes, SVEvent
 from source.logger import critical, warn, err, step_greetings
@@ -151,7 +151,7 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
 def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
     bed_fpath = verify_file(cnf.bed, is_critical=False) if cnf.bed else None
-    key_gene_by_name_chrom, _ = get_key_or_target_bed_genes(bed_fpath, cnf.key_genes)
+    key_gene_by_name_chrom, _ = get_key_or_target_bed_genes(bed_fpath, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
     key_genes = [g for (g, c) in key_gene_by_name_chrom]
 
     altered_genes = set()
