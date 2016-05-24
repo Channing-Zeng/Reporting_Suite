@@ -46,12 +46,13 @@
 </div>
 
 <div id="comment_window">
-    <h2>Save comment</h2>
+    <h2>Comment mutation</h2>
     <span id="comment_window_text"></span>
-    <textarea id="comment_window_textarea" rows="4" placeholder="" style="width:99%"></textarea>
+    <br><br>
+    <textarea id="comment_window_textarea" rows="5" placeholder="" style="width:99%"></textarea>
     <br><br>
     <div class="btn btn-large" id="comment_window_cancel_btn">Cancel</div>
-    <div class="btn btn-large" id="comment_window_save_btn" style="float:right">Save</div>
+    <div class="btn btn-large" id="comment_window_save_btn" style="float:right">Send</div>
 </div>
 
 <div class="content">
@@ -160,12 +161,13 @@
                         </p>
                     </div>
                         <div style="float: left; margin-top: 10px; padding-left: 110px;">
-                        Show only with freq &#8805;
+                        Hide "likely" with AF below
                         <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
                                onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
                         <input type="text" id="mut_af_textbox" min="0" max="100" value="{min_af}" maxlength="3" size="3"
                                onchange="filterMutationsByAF(this.value)" oninput="mut_af_slider.value=this.value" style="text-align: right"/>&nbsp%
-                        <br>All known mutations with freq &#8805; <span id="act_min_af">{act_min_af}</span>&nbsp% are shown.
+
+                        <span style="display: none"><br>All known mutations with freq &#8805; <span id="act_min_af">{act_min_af}</span>&nbsp% are shown.</span>
                     </div>
                     <div style="float: right; margin-top: -20px; margin-bottom: 0;">
                         <p>

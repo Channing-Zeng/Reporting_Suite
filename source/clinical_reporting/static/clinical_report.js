@@ -346,14 +346,18 @@ function commentMutation(caller) {
     var gene, mut, pos;
     for (var c = 0; c < row.cells.length; c++) {
         var cell = row.cells[c];
-        if (cell.attributes.metric && cell.attributes.metric.value == "Gene")
-            gene = cell.innerText.split(" ")[0];
-        else if (cell.attributes.metric && cell.attributes.metric.value == "AA chg")
+        if (cell.attributes.metric && cell.attributes.metric.value == "Gene") {
+            console.log(cell.innerText);
+            gene = cell.innerText.split(' ')[0];
+        } else if (cell.attributes.metric && cell.attributes.metric.value == "AA chg") {
             mut = cell.textContent;
-        else if (cell.attributes.metric && cell.attributes.metric.value == "Position")
+        } else if (cell.attributes.metric && cell.attributes.metric.value == "Position") {
             pos = cell.textContent;
+        }
     }
-    document.getElementById('comment_window_text').innerText = 'Enter your comment about mutation ' + mut + ' in ' + gene + ', position ' + pos;
+    document.getElementById('comment_window_text').innerText = 'Leave a comment about mutation ' + mut + ' in ' + gene +
+        '. This information is going to be sent to Vlad Saveliev and considered to be added into filtering ' +
+        'blacklisting or prioritizing rules.';
     document.getElementById('comment_window_save_btn').onclick=function() {
         var comment = document.getElementById('comment_window_textarea').value;
         if (comment) {
@@ -361,10 +365,10 @@ function commentMutation(caller) {
             var php_path = '/save_comment.php';
             $.post(php_path, {data: data})
              .done(function () {
-                  alert('Comment was successfully saved!');
+                  alert('Comment was successfully sent!');
              })
              .error(function () {
-                  alert('Error! Comment was not saved.');
+                  alert('Error! Comment was not sent.');
              });
         }
         document.getElementById('comment_window').style.display = "none";
@@ -374,6 +378,15 @@ function commentMutation(caller) {
     };
 
     document.getElementById('comment_window').style.display = "block";
+
+    document.getElementById('comment_window_textarea').focus();
+
+    //document.getElementById("comment_window_textarea").addEventListener("keyup", function(event) {
+    //    event.preventDefault();
+    //    if (event.keyCode == 13) {
+    //        document.getElementById("comment_window_save_btn").click();
+    //    }
+    //})
 }
 //function extendedClick() {
 //    //$('.row_to_hide').toggleClass('row_hidden');
