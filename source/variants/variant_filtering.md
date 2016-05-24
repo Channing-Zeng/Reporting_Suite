@@ -7,10 +7,26 @@ Variant calling is performed by [VarDict](https://github.com/AstraZeneca-NGS/Var
 The allele frequency threshold defaults to 1% for exomes, hybrid capture, and whole genome sequencing, and .1% for deep sequencing. 
 
 ##### Target regions
-In exomes, The variant are called in a special target called AZ exome, that combines all Ensembl CDS regions, UTR, plus regions from commonly used panels, padded by 50pb. Also, BCBio-nextgen doesn't call variants in complicated regions like centromers.
+In exomes, the variant are called in a special target called AZ exome, that combines all Ensembl CDS regions, UTR, plus regions from commonly used panels, padded by 50pb:
+```
+ExomeSNP_ID.bed
+FM_T5.bed
+IDT_Exome.bed
+IDT-PanCancer_AZ1-IDT_orig.bed
+IDT_PanCancer_Exons.bed
+Illumina_Nextera_Exome.bed
+Illumina_TruSeq_Exome.bed
+Illumina_TruSight_Cancer.bed
+Personalis.bed
+SeqCap_EZ_Exome_v3_capture.bed
+SureSelect_Human_AllExon_V4.bed
+SureSelect_Human_AllExon_V5.bed
+Xgen-PanCancer.bed
+```
+For all types of projects, BCBio-nextgen removes tricky regions like centromers and doesn't call variants in them.
 
 ### Annotation
-Variants are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on proteins according to RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
+Variants in for of VCF are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on proteins according to RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
 ```
 FANCL   NM_018062.3
 MET     NM_000245.2
@@ -43,23 +59,28 @@ Variants are also searched against the following mutation databases:
 - [ClinVar](http://www.ncbi.nlm.nih.gov/clinvar/) - assigns CLNSIG (clinical significance)
 
 ### Raw filtering: vardict.txt
-The first filtering step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex)
+The first filtering step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. Its input is a VarDict VCF file annotated as described above, its output is `vardict.txt` sample-level file. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex)
 
-Hard filtering - the variants are discarded - is performed based on the following parameters:
+Hard filtering (where the variants are discarded) is performed using the following parameters:
 - Locus total depth (5x for exomes, hybrid capture, and targeted)
 - Mean position in reads (5)
 - Mean base quality phred score (25)
 
-Soft filtering - the variants are kept in vardict.txt, but with PASS!=True - is done based on the following:
+Soft filtering (the variants are reproted into `vardict.txt` with a reject reason in the `PASS` column) is done based on the following:
 - Variant depth (2x for WGS; 3x for exomes, hybrid capture, and targeted)
 - Alelle frequency (7.5% for whole genome sequencing; 5% for exomes and hybrid capture; .5% for targeted)
 - Mean mapping quality (10)
 
-The thresholds are specified in the run_info.yaml configuration file. Depending on the analysis, it can be either of [run_info_ExomeSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_ExomeSeq.yaml), [run_info_WGS.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_WGS.yaml), or [run_info_DeepSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_DeepSeq.yaml); the defaults are pulled from [RUNINFO_DEFAULTS.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/configs/RUNINFO_DEFAULTS.yaml).
+The thresholds are specified in the run_info.yaml configuration file. Depending on the analysis, it can be either of:
+- [run_info_ExomeSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_ExomeSeq.yaml)
+- [run_info_WGS.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_WGS.yaml)
+- [run_info_DeepSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_DeepSeq.yaml)
 
-Mutation class (Var_Class) is assigned in the following order:
+The defaults are pulled from [RUNINFO_DEFAULTS.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/configs/RUNINFO_DEFAULTS.yaml)
+
+Mutation class (`Var_Class`) is assigned in the following order:
 - _COSMIC_ - any mutation found in COSMIC
-- _ClnSNP_known_ - any other mutation, labeled significant in ClinVar (3 < CLNSIG < 7)
+- _ClnSNP_known_ - any other mutation, labeled significant in ClinVar (3 < `CLNSIG` < 7)
 - _dbSNP_del_ - deletion found in dbSNP
 - _dbSNP_ - the remaining dbSNP variants
 - _Novel_ - all remaining variants
@@ -67,28 +88,55 @@ Mutation class (Var_Class) is assigned in the following order:
 The results of the script are saved under `final/YYYY-MM-DD_projectname/var/vardict.txt`
 
 ### Cancer mutation filtering: vardict.PASS.txt
-This step is partly based on [vardict2mut.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vardict2mut.pl) script from the VarDict package, and partly on Rob McEven, Hedley Carr, and Brian Dougherty knowledge.
+This step is mostly based on [vardict2mut.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vardict2mut.pl) script from the VarDict package, and partly on Rob McEven, Hedley Carr, and Brian Dougherty knowledge. Its input is a sample-level `vardict.txt`, its output is the sample-level `vardict.PASS.txt`.
 
-#### Classification
+This script does hard-filtering, and classified the remaining variants into the following classes:
+- known (actionable; tier 1; clinically significant)
+- likely (not actionable but high-impact; suppressors LOF; tier 2; Compendia and COSMIC hotspots; dbSNP deletions)
+- unknown (remaining variants that were not hard-filtered)
+- silent (any variant that would fall into known/likely/unknown if it weren't silent)
+- incidentalome (found in blacklisted low-complexity genes and regions)
 
-##### Classes
-- incidentalome - blacklisted genes and regions
-- unknown - 
-- known - actionable, tier 1, ClinVar known.
-- likely - not known as actinable, but potentially important for cancer
+##### Raw hard filtering
+The following records are removed:
+- all soft-filtered variants in the previous step
+- all variants reported as `protein_protein_contact` according to SnpEff
 
-frameshifts, stop gained, start lost, splice site, compendia ms7 hotspots, dbSNP deletions, or tier 2 according to your rules, or COSMIC hotspots with count more than 5
+##### Actionability
+The variant is checked against a set of rules that defined "actionable" variants. It may be either of the following:
+- a gene
+- an exon 
+- a genomic position and change 
+- a protein position and change
+- a genomic region
+- a protein region
+- an indel type (deletion, frameshift deletion, insertion, etc.)
+
+For position-based rules, there are rules for somatic and germline actionable variants.
+
+For actionable variants, a special allele frequency (AF) threshold is defined. For somatic variants, by default it corresponds to the AF theshold used for variant calling (1% for exomes, hybrid capture, and whole genome sequencing, and .1% for deep sequencing); for germline, it is set to 15%. If the variant does not pass the threshold, it is not reported as actionable.
+
+##### Filter out rules
 
 ##### Actionable
 /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
 
-#### Rules
+##### Likely
+frameshifts, stop gained, start lost, splice site, compendia ms7 hotspots, dbSNP deletions, or tier 2 according to your rules, or COSMIC hotspots with count more than 5
 
-#### GMAF
+##### Rules
 
-#### MSI
+##### GMAF
+
+##### MSI
 
 ##### Incidentalome
 
-#### Reporting
+### Cohort sequencing artefacts filtering
+If the samples are not homogeneous, but come from one sequencer's run, we expect recurring variants to be caused by sequencing artefacts. For all not-known and not-actionable variants, we calcualte the number and the percentage of samples harbouring this variant. If it's more than 40% of all samples and at the same time at least 5 samples, such variants are filtered out. Cohort filtering is done on the stage of merging all sample-level `vardict.PASS.txt` into the project level `vardict.PASS.txt` located in `final/<datestamp>` directory.
+
+### Reporting
+
+### Conversion to VCF
+
 
