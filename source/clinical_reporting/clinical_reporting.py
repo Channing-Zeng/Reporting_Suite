@@ -52,10 +52,11 @@ class BaseClinicalReporting:
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
             Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
             Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
+            Metric('MSI', description='Microsatellite instabiity length', quality='Less is better', with_heatmap=False),
             Metric('Status', short_name='Status'),     # Somatic
-            Metric('Effect', max_width=150, class_='long_line'),               # Frameshift
-            Metric('VarDict status', short_name='Status', max_width=230, class_='long_line'),     # Likely
-            Metric('Databases', class_='long_line'),                 # rs352343, COSM2123, SolveBio
+            Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
+            Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
+            # Metric('Databases', class_='long_line'),                 # rs352343, COSM2123, SolveBio
             Metric('Samples', with_heatmap=False),          # 128
             # Metric('ClinVar', short_name='SolveBio ClinVar'),
         ]
@@ -144,12 +145,14 @@ class BaseClinicalReporting:
             row.add_record('Change', show_content=mut.is_canonical, **self._g_chg_recargs(mut))
             if print_cdna:
                 row.add_record('cDNA change', **self._cdna_chg_recargs(mut))
+            if mut.msi > 3:
+                row.add_record('MSI', mut.msi)
             if mut.status:
                 row.add_record('Status', mut.status)
-            row.add_record('Effect', mut.eff_type)
-            row.add_record('VarDict status', **self._signif_field(mut))
+            row.add_record('Effect', mut.eff_type.replace(' variant', '') if mut.eff_type else None)
+            row.add_record('VarDict status', **self._significance_field(mut))
             # row.add_record('VarDict reason', mut.reason)
-            row.add_record('Databases', **self._db_recargs(mut))
+            # row.add_record('Databases', **self._db_recargs(mut))
             # row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             if len(mutations_by_experiment.values()) == 1:
@@ -244,7 +247,7 @@ class BaseClinicalReporting:
             )
 
             for i, mut in enumerate(sorted(muts, key=lambda m: m.freq, reverse=True)):
-                if mut.is_canonical:
+                if mut.signif in ['known', 'likely']:
                     d['mutations'].append(dict(
                         x=i+1,
                         geneName=mut.gene.name,
@@ -275,8 +278,9 @@ class BaseClinicalReporting:
             for nuc in nucleotides:
                 _add_nuc(nuc, d['substitutions'])
             for mut in muts:
-                if mut.var_type == 'SNV' and mut.alt in nucleotides:
-                    d['substitutions'][mut.ref + '>' + mut.alt] += 1
+                if mut.signif in ['known', 'likely']:
+                    if mut.var_type == 'SNV' and mut.alt in nucleotides:
+                        d['substitutions'][mut.ref + '>' + mut.alt] += 1
             d['maxY'] = max([d['substitutions'][s] for s in d['substitutions']])
             substitutions_sum = sum([d['substitutions'][s] for s in d['substitutions']])
             d['maxRate'] = d['maxY'] * 100 / substitutions_sum if substitutions_sum > 0 else 0
@@ -517,7 +521,7 @@ class BaseClinicalReporting:
 
             for gene in e.key_gene_by_name_chrom.values():
                 if not gene.cov_by_threshs:
-                    err('Gene ' + gene.name + ' has no cov_by_threshs')
+                    # err('Gene ' + gene.name + ' has no cov_by_threshs')
                     continue
                 gene_names.append(gene.name)
                 transcript_names.append(gene.transcript_id)
@@ -709,8 +713,9 @@ class BaseClinicalReporting:
             t += '<div style="position:relative;"><div class="comment_div" onclick="commentMutation($(this))"></div></div> '
         t += mut.gene.name
         if mut.transcript:
-            tooltip = ('Protein length: ' + str(mut.aa_len) + '<br>' +
-                       'Exon altered: ' + str(mut.exon) + '')
+            tooltip = 'Protein length: ' + str(mut.aa_len)
+            if mut.exon:
+               tooltip += '<br>Exon altered: ' + str(mut.exon)
             t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>'\
                  + gray(mut.transcript) + '</span>'
             str(mut.aa_len)
@@ -745,6 +750,10 @@ class BaseClinicalReporting:
             if t in ['Insertion', 'Deletion']:
                 t = t[:3]
             chg = gray(t) + ' ' + chg
+
+        if mut.solvebio_url:
+            chg = '<a href="' + mut.solvebio_url + '" target="_blank">' + chg + '</a>'
+
         return dict(value=chg)
 
     @staticmethod
@@ -754,13 +763,11 @@ class BaseClinicalReporting:
         return dict(value=gray(p + ':') + chg)
 
     @staticmethod
-    def _signif_field(mut):
-        debug('_signif_field: ' + mut.signif)
+    def _significance_field(mut):
         if mut.signif == 'incidentalome':
             debug('   _signif_field = incidentalome, txt is ' + mut.reason)
             txt = mut.reason
         else:
-            debug('   _signif_field != incidentalome, txt is ' + mut.signif)
             txt = mut.signif
             if mut.reason:
                 txt += '<span class="reason"> (' + mut.reason + ') </span>'
@@ -980,7 +987,7 @@ class ClinicalReporting(BaseClinicalReporting):
                 if vardict_mut_types:
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
-                            if mut.signif not in ['unknown', 'incidentalome'] and mut.is_canonical:
+                            if mut.signif in ['known', 'likely']:
                                 variants.append(mut.aa_change if mut.aa_change else '.')
                                 types.append(mut.var_type)
                                 frequencies.append(Metric.format_value(mut.freq, unit='%'))

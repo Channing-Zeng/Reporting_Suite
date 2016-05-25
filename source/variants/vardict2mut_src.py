@@ -625,7 +625,7 @@ class Filtration:
         aa_chg_col = None
         cosmaachg_col = None
         cosmcnt_col = None
-        msicol = None
+        msi_col = None
         cdna_chg_col = None
         gene_coding_col = None
         transcript_col = None
@@ -671,7 +671,7 @@ class Filtration:
                 aa_chg_col = headers.index('Amino_Acid_Change')
                 cosmaachg_col = headers.index('COSMIC_AA_Change')
                 cosmcnt_col = headers.index('COSMIC_Cnt') if 'COSMIC_Cnt' in headers else None
-                msicol = headers.index('MSI')
+                msi_col = headers.index('MSI')
                 cdna_chg_col = headers.index('cDNA_Change')
                 gene_coding_col = headers.index('Gene_Coding')
                 transcript_col = headers.index('Transcript')
@@ -813,7 +813,7 @@ class Filtration:
                     continue
 
             # Filter low AF MSI
-            msi = float(fields[msicol])
+            msi = float(fields[msi_col])
             if abs(len(ref) - len(alt)) == 1 and msi > 3:
                 msi_fail = any([
                     msi <=  7 and af < 0.03,

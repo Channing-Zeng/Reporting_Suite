@@ -8,10 +8,9 @@ td.long_line:hover {
   -o-text-overflow: unset;
   text-overflow: unset; }
   td.long_line:hover > span {
-    border: 1px solid black;
     position: absolute;
-    margin-top: -8px;
-    margin-left: -1px;
+    margin-top: -7px;
+    margin-left: 0;
     background: white; }
 
 tr.unselected_type {
@@ -83,7 +82,7 @@ ol {
 
 .my_tooltip {
   display: none;
-  position: absoluteew comment for mutati;
+  position: absolute;
   background: #ffe;
   border: 1px solid #eed;
   border-radius: 4px;

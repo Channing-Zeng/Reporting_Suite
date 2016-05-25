@@ -63,6 +63,7 @@ class Mutation(SortableByChrom):
         self.alt = None
         self.aa_change = None
         self.aa_len = None
+        self.msi = None
         self.eff_type = None
         self.status = None
         self.reason = None
@@ -669,6 +670,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
     aa_len_col = None
     aa_chg_col = None
     cdna_chg_col = None
+    msi_col = None
     transcript_col = None
     exon_col = None
     status_col = None
@@ -682,33 +684,34 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
     with open(mutations_fpath) as f:
         for i, l in enumerate(f):
             if i == 0:
-                header = l.strip().split('\t')
-                sample_col = header.index('Sample')
-                chr_col = header.index('Chr')
-                ids_col = header.index('ID')
-                pos_col = header.index('Start')
-                ref_col = header.index('Ref')
-                alt_col = header.index('Alt')
-                class_col = header.index('Var_Class')
-                type_col = header.index('Type')
-                var_type_col = header.index('Var_Type')
-                codon_chg_col = header.index('Codon_Change')
-                aa_chg_col = header.index('Amino_Acid_Change')
-                cdna_chg_col = header.index('cDNA_Change')
-                aa_len_col = header.index('Amino_Acid_Length')
-                allele_freq_col = header.index('AlleleFreq')
-                gene_col = header.index('Gene')
-                depth_col = header.index('Depth')
-                transcript_col = header.index('Transcript')
-                exon_col = header.index('Exon')
-                if 'Status' in header:
-                    status_col = header.index('Status')
-                if 'Significance' in header:
-                    signif_col = header.index('Significance')
+                headers = l.strip().split('\t')
+                sample_col = headers.index('Sample')
+                chr_col = headers.index('Chr')
+                ids_col = headers.index('ID')
+                pos_col = headers.index('Start')
+                ref_col = headers.index('Ref')
+                alt_col = headers.index('Alt')
+                class_col = headers.index('Var_Class')
+                type_col = headers.index('Type')
+                var_type_col = headers.index('Var_Type')
+                codon_chg_col = headers.index('Codon_Change')
+                aa_chg_col = headers.index('Amino_Acid_Change')
+                cdna_chg_col = headers.index('cDNA_Change')
+                aa_len_col = headers.index('Amino_Acid_Length')
+                msi_col = headers.index('MSI')
+                allele_freq_col = headers.index('AlleleFreq')
+                gene_col = headers.index('Gene')
+                depth_col = headers.index('Depth')
+                transcript_col = headers.index('Transcript')
+                exon_col = headers.index('Exon')
+                if 'Status' in headers:
+                    status_col = headers.index('Status')
+                if 'Significance' in headers:
+                    signif_col = headers.index('Significance')
                 else:
-                    signif_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
-                if 'Reason' in header:
-                    reason_col = header.index('Reason')
+                    signif_col = len(headers) - headers[::-1].index('Status') - 1  # get last index of status
+                if 'Reason' in headers:
+                    reason_col = headers.index('Reason')
                 continue
             fs = l.replace('\n', '').split('\t')
             sample_name, chrom, start, ref, alt, gname, transcript = \
@@ -752,6 +755,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                     mut.freq = None
                 mut.dbsnp_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('rs')), None)
                 mut.cosmic_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('COS')), None)
+                mut.msi = int(float(fs[msi_col]))
                 mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
                 mut.var_type = var_type
                 mut.var_class = var_class
