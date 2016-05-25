@@ -82,9 +82,9 @@ def query_mutations(cnf, mutations):
                 info('  batch ' + str(i) + '...')
             for mut, res in zip(mutations, BatchQuery(batch).execute()):
                 if res['results']:
-                    solvbio_record = parse_response(res['results'][0], mut)
-                    if solvbio_record:
-                        mut.solvebio = solvbio_record
+                    solvebio_record = parse_response(res['results'][0], mut)
+                    if solvebio_record:
+                        mut.solvebio = solvebio_record
             info('  done, found ' + str(sum(1 for m in mutations if m.solvebio)) + ' hits')
     except SolveError:
         err(format_exc())

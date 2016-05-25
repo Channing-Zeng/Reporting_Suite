@@ -1113,7 +1113,7 @@ def check_clnsig(clnsig):
             return 'ClnSNP_known'
         if flagyes > 0 and flagno == 0:
             return 'ClnSNP_known'
-        if flagyes >= flagno and flagno <= 1 and flagyes / flags >= 0.5:
+        if flags and flagyes >= flagno and flagno <= 1 and flagyes / flags >= 0.5:
             return 'ClnSNP_known'
         else:
             return 'ClnSNP_unknown'

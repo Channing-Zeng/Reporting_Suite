@@ -1,6 +1,6 @@
 #### v1.4.0, 19 May 2016
 Filtering
-- Added gene and region blacklist.
+- Added gene and region blacklist
 - Checking if ClinVar gene matches SnpEff gene
 - Fixed issue when artefact filtering was perfomered before the NGS reports are generated. Thanks Sally Luke
 - Cohort frequency default threshold 1.0 changed to 0.4
@@ -12,10 +12,15 @@ Filtering
   - Exome
   - DeepSeq
   - WGS
-
+- 
 
 NGS Reports
 - Unique color scheme for Seq2C report and plot
+- Column for MSI added
+- Indicendalome
+- SolveBio for all mutations
+- Known shown with any AF threshold
+- Buttons to report mutation
 
 #### v1.3.0, 21 Apr 2016
 Features

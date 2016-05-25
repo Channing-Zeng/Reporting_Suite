@@ -87,6 +87,7 @@ def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_li
                          '\ntype = JBrowse/View/Track/CanvasVariants' \
                          '\nkey  = {sample}_variants\n'.format(**locals())
 
+
 def trunc_symlink(link):
     if not link:
         return None

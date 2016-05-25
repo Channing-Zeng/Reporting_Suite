@@ -470,7 +470,13 @@ class ClinicalExperimentInfo:
         return hash((self.sample.name, self.project_name))
 
     def get_mut_info_from_solvebio(self):
-        query_mutations(self.cnf, self.mutations)
+        for m in self.mutations:
+            m.solvebio_url = 'https://astrazeneca.solvebio.com/variant/GRCH37-{chrom}-{start}-{stop}-{alt}'.format(
+                chrom=m.chrom,
+                start=m.pos,
+                stop=m.pos + len(m.ref) - 1,
+                alt=m.alt)
+        # query_mutations(self.cnf, self.mutations)
 
     def parse_sv(self, sv_fpath, key_gene_by_name_chrom):
         info('Parsing prioritized SV events from ' + sv_fpath)
