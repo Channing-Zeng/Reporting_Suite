@@ -1,6 +1,6 @@
 {
 "version": 3,
-"mappings": "AAAA,6BAA6B;EACzB,KAAK,EAAE,MAAM;EACb,MAAM,EAAE,KAAK;EACb,UAAU,EAAE,qyntDAAqyntD",
+"mappings": "AAAA,6BAA6B;EACzB,KAAK,EAAE,MAAM;EACb,MAAM,EAAE,KAAK;EACb,UAAU,EAAE,ylp2CAAylp2C",
 "sources": ["header_picture.sass"],
 "names": [],
 "file": "header_picture.css"

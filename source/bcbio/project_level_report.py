@@ -560,6 +560,19 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
 
     return write_static_html_report(cnf, data, html_fpath)
 
+
+def get_version():
+    cur_fpath = abspath(getsourcefile(lambda: 0))
+    reporting_suite_dirpath = dirname(dirname(dirname(cur_fpath)))
+
+    version = ''
+    if verify_file(join(reporting_suite_dirpath, 'VERSION.txt')):
+        with open(join(reporting_suite_dirpath, 'VERSION.txt')) as f:
+            version = f.read().strip()
+
+    return version
+
+
 def get_run_info(cnf, bcbio_structure, dataset_project):
     info('Getting run and codebase information...')
     run_info_dict = dict()
@@ -569,10 +582,7 @@ def get_run_info(cnf, bcbio_structure, dataset_project):
     run_date = cnf.run_date if cnf.run_date else time.localtime()
     run_info_dict["run_date"] = time.strftime('%d %b %Y, %H:%M (GMT%z)', run_date)
 
-    version = ''
-    if verify_file(join(reporting_suite_dirpath, 'VERSION.txt')):
-        with open(join(reporting_suite_dirpath, 'VERSION.txt')) as f:
-            version = f.read().strip()
+    version = get_version()
 
     last_modified_datestamp = ''
     try:

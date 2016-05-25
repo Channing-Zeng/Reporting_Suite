@@ -57,7 +57,7 @@
 
 <div class="content">
     <div style="margin-top: -150px; margin-bottom: 45px; color: white;">
-        <h1 style="">Oncology NGS Report</h1>
+        <h1 style="">Oncology NGS Report v.{software_version}</h1>
         <span style="color: red;">For research use only</span>
     </div>
 
@@ -136,19 +136,39 @@
         <h1>Mutations in {total_key_genes} {key_or_target} genes</h1>
         {.section variants}
             <div id="variants_div">
-                <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
-                    These data were analyzed to identify previously reported and novel variants
-                    in {total_key_genes} {genes_description} (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
-                </p>
-                <p>
-                    Warning! There are many caveats to interpreting NGS results, and many sources of false positive and false negative results. Some factors and issues to be aware of:
-                    <ol>
-                    <li><b>Germline variants</b> – germline SNPs occur at approximately 100%, 50%, or 0% frequency and every effort is made to filter out germline variants (some exceptions like BRCA1/2).
-                    <li><b>Somatic variants</b> – somatic variants occur at nearly any allele frequency but as allele frequencies approach 20% and lower, data become noisier and false positive variants increase.
-                    <li><b>Sample types</b> - in general, focus on somatic variants above ~30% allele frequency for cell line and explant models, above ~5% and above for tumors, and above ~0.7% for ctDNA. Formalin treated tumors have the added complication of C>T and G>A de-amination artefacts.
-                    <li><b>False positive mutations</b> – advance algorithms were employed to generate the highest quality variant calls, but false positive will still occur and are likely present in the candidate mutation output below. False positive variants are more found in homopolymer tracts, in genes with repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes residing in repetitive or unstable regions of the genome.
-                    </ol>
-                </p>
+                <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using
+                    <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
+                    These data were analyzed to identify previously reported and novel variants<br>in {total_key_genes}
+                    {genes_description}.
+
+                <p>Showing known actionable mutations with allele frequency (AF) above
+                    <span id="act_min_af">{act_min_af}</span><span class="rhs"> </span>%
+                    and other likely significant mutations with AF above
+                    <span id="min_af">{min_af}</span><span class="rhs"> </span>%
+
+                <div class="variants_info_message_header">Warning! There are many caveats to interpreting NGS results,
+                    and many sources of false positive and false negative results. Some factors and issues to be aware of:
+                </div>
+                <div class="variants_info_message">
+                    <div class="variants_info_message_1">
+                        <p><b>Somatic variants</b> – somatic variants occur at nearly any allele frequency but as allele
+                        frequencies approach 20% and lower, data become noisier and false positive variants increase.
+                        <p><b>Germline variants</b> – germline SNPs occur at approximately 100%, 50%, or 0% frequency
+                        and every effort is made to filter out germline variants (some exceptions like BRCA1/2).
+                    </div>
+                    <div class="variants_info_message_2">
+                        <p><b>Sample types</b> -
+                        in general, focus on somatic variants above ~30% allele frequency for cell line and explant models;<br>
+                        above ~5% and above for tumors; and above ~0.7% for ctDNA. Formalin treated tumors have the added
+                        complication of C>T and G>A de-amination artefacts.
+                        <p><b>False positive mutations</b> – advance algorithms were employed to generate the highest
+                        quality variant calls, but false positive will still occur and are likely present in the candidate
+                        mutation output below. False positive variants are more found in homopolymer tracts, in genes with
+                        repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes
+                        residing in repetitive or unstable regions of the genome.
+                    </div>
+                </div>
+                <div style="clear: both;"></div>
                 <div id="variants_table_controls">
                     <div style="float: left">
                         <p id="variants_switch">
@@ -160,18 +180,19 @@
                                 incidentalome</a>
                         </p>
                     </div>
-                        <div style="float: left; margin-top: 10px; padding-left: 110px;">
+                        <div id="slider_div">
                         Hide "likely" with AF below
                         <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
                                onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
                         <input type="text" id="mut_af_textbox" min="0" max="100" value="{min_af}" maxlength="3" size="3"
                                onchange="filterMutationsByAF(this.value)" oninput="mut_af_slider.value=this.value" style="text-align: right"/>&nbsp%
 
-                        <span style="display: none"><br>All known mutations with freq &#8805; <span id="act_min_af">{act_min_af}</span>&nbsp% are shown.</span>
+                        <span id="actionable_mutations_freq_span">but keep all <span id="known_word">known</span>
+                        with AF<span class="rhs"> </span>><span class="rhs"> </span>{act_min_af}<span class="rhs"> </span>%</span>
                     </div>
-                    <div style="float: right; margin-top: -20px; margin-bottom: 0;">
+                    <div id="download_mut_table_div">
                         <p>
-                            <a class="btn" id="download_mut_table" style="display: none;">Download for Excel</a>
+                            <a class="btn" id="download_mut_table" style="display: none;">Export to Excel</a>
                         </p>
                     </div>
                     <div style="clear: both"></div>

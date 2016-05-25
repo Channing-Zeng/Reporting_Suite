@@ -8,6 +8,7 @@ import itertools
 
 import source
 from source import info, verify_file
+from source.bcbio.project_level_report import get_version
 from source.calling_process import call
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
@@ -52,7 +53,7 @@ class BaseClinicalReporting:
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
             Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
             Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
-            Metric('MSI', description='Microsatellite instabiity length', quality='Less is better', with_heatmap=False),
+            Metric('MSI', short_name='HP', description='Microsatellite instabiity length', quality='Less is better', with_heatmap=False),
             Metric('Status', short_name='Status'),     # Somatic
             Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
@@ -826,6 +827,7 @@ class ClinicalReporting(BaseClinicalReporting):
         info('')
 
         data = {
+            'software_version': get_version(),
             'key_or_target': self.experiment.genes_collection_type,
             'genes_description': self.experiment.genes_description,
             'sample': self.sample_section(self.experiment),

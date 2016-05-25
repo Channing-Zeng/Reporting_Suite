@@ -9,9 +9,9 @@ from os.path import join, basename, isdir
 
 import source
 from source import info
+from source.clinical_reporting.utils import get_key_or_target_bed_genes, SVEvent
 from source.file_utils import verify_file, add_suffix, file_transaction, adjust_system_path
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
-from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes, SVEvent
 from source.logger import critical, warn, err, step_greetings
 from source.prepare_args_and_cnf import check_genome_resources
 from source.clinical_reporting.known_sv import fusions as known_fusions
