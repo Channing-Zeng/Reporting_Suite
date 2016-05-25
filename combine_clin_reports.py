@@ -38,7 +38,7 @@ def main():
     if cnf.sample_names:
         cnf.sample_names = cnf.sample_names.split(',')
 
-    if len(bcbio_project_dirpaths) < 2:
+    if len(bcbio_project_dirpaths) < 1:
         critical('Usage: ' + __file__ + ' project_bcbio_path [project_bcbio_path] [-o output_dir]')
 
     info()

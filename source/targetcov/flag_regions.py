@@ -373,10 +373,10 @@ single_report_metric_storage = MetricStorage(
     ])])
 
 
-def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
+def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample, return_intersect=False):
     info()
     info('Detecting problematic regions for ' + sample)
-    tricky_regions = {'low_gc.bed': 'Low GC', 'high_gc.bed': 'High GC', 'low_complexity.bed': 'Low complexity',
+    tricky_regions = {'low_gc.bed.gz': 'Low GC', 'high_gc.bed.gz': 'High GC', 'low_complexity.bed.gz': 'Low complexity',
                       'bad_promoter.bed': 'Bad promoter'}
     bed_filenames = tricky_regions.keys()
 
@@ -387,8 +387,11 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
     vcf_bed_intersect = join(cnf.work_dir, splitext(basename(selected_bed_fpath))[0] + '_tricky_vcf_bed.intersect')
     if not cnf.reuse_intermediate or not verify_file(vcf_bed_intersect, silent=True, is_critical=False):
         bedtools = get_system_path(cnf, 'bedtools')
-        cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wa -wb -filenames'
+        cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wo -filenames'
         call(cnf, cmdline, output_fpath=vcf_bed_intersect, exit_on_error=False)
+
+    if return_intersect:
+        return vcf_bed_intersect
 
     regions_by_reasons = defaultdict(set)
 
