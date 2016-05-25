@@ -1,23 +1,25 @@
-#### v1.4.0, 19 May 2016
+#### v1.4.0, 26 May 2016
 Filtering
-- Added gene and region blacklist
+- Gene and region blacklists introduced to filter variants
 - Checking if ClinVar gene matches SnpEff gene
-- Fixed issue when artefact filtering was perfomered before the NGS reports are generated. Thanks Sally Luke
-- Cohort frequency default threshold 1.0 changed to 0.4
+- Cohort frequency default threshold 1.0 (no filtering) changed to 0.4
 - Germline default AF is 15%
-- Actionable freq default 1%
-- MSI check constant changed
+- Defailt AF is 7.5% (2.5% for actionable) for exomes, 7.5% (5%) for WGS, 0.5% (0.2%) for deep-seq
+- Other default filtering parameters changed (see [configs/RUNINFO_DEFAULT.yaml])
+- MSI check constants changed
 - If low ClinVar significance, filter even if COSMIC
-- Changed default filtering parameters (see [configs/RUNINFO_DEFAULT.yaml])
+- Artefacts and actionable filtering rules updated
 
 NGS Reports
 - Unique color scheme for Seq2C report and plot
-- Column for MSI added
-- Indicendalome
-- SolveBio for all mutations
-- Known shown with any AF threshold
-- Buttons to report mutation
-- Reporting for 820 key genes
+- Column for HP (homopolymer length if > 3) added
+- Indicendalome tab for mutations in blacklisted genes and regions
+- SolveBio links for all mutations
+- Actioanble mutations shown disregarding of the AF slider
+- Buttons to report mutation and send an email
+- Reporting for 820 key genes instead of 300
+- Showing version and link to changes
+- Showing link to documentation
 
 #### v1.3.0, 21 Apr 2016
 Features

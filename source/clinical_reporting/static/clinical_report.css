@@ -152,4 +152,20 @@ p {
   #actionable_mutations_freq_span #known_word {
     background-color: #f5ffa3; }
 
+.ngs_reports_header_link {
+  color: #67ddff;
+  border-bottom: 1px solid #67ddff; }
+
+.ngs_reports_header_link {
+  color: #67ddff;
+  border-bottom: 1px solid #67ddff; }
+
+.ngs_reports_header_link:hover {
+  color: #ff5763 !important;
+  border-bottom: 1px solid #ff5763 !important; }
+
+.ngs_reports_header_link:visited {
+  color: #ae7fff;
+  border-bottom: 1px solid #ae7fff; }
+
 /*# sourceMappingURL=clinical_report.css.map */

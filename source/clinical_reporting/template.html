@@ -57,7 +57,9 @@
 
 <div class="content">
     <div style="margin-top: -150px; margin-bottom: 45px; color: white;">
-        <h1 style="">Oncology NGS Report v.{software_version}</h1>
+        <h1 style="">Oncology NGS Report
+            <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/CHANGES.md" class="ngs_reports_header_link">
+                v.{software_version}</a></h1>
         <span style="color: red;">For research use only</span>
     </div>
 
@@ -137,14 +139,15 @@
         {.section variants}
             <div id="variants_div">
                 <p style="margin-top: -5px;">{total_variants} variants found compared to a reference genome using
-                    <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict variant caller</a>.
-                    These data were analyzed to identify previously reported and novel variants<br>in {total_key_genes}
-                    {genes_description}.
+                    VarDict variant caller. These data were
+                    <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/source/variants/variant_filtering.md">
+                    analyzed</a> to identify previously reported and novel variants.
 
                 <p>Showing known actionable mutations with allele frequency (AF) above
                     <span id="act_min_af">{act_min_af}</span><span class="rhs"> </span>%
                     and other likely significant mutations with AF above
-                    <span id="min_af">{min_af}</span><span class="rhs"> </span>%
+                    <span id="min_af">{min_af}</span><span class="rhs"> </span>%,
+                    only in {total_key_genes} {genes_description}.</p>
 
                 <div class="variants_info_message_header">Warning! There are many caveats to interpreting NGS results,
                     and many sources of false positive and false negative results. Some factors and issues to be aware of:
@@ -158,7 +161,7 @@
                     </div>
                     <div class="variants_info_message_2">
                         <p><b>Sample types</b> -
-                        in general, focus on somatic variants above ~30% allele frequency for cell line and explant models;<br>
+                        in general, focus on somatic variants above ~30% allele frequency for cell line and explant models;
                         above ~5% and above for tumors; and above ~0.7% for ctDNA. Formalin treated tumors have the added
                         complication of C>T and G>A de-amination artefacts.
                         <p><b>False positive mutations</b> – advance algorithms were employed to generate the highest
