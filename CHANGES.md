@@ -21,6 +21,7 @@ NGS Reports
 - SolveBio for all mutations
 - Known shown with any AF threshold
 - Buttons to report mutation
+- Reporting for 820 key genes
 
 #### v1.3.0, 21 Apr 2016
 Features

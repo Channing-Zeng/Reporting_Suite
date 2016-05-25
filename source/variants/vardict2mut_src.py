@@ -863,7 +863,7 @@ class Filtration:
                     self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
                     continue
 
-            if self.status != 'known' and not actionability:
+            if not actionability:
                 if var_type.startswith('UPSTREAM'):
                     self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
                     continue

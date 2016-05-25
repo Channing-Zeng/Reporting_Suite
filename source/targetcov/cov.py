@@ -569,7 +569,7 @@ def make_per_gene_report(cnf, sample, bam_fpath, target_bed, features_bed, featu
                          min_depth=float(min_depth) if min_depth != '.' else None,
                          avg_depth=float(avg_depth) if avg_depth != '.' else None,
                          std_dev=float(std_dev) if std_dev != '.' else None,
-                         rate_within_normal=float(wn20ofmean) if wn20ofmean != '.' else None,)
+                         rate_within_normal=float(wn20ofmean) if wn20ofmean and wn20ofmean != '.' else None,)
                     region.sample_name = gene_by_name_and_chrom[(gene_name, chrom)].sample_name
                     depth_thresholds = cnf.coverage_reports.depth_thresholds
                     rates_within_threshs = OrderedDict((depth, None) for depth in depth_thresholds)
