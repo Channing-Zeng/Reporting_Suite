@@ -70,6 +70,7 @@ class Mutation(SortableByChrom):
         self.cosmic_id = None
         self.dbsnp_id = None
         self.solvebio = None
+        self.solvebio_url = None
 
         self.depth = None
         self.freq = None

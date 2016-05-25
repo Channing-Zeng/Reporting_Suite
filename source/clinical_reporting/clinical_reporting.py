@@ -685,7 +685,7 @@ class BaseClinicalReporting:
 
         val = OrderedDict()
 
-        if mut.solvebio:
+        if mut.solvebio_url:
             val['SolveBio'] = mut.solvebio_url
 
         if mut.cosmic_id:
