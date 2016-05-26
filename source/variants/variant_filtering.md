@@ -4,10 +4,10 @@
 Variant calling is performed by [VarDict](https://github.com/AstraZeneca-NGS/VarDict) ([Lai Z, 2016](http://www.ncbi.nlm.nih.gov/pubmed/27060149)) that calls SNV, MNV, indels, complex and structural variants, and differences in somatic and LOH variants when processed in paired mode. 
 
 ##### Allele frequency threshold
-The allele frequency threshold defaults to 1% for exomes, hybrid capture, and whole genome sequencing, and .1% for deep sequencing. 
+The allowed allele frequency is 1% for exomes, hybrid capture, and whole genome sequencing, and .1% for deep sequencing. 
 
 ##### Target regions
-In exomes, the variant are called in a special target called AZ exome, that combines all Ensembl CDS regions, UTR, plus regions from commonly used panels, padded by 50pb:
+In exomes, the variant are called in a special target called AZ exome, that combines all Ensembl CDS regions, UTR, plus regions from commonly used panels padded by 50pb:
 ```
 ExomeSNP_ID.bed
 FM_T5.bed
@@ -23,10 +23,10 @@ SureSelect_Human_AllExon_V4.bed
 SureSelect_Human_AllExon_V5.bed
 Xgen-PanCancer.bed
 ```
-For all types of projects, BCBio-nextgen removes tricky regions like centromers and doesn't call variants in them.
+For WGS projects, BCBio-nextgen removes tricky regions like centromers from the target.
 
 ### Annotation
-Variants in for of VCF are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on proteins according to RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
+Variants in form of VCF are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on proteins according to RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
 ```
 FANCL   NM_018062.3
 MET     NM_000245.2
@@ -62,14 +62,14 @@ Variants are also searched against the following mutation databases:
 The first filtering step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. Its input is a VarDict VCF file annotated as described above, its output is `vardict.txt` sample-level file. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex)
 
 Hard filtering (where the variants are discarded) is performed using the following parameters:
-- Locus total depth (5x for exomes, hybrid capture, and targeted)
-- Mean position in reads (5)
-- Mean base quality phred score (25)
+- Locus total depth (≥ 5x for exomes, hybrid capture, and targeted)
+- Mean position in reads (≥ 5)
+- Mean base quality phred score (≥ 25)
 
 Soft filtering (the variants are reproted into `vardict.txt` with a reject reason in the `PASS` column) is done based on the following:
-- Variant depth (2x for WGS; 3x for exomes, hybrid capture, and targeted)
-- Alelle frequency (7.5% for whole genome sequencing; 5% for exomes and hybrid capture; .5% for targeted)
-- Mean mapping quality (10)
+- Variant depth (≥ 2x for WGS; ≥ 3x for exomes, hybrid capture, and targeted)
+- Alelle frequency (≥ 7.5% for whole genome sequencing; ≥ 5% for exomes and hybrid capture; ≥ .5% for targeted)
+- Mean mapping quality (≥ 10)
 
 The thresholds are specified in the run_info.yaml configuration file. Depending on the analysis, it can be either of:
 - [run_info_ExomeSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_ExomeSeq.yaml)
@@ -103,22 +103,25 @@ The following records are removed:
 - all variants reported as `protein_protein_contact` according to SnpEff
 
 ##### Actionability
-The variant is checked against a set of rules that defined "actionable" variants. It may be either of the following:
-- a gene
-- an exon 
-- a genomic position and change 
-- a protein position and change
-- a genomic region
-- a protein region
-- an indel type (deletion, frameshift deletion, insertion, etc.)
+The variant is checked against a set of rules that defined "actionable" (known driver) variants. A rules may specify any specific variant feature out of the following:
+- gene
+- exon 
+- genomic position and change 
+- protein position and change
+- genomic region
+- protein region
+- indel type (deletion, frameshift deletion, insertion, frameshift insertion, indel, etc.)
 
-For position-based rules, there are rules for somatic and germline actionable variants.
+For position-based rules, there exist rules for somatic and germline actionable variants.
 
 For actionable variants, a special allele frequency (AF) threshold is defined. For somatic variants, by default it corresponds to the AF theshold used for variant calling (1% for exomes, hybrid capture, and whole genome sequencing, and .1% for deep sequencing); for germline, it is set to 15%. If the variant does not pass the threshold, it is not reported as actionable.
 
 ##### Filter out rules
 
-##### Actionable
+##### Known
+Robust evidence base linking aberration with likely sensitization or high likelihood of response in human in proposed trial and disease setting – good enough to go into a PhIII pivotal trial as a selection marker (registration intent). Well characterized pathogenic germline variants may be included. 
+Similar to: Class 5 – pathogenic.
+
 /ngs/reference_data/genomes/Hsapiens/hg19/variation/cancer_informatics/actionable.txt
 
 ##### Likely
@@ -138,5 +141,14 @@ If the samples are not homogeneous, but come from one sequencer's run, we expect
 ### Reporting
 
 ### Conversion to VCF
+
+
+Germline variants – germline SNPs occur at approximately 100%, 50%, or 0% frequency and every effort is made to filter out germline variants (some exceptions like BRCA1/2).
+
+Sample types - in general, focus on somatic variants above ~30% allele frequency for cell line and explant models, above ~5% and above for tumors, and above ~0.7% for ctDNA. Formalin treated tumors have the added complication of C>T and G>A de-amination artefacts.
+
+Somatic variants – somatic variants occur at nearly any allele frequency but as allele frequencies approach 20% and lower, data become noisier and false positive variants increase.
+
+False positive mutations – advance algorithms were employed to generate the highest quality variant calls, but false positive will still occur and are likely present in the candidate mutation output below. False positive variants are more found in homopolymer tracts, in genes with repetitive regions (within the gene or elsewhere in the genome), in very large genes, and in genes residing in repetitive or unstable regions of the genome.
 
 
