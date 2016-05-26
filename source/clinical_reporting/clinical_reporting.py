@@ -140,10 +140,10 @@ class BaseClinicalReporting:
             if len(mutations_by_experiment.values()) > 1 and \
                     (not mut.signif or mut.signif.lower() in ['unknown', 'incidentalome']):
                 continue
-            if sample_experiments and all(mut not in mutations_by_experiment[e] for e in sample_experiments):
+            if sample_experiments and all(e not in sample_experiments for e in mut_by_experiment.keys()):
                 continue
             elif sample_experiments:
-                cur_experiments = [e for e in sample_experiments if mut in mutations_by_experiment[e]]
+                cur_experiments = [e for e in mut_by_experiment.keys() if e in sample_experiments]
             row = report.add_row()
             row.add_record('Gene', **self._gene_recargs(mut))
             # if mut.is_canonical:
@@ -176,6 +176,8 @@ class BaseClinicalReporting:
                 if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
                     self._find_other_occurences(row, mut_by_experiment, cur_experiments)
                 for e, m in mut_by_experiment.items():
+                    if cur_experiments and e not in cur_experiments:
+                        continue
                     row.add_record(e.key + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
                     row.add_record(e.key + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
 
@@ -200,7 +202,7 @@ class BaseClinicalReporting:
         if '_' in sample_name and sample_name.split('_')[-1].isdigit():
             return int(sample_name.split('_')[-1])
         else:
-            return ''.join(c for c in sample_name if c.isdigit())
+            return int(''.join(c for c in sample_name if c.isdigit()))
 
     @staticmethod
     def _find_other_occurences(row, mut_by_experiment, cur_experiments):
@@ -221,8 +223,9 @@ class BaseClinicalReporting:
             samples = [e.sample.name.lower() for e in cur_experiments]
             for parameter, values in sample_parameters.iteritems():
                 for value in values:
-                    if any(value.lower() in sample_name for sample_name in samples):
-                        num_samples[value] -=1
+                    for sample_name in samples:
+                        if value.lower() in sample_name:
+                            num_samples[value] -=1
             other_occurences = ' '.join([k + ': ' + str(v) for k, v in num_samples.iteritems() if v > 0])
             other_occurences.replace('Sensitive', 'Sens').replace('Resistant', 'Res')
             row.add_record('Other occurrences', other_occurences)
