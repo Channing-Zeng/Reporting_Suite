@@ -56,8 +56,21 @@ def run_combine_clinical_reports(cnf, bcbio_structures):
 
 
 def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, is_target2wgs=False):
-    ComparisonClinicalReporting(cnf, infos_by_key).write_report(
+    report = ComparisonClinicalReporting(cnf, infos_by_key)
+    report.write_report(
         join(output_dirpath, 'clinical_report.html'), is_target2wgs=is_target2wgs)
+    report.key_genes_report = None
+    sample_nums = set([report.get_sample_num(s) for s in report.sample_names])
+    for num in sample_nums:
+        sample_report = ComparisonClinicalReporting(cnf, dict())
+        sample_experiments = dict()
+        for k, e in report.experiment_by_key.items():
+            if report.get_sample_num(e.sample.name) == num:
+                sample_experiments[k] = e
+
+        sample_report.experiment_by_key = sample_experiments
+        sample_report.mutations_report = report.sample_reports[num]
+        sample_report.write_report(join(output_dirpath, 'report_' + str(num) + '.html'))
 
 
 # class ComparisonMutation(Mutation):
@@ -88,28 +101,33 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         self.seq2c_report = None
         self.key_genes_report = None
         self.cov_plot_data = None
+        self.sample_reports = dict()
 
-        sample_names = []
+        self.sample_names = []
         for k, e in experiment_by_key.items():
             e.key = k
-            sample_names.append(e.sample.name)
+            self.sample_names.append(e.sample.name)
         # self.patient = self.merge_patients(self.infos)
         # bed_fpaths = set(experiment.target.bed_fpath for experiment in experiment_by_key.values() if experiment.target.bed_fpath)
         # bed_fnames = [basename(bed_fpath).split('.')[0] + '.bed' for bed_fpath in bed_fpaths]
-        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, sample_names)
+        jbrowser_link = get_jbrowser_link(self.cnf.genome.name, self.sample_names)
 
         info('Preparing data...')
         # self.mut_by_key_by_exper = self.arrange_mutations({k: i.mutations for k, i in experiment_by_key.items()})
         mutations_by_experiment = {e: e.mutations for e in experiment_by_key.values() if e.mutations}
         if mutations_by_experiment:
             self.mutations_report, self.venn_plot_data = self.make_mutations_report(mutations_by_experiment, jbrowser_link, create_venn_diagrams=True)
+            sample_nums = [self.get_sample_num(s) for s in self.sample_names]
+            for num in sample_nums:
+                sample_mut_report = self.make_mutations_report(mutations_by_experiment, jbrowser_link, cur_sample_num=num)
+                self.sample_reports[num] = sample_mut_report
             # self.mutations_plot_data = self.make_mutations_json(mutations_by_experiment)
             # self.substitutions_plot_data = self.make_substitutions_json(mutations_by_experiment)
         #self.actionable_genes_report = self.make_actionable_genes_report(experiment_by_key.values()[0].actionable_genes_dict)
-        seq2c_events_by_experiment = {e: e.seq2c_events_by_gene for e in experiment_by_key.values() if e.seq2c_events_by_gene}
-        if seq2c_events_by_experiment:
-            # self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
-            self.seq2c_report = self.make_seq2c_report(seq2c_events_by_experiment)
+        # seq2c_events_by_experiment = {e: e.seq2c_events_by_gene for e in experiment_by_key.values() if e.seq2c_events_by_gene}
+        # if seq2c_events_by_experiment:
+        #    self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
+        #    self.seq2c_report = self.make_seq2c_report(seq2c_events_by_experiment)
         # self.key_genes_report = self.make_key_genes_cov_report(self.experiment_by_key)
         # self.cov_plot_data = self.make_key_genes_cov_json(self.experiment_by_key)
 

@@ -98,9 +98,7 @@
         <div class="space_8px"></div>
         <div>
             <a class="dotted-link" href="#variants">Mutations in key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#actionable">Actionable key genes</a><span>&nbsp;&nbsp;&nbsp;</span>
             <a class="dotted-link" href="#seq2c">Seq2C log2 ratios (CNV)</a>                  <span>&nbsp;&nbsp;&nbsp;</span>
-            <a class="dotted-link" href="#coverage">Coverage analysis for the key genes</a>        <span>&nbsp;&nbsp;&nbsp;</span>
         </div>
         <div class="space_4px"></div>
 
@@ -140,17 +138,6 @@
 
                         </p>
                     </div>
-                    <div style="float: left">
-                        <p id="variants_switch">
-                            <span>known, likely</span>
-                            /
-                            <a class="dotted-link" id="extend_link_variants" onclick="extendClick($(this))">
-                                + unknown</a>
-                            /
-                            <a class="dotted-link" id="extend_link_incidentalome_variants" onclick="extendClick($(this))">
-                                incidentalome</a>
-                        </p>
-                    </div>
                     <div style="float: right; margin-top: -20px; margin-bottom: 0;">
                         <p>
                             <a class="btn" id="download_mut_table" style="display: none;">Export to Excel</a>
@@ -174,17 +161,6 @@
             {.end}
         {.or}
             <p>No variants detected in key regions.</p>
-        {.end}
-
-        <a name="actionable"></a>
-        <h1>Actionable key genes</h1>
-        {.section actionable_genes}
-            <p style="margin-top: -5px;">Mutations annotated based on the Broad's database of actionable genes</p>
-            <div class="actionable_table">
-                {table}
-            </div>
-        {.or}
-            <p>No mutations found in actionable genes.</p>
         {.end}
 
         <a name="seq2c"></a>
@@ -305,67 +281,6 @@
             <p>No Seq2C events found.</p>
         {.end}
 
-        <a name="coverage"></a>
-        {.section coverage}
-        <h1>Coverage analysis for the key genes</h1>
-        <div class="coverage_plot">
-            <p style="margin-top: -5px;">
-                Height indicates gene average coverage,
-                <span style="color: green;">green</span> means that > 90% gene is covered at half of global average coverage.
-            </p>
-            {.repeated section experiments}
-            <div class="js_plot" id="gene_plot">
-                <table>
-                    <tr>
-                        <td colspan="2">
-                            <div class='plot_placeholder gene_plot_placeholder' id="{key}_gene_plot_placeholder">
-                            </div>
-                        </td>
-                        <td>
-                            <div class='legend_placeholder' id="{key}_gene_plot_legend_placeholder"></div>
-                        </td>
-                    </tr>
-                </table>
-                <div class="json_code">
-                    <div id="gene_plot_data_json">
-                        {plot_data}
-                    </div>
-                </div>
-            </div>
-            {.end}
-            <!--<div class="space_30px"></div>-->
-        </div>
-
-        <table width="100%">
-            <tr style="vertical-align: top;">
-            <!--<div class="multi-col-layout">-->
-            {.repeated section columns}
-                <td style="">
-                    <table class="report_table static_report"
-                           style="margin-right: 40px;">
-                        <thead>
-                            <tr class="top_row_tr">
-                                {.repeated section metric_names}
-                                    {@}
-                                {.end}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {.repeated section rows}
-                                <tr>
-                                    {.repeated section records}
-                                        {@}
-                                    {.end}
-                                </tr>
-                            {.end}
-                        </tbody>
-                    </table>
-                </td>
-            {.end}
-            <!--</div>-->
-            </tr>
-        </table>
-        {.end}
     </div>
 </div>
 </body>

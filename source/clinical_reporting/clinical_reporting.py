@@ -45,7 +45,7 @@ class BaseClinicalReporting:
         self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_by_name(self.cnf)
 
-    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, create_venn_diagrams=False):
+    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, create_venn_diagrams=False, cur_sample_num=None):
         ms = [
             Metric('Gene'),  # Gene & Transcript
             Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
@@ -53,12 +53,13 @@ class BaseClinicalReporting:
             Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
             Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
             Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
-            Metric('MSI', short_name='HP', description='Microsatellite instabiity length', quality='Less is better', with_heatmap=False),
+            Metric('MSI', short_name='HP', description='Microsatellite instability length', quality='Less is better', with_heatmap=False),
             Metric('Status', short_name='Status'),     # Somatic
             Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
             # Metric('Databases', class_='long_line'),                 # rs352343, COSM2123, SolveBio
             Metric('Samples', with_heatmap=False),          # 128
+            Metric('Other occurrences', class_='long_line', with_heatmap=False),          # 128
             # Metric('ClinVar', short_name='SolveBio ClinVar'),
         ]
 
@@ -90,7 +91,10 @@ class BaseClinicalReporting:
         # Writing records
         print_cdna = False
         muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
+        sample_experiments = []
         for e, muts in mutations_by_experiment.items():
+            if cur_sample_num and self.get_sample_num(e.sample.name) == cur_sample_num:
+                sample_experiments.append(e)
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
                 if mut.cdna_change.strip():
@@ -106,6 +110,7 @@ class BaseClinicalReporting:
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
             row_class = ''
+            cur_experiments = []
 
             # if mut.pos not in mut_positions:
             #     mut_positions.append(mut.pos)
@@ -132,6 +137,13 @@ class BaseClinicalReporting:
                 continue
             if mut.is_silent:
                 continue
+            if len(mutations_by_experiment.values()) > 1 and \
+                    (not mut.signif or mut.signif.lower() in ['unknown', 'incidentalome']):
+                continue
+            if sample_experiments and all(mut not in mutations_by_experiment[e] for e in sample_experiments):
+                continue
+            elif sample_experiments:
+                cur_experiments = [e for e in sample_experiments if mut in mutations_by_experiment[e]]
             row = report.add_row()
             row.add_record('Gene', **self._gene_recargs(mut))
             # if mut.is_canonical:
@@ -161,20 +173,11 @@ class BaseClinicalReporting:
                 row.add_record('Freq', mut.freq if mut else None, show_content=mut.is_canonical)
                 row.add_record('Depth', mut.depth if mut else None, show_content=mut.is_canonical)
             else:
-                row.add_record('Samples', len(mut_by_experiment.keys()))
+                if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
+                    self._find_other_occurences(row, mut_by_experiment, cur_experiments)
                 for e, m in mut_by_experiment.items():
                     row.add_record(e.key + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
                     row.add_record(e.key + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
-                if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
-                    samples = [e.sample.name.lower() for e in mut_by_experiment.keys()]
-                    sample_parameters = {'Sensitivity': ['Sensitive', 'Resistant'], 'Type': ['Plasma', 'Tissue', 'PBMC']}
-                    for parameter, values in sample_parameters.iteritems():
-                        cur_info = set()
-                        for value in values:
-                            if any(value.lower() in sample_name for sample_name in samples):
-                                cur_info.add(value)
-                        if cur_info:
-                            row.add_record(parameter, ', '.join(sorted(cur_info)))
 
             self._highlighting_and_hiding_mut_row(row, mut)
 
@@ -191,6 +194,39 @@ class BaseClinicalReporting:
             return report, venn_data
 
         return report
+
+    @staticmethod
+    def get_sample_num(sample_name):
+        if '_' in sample_name and sample_name.split('_')[-1].isdigit():
+            return int(sample_name.split('_')[-1])
+        else:
+            return ''.join(c for c in sample_name if c.isdigit())
+
+    @staticmethod
+    def _find_other_occurences(row, mut_by_experiment, cur_experiments):
+        samples = [e.sample.name.lower() for e in mut_by_experiment.keys()]
+        sample_parameters = {'Sensitivity': ['Sensitive', 'Resistant'], 'Type': ['Plasma', 'Tissue', 'PBMC']}
+        num_samples = defaultdict(int)
+        for parameter, values in sample_parameters.iteritems():
+            cur_info = set()
+            for value in values:
+                if any(value.lower() in sample_name for sample_name in samples):
+                    cur_info.add(value)
+                    num_samples[value] += 1
+            if cur_info:
+                row.add_record(parameter, ', '.join(sorted(cur_info)))
+        if not cur_experiments:
+            row.add_record('Samples', len(mut_by_experiment.keys()))
+        else:
+            samples = [e.sample.name.lower() for e in cur_experiments]
+            for parameter, values in sample_parameters.iteritems():
+                for value in values:
+                    if any(value.lower() in sample_name for sample_name in samples):
+                        num_samples[value] -=1
+            other_occurences = ' '.join([k + ': ' + str(v) for k, v in num_samples.iteritems() if v > 0])
+            other_occurences.replace('Sensitive', 'Sens').replace('Resistant', 'Res')
+            row.add_record('Other occurrences', other_occurences)
+        return row
 
     def group_for_venn_diagram(self, mutations_by_experiment):
         samples_by_index = dict()
