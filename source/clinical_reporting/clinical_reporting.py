@@ -45,7 +45,7 @@ class BaseClinicalReporting:
         self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_by_name(self.cnf)
 
-    def make_mutations_report(self, mutations_by_experiment, jbrowser_link):
+    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, create_venn_diagrams=False):
         ms = [
             Metric('Gene'),  # Gene & Transcript
             Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
@@ -75,11 +75,12 @@ class BaseClinicalReporting:
             ])
             for e in mutations_by_experiment.keys():
                 ms.extend([
-                    Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, unit='%',
+                    Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, align='left', unit='%',
                            with_heatmap=False),          # .19
-                    Metric(e.key + ' Depth', short_name='depth', max_width=48,
+                    Metric(e.key + ' Depth', short_name='depth', max_width=48, align='left',
                            med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
                 ])
+        if create_venn_diagrams:
             samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment)
 
         clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
@@ -177,7 +178,7 @@ class BaseClinicalReporting:
 
             self._highlighting_and_hiding_mut_row(row, mut)
 
-            if len(mutations_by_experiment) > 1:
+            if create_venn_diagrams:
                 self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index)
                 if len(mut_by_experiment.keys()) > 1:
                     k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
@@ -185,7 +186,7 @@ class BaseClinicalReporting:
 
             row.class_ += ' ' + row_class
 
-        if venn_sets:
+        if create_venn_diagrams:
             venn_data = self.save_venn_diagram_data(venn_sets, set_labels)
             return report, venn_data
 

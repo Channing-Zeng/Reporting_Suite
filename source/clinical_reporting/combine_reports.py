@@ -42,7 +42,7 @@ def run_combine_clinical_reports(cnf, bcbio_structures):
     infos_by_key = dict()
     for i, bs in enumerate(bcbio_structures):
         for sample in bs.samples:
-            if not cnf.sample_names or (cnf.sample_names and sample.name == cnf.sample_names[i]):
+            if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 info('Preparing ' + sample.name + '...')
                 info('-' * 70)
                 clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
@@ -102,7 +102,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         # self.mut_by_key_by_exper = self.arrange_mutations({k: i.mutations for k, i in experiment_by_key.items()})
         mutations_by_experiment = {e: e.mutations for e in experiment_by_key.values() if e.mutations}
         if mutations_by_experiment:
-            self.mutations_report, self.venn_plot_data = self.make_mutations_report(mutations_by_experiment, jbrowser_link)
+            self.mutations_report, self.venn_plot_data = self.make_mutations_report(mutations_by_experiment, jbrowser_link, create_venn_diagrams=True)
             # self.mutations_plot_data = self.make_mutations_json(mutations_by_experiment)
             # self.substitutions_plot_data = self.make_substitutions_json(mutations_by_experiment)
         #self.actionable_genes_report = self.make_actionable_genes_report(experiment_by_key.values()[0].actionable_genes_dict)

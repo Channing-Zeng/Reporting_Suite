@@ -196,6 +196,7 @@ function write_to_excel(table) {
 }
 
 jQuery(function($) {
+    if (!$('#circos_zoom')[0]) return;
     $('#circos_zoom').easyZoom({
         parent: '#circos_plot_div',
         append: false
@@ -241,6 +242,7 @@ function filterMutationsByAF(thresholdValue) {
 
 function checkAF(row, minAF) {
       var isKnown = false;
+      if (!$('#mut_af_textbox')[0]) return;
       var minActAF = $('#act_min_af')[0].innerText;
       for (var c = 0, m = row.cells.length; c < m; c++) {
           if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value.indexOf('status') != -1) {
