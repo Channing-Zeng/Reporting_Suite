@@ -7,6 +7,7 @@ from subprocess import check_output
 from collections import OrderedDict
 
 from source.calling_process import call, call_pipe
+from source.config import with_cnf
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
     safe_mkdir, file_transaction
 from source.logger import info, critical, warn, err, debug
@@ -512,15 +513,16 @@ def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
             out.write('\t'.join(fields) + '\n')
 
 
-def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_grid=False, command_name=''):
+def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_grid=False,
+                  command_name='', sample_name=None):
     sambamba = sambamba or get_system_path(cnf, 'sambamba', is_critical=True)
-
+    sample_name = sample_name or basename(bam_fpath).split('.')[0]
     if use_grid:
         grid_sambabma = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sambamba.py'))
         cmdl = cmdl.replace(' "', ' \'\"__QUOTE__')
         cmdl = cmdl.replace('" ', '__QUOTE__\"\' ')
         grid_cmdl = grid_sambabma + ' ' + bam_fpath + ' ' + sambamba + ' ' + cmdl
-        job_name = command_name + '_' + basename(bam_fpath).split('.')[0]
+        job_name = command_name + '_' + sample_name
         j = submit_job(cnf, grid_cmdl, job_name=job_name, output_fpath=output_fpath)
         info()
         return j
@@ -540,11 +542,12 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_gr
         return res
 
 
-def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None):
+def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None, sample_name=None):
+    sample_name = sample_name or splitext_plus(basename(bam))[0]
+
     if not output_fpath:
         output_fpath = join(cnf.work_dir,
-            splitext_plus(basename(bed))[0] + '_' +
-            splitext_plus(basename(bam))[0] + '_sambamba_depth.txt')
+            splitext_plus(basename(bed))[0] + '_' + sample_name + '_sambamba_depth.txt')
 
     if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
         info(output_fpath + ' exists, reusing.')
@@ -558,7 +561,8 @@ def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thres
     cmdline = 'depth region -F "not duplicate and not failed_quality_control" -L {bed} -T {thresholds_str} {bam}'.format(**locals())
 
     return call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam,
-        sambamba=sambamba, use_grid=use_grid, command_name='depth_' + splitext_plus(basename(bed))[0])
+        sambamba=sambamba, use_grid=use_grid, command_name='depth_' + splitext_plus(basename(bed))[0],
+                         sample_name=sample_name)
 
 
 def remove_dups(cnf, bam, output_fpath, sambamba=None, use_grid=False):
@@ -734,20 +738,21 @@ def _parse_picard_dup_report(dup_report_fpath):
     err('Error: cannot read duplication rate from ' + dup_report_fpath)
 
 
-def count_in_bam(cnf, bam, query, dedup=False, bed=None, use_grid=False):
+def count_in_bam(cnf, bam, query, dedup=False, bed=None, use_grid=False, sample_name=None):
     if dedup:
         query += ' and not duplicate'
     name = 'num_' + (query.replace(' ', '_') or 'reads')
     if bed:
         name += '_on_target_' + basename(bed)
-    output_fpath = join(cnf.work_dir, basename(bam) + '_' + name)
+    sample_name = sample_name or basename(bam)
+    output_fpath = join(cnf.work_dir, sample_name + '_' + name)
 
     cmdline = 'view -c -F "{query}" {bam}'.format(**locals())
     if bed:
         cmdline += ' -L ' + bed
 
     res = call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam,
-                        use_grid=use_grid, command_name=name)
+                        use_grid=use_grid, command_name=name, sample_name=sample_name)
     if not use_grid:
         with open(output_fpath) as f:
             return int(f.read().strip())
@@ -755,24 +760,24 @@ def count_in_bam(cnf, bam, query, dedup=False, bed=None, use_grid=False):
         return res  # Job object
 
 
-def number_of_reads(cnf, bam, dedup=False, use_grid=False):
-    return count_in_bam(cnf, bam, '', dedup, use_grid=use_grid)
+def number_of_reads(cnf, bam, dedup=False, use_grid=False, sample_name=None):
+    return count_in_bam(cnf, bam, '', dedup, use_grid=use_grid, sample_name=sample_name)
 
 
-def number_of_mapped_reads(cnf, bam, dedup=False, use_grid=False):
-    return count_in_bam(cnf, bam, 'not unmapped', dedup, use_grid=use_grid)
+def number_of_mapped_reads(cnf, bam, dedup=False, use_grid=False, sample_name=None):
+    return count_in_bam(cnf, bam, 'not unmapped', dedup, use_grid=use_grid, sample_name=sample_name)
 
 
-def number_of_properly_paired_reads(cnf, bam, dedup=False, use_grid=False):
-    return count_in_bam(cnf, bam, 'proper_pair', dedup, use_grid=use_grid)
+def number_of_properly_paired_reads(cnf, bam, dedup=False, use_grid=False, sample_name=None):
+    return count_in_bam(cnf, bam, 'proper_pair', dedup, use_grid=use_grid, sample_name=sample_name)
 
 
-def number_of_dup_reads(cnf, bam, use_grid=False):
-    return count_in_bam(cnf, bam, 'duplicate', use_grid=use_grid)
+def number_of_dup_reads(cnf, bam, use_grid=False, sample_name=None):
+    return count_in_bam(cnf, bam, 'duplicate', use_grid=use_grid, sample_name=sample_name)
 
 
-def number_mapped_reads_on_target(cnf, bed, bam, dedup=False, use_grid=False):
-    return count_in_bam(cnf, bam, 'not unmapped', dedup, bed=bed, use_grid=use_grid)
+def number_mapped_reads_on_target(cnf, bed, bam, dedup=False, use_grid=False, sample_name=None):
+    return count_in_bam(cnf, bam, 'not unmapped', dedup, bed=bed, use_grid=use_grid, sample_name=sample_name)
 
 
 def flag_stat(cnf, bam):

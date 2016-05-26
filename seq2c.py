@@ -22,7 +22,6 @@ from source.logger import info, critical, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, determine_run_cnf, \
     determine_sys_cnf, set_up_dirs, check_genome_resources
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed, count_bed_cols, prepare_beds
-from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
 from targqc import find_bams
 
@@ -76,8 +75,11 @@ def proc_args(argv):
     set_up_dirs(cnf)
 
     samples = [
-        source.TargQC_Sample(s_name, join(cnf.output_dir, s_name), bam=bam_fpath)
+        source.TargQC_Sample(name=s_name, dirpath=join(cnf.output_dir, s_name), bam=bam_fpath)
             for s_name, bam_fpath in bam_by_sample.items()]
+    info('Samples: ')
+    for s in samples:
+        info('  ' + s.name)
     samples.sort(key=lambda _s: _s.key_to_sort())
 
     target_bed = verify_bed(cnf.bed, is_critical=True) if cnf.bed else None
@@ -95,14 +97,16 @@ def read_samples(sample2bam_fpath):
     sample_names = []
     bad_bam_fpaths = []
 
+    info('Reading sample info from ' + sample2bam_fpath)
     with open(sample2bam_fpath) as f:
         for l in f:
             if l.startswith('#'):
                 continue
-            l = l.strip()
+            l = l.replace('\n', '')
             if not l:
                 continue
-            if '\t' in l:
+            sample_name = None
+            if len(l.split('\t')) == 2:
                 sample_name, bam_fpath = l.split('\t')
             else:
                 sample_name, bam_fpath = None, l
@@ -111,11 +115,12 @@ def read_samples(sample2bam_fpath):
             bam_fpath = verify_bam(bam_fpath)
             bam_fpaths.append(bam_fpath)
 
-            if not sample_name:
-                sample_name = basename(splitext(bam_fpath)[0])
-                if sample_name.endswith('-ready'):
-                    sample_name = sample_name.split('-ready')[0]
+            # if not sample_name:
+            #     sample_name = basename(splitext(bam_fpath)[0])
+            #     if sample_name.endswith('-ready'):
+            #         sample_name = sample_name.split('-ready')[0]
             sample_names.append(sample_name)
+            info(sample_name + ': ' + bam_fpath)
 
     if bad_bam_fpaths:
         critical('BAM files cannot be found, empty or not BAMs:' + ', '.join(bad_bam_fpaths))
@@ -125,6 +130,7 @@ def read_samples(sample2bam_fpath):
 
 def main():
     cnf, samples, bed_fpath, output_dir = proc_args(sys.argv)
+    info('Processing ' + str(len(samples)) + ' samples')
 
     if cnf.prep_bed is not False:
         if not bed_fpath:

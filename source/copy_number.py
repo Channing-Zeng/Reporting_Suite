@@ -13,6 +13,7 @@ from ext_modules.joblib import Parallel, delayed
 import source
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
+from source.config import with_cnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction
 from source.logger import info, err, step_greetings, critical
 from source.targetcov.bam_and_bed_utils import verify_bed, number_of_mapped_reads, sambamba_depth
@@ -215,29 +216,31 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     for s in samples:
         info('*' * 50)
         info(s.name + ':')
-        seq2cov_output_by_sample[s.name] = join(seq2c_work_dirpath, s.name + '.seq2cov.txt')
+        with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
+            safe_mkdir(cnf.work_dir)
+            seq2cov_output_by_sample[s.name] = join(seq2c_work_dirpath, s.name + '.seq2cov.txt')
 
-        if not cnf.reuse_intermediate and isfile(seq2cov_output_by_sample[s.name]):
-            os.remove(seq2cov_output_by_sample[s.name])
+            if not cnf.reuse_intermediate and isfile(seq2cov_output_by_sample[s.name]):
+                os.remove(seq2cov_output_by_sample[s.name])
 
-        if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
-            info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
+            if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
+                info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
 
-        elif verify_file(s.targetcov_detailed_tsv, silent=True):
-            info('Using targetcov detailed output for Seq2C coverage.')
-            info(s.name + ': using targetseq output')
-            targetcov_details_to_seq2cov(cnf, s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
+            elif verify_file(s.targetcov_detailed_tsv, silent=True):
+                info('Using targetcov detailed output for Seq2C coverage.')
+                info(s.name + ': using targetseq output')
+                targetcov_details_to_seq2cov(cnf, s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
 
-        else:
-            info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
-            bam_fpath = bams_by_sample[s.name]
-            depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
-            depth_output_by_sample[s.name] = depth_output
-            if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
-                info(depth_output + ' exists, reusing')
             else:
-                j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True)
-                jobs_by_sample[s.name] = j
+                info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
+                bam_fpath = bams_by_sample[s.name]
+                depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
+                depth_output_by_sample[s.name] = depth_output
+                if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
+                    info(depth_output + ' exists, reusing')
+                else:
+                    j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True, sample_name=s.name)
+                    jobs_by_sample[s.name] = j
         info()
     info('*' * 50)
 
@@ -569,25 +572,27 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
     job_by_sample = dict()
 
     for s in samples:
-        if verify_file(s.targetcov_json_fpath, silent=True):
-            info('Parsing targetSeq output ' + s.targetcov_json_fpath)
-            with open(s.targetcov_json_fpath) as f:
-                data = load(f, object_pairs_hook=OrderedDict)
-            cov_report = SampleReport.load(data, s)
-            mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
-            info(s.name + ': ')
-            info('  Mapped reads: ' + str(mapped_reads))
-            mapped_reads_by_sample[s.name] = mapped_reads
+        with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
+            safe_mkdir(cnf.work_dir)
+            if verify_file(s.targetcov_json_fpath, silent=True):
+                info('Parsing targetSeq output ' + s.targetcov_json_fpath)
+                with open(s.targetcov_json_fpath) as f:
+                    data = load(f, object_pairs_hook=OrderedDict)
+                cov_report = SampleReport.load(data, s)
+                mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
+                info(s.name + ': ')
+                info('  Mapped reads: ' + str(mapped_reads))
+                mapped_reads_by_sample[s.name] = mapped_reads
 
-        else:
-            if s.name not in bam_by_sample:
-                err('No BAM for ' + s.name + ', not running Seq2C')
-                return None, None
+            else:
+                if s.name not in bam_by_sample:
+                    err('No BAM for ' + s.name + ', not running Seq2C')
+                    return None, None
 
-            info('Submitting a sambamba job to get mapped read numbers')
-            bam_fpath = bam_by_sample[s.name]
-            j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True)
-            job_by_sample[s.name] = j
+                info('Submitting a sambamba job to get mapped read numbers')
+                bam_fpath = bam_by_sample[s.name]
+                j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True, sample_name=s.name)
+                job_by_sample[s.name] = j
 
     wait_for_jobs(cnf, job_by_sample.values())
     for s_name, j in job_by_sample.items():
