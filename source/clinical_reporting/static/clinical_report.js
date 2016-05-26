@@ -283,7 +283,7 @@ function showVariantsByType(switch_id) {
     checkVariantsTable(parameter, switchValue);
 }
 
-function showVariantsBySensilenttivity(switch_id) {
+function showVariantsBySensitivity(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
     // Showing full
     switch_id = switch_id.split("_");
@@ -330,16 +330,25 @@ function checkVariantsTable(parameter, switchValue) {
 }
 
 function checkSamples(row, metric, value) {
+    if (value == 'all') {
+        showHideRow(row, metric);
+        return;
+    }
     for (var c = 0, m = row.cells.length; c < m; c++) {
         var cell = row.cells[c];
-        if (value == 'all') $(row).removeClass('unselected_type');
-        else {
-            if (cell.attributes.metric && cell.attributes.metric.value == metric) {
-                if (cell.innerText.toLowerCase() != value)
-                    $(row).addClass('unselected_type');
-                else $(row).removeClass('unselected_type');
-            }
+        if (cell.attributes.metric && cell.attributes.metric.value == metric) {
+            if (cell.innerText.toLowerCase() != value)
+                $(row).addClass(metric + ' unselected_type');
+            else showHideRow(row, metric);
         }
+    }
+}
+
+function showHideRow(row, metric) {
+    if ($(row).hasClass(metric)) {
+        $(row).removeClass(metric);
+        if (!$(row).hasClass("Sensitivity") && !$(row).hasClass("Type"))
+        $(row).removeClass('unselected_type')
     }
 }
 
