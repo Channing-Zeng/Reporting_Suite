@@ -63,9 +63,9 @@ def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, is_target2w
     sample_nums = set([report.get_sample_num(s) for s in report.sample_names])
     for num in sample_nums:
         sample_report = ComparisonClinicalReporting(cnf, dict())
-        sample_experiments = dict()
+        sample_experiments = OrderedDict()
         for k, e in report.experiment_by_key.items():
-            if report.get_sample_num(e.sample.name) == num:
+            if report.get_sample_num(e.sample.name) == num and 'PBMC' not in e.sample.name:
                 sample_experiments[k] = e
 
         sample_report.experiment_by_key = sample_experiments
@@ -107,6 +107,13 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         for k, e in experiment_by_key.items():
             e.key = k
             self.sample_names.append(e.sample.name)
+        sample_infos = {k: self.get_sample_info(e.sample.name, e.project_name, return_info=True) for k, e in experiment_by_key.iteritems()}
+        sorted_sample_infos = OrderedDict(sorted(sample_infos.items(), key=lambda x:(x[1][1], x[1][0], x[1][2])))
+        sorted_experiments = OrderedDict()
+        for k in sorted_sample_infos.keys():
+            sorted_experiments[k] = experiment_by_key[k]
+
+        self.experiment_by_key = sorted_experiments
         # self.patient = self.merge_patients(self.infos)
         # bed_fpaths = set(experiment.target.bed_fpath for experiment in experiment_by_key.values() if experiment.target.bed_fpath)
         # bed_fnames = [basename(bed_fpath).split('.')[0] + '.bed' for bed_fpath in bed_fpaths]
@@ -114,7 +121,10 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
 
         info('Preparing data...')
         # self.mut_by_key_by_exper = self.arrange_mutations({k: i.mutations for k, i in experiment_by_key.items()})
-        mutations_by_experiment = {e: e.mutations for e in experiment_by_key.values() if e.mutations}
+        mutations_by_experiment = OrderedDict()
+        for e in sorted_experiments.values():
+            if e.mutations:
+                mutations_by_experiment[e] = e.mutations
         if mutations_by_experiment:
             self.mutations_report, self.venn_plot_data = self.make_mutations_report(mutations_by_experiment, jbrowser_link, create_venn_diagrams=True)
             sample_nums = [self.get_sample_num(s) for s in self.sample_names]
@@ -130,6 +140,19 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         #    self.seq2c_report = self.make_seq2c_report(seq2c_events_by_experiment)
         # self.key_genes_report = self.make_key_genes_cov_report(self.experiment_by_key)
         # self.cov_plot_data = self.make_key_genes_cov_json(self.experiment_by_key)
+
+    @staticmethod
+    def get_sample_info(sample_name, project_name, return_info=False):
+        sample_type = 'P' if 'Plasma' in sample_name else 'T'
+        sample_sens = 'Sen' if 'Sensitive' in sample_name else 'Res'
+        project_types = ['WGS', 'WES', 'AZ300', 'AZ50']
+        for project_type in project_types:
+            if project_type in project_name:
+                break
+        if return_info:
+            return sample_type, sample_sens, project_type
+        formatted_name = '{sample_type} {sample_sens} {project_type}'.format(**locals())
+        return formatted_name
 
     @staticmethod
     def merge_patients(patients):
@@ -158,7 +181,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             'key_or_target': self.experiment_by_key.values()[0].genes_collection_type,
             'genes_description': self.experiment_by_key.values()[0].genes_description,
             'sample': {
-                'experiments': [self.sample_section(e, use_abs_report_fpath=True)
+                'experiments': [self.sample_section(e, use_abs_report_fpath=True,
+                                                    sample_name=self.get_sample_info(e.sample.name, e.project_name))
                                 for k, e in self.experiment_by_key.items()],
             },
             # 'patient': self.__patient_section(self.patient),

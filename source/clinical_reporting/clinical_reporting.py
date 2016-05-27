@@ -75,12 +75,18 @@ class BaseClinicalReporting:
                 Metric('Sensitivity')
             ])
             for e in mutations_by_experiment.keys():
-                ms.extend([
-                    Metric(e.key + ' Freq', short_name=e.key + '\nfreq', max_width=55, align='left', unit='%',
-                           with_heatmap=False),          # .19
-                    Metric(e.key + ' Depth', short_name='depth', max_width=48, align='left',
-                           med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
-                ])
+                formatted_name = ''
+                if self.get_sample_num(e.sample.name) == cur_sample_num:
+                    formatted_name = self.get_sample_info(e.sample.name, e.project_name)
+                elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
+                    formatted_name = e.key
+                if formatted_name:
+                    ms.extend([
+                        Metric(formatted_name + ' Freq', short_name=formatted_name + '\nfreq', max_width=55, align='left', unit='%',
+                               with_heatmap=False),          # .19
+                        Metric(formatted_name + ' Depth', short_name='depth', max_width=48, align='left',
+                               med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
+                    ])
         if create_venn_diagrams:
             samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment)
 
@@ -178,16 +184,20 @@ class BaseClinicalReporting:
                 for e, m in mut_by_experiment.items():
                     if cur_experiments and e not in cur_experiments:
                         continue
-                    row.add_record(e.key + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
-                    row.add_record(e.key + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
+                    if mutations_by_experiment.keys()[0].is_target2wgs_comparison:
+                        formatted_name = e.key
+                    else:
+                        formatted_name = self.get_sample_info(e.sample.name, e.project_name)
+                    row.add_record(formatted_name + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
+                    row.add_record(formatted_name + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
 
             self._highlighting_and_hiding_mut_row(row, mut)
 
+            if len(mut_by_experiment.keys()) > 1:
+                k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
+                row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
             if create_venn_diagrams:
                 self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index)
-                if len(mut_by_experiment.keys()) > 1:
-                    k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
-                    row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
 
             row.class_ += ' ' + row_class
 
@@ -207,14 +217,14 @@ class BaseClinicalReporting:
     @staticmethod
     def _find_other_occurences(row, mut_by_experiment, cur_experiments):
         samples = [e.sample.name.lower() for e in mut_by_experiment.keys()]
-        sample_parameters = {'Sensitivity': ['Sensitive', 'Resistant'], 'Type': ['Plasma', 'Tissue', 'PBMC']}
+        sample_parameters = {'Sensitivity': ['Sen', 'Res'], 'Type': ['Plasma', 'Tissue']}
         num_samples = defaultdict(int)
         for parameter, values in sample_parameters.iteritems():
             cur_info = set()
             for value in values:
                 if any(value.lower() in sample_name for sample_name in samples):
                     cur_info.add(value)
-                    num_samples[value] += 1
+                    num_samples[value] += sum(1 for sample_name in samples if value.lower() in sample_name)
             if cur_info:
                 row.add_record(parameter, ', '.join(sorted(cur_info)))
         if not cur_experiments:
@@ -223,11 +233,10 @@ class BaseClinicalReporting:
             samples = [e.sample.name.lower() for e in cur_experiments]
             for parameter, values in sample_parameters.iteritems():
                 for value in values:
-                    for sample_name in samples:
-                        if value.lower() in sample_name:
-                            num_samples[value] -=1
+                    num_samples[value] -= sum(1 for sample_name in samples if value.lower() in sample_name)
             other_occurences = ' '.join([k + ': ' + str(v) for k, v in num_samples.iteritems() if v > 0])
-            other_occurences.replace('Sensitive', 'Sens').replace('Resistant', 'Res')
+            other_occurences.replace('Sensitive', 'Sen').replace('Resistant', 'Res')
+            other_occurences.replace('Plasma', 'P').replace('Tissue', 'T')
             row.add_record('Other occurrences', other_occurences)
         return row
 
@@ -608,7 +617,7 @@ class BaseClinicalReporting:
 
         return json.dumps(data)
 
-    def sample_section(self, experiment, use_abs_report_fpath=False):
+    def sample_section(self, experiment, use_abs_report_fpath=False, sample_name=None):
         d = dict()
         d['patient'] = {'sex': 'unknown'}
         d['project_report_rel_path'] = 'not generated'
@@ -619,7 +628,7 @@ class BaseClinicalReporting:
         # d['ave_depth'] = 'unknown'
 
         d['key'] = experiment.key
-        d['sample'] = experiment.sample.name.replace('_', ' ')
+        d['sample'] = sample_name or experiment.sample.name.replace('_', ' ')
         if experiment.patient and experiment.patient.gender:
             d['patient'] = {'sex': experiment.patient.gender}
         d['project_name'] = experiment.project_name.replace('_', ' ')
