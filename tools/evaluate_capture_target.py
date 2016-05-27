@@ -109,7 +109,7 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
 
     with open(all_regions_bed_fpath, 'w') as out:
         if not cnf.min_depth:
-            out.write('## Coverage threshold Nx is 10x for cell ine and 100x for plasma\n')
+            out.write('## Coverage threshold Nx is 10x for cell line and 100x for plasma\n')
         else:
             out.write('## Coverage threshold Nx is ' + str(cnf.min_depth) + 'x\n')
         out.write('\t'.join(['#Chr', 'Start', 'End', 'Size', 'Gene', 'Depth<Nx', 'SamplesSharingSameFeature']) + '\n')
@@ -189,7 +189,7 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
 
                     cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(depth_thresholds, pcnt_val_by_thresh))
 
-                    if feature in ['Capture', "CDS"]:
+                    if feature in ['Capture']:
                         region = (chrom, start, end, size, symbol)
                         if not cnf.min_depth and not cnf.min_depths[i]:  # no filtering
                             regions[region] += 1
