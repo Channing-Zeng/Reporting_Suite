@@ -168,4 +168,7 @@ p {
   color: #ae7fff;
   border-bottom: 1px solid #ae7fff; }
 
+.multiple_occurences_row {
+  border: green; }
+
 /*# sourceMappingURL=clinical_report.css.map */

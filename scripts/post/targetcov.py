@@ -242,15 +242,15 @@ def process_one(cnf, output_dir, bam_fpath, features_bed, features_no_genes_bed)
     avg_depth, gene_by_name_and_chrom, reports = make_targetseq_reports(
         cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list)
 
-    #if cnf.extended:
-    try:
-        info('Generating flagged regions report...')
-        flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name_and_chrom)
-        if not flagged_report:
-            err('Flagged regions report was not generated')
-            err()
-    except:
-        err(format_exc())
+    # #if cnf.extended:
+    # try:
+    #     info('Generating flagged regions report...')
+    #     flagged_report = generate_flagged_regions_report(cnf, cnf.output_dir, sample, avg_depth, gene_by_name_and_chrom)
+    #     if not flagged_report:
+    #         err('Flagged regions report was not generated')
+    #         err()
+    # except:
+    #     err(format_exc())
 
     return reports
 

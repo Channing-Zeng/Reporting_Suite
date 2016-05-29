@@ -161,7 +161,7 @@ def get_key_or_target_bed_genes(bed_fpath, key_genes_fpath):
 
 
 def get_key_genes(key_genes_fpath):
-    key_genes_fpath = verify_file(key_genes_fpath, is_critical=True, description='300 AZ key genes')
+    key_genes_fpath = verify_file(key_genes_fpath, is_critical=True, description='820 AZ key genes')
     with open(key_genes_fpath) as f:
         key_gene_names = set([l.strip() for l in f.readlines() if l.strip() != ''])
 

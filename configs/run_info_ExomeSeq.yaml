@@ -19,6 +19,6 @@ variant_filtering:
   min_freq:       0.075  # -f
                          # When individual allele frequency (AF) is less than [min_freq], the variant is considered
                          # likely false poitive, unless it is actionable.
-  act_min_freq:   0.02   # -F
+  act_min_freq:   0.025  # -F
                          # The minimum allele frequency hotspot somatic mutations, typically lower then -f.
                          # Default: 0.01 or half [min_freq], whichever is less.

@@ -373,7 +373,7 @@ class Filtration:
                 cosmic_aachg = cosmic_aachg[2:]
         return cosmic_aachg
 
-    def check_by_type(self, var_type, aa_chg, cdna_chg, effect):
+    def check_by_effect(self, var_type, aa_chg, cdna_chg, effect):
         if 'FRAME_SHIFT' in var_type or 'FRAMESHIFT' in var_type:
             self.update_status('likely', 'frame_shift')
         elif stop_gain_pattern.match(aa_chg) or 'STOP_GAIN' in var_type:
@@ -722,7 +722,7 @@ class Filtration:
                 fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
                 float(fields[depth_col])
 
-            if pos == 210591913:
+            if pos == 14783:
                 pass
 
             # gene_aachg = '-'.join([gene, aa_chg])
@@ -788,7 +788,7 @@ class Filtration:
                     continue
                 clncheck = check_clnsig(fields[clnsig_col])
                 if clncheck == 'dbSNP':  # Even if it's COSMIC in status, it's going to be filtered in case of low ClinVar significance
-                    self.apply_reject_counter('clnsig', is_canonical, no_transcript)
+                    self.apply_reject_counter('clnsig dbSNP', is_canonical, no_transcript)
                     continue
                 if '-'.join([gene, aa_chg]) in self.snpeff_snp and clncheck != 'ClnSNP_known':
                     self.apply_reject_counter('not act and not ClnSNP_known and in snpeff_snp', is_canonical, no_transcript)
@@ -829,7 +829,7 @@ class Filtration:
 
             cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
             cosm_aa_chg = self.check_by_var_class(var_class, cosm_aa_chg, cosmic_counts)
-            aa_chg = self.check_by_type(var_type, aa_chg, cdna_chg, effect)
+            aa_chg = self.check_by_effect(var_type, aa_chg, cdna_chg, effect)
 
             if is_hotspot_nt(chrom, pos, ref, alt, self.hotspot_nucleotides):
                 self.update_status('likely', 'hotspot_nucl_change')
@@ -863,7 +863,7 @@ class Filtration:
                     self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
                     continue
 
-            if not actionability:
+            if not actionability and self.status != 'known':
                 if var_type.startswith('UPSTREAM'):
                     self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
                     continue
@@ -898,20 +898,19 @@ class Filtration:
                     self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
                     continue
 
-            if not actionability:
+            if not actionability and self.status != 'known':
                 bl_gene_reasons = self.check_blacklist_genes(gene, aa_pos)
                 bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=pos - 1, end=pos - 1 + len(ref))
                 if bl_gene_reasons or bl_region_reasons:
                     if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
                         self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
                         continue
-
                     self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
-                    # if gene in self.gene_to_soft_filter:
-                    #     self.update_status('unknown', 'blacklist gene', force=True)
-                    # else:
-                    if bl_gene_reasons or bl_region_reasons:
-                        self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
+                    self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
+
+                # if gene in self.gene_to_soft_filter:
+                #     self.update_status('unknown', 'blacklist gene', force=True)
+                # else:
 
             # if not is_act:
                     # if float(fields[pcnt_sample_col]) > self.max_ratio:

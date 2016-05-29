@@ -819,7 +819,7 @@ class BCBioStructure(BaseProjectStructure):
             self.target_type = 'panel'
             info('Using DeepSeq parameters for filtering')
         else:
-            self.target_type = 'panel'
+            self.target_type = 'exome'
             info('Using Exome parameters for filtering')
 
         # setting up batch properties
