@@ -86,7 +86,8 @@ function drawSubstitutionsPlot(key, data, placeholder_el) {
                     reserveSpace: true,
                     lineWidth: 0.5,
                     color: '#000',
-                    minTickSize: 1
+                    minTickSize: 1,
+                    tickDecimals: 0
                 },
                 {
                     position: "right",
