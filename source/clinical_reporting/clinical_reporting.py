@@ -40,6 +40,14 @@ class Chromosome:
             for i in range(len(chromosomes_by_name.keys()) + 1)]
 
 
+class ActionableVariant:
+    def __init__(self):
+        self.gene = None
+        self.var_type = None
+        self.status = ''
+        self.freq = ''
+
+
 class BaseClinicalReporting:
     def __init__(self, cnf, *args):
         self.cnf = cnf
@@ -299,12 +307,11 @@ class BaseClinicalReporting:
             )
 
             for i, mut in enumerate(sorted(muts, key=lambda m: m.freq, reverse=True)):
-                if mut.signif in ['known', 'likely']:
-                    d['mutations'].append(dict(
-                        x=i+1,
-                        geneName=mut.gene.name,
-                        chrom=mut.chrom, position=mut.pos, freq=mut.freq * 100,
-                        mutType=mut.eff_type, aaChg=mut.aa_change, cdnaChange=mut.codon_change))
+                d['mutations'].append(dict(
+                    x=i+1,
+                    geneName=mut.gene.name,
+                    chrom=mut.chrom, position=mut.pos, freq=mut.freq * 100, status=mut.signif,
+                    mutType=mut.eff_type, aaChg=mut.aa_change, cdnaChange=mut.codon_change))
             d['minY'] = 0
 
             data[e.key.lower()] = d
@@ -1015,25 +1022,23 @@ class ClinicalReporting(BaseClinicalReporting):
                     min_width=130, max_width=130, style='white-space: pre;'),  # Mutation
                 Metric('Rationale', style='max-width: 300px !important; white-space: normal;'),          # Translocations predict sensitivity
                 Metric('Therapeutic Agents', max_width=120, style='white-space: normal;'),  # Sorafenib
-                Metric('Freq', short_name='Freq', max_width=55, style='white-space: pre;', with_heatmap=False)
-            ])])
+                Metric('Freq', short_name='Freq', max_width=55, unit='%', style='white-space: pre;', with_heatmap=False),
+                Metric('VarDict status', short_name='Significance', with_heatmap=False)
+            ], name='actionable')])
 
-        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_action_metric_storage)
+        report = PerRegionSampleReport(sample=self.sample, metric_storage=clinical_action_metric_storage, keep_order=True)
         actionable_gene_names = actionable_genes_dict.keys()
 
         sv_mutation_types = {'Rearrangement', 'Fusion', 'Amplification', 'Deletion'}
         cnv_mutation_types = {'Amplification', 'Deletion'}
 
-        for gene in self.experiment.key_gene_by_name_chrom.values():
+        for gene in sorted(self.experiment.key_gene_by_name_chrom.values(), key=lambda x: x.name):
             if gene.name not in actionable_gene_names:
                 continue
             possible_mutation_types = set(actionable_genes_dict[gene.name][1].split('; '))
             # possible_mutation_types = possible_mutation_types - sv_mutation_types
             # if not possible_mutation_types: continue
-
-            variants = []
-            types = []
-            frequencies = []
+            actionable_variants = []
 
             if self.experiment.mutations:
                 vardict_mut_types = possible_mutation_types - sv_mutation_types - cnv_mutation_types
@@ -1041,17 +1046,21 @@ class ClinicalReporting(BaseClinicalReporting):
                     for mut in self.experiment.mutations:
                         if mut.gene.name == gene.name:
                             if mut.signif in ['known', 'likely']:
-                                variants.append(mut.aa_change if mut.aa_change else '.')
-                                types.append(mut.var_type)
-                                frequencies.append(Metric.format_value(mut.freq, unit='%'))
+                                actionable_var = ActionableVariant()
+                                actionable_var.mut = mut.aa_change if mut.aa_change else '.'
+                                actionable_var.var_type = mut.var_type
+                                actionable_var.freq = mut.freq
+                                actionable_var.status = mut.signif
+                                actionable_variants.append(actionable_var)
 
             if cnv_mutation_types:
                 for se in gene.seq2c_events:
                     if 'Amplification' in possible_mutation_types and se.amp_del == 'Amp' or \
                             'Deletion' in possible_mutation_types and se.amp_del == 'Del':
-                        variants.append(se.amp_del + ', ' + se.fragment)
-                        types.append(se.amp_del)
-                        frequencies.append('')
+                        actionable_var = ActionableVariant()
+                        actionable_var.mut = se.amp_del + ', ' + se.fragment
+                        actionable_var.var_type = se.amp_del
+                        actionable_variants.append(actionable_var)
 
             if sv_mutation_types:
                 svs_by_key = OrderedDict()
@@ -1063,21 +1072,37 @@ class ClinicalReporting(BaseClinicalReporting):
                     if ('Fusion' in possible_mutation_types or 'Rearrangement' in possible_mutation_types) and se.type == 'BND' or \
                        'Deletion' in possible_mutation_types and se.type == 'DEL' or \
                        'Amplification' in possible_mutation_types and se.type == 'DUP':
-                        variants.append(', '.join(set('/'.join(set(a.genes)) for a in se.key_annotations if a.genes)))
-                        types.append(BaseClinicalReporting.sv_type_dict.get(se.type, se.type))
-                        frequencies.append('')
+                        actionable_var = ActionableVariant()
+                        actionable_var.mut = ', '.join(set('/'.join(set(a.genes)) for a in se.key_annotations if a.genes))
+                        actionable_var.var_type = BaseClinicalReporting.sv_type_dict.get(se.type, se.type)
+                        actionable_variants.append(actionable_var)
 
-            if not variants:
+            if not actionable_variants:
                 continue
 
-            reg = report.add_row()
-            reg.add_record('Gene', gene.name)
-            reg.add_record('Variant', '\n'.join(variants))
-            reg.add_record('Type', '\n'.join(types))
-            reg.add_record('Types of recurrent alterations', actionable_genes_dict[gene.name][1].replace('; ', '\n'))
-            reg.add_record('Rationale', actionable_genes_dict[gene.name][0])
-            reg.add_record('Therapeutic Agents', actionable_genes_dict[gene.name][2])
-            reg.add_record('Freq', '\n'.join(frequencies))
+            def get_signif_order(status, freq):
+                if status == 'known' and freq >= self.cnf.variant_filtering.act_min_freq:
+                    return 2
+                if status == 'known' or status == 'likely':
+                    return 1
+                return 0
+
+            sorted_variants = sorted(actionable_variants, reverse=True,
+                                     key=lambda x: (get_signif_order(x.status, x.freq), x.freq))
+            for i, actionable_var in enumerate(sorted_variants):
+                reg = report.add_row()
+                gene_name = gene.name if i == 0 else ''
+                rationale = actionable_genes_dict[gene.name][0] if i == 0 else ''
+                types_alterations = actionable_genes_dict[gene.name][1].replace('; ', '\n') if i == 0 else ''
+                therapeutic_agents = actionable_genes_dict[gene.name][2] if i == 0 else ''
+                reg.add_record('Gene', gene_name, rowspan=str(len(sorted_variants)))
+                reg.add_record('Variant', actionable_var.mut)
+                reg.add_record('Type', actionable_var.var_type)
+                reg.add_record('Types of recurrent alterations', types_alterations, rowspan=str(len(sorted_variants)))
+                reg.add_record('Rationale', rationale, rowspan=str(len(sorted_variants)))
+                reg.add_record('Therapeutic Agents', therapeutic_agents, rowspan=str(len(sorted_variants)))
+                reg.add_record('Freq', actionable_var.freq)
+                reg.add_record('VarDict status', actionable_var.status)
 
         return report
 

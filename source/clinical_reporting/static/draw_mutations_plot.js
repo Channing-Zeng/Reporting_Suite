@@ -68,6 +68,7 @@ function drawMutPlot(key, data, placeholder_el) {
                 mutType: data.mutations[k].mutType,
                 aaChg: data.mutations[k].aaChg,
                 cdnaChange: data.mutations[k].cdnaChange,
+                status: data.mutations[k].status,
                 color: color
             };
             series.bars = {
@@ -128,7 +129,8 @@ function drawMutPlot(key, data, placeholder_el) {
         info.isInitialized = true;
     }
 
-    showPlotWithInfo(info);
+    showPlotWithInfo(info, minAF);
+    mutPlotInfo = info;
 
     var subt_placeholder = $('#substitutions_plot_placeholder');
     var subst_plot_width = subt_placeholder.width();
@@ -142,6 +144,41 @@ function drawMutPlot(key, data, placeholder_el) {
         .css('position', 'absolute')
         .css(mut_plot_pos);
         //.css('right', mut_plot_right - subst_plot_width);
+}
+
+function filterMutPlotInfo(series, minAF) {
+    var newSeries = [];
+    var table_full = $('.table_full#report_table_mutations')[0];
+    var hiddenStatuses = table_full ? ['incidentalome'] : ['unknown', 'incidentalome'];
+    var minActAF = $('#act_min_af')[0].innerText;
+    for (var i = 0; i < series.length; i++) {
+        if (checkPlotRow(series[i].status, hiddenStatuses)) {
+            if (!minAF || series[i].status == 'known' && series[i].freq >= minActAF || series[i].freq >= minAF) {
+                newSeries.push(series[i]);
+            }
+        }
+    }
+    ticksX = 100 / newSeries.length;
+    barMaxWidth = ticksX / 1.15;
+    for (var i = 0; i < newSeries.length; i++) {
+        newSeries[i].data = [[ticksX * i, newSeries[i].data[0][1]]];
+        newSeries[i].bars = {
+            show: true,
+            barWidth: barMaxWidth,
+            lineWidth: 0,
+            order: 1,
+            fillColor: newSeries[i].color
+        };
+    }
+    return newSeries;
+}
+
+function checkPlotRow(status, hiddenStatuses) {
+    if (showBlacklisted && status == 'incidentalome')
+        return true;
+    if (!showBlacklisted && hiddenStatuses.indexOf(status) == -1)
+        return true;
+    return false;
 }
 
 function showMutationTip(key, item, plot, direction, generalData) {

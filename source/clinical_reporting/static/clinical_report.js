@@ -21,6 +21,10 @@ var key_or_target = null;
 
 var minAF = 0;
 
+var showBlacklisted = false;
+
+var mutPlotInfo;
+
 $(function() {
     var tables_short = $('.table_short');
     var tables_full = $('.table_full');
@@ -58,7 +62,7 @@ $(function() {
 
 function extendClick(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
-    var showBlacklisted = switch_id.search('incidentalome') != -1;
+    showBlacklisted = switch_id.search('incidentalome') != -1;
     // Showing full
     switch_id = switch_id.split("_");
     var table_id = switch_id[switch_id.length - 1];
@@ -110,10 +114,12 @@ function extendClick(switch_id) {
         }
     }
     if (table_full_clone) table_full_clones.push({'id_': table_id, 'table': table_full_clone.clone()});
+    if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
 }
 
 function reduceClick(switch_id) {
-  if (switch_id[0].id) switch_id = switch_id[0].id;
+    if (switch_id[0].id) switch_id = switch_id[0].id;
+    showBlacklisted = false;
     switch_id = switch_id.split("_");
     var table_id = switch_id[switch_id.length - 1];
     // Showing reduced
@@ -155,6 +161,7 @@ function reduceClick(switch_id) {
       }
     }
     table_short_clones.push({'id_': table_id, 'table': table_short_clone.clone()});
+    if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
 }
 
 function write_to_excel(table) {
@@ -226,6 +233,7 @@ function filterMutationsByAF(thresholdValue) {
     minAF = thresholdValue;
     var table_short = $('.table_short#report_table_mutations');
     var table_full = $('.table_full#report_table_mutations');
+    var table_actionable = $('#report_table_actionable');
     if (table_short) {
         $(table_short).css('height', '');
         $('.table_short#report_table_mutations tr').each(function() {
@@ -238,6 +246,16 @@ function filterMutationsByAF(thresholdValue) {
             checkAF(this, minAF);
         });
     }
+    if (table_actionable) {
+        $(table_actionable).css('height', '');
+        $('#report_table_actionable tr').each(function() {
+            checkAF(this, minAF);
+        });
+        $('#report_table_actionable tr').each(function() {
+            correctRowspan(this);
+        });
+    }
+    if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
 }
 
 function checkAF(row, minAF) {
@@ -253,12 +271,32 @@ function checkAF(row, minAF) {
       }
       for (var c = 0, m = row.cells.length; c < m; c++) {
         if (row.cells[c].attributes.metric && row.cells[c].attributes.number && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
-            if ((isKnown && row.cells[c].attributes.number.value * 100 < minActAF) || (!isKnown && row.cells[c].attributes.number.value * 100 < minAF))
-                $(row).addClass('af_less_threshold');
-            else $(row).removeClass('af_less_threshold');
+            if ((isKnown && row.cells[c].attributes.number.value * 100 >= minActAF) || row.cells[c].attributes.number.value * 100 >= minAF)
+                $(row).removeClass('af_less_threshold');
+            else $(row).addClass('af_less_threshold');
         }
     }
 }
+function correctRowspan(row) {
+    if (!$(row).find("td:first-child")[0])
+        return;
+    if ($(row).hasClass("af_less_threshold")) return;
+
+    var rowspan = 1;
+    var nextRow = $(row).next("tr");
+
+    while ($(nextRow).find("td:first-child")[0]) {
+        if (nextRow.find("td:first-child")[0].attributes.metric.value == "Gene")
+            break;
+        if (!$(nextRow).hasClass("af_less_threshold"))
+            rowspan++;
+        nextRow = $(nextRow).next("tr");
+    }
+    $("td[rowspan]", $(row)).each(function() {
+        $(this).attr("rowspan", rowspan);
+    });
+}
+
 function showVariantsByType(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
     // Showing full

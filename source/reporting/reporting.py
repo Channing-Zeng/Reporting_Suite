@@ -42,7 +42,8 @@ class Record:
             right_shift=None,
             color=None,
             text_color=None,
-            show_content=True):  # TODO: get rid of those
+            show_content=True,
+            rowspan=None):  # TODO: get rid of those
 
         self.metric = metric
         if self.metric.parse:
@@ -65,6 +66,7 @@ class Record:
         self.color = color
         self.text_color = text_color
         self.show_content = show_content
+        self.rowspan = rowspan
         # self.color = lambda: self._color
         # self.text_color = lambda: self._text_color
 
@@ -1171,6 +1173,10 @@ def make_cell_td(rec, class_=''):
     html += '\n<td metric="' + rec.metric.name + '" style="' + style + '"'
     if rec.id:
         html += ' id=' + rec.id
+    if rec.rowspan:
+        if not rec.value:
+            return ''
+        html += ' rowspan="' + rec.rowspan + '"'
     html += ' quality="' + str(rec.metric.quality) + '"'
     html += ' class="td ' + class_ + ' ' + rec.metric.td_class + ' ' + rec.metric.class_ + ' '
 

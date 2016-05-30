@@ -331,13 +331,16 @@ function bindTip(placeholder, key, showTipFn, plot, direction, generalData, addC
 }
 
 
-function showPlotWithInfo(info, index) {
-    var series = info.series;
+function showPlotWithInfo(info, minAF) {
+    var newSeries = info.series;
     var colors = [];
-    for (var i = 0; i < series.length; i++) {
-        colors.push(series[i].color);
+    if (minAF) {
+        newSeries = filterMutPlotInfo(info.series, minAF);
     }
-    info.showWithData(info.series, colors);
+    for (var i = 0; i < newSeries.length; i++) {
+        colors.push(newSeries[i].color);
+    }
+    info.showWithData(newSeries, colors);
 }
 
 

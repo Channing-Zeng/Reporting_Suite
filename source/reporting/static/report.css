@@ -42,7 +42,7 @@
       font-weight: bold; }
     #report table.report_table tr.group_header td, #report table.report_table tr.group_header th {
       height: 20px; }
-    #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty, #report table.report_table tr.af_less_threshold {
+    #report table.report_table tr.row_hidden, #report table.report_table tr.group_empty {
       display: none; }
     #report table.report_table tr.highlighted_row td {
       background-color: #f5ffa3; }
@@ -50,6 +50,9 @@
       border-right: 1px solid #bbb; }
     #report table.report_table tr.highlighted_green_row td {
       background-color: #daffde; }
+
+tr.af_less_threshold {
+  display: none; }
 
 #contigs_are_ordered {
   z-index: 0;
