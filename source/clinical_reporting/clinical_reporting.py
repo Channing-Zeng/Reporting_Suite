@@ -194,9 +194,9 @@ class BaseClinicalReporting:
             self._highlighting_and_hiding_mut_row(row, mut)
 
             if len(mut_by_experiment.keys()) > 1:
-                k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
+                # k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
                 # row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
-                if k > 1:
+                if len(mut_by_experiment.keys()) > 1:
                     row.class_ += ' multiple_occurences_row'
             if create_venn_diagrams:
                 self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index)

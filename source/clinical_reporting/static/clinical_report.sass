@@ -24,10 +24,15 @@ tr.unselected_type
     table.report_table
         td, th
             max-width: 160px
-        tr.known td
+        tr.known
             background-color: #f5ffa3
-    table.table_full
-        tr.likely td
+        //tr.multiple_occurences_row
+        //    background-color: #c0ffc0
+        //tr.multiple_occurences_row.known
+        //    background-color: #becfa2
+
+    table.report_table.table_full
+        tr.likely
             background-color: #f1ffce
 
     .multi-col-layout
@@ -196,5 +201,3 @@ p
     color: #ae7fff
     border-bottom: 1px solid #ae7fff
 
-.multiple_occurences_row
-    border: green

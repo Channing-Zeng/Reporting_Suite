@@ -21,9 +21,9 @@ tr.unselected_type {
 
 .clinical_report table.report_table td, .clinical_report table.report_table th {
   max-width: 160px; }
-.clinical_report table.report_table tr.known td {
+.clinical_report table.report_table tr.known {
   background-color: #f5ffa3; }
-.clinical_report table.table_full tr.likely td {
+.clinical_report table.report_table.table_full tr.likely {
   background-color: #f1ffce; }
 .clinical_report .multi-col-layout {
   column-count: 4;
@@ -167,8 +167,5 @@ p {
 .ngs_reports_header_link:visited {
   color: #ae7fff;
   border-bottom: 1px solid #ae7fff; }
-
-.multiple_occurences_row {
-  border: green; }
 
 /*# sourceMappingURL=clinical_report.css.map */
