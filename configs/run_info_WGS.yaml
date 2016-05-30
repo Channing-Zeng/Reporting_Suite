@@ -4,7 +4,7 @@ steps:
 - Seq2C
 
 
-# reuse_intermediate: True
+# reuse_intermediate: yes
 
 
 variant_filtering:

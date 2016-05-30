@@ -51,24 +51,12 @@ genomes:
 
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
-    filter_common_snp:            reference_data/filtering/hg19/filter_common_snp.txt
-    filter_common_artifacts:      reference_data/filtering/hg19/filter_common_artifacts.txt
-    actionable:                   reference_data/filtering/hg19/actionable.txt
-    compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
-    splice:                       reference_data/filtering/hg19/SPLICE.txt
-
   hg19:
     seq: ~/Dropbox/az/reference_data/hg19.fa
 
     snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
     dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/dbSNP_multi_mafs_latest.txt
-
-    filter_common_snp:            reference_data/filtering/hg19/filter_common_snp.txt
-    filter_common_artifacts:      reference_data/filtering/hg19/filter_common_artifacts.txt
-    actionable:                   reference_data/filtering/hg19/actionable.txt
-    compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
-    splice:                       reference_data/filtering/hg19/SPLICE.txt
 
     tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
 
@@ -92,11 +80,8 @@ genomes:
     cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
 #    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering.hg38/dbSNP_multi_mafs_latest.txt
-    filter_common_snp:            reference_data/filtering/hg38/filter_common_snp.txt
-    filter_common_artifacts:      reference_data/filtering/hg38/filter_common_artifacts.txt
-    actionable:                   reference_data/filtering/hg38/actionable.txt
-    compendia_ms7_hotspot:        reference_data/filtering/hg38/Compendia.MS7.Hotspot.txt
-    splice:                       reference_data/filtering/hg38/reference_data/filtering/SPLICE.txt
+
+    tricky_regions: ~/Dropbox/az/reference_data/tricky_regions_hg38/
 
     all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 

@@ -722,7 +722,7 @@ class Filtration:
                 fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
                 float(fields[depth_col])
 
-            if pos == 14783:
+            if pos == 161518214:  #161514542
                 pass
 
             # gene_aachg = '-'.join([gene, aa_chg])
@@ -1090,6 +1090,22 @@ def parse_genes_list(fpath):
 
 
 def check_clnsig(clnsig):
+    """
+    :param clnsig: a |-separate values of variant clinical significance from ClinVar:
+            0 - uncertain significance,
+            1 - not provided,
+            2 - benign,
+            3 - likely benign,
+            4 - likely pathogenic,
+            5 - pathogenic,
+            6 - drug response,
+            7 - histocompatibility,
+            255 - other
+    :return: variant class:
+            ClnSNP_known - mostly (likely) pathogenic
+            ClnSNP_unknown - mostly uncertain/other
+            dbSNP - mostly (likely) benign
+    """
     if not clnsig:
         return None
     flag255 = 0
@@ -1098,26 +1114,26 @@ def check_clnsig(clnsig):
     flags = 0
     for cl in re.split('\||,', clnsig):
         cl = int(cl)
-        if 3 < cl < 7:
+        if 4 <= cl <= 6:  # likely pathogenic, pathogenic, drug response
             flagyes += 1
-        if 2 <= cl <= 3:
+        if 2 <= cl <= 3:  # benign, likely benign
             flagno += 1
-        if cl == 255 or cl < 1:
+        if cl == 255 or cl == 0:  # uncertain, other
             flag255 += 1
-        if cl == 1:
+        if cl == 1:  # not provided
             flags += 1
 
     if flagyes:
         if flagyes > 1:
-            return 'ClnSNP_known'
+            return 'ClnSNP_known'  # twice pathogenic
         if flagyes > 0 and flagno == 0:
-            return 'ClnSNP_known'
+            return 'ClnSNP_known'  # pathogenic and not benign
         if flags and flagyes >= flagno and flagno <= 1 and flagyes / flags >= 0.5:
             return 'ClnSNP_known'
         else:
             return 'ClnSNP_unknown'
 
-    if flagno > 1 and flagno >= flag255:
+    if flagno > 1 and flagno >= flag255:  # benign is > 2 and > "not provided"
         return 'dbSNP'
     if flag255 > 0:
         return 'ClnSNP_unknown'  # Keep unknown significant variants
