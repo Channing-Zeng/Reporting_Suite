@@ -5,10 +5,10 @@ steps:
 
 
 variant_filtering:
-  # If a variant is present in > [max_ratio] fraction AND > [max_sample_cnt] number of samples,
-  # AND not actionable, it will be to be considered too common to be functional and filtered out.
+  # If a novel variant is present in > [max_ratio] fraction AND > [max_sample_cnt] number of samples,
+  # it will be to be considered too common to be functional and filtered out.
   # Don't use it if the cohort is homogeneous! Use only for heterogeneous cohorts.
-  max_ratio:         1.0    # 1.0 means no filtering
+  max_ratio:         0.4    # 1.0 means no filtering
   max_sample_cnt:    5
 
   ###################
@@ -334,3 +334,11 @@ genomes:
     actionable:                   reference_data/filtering/hg19/actionable.txt
     compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
     splice:                       reference_data/filtering/hg19/SPLICE.txt
+
+  hg19-chr21:
+    filter_common_snp:            reference_data/filtering/hg19/filter_common_snp.txt
+    filter_common_artifacts:      reference_data/filtering/hg19/filter_common_artifacts.txt
+    actionable:                   reference_data/filtering/hg19/actionable.txt
+    compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
+    splice:                       reference_data/filtering/hg19/SPLICE.txt
+

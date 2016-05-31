@@ -875,7 +875,11 @@ class BCBioRunner:
 
             if is_us() or is_uk():
                 info('Exposing to jBrowse')
-                add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
+                try:
+                    add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
+                except:
+                    traceback.print_exc()
+                    err('Error: cannot export to jBrowse')
                 info()
 
             oncoprints_link = None

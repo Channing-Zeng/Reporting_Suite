@@ -265,7 +265,8 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
         info('No CSV file found in config dir ' + bcbio_structure.config_dir)
         return None
 
-    report_rmd_template_fpath = get_system_path(cnf, join(get_ext_tools_dirname(is_common_file=True), 'qc_report.rmd'))
+    report_rmd_template_fpath = get_system_path(cnf, join(get_ext_tools_dirname(is_common_file=True),
+                                          'qc_report_template.rmd'))
     with open(report_rmd_template_fpath) as f:
         report_template = f.read()
 

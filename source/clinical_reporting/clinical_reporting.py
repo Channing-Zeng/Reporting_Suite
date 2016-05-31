@@ -96,7 +96,7 @@ class BaseClinicalReporting:
                            med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
                 ])
 
-        ms.append(Metric('Indicentalome', short_name='Indicentalome'))
+        ms.append(Metric('Indicentalome', short_name='Callability issues'))
 
         if create_venn_diagrams:
             samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment)
@@ -863,6 +863,8 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
+        if mut.incidentalome_reason:
+            row.class_ += ' incidentalome'
         if not mut.signif or mut.signif.lower() in ['unknown']:
             # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
             #     warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio as Pathogenic')

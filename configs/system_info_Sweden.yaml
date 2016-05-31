@@ -149,6 +149,21 @@ genomes:
 
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
+  mm10:
+    seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
+    bwa: /ngs/reference_data/genomes/Mmusculus/mm10/bwa/mm10.fa
+
+    dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf.gz
+    snpeff:
+      reference: GRCm38.82
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Mmusculus/mm10/rnaseq/ref-transcripts.gtf
+
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq.all_features.hg38.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
+
 #queue: ngs.q
 
 qsub_runner: scripts/runner_sequencial.sh

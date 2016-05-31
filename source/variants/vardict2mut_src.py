@@ -20,6 +20,16 @@ def iter_lines(fpath):
             yield l
 
 
+def _read_list(reason, fpath):
+    gene_d = {}
+    fpath = verify_file(fpath, description=reason + ' blacklist genes file', is_critical=True)
+    for l in iter_lines(fpath):
+        fs = l.split('\t')
+        gene_name = l.split('\t')[0]
+        meta_info = l.split('\t')[1] if len(fs) == 2 else ''
+        gene_d[gene_name] = meta_info
+    return gene_d
+
 def parse_gene_blacklists(cnf):
     _d = OrderedDict()
     if 'published' in cnf.variant_filtering.blacklist.genes:
@@ -37,15 +47,12 @@ def parse_gene_blacklists(cnf):
         _d['high GC gene'] = 'low_complexity/high_gc.txt'
     if 'too_many_cosmic_mutations' in cnf.variant_filtering.blacklist.genes:
         _d['gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
+    _d['hardfilter'] = 'blacklist.txt'
 
     d = OrderedDefaultDict(dict)
     for reason, fn in _d.items():
-        fpath = verify_file(join(cnf.incidentalome_dir, fn), description=reason + ' blacklist genes file', is_critical=True)
-        for l in iter_lines(fpath):
-            fs = l.split('\t')
-            gene_name = l.split('\t')[0]
-            meta_info = l.split('\t')[1] if len(fs) == 2 else ''
-            d[reason][gene_name] = meta_info
+        d[reason] = _read_list(reason, join(cnf.incidentalome_dir, fn))
+
     return d
 
 
@@ -99,7 +106,7 @@ class Rule:
 
 
 class Filtration:
-    statuses = ['', 'known', 'likely', 'unknown', 'incidentalome']  # Tier 1, 2, 3, 4
+    statuses = ['', 'known', 'likely', 'unknown', 'uncallable regions']  # Tier 1, 2, 3, 4
     sensitization_aa_changes = {'EGFR-T790M': 'TKI'}
 
     def __init__(self, cnf):
@@ -910,11 +917,12 @@ class Filtration:
                 #     self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
                 #     continue
                 self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
-                # self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
+            if 'hardfilter' in bl_gene_reasons and not actionability and self.status != 'known':
+                self.apply_reject_counter('blacklist gene', is_canonical, no_transcript)
+                continue
 
-                # if gene in self.gene_to_soft_filter:
-                #     self.update_status('unknown', 'blacklist gene', force=True)
-                # else:
+            # if bl_region_reasons and not actionability and self.status != 'known' and gene not in self.gene_to_soft_filter:
+            #     self.update_status('uncallable regions', bl_region_reasons, force=True)
 
             # if not is_act:
                     # if float(fields[pcnt_sample_col]) > self.max_ratio:
@@ -958,7 +966,7 @@ class Filtration:
             info('    Set known: ' + str(counter['known']))
             info('    Set likely: ' + str(counter['likely']))
             info('    Kept unknown: ' + str(counter['unknown']))
-            info('    Incidentalome: ' + str(counter['incidentalome']))
+            info('    In uncallable regions: ' + str(counter['uncallable regions']))
             for reason, count in gene_blacklist_counter.items():
                 info('        ' + str(count) + ' ' + reason)
             info('    Dropped: ' + str(sum(reject_counter.values())))

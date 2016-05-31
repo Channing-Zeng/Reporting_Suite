@@ -11,12 +11,11 @@ import source
 from source.calling_process import call, call_check_output
 from source.config import defaults
 from source.profiling import fn_timer
-from source.tools_from_cnf import get_script_cmdline, get_system_path, get_java_tool_cmdline
+from source.tools_from_cnf import get_script_cmdline, get_java_tool_cmdline
 from source.logger import err, warn, send_email, critical
-from source.utils import is_us
+from source.utils import is_us, OrderedDefaultDict
 from source.variants.tsv import make_tsv
-from source.variants.vcf_processing import iterate_vcf, get_sample_column_index, bgzip_and_tabix, igvtools_index, \
-    verify_vcf
+from source.variants.vcf_processing import bgzip_and_tabix, verify_vcf
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, \
     symlink_plus, file_transaction, num_lines
 from source.logger import info
@@ -565,7 +564,8 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                 for line_i, l in enumerate(f):
                     if line_i > 0:
                         fs = l.replace('\n', '').split()
-                        vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
+                        chrom, pos, db_id, ref, alt = fs[1:6]
+                        vark = ':'.join([chrom, pos, ref, alt])
                         if vark in met_in_this_sample:
                             warn(vark + ' already met for sample ' + sample.name)
                             total_duplicated_count += 1
@@ -592,10 +592,11 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
         info('Maximum frequency in cohort is ' + str(max_freq))
         info()
 
-        known_variants_count = 0
-        act_variants_count = 0
+        artefacts_samples = OrderedDefaultDict()
+        artefacts_data = OrderedDict()
+
+        not_filtered_variants_count = 0
         good_freq_variants_count = 0
-        skipped_variants_count = 0
         written_lines_count = 0
         status_col, reason_col, n_samples_col, n_var_col, pcnt_sample_col, ave_af_col \
             = None, None, None, None, None, None
@@ -619,36 +620,50 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                     ave_af_col = fs.index('Ave_AF')
                                 if line_i > 0:
                                     fs = l.replace('\n', '').split('\t')
-                                    vark = ':'.join([fs[1], fs[2], fs[4], fs[5]])
+                                    chrom, pos, db_id, ref, alt = fs[1:6]
+                                    vark = ':'.join([chrom, pos, ref, alt])
                                     assert len(fs) > reason_col, 'len(fs)=' + str(len(fs)) + ' > reason_col=' + str(reason_col) + \
                                                                  ' in ' + sample.name + ', ' + vcf2txt_fpath + ' for line\n' + l
 
                                     freq = freq_in_cohort_by_vark[vark]
                                     cnt = count_in_cohort_by_vark[vark]
-
-                                    if fs[status_col] == 'known' or 'act_' in fs[reason_col] or 'actionable' in fs[reason_col]:
-                                        act_variants_count += 1
-                                    elif freq > cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
-                                        skipped_variants_count += 1
-                                        continue
-                                    else:
-                                        good_freq_variants_count += 1
-
                                     fs[n_samples_col] = str(len(samples))
                                     fs[n_var_col] = str(cnt)
                                     fs[pcnt_sample_col] = str(freq)
                                     fs[ave_af_col] = ''
                                     l = '\t'.join(fs) + '\n'
-                                    fixed_f_out.write(l)
-                                    out.write(l)
-                                    written_lines_count += 1
 
-        if cnf.variant_filtering.max_ratio < 1.0:
-            info('Skipped variants with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
-                 ': ' + str(skipped_variants_count))
-        info('Actionable and known records: ' + str(act_variants_count))
-        if cnf.variant_filtering.max_ratio < 1.0:
-            info('Unknown and not actionable records with freq < ' +
+                                    if fs[status_col] not in ['known', 'likely']:
+                                        not_filtered_variants_count += 1
+                                    elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
+                                        artefacts_samples[vark].append(sample.name)
+                                        artefacts_data[vark] = db_id, freq, cnt, fs[status_col], fs[reason_col]
+                                    else:
+                                        good_freq_variants_count += 1
+                                        fixed_f_out.write(l)
+                                        out.write(l)
+                                        written_lines_count += 1
+
+        artefacts_fpath = add_suffix(variants_fpath, 'artifacts')
+        if len(artefacts_samples.keys()) > 0:
+            with file_transaction(cnf.work_dir, artefacts_fpath) as tx:
+                with open(tx, 'w') as f:
+                    f.write('##Novel variants with cohort frequency > ' + str(cnf.variant_filtering.max_ratio)) + \
+                        ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt)
+                    f.write('Chrom\tPos\tID\tRef\tAlt\tN_samples\tPcnt_sample\tSignificance\tReason')
+                    for vark, samples in artefacts_samples.items():
+                        db_id, freq, cnt, status, reason = artefacts_data[vark]
+                        chrom, pos, ref, alt = vark.split(':')
+                        f.write('\t'.join([chrom, pos, db_id, ref, alt, cnt, freq, status, reason]) + '\n')
+
+            info('Skipped artefacts with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
+                 ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + ': ' +
+                 str(len(artefacts_samples.keys())))
+            info('Saved artefacts into ' + artefacts_fpath)
+
+        info('All variants not under filtering: ' + str(not_filtered_variants_count))
+        if len(artefacts_samples.keys()) > 0:
+            info('Variants not under filtering with freq < ' +
                  str(cnf.variant_filtering.max_ratio) + ': ' + str(good_freq_variants_count))
         verify_file(pass_variants_fpath, 'PASS variants file', is_critical=True)
         info('Written ' + str(written_lines_count) + ' records to ' + pass_variants_fpath)

@@ -73,11 +73,11 @@ function extendClick(switch_id) {
         switchElContent = '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / ';
         if (showBlacklisted) {
             switchElContent += '<a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">+ unknown</a>';
-            switchElContent += '<span id="incidentalome_span">incidentalome</span>';
+            //switchElContent += '<span id="incidentalome_span">incidentalome</span>';
         }
         else {
             switchElContent += '<span>+ unknown</span>';
-            switchElContent += '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>';
+            //switchElContent += '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>';
         }
         switch_el.html(switchElContent)
     }
@@ -128,9 +128,10 @@ function reduceClick(switch_id) {
       switch_el.html('<span>'  + key_or_target + ' genes</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">all genes</a>')
     }
     else {
-      switch_el.html('<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
-          'onclick="extendClick($(this))">+ unknown</a>' +
-          '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>')
+        html = '<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
+          'onclick="extendClick($(this))">+ unknown</a>'
+        //html += '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>'
+      switch_el.html(html)
     }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
