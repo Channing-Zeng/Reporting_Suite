@@ -67,6 +67,7 @@ class Mutation(SortableByChrom):
         self.eff_type = None
         self.status = None
         self.reason = None
+        self.incidentalome_reason = None
         self.is_silent = False
         self.cosmic_id = None
         self.dbsnp_id = None
@@ -703,4 +704,24 @@ def get_total_variants_number(sample, varqc_json_fpath):
     r = sr.find_record(sr.records, 'Total with rejected')
     return r.value if r else None
 
+
+def get_sample_info(sample_name, project_name, return_info=False):
+    sample_type = 'Plasma' if 'Plasma' in sample_name else 'Tissue'
+    sample_sens = 'Sensitive' if 'Sensitive' in sample_name else 'Resistant'
+    project_types = ['WGS', 'WES', 'AZ300', 'AZ50', 'Exome']
+    for project_type in project_types:
+        if project_type in project_name:
+            break
+    if return_info:
+        return sample_type, sample_sens, project_type
+
+    formatted_name = '{sample_type} {sample_sens} {project_type}'.format(**locals())
+    return formatted_name
+
+
+def get_sample_num(sample_name):
+    if '_' in sample_name and sample_name.split('_')[-1].isdigit():
+        return int(sample_name.split('_')[-1])
+    else:
+        return int(''.join(c for c in sample_name if c.isdigit()))
 

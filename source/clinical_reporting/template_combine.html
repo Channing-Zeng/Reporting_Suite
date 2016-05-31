@@ -117,24 +117,40 @@
                         <p id="variants_group_switch_sens">
                             <span>all mutations</span>
                             /
-                            <a class="dotted-link" id="show_variants_sensitive" onclick="showVariantsBySensitivity($(this))">
-                                only sensitive samples</a>
+                            <a class="dotted-link" id="show_variants_sen" onclick="showVariantsBySensitivity($(this))">
+                                only sensitive </a>
                             /
-                            <a class="dotted-link" id="show_variants_resistance" onclick="showVariantsBySensitivity($(this))">
-                                only resistant samples</a>
+                            <a class="dotted-link" id="show_variants_res" onclick="showVariantsBySensitivity($(this))">
+                                only resistant </a>
                             /
-                            <a class="dotted-link" id="show_variants_common" onclick="showVariantsBySensitivity($(this))">
-                                only common mutations</a>
+                            <a class="dotted-link" id="show_variants_sens_common" onclick="showVariantsBySensitivity($(this))">
+                                only common </a>
 
                         </p>
                         <p id="variants_group_switch_type">
                             <span>all mutations</span>
                             /
                             <a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))">
-                                only plasma samples</a>
+                                only plasma </a>
                             /
                             <a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))">
-                                only tissue samples</a>
+                                only tissue </a>
+                            /
+                            <a class="dotted-link" id="show_variants_common" onclick="showVariantsByType($(this))">
+                                only common </a>
+
+                        </p>
+                        <p id="project_group_switch_type">
+                            <span>all mutations</span>
+                            /
+                            <a class="dotted-link" id="show_projects_wgs" onclick="showVariantsByProject($(this))">
+                                only WGS </a>
+                            /
+                            <a class="dotted-link" id="show_projects_nonwgs" onclick="showVariantsByProject($(this))">
+                                only non-WGS </a>
+                            /
+                            <a class="dotted-link" id="show_projects_common" onclick="showVariantsByProject($(this))">
+                                only common </a>
 
                         </p>
                     </div>

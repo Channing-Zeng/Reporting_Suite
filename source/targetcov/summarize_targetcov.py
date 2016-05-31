@@ -5,7 +5,7 @@ from os.path import relpath, join, exists, dirname, basename, abspath
 from collections import OrderedDict, defaultdict
 
 import source
-from source.clinical_reporting.clinical_reporting import gray
+from source.utils import gray
 from source.targetcov.Region import Region
 from source.targetcov.bam_and_bed_utils import verify_bed
 from source.reporting.reporting import FullReport, Metric, MetricStorage, ReportSection, write_tsv_rows, PerRegionSampleReport, BaseReport, \

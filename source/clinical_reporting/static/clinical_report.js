@@ -297,9 +297,51 @@ function correctRowspan(row) {
     });
 }
 
+function showVariantsByProject(switch_id) {
+    if (switch_id[0].id) switch_id = switch_id[0].id;
+    switch_id = switch_id.split("_");
+    var switchValue = switch_id[switch_id.length-1];
+    var switch_el = $('#project_group_switch_type');
+    var parameter = 'Project';
+    var wgs = false;
+    var nonwgs = false;
+    if (switchValue == 'all')
+        switchElContent = '<span>all mutations</span> / ';
+    else
+        switchElContent = '<a class="dotted-link" id="show_projects_all" onclick="showVariantsByProject($(this))"> all mutations</a> / ';
+    if (switchValue == 'wgs')
+        switchElContent += '<span> only WGS</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_projects_wgs" onclick="showVariantsByProject($(this))"> only WGS</a> / ';
+    if (switchValue == 'nonwgs')
+        switchElContent += '<span> only non-WGS</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_projects_nonwgs" onclick="showVariantsByProject($(this))"> only non-WGS</a> / ';
+    if (switchValue == 'common')
+        switchElContent += '<span> only common</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_projects_common" onclick="showVariantsByProject($(this))"> only common</a> / ';
+    switch_el.html(switchElContent);
+    if (switchValue == 'all') {
+        checkVariantsTable(parameter, switchValue);
+        return;
+    }
+    if (switchValue == 'common') {
+        wgs = true;
+        nonwgs = true
+    }
+    else if (switchValue == 'wgs') {
+        wgs = true;
+    }
+    else if (switchValue == 'nonwgs') {
+        nonwgs = true;
+    }
+    checkVariantsTable(wgs, nonwgs, true);
+
+}
+
 function showVariantsByType(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
-    // Showing full
     switch_id = switch_id.split("_");
     var switchValue = switch_id[switch_id.length-1];
     var switch_el = $('#variants_group_switch_type');
@@ -309,13 +351,18 @@ function showVariantsByType(switch_id) {
     else
         switchElContent = '<a class="dotted-link" id="show_variants_all" onclick="showVariantsByType($(this))"> all mutations</a> / ';
     if (switchValue == 'plasma')
-        switchElContent += '<span> only plasma samples</span> / ';
+        switchElContent += '<span> only plasma</span> / ';
     else
-        switchElContent += '<a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))"> only plasma samples</a> / ';
+        switchElContent += '<a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))"> only plasma</a> / ';
     if (switchValue == 'tissue')
-        switchElContent += '<span> only tissue samples</span> / ';
+        switchElContent += '<span> only tissue</span> / ';
     else
-        switchElContent += '<a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))"> only tissue samples</a> / ';
+        switchElContent += '<a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))"> only tissue</a> / ';
+    if (switchValue == 'common')
+        switchElContent += '<span> only common</span> / ';
+    else
+        switchElContent += '<a class="dotted-link" id="show_variants_sens_common" onclick="showVariantsByType($(this))"> only common</a> / ';
+    if (switchValue == 'common') switchValue = 'plasma, tissue';
 
     switch_el.html(switchElContent);
     checkVariantsTable(parameter, switchValue);
@@ -323,7 +370,6 @@ function showVariantsByType(switch_id) {
 
 function showVariantsBySensitivity(switch_id) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
-    // Showing full
     switch_id = switch_id.split("_");
     var switchValue = switch_id[switch_id.length-1];
     var switch_el = $('#variants_group_switch_sens');
@@ -332,39 +378,60 @@ function showVariantsBySensitivity(switch_id) {
         switchElContent = '<span>all mutations</span> / ';
     else
         switchElContent = '<a class="dotted-link" id="show_variants_all" onclick="showVariantsBySensitivity($(this))"> all mutations</a> / ';
-    if (switchValue == 'sensitive')
-        switchElContent += '<span> only sensitive samples</span> / ';
+    if (switchValue == 'sen')
+        switchElContent += '<span> only sensitive</span> / ';
     else
-        switchElContent += '<a class="dotted-link" id="show_variants_sensitive" onclick="showVariantsBySensitivity($(this))"> only sensitive samples</a> / ';
-    if (switchValue == 'resistant')
-        switchElContent += '<span> only resistant samples</span> / ';
+        switchElContent += '<a class="dotted-link" id="show_variants_sen" onclick="showVariantsBySensitivity($(this))"> only sensitive</a> / ';
+    if (switchValue == 'res')
+        switchElContent += '<span> only resistant</span> / ';
     else
-        switchElContent += '<a class="dotted-link" id="show_variants_resistant" onclick="showVariantsBySensitivity($(this))"> only resistant samples</a> / ';
+        switchElContent += '<a class="dotted-link" id="show_variants_res" onclick="showVariantsBySensitivity($(this))"> only resistant</a> / ';
     if (switchValue == 'common')
-        switchElContent += '<span> only common mutations</span> / ';
+        switchElContent += '<span> only common</span> / ';
     else
-        switchElContent += '<a class="dotted-link" id="show_variants_common" onclick="showVariantsBySensitivity($(this))"> only common mutations</a> / ';
-    if (switchValue == 'common') switchValue = 'resistant, sensitive';
+        switchElContent += '<a class="dotted-link" id="show_variants_common" onclick="showVariantsBySensitivity($(this))"> only common</a> / ';
+    if (switchValue == 'common') switchValue = 'res, sen';
 
     switch_el.html(switchElContent);
     checkVariantsTable(parameter, switchValue);
 }
 
-function checkVariantsTable(parameter, switchValue) {
+function checkVariantsTable(parameter, switchValue, isWgsCheck) {
     var table_short = $('.table_short#report_table_mutations');
     var table_full = $('.table_full#report_table_mutations');
     if (table_full[0]) {
         $(table_full).css('height', '');
-        $('.table_full#report_table_mutations tr').each(function() {
-            checkSamples(this, parameter, switchValue);
+        $('.table_full#report_table_mutations tbody tr').each(function() {
+            if (isWgsCheck) checkSamplesByProjects(this, parameter, switchValue);
+            else checkSamples(this, parameter, switchValue);
         });
     }
     else {
         $(table_short).css('height', '');
-        $('.table_short#report_table_mutations tr').each(function() {
-            checkSamples(this, parameter, switchValue);
+        $('.table_short#report_table_mutations tbody tr').each(function() {
+            if (isWgsCheck) checkSamplesByProjects(this, parameter, switchValue);
+            else checkSamples(this, parameter, switchValue);
         });
     }
+}
+
+function checkSamplesByProjects(row, wgs, nonwgs) {
+    var isWgs = false;
+    var isNonWgs = false;
+    var metric = 'Project';
+    for (var c = 0, m = row.cells.length; c < m; c++) {
+        var cell = row.cells[c];
+        if (cell.attributes.metric && cell.attributes.metric.value.indexOf('Freq') != -1) {
+            if (cell.innerText.toLowerCase()) {
+                if (cell.attributes.metric.value.indexOf('WGS') != -1)
+                    isWgs = true;
+                else isNonWgs = true
+            }
+        }
+    }
+    if (isWgs != wgs || isNonWgs != nonwgs)
+        $(row).addClass(metric + ' unselected_type');
+    else showHideRow(row, metric);
 }
 
 function checkSamples(row, metric, value) {
@@ -385,8 +452,8 @@ function checkSamples(row, metric, value) {
 function showHideRow(row, metric) {
     if ($(row).hasClass(metric)) {
         $(row).removeClass(metric);
-        if (!$(row).hasClass("Sensitivity") && !$(row).hasClass("Type"))
-        $(row).removeClass('unselected_type')
+        if (!$(row).hasClass("Sensitivity") && !$(row).hasClass("Type") && !$(row).hasClass("Project"))
+            $(row).removeClass('unselected_type')
     }
 }
 

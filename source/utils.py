@@ -202,3 +202,7 @@ def md5(fpath):
         for chunk in iter(lambda: f.read(4096), b""):
             hash.update(chunk)
     return hash.hexdigest()
+
+
+def gray(text):
+    return '<span class="gray">' + text + '</span>'

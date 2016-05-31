@@ -10,10 +10,11 @@ import source
 from source import info, verify_file
 from source.bcbio.project_level_report import get_version
 from source.calling_process import call
+from source.clinical_reporting.clinical_parser import get_sample_num, get_sample_info
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.tools_from_cnf import get_script_cmdline
-from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local
+from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local, gray
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
 
@@ -82,19 +83,19 @@ class BaseClinicalReporting:
                 Metric('Type'),
                 Metric('Sensitivity')
             ])
-            for e in mutations_by_experiment.keys():
-                formatted_name = ''
-                if self.get_sample_num(e.sample.name) == cur_sample_num:
-                    formatted_name = self.get_sample_info(e.sample.name, e.project_name)
-                elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
-                    formatted_name = e.key
-                if formatted_name:
-                    ms.extend([
-                        Metric(formatted_name + ' Freq', short_name=formatted_name + '\nfreq', max_width=55, align='left', unit='%',
-                               with_heatmap=False),          # .19
-                        Metric(formatted_name + ' Depth', short_name='depth', max_width=48, align='left',
-                               med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
-                    ])
+            short_names, full_names = self.format_experiment_names(mutations_by_experiment, cur_sample_num)
+            for index in range(len(short_names.values())):
+                short_name = short_names.values()[index]
+                full_name = full_names.values()[index]
+                next_short_name = short_names.values()[index + 1] if index < len(short_names.values()) - 1 else ''
+                col_width = 40 + 15 * len(next_short_name.split())
+                ms.extend([
+                    Metric(full_name + ' Freq', short_name='\n'.join(short_name.split()) + '\nfreq', max_width=45,  min_width=45,
+                           align='left', unit='%', with_heatmap=False),          # .19
+                    Metric(full_name + ' Depth', short_name='depth', min_width=col_width, align='left',
+                           med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
+                ])
+
         ms.append(Metric('Indicentalome', short_name='Indicentalome'))
 
         if create_venn_diagrams:
@@ -109,7 +110,7 @@ class BaseClinicalReporting:
         muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         sample_experiments = []
         for e, muts in mutations_by_experiment.items():
-            if cur_sample_num and self.get_sample_num(e.sample.name) == cur_sample_num:
+            if cur_sample_num and get_sample_num(e.sample.name) == cur_sample_num:
                 sample_experiments.append(e)
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
@@ -196,10 +197,7 @@ class BaseClinicalReporting:
                 for e, m in mut_by_experiment.items():
                     if cur_experiments and e not in cur_experiments:
                         continue
-                    if mutations_by_experiment.keys()[0].is_target2wgs_comparison:
-                        formatted_name = e.key
-                    else:
-                        formatted_name = self.get_sample_info(e.sample.name, e.project_name)
+                    formatted_name = full_names[e]
                     row.add_record(formatted_name + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
                     row.add_record(formatted_name + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
 
@@ -222,37 +220,63 @@ class BaseClinicalReporting:
         return report
 
     @staticmethod
-    def get_sample_num(sample_name):
-        if '_' in sample_name and sample_name.split('_')[-1].isdigit():
-            return int(sample_name.split('_')[-1])
-        else:
-            return int(''.join(c for c in sample_name if c.isdigit()))
-
-    @staticmethod
     def _find_other_occurences(row, mut_by_experiment, cur_experiments):
-        samples = [e.sample.name.lower() for e in mut_by_experiment.keys()]
+        samples = [e.sample.name for e in mut_by_experiment.keys()]
         sample_parameters = {'Sensitivity': ['Sen', 'Res'], 'Type': ['Plasma', 'Tissue']}
-        num_samples = defaultdict(int)
         for parameter, values in sample_parameters.iteritems():
             cur_info = set()
             for value in values:
-                if any(value.lower() in sample_name for sample_name in samples):
+                if any(value in sample_name for sample_name in samples):
                     cur_info.add(value)
-                    num_samples[value] += sum(1 for sample_name in samples if value.lower() in sample_name)
             if cur_info:
                 row.add_record(parameter, ', '.join(sorted(cur_info)))
         if not cur_experiments:
             row.add_record('Samples', len(mut_by_experiment.keys()))
         else:
-            samples = [e.sample.name.lower() for e in cur_experiments]
-            for parameter, values in sample_parameters.iteritems():
-                for value in values:
-                    num_samples[value] -= sum(1 for sample_name in samples if value.lower() in sample_name)
-            other_occurences = ' '.join([k + ': ' + str(v) for k, v in num_samples.iteritems() if v > 0])
-            other_occurences.replace('Sensitive', 'Sen').replace('Resistant', 'Res')
-            other_occurences.replace('Plasma', 'P').replace('Tissue', 'T')
+            num_by_samples = defaultdict(set)
+            cur_sample_num = get_sample_num(cur_experiments[0].sample.name)
+            for i, sample in enumerate(samples):
+                if get_sample_num(sample) == cur_sample_num:
+                    continue
+                sample_type, sample_sens, _ = get_sample_info(sample, mut_by_experiment.keys()[i].project_name, return_info=True)
+                num_by_samples[(sample_type, sample_sens)].add(get_sample_num(sample))
+            other_occurences = ' '.join([str(len(v)) + ' ' + ' '.join(k) for k, v in num_by_samples.iteritems()])
+            other_occurences = other_occurences.replace('Sensitive', 'Sen').replace('Resistant', 'Res')
             row.add_record('Other occurrences', other_occurences)
         return row
+
+
+    def format_experiment_names(self, mutations_by_experiment, cur_sample_num):
+        formatted_names = []
+        for e in mutations_by_experiment.keys():
+            formatted_name = ''
+            if get_sample_num(e.sample.name) == cur_sample_num:
+                formatted_name = get_sample_info(e.sample.name, e.project_name)
+            elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
+                formatted_name = e.key
+            formatted_names.append(formatted_name)
+        short_names = OrderedDict()
+        full_names = OrderedDict()
+        if not mutations_by_experiment.keys()[0].is_target2wgs_comparison:
+            prev_type, prev_sens = None, None
+            for index in range(len(formatted_names)):
+                formatted_name = formatted_names[index]
+                if not formatted_name:
+                    continue
+                full_names[mutations_by_experiment.keys()[index]] = formatted_name
+                sample_type, sample_sens, project = formatted_name.split()
+                formatted_name = project
+                if not prev_sens or sample_sens != prev_sens:
+                    formatted_name = sample_sens + ' ' + formatted_name
+                if not prev_type or sample_type != prev_type:
+                    formatted_name = sample_type + ' ' + formatted_name
+                prev_type, prev_sens = sample_type, sample_sens
+                short_names[mutations_by_experiment.keys()[index]] = formatted_name
+        else:
+            for index, e in enumerate(mutations_by_experiment.keys()):
+                short_names[e] = formatted_names[index]
+        return short_names, full_names
+
 
     def group_for_venn_diagram(self, mutations_by_experiment):
         samples_by_index = dict()
@@ -1179,6 +1203,3 @@ def tooltip_long(string, max_len=30):
     else:
         return '<a class="tooltip-link" rel="tooltip" title="' + string + '">' + string[:max_len - 2] + '...</a>'
 
-
-def gray(text):
-    return '<span class="gray">' + text + '</span>'
