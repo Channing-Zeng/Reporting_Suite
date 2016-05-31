@@ -42,16 +42,28 @@ variant_filtering:
 
   blacklist:
     genes:
-      published: yes
-      abnormal_gc: yes
-      low_complexity: yes
-      repetitive_single_exome: yes
-      too_many_cosmic_mutations: yes
+    - published
+    - abnormal_gc
+    - low_complexity
+    - repetitive_single_exome
+    - too_many_cosmic_mutations
     regions:
-      abnormal_gc: yes
-      low_complexity: yes
-      hengs_universal_mask: yes
-      repeats: yes
+    - bad_promoter
+    - gc0to15
+    - gc15to20
+    - gc20to25
+    - gc25to30
+    - gc65to70
+    - gc70to75
+    - gc75to80
+    - gc80to85
+    - gc85to100
+    - low_complexity_lt51bp
+    - low_complexity_51to200bp
+    - low_complexity_gt200bp
+    - heng_universal_mask
+    - repeats
+    - self_chain
 
 
 annotation:

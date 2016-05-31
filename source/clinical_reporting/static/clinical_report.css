@@ -71,7 +71,12 @@ p {
 #extend_link_incidentalome_variants, #incidentalome_span {
   margin-left: 20px; }
 
-.reason {
+.incidentalome {
+  color: #b3b3b3; }
+  .incidentalome .gray, .incidentalome .reason, .incidentalome td, .incidentalome a {
+    color: #c8c8c8; }
+
+.gray .reason {
   color: gray; }
 
 .my_hover {

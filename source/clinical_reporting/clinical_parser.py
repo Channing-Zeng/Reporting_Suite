@@ -536,6 +536,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
     status_col = None
     signif_col = None
     reason_col = None
+    incidentalome_col = None
     ids_col = None
     var_type_col = None
 
@@ -572,6 +573,8 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                     signif_col = len(headers) - headers[::-1].index('Status') - 1  # get last index of status
                 if 'Reason' in headers:
                     reason_col = headers.index('Reason')
+                if 'Incidentalome' in headers:
+                    incidentalome_col = headers.index('Incidentalome')
                 continue
             fs = l.replace('\n', '').split('\t')
             sample_name, chrom, start, ref, alt, gname, transcript = \
@@ -583,6 +586,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             status = fs[status_col] if status_col is not None else None
             signif = fs[signif_col] if signif_col is not None else None
             reason = fs[reason_col] if reason_col is not None else None
+            incidentalome_reason = fs[incidentalome_col] if incidentalome_col is not None else None
 
             if sample_name == sample.name:
                 if (chrom, start, ref, alt, transcript) in alts_met_before:
@@ -630,6 +634,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                     reason = reason.replace('change', 'chg.')
                     mut.is_silent = 'silent' in reason.split()
                 mut.reason = reason
+                mut.incidentalome_reason = incidentalome_reason
 
                 mutations.append(mut)
 

@@ -22,20 +22,20 @@ def iter_lines(fpath):
 
 def parse_gene_blacklists(cnf):
     _d = OrderedDict()
-    if cnf.variant_filtering.blacklist.genes.published:
+    if 'published' in cnf.variant_filtering.blacklist.genes:
         _d['freq mut gene in HGMD'] = 'published/flags_in_hgmd.txt'
         _d['freq mut gene in OMIM'] = 'published/flags_in_omim.txt'
         _d['freq mut gene'] = 'published/flags.txt'
         _d['incidentalome gene'] = 'published/incidentalome.txt'
         _d['mutSigCV gene'] = 'published/mutsigcv.txt'
-    if cnf.variant_filtering.blacklist.genes.low_complexity:
+    if 'low_complexity' in cnf.variant_filtering.blacklist.genes:
         _d['low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
-    if cnf.variant_filtering.blacklist.genes.repetitive_single_exome:
+    if 'repetitive_single_exome' in cnf.variant_filtering.blacklist.genes:
         _d['repetitive single exon gene'] = 'low_complexity/repetitive_single_exon_gene.txt'
-    if cnf.variant_filtering.blacklist.genes.abnormal_gc:
+    if 'abnormal_gc' in cnf.variant_filtering.blacklist.genes:
         _d['low GC gene'] = 'low_complexity/low_gc.txt'
         _d['high GC gene'] = 'low_complexity/high_gc.txt'
-    if cnf.variant_filtering.blacklist.genes.too_many_cosmic_mutations:
+    if 'too_many_cosmic_mutations' in cnf.variant_filtering.blacklist.genes:
         _d['gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
 
     d = OrderedDefaultDict(dict)
@@ -50,21 +50,16 @@ def parse_gene_blacklists(cnf):
 
 
 def load_region_blacklists(cnf):
-    _d = OrderedDict()
-    if cnf.variant_filtering.blacklist.regions.low_complexity:
-        _d['low complexity region'] = 'low_complexity.bed.gz'
-    if cnf.variant_filtering.blacklist.regions.abnormal_gc:
-        _d['low GC region'] = 'low_gc.bed.gz'
-        _d['high GC region'] = 'high_gc.bed.gz'
-    if cnf.variant_filtering.blacklist.regions.hengs_universal_mask:
-        _d['Heng\'s mask'] = 'heng_um75-hs37d5.bed.gz'
-    if cnf.variant_filtering.blacklist.regions.repeats:
-        _d['repetitive region'] = 'repeats.bed.gz'
-
     d = OrderedDict()
-    for reason, fn in _d.items():
-        fpath = verify_file(join(cnf.genome.tricky_regions, fn), description=reason + ' tricky regions file', is_critical=True)
+    for region_type in cnf.variant_filtering.blacklist.regions:
+        fpath = verify_file(join(cnf.genome.tricky_regions, 'new', region_type + '.bed.gz'),
+                            description=region_type + ' tricky regions file', is_critical=True)
         # d[reason] = build_interval_tree(fpath)
+        reason = region_type.replace('_', ' ').replace('heng', 'Heng\'s').replace('lt51bp', '< 51bp')
+        if 'gc' in reason:
+            reason = reason.replace('to', '-').replace('gc', 'GC ') + '%'
+        if 'complexity' in reason:
+            reason = reason.replace('to', '-')
         d[reason] = tabix.open(fpath)
     return d
 
@@ -544,7 +539,8 @@ class Filtration:
     #             #     self.update_status('unlikely', sensitization_aa_chg + '_required', force=True)
     #         self.print_mutation(output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data=fm_data)
 
-    def print_mutation(self, output_f, fm_output_f, all_transcripts_output_f, status, reasons, fields, is_canonical, no_transcript, fm_data):
+    def print_mutation(self, output_f, fm_output_f, all_transcripts_output_f, status, reasons, blacklisted_reasons,
+                       fields, is_canonical, no_transcript, fm_data):
         self.apply_counter('lines_written', is_canonical, no_transcript)
         self.apply_counter(status, is_canonical, no_transcript)
 
@@ -554,7 +550,7 @@ class Filtration:
                 fm_output_f.write('\t'.join([sample, platform, 'short-variant', gene, status, aa_chg, cdna_chg,
                                        chrom + ':' + pos, str(depth), str(allele_freq * 100),
                                        '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])  + '\n')
-            output_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
+            output_f.write('\t'.join(fields + [status] + [', '.join(reasons)] + [', '.join(blacklisted_reasons)]) + '\n')
         if all_transcripts_output_f:
             all_transcripts_output_f.write('\t'.join(fields + [status]) + ('\t' + ', '.join(reasons) + '\n'))
             # if status != fields[-2] or ','.join(reasons) != fields[-1]:
@@ -633,6 +629,7 @@ class Filtration:
         exon_col = None
         status_col = None
         reason_col = None
+        incidentalome_col = None
         lof_col = None
         clnsig_col = None
 
@@ -678,17 +675,23 @@ class Filtration:
                 exon_col = headers.index('Exon')
                 clnsig_col = headers.index('CLNSIG')
                 try:
+                    lof_col = headers.index('LOF')
+                except ValueError:
+                    lof_col = None
+                try:
                     reason_col = headers.index('Reason')
                 except ValueError:
                     reason_col = None
                 else:
                     status_col = reason_col - 1
                 try:
-                    lof_col = headers.index('LOF')
+                    incidentalome_col = headers.index('Incidentalome')
                 except ValueError:
-                    lof_col = None
+                    incidentalome_col  = None
                 if not status_col and not reason_col:
                     l += '\tSignificance\tReason'
+                if not incidentalome_col:
+                    l += '\tIncidentalome'
                 output_f.write(l + '\n')
                 if all_transcripts_output_f:
                     all_transcripts_output_f.write(l + '\n')
@@ -898,15 +901,16 @@ class Filtration:
                     self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
                     continue
 
-            if not actionability and self.status != 'known':
-                bl_gene_reasons = self.check_blacklist_genes(gene, aa_pos)
-                bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=pos - 1, end=pos - 1 + len(ref))
-                if bl_gene_reasons or bl_region_reasons:
-                    if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
-                        self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
-                        continue
-                    self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
-                    self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
+            # if not actionability and self.status != 'known':
+            bl_gene_reasons = self.check_blacklist_genes(gene, aa_pos)
+            bl_region_reasons = self.check_blacklist_regions(chrom=chrom, start=pos - 1, end=pos - 1 + len(ref))
+            blacklisted_reasons = bl_gene_reasons + bl_region_reasons
+            if bl_gene_reasons or bl_region_reasons:
+                # if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
+                #     self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
+                #     continue
+                self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
+                # self.update_status('incidentalome', bl_gene_reasons + bl_region_reasons, force=True)
 
                 # if gene in self.gene_to_soft_filter:
                 #     self.update_status('unknown', 'blacklist gene', force=True)
@@ -937,7 +941,7 @@ class Filtration:
             #
             # if gene not in self.sensitizations_by_gene:  # sens/res mutations in spec. gene are written in print_mutations_for_one_gene
             self.print_mutation(output_f, fm_output_f, all_transcripts_output_f,
-                self.status, self.reason_by_status[self.status], fields, is_canonical, no_transcript,
+                self.status, self.reason_by_status[self.status], blacklisted_reasons, fields, is_canonical, no_transcript,
                 fm_data=[sample, self.parse_platform(sample), gene, str(pos), cosm_aa_chg, aa_chg, cdna_chg, chrom, depth, af])
 
         info('Done.')

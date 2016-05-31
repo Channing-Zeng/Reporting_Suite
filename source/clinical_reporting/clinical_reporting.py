@@ -95,6 +95,8 @@ class BaseClinicalReporting:
                         Metric(formatted_name + ' Depth', short_name='depth', max_width=48, align='left',
                                med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
                     ])
+        ms.append(Metric('Indicentalome', short_name='Indicentalome'))
+
         if create_venn_diagrams:
             samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment)
 
@@ -179,6 +181,8 @@ class BaseClinicalReporting:
                 row.add_record('Status', mut.status)
             row.add_record('Effect', mut.eff_type.replace(' variant', '') if mut.eff_type else None)
             row.add_record('VarDict status', **self._significance_field(mut))
+            if mut.incidentalome_reason:
+                row.add_record('Indicentalome', value=mut.incidentalome_reason)
             # row.add_record('VarDict reason', mut.reason)
             # row.add_record('Databases', **self._db_recargs(mut))
             # row.add_record('ClinVar', **self._clinvar_recargs(mut))
@@ -835,13 +839,15 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _highlighting_and_hiding_mut_row(row, mut):
-        if not mut.signif or mut.signif.lower() in ['unknown', 'incidentalome']:
+        if not mut.signif or mut.signif.lower() in ['unknown']:
             # if mut.solvebio and 'Pathogenic' in mut.solvebio.clinsig:
             #     warn('Mutation ' + str(mut) + ' is unknown, but found in SolveBio as Pathogenic')
             row.hidden = True
         else:
             if mut.signif:
                 row.class_ += ' ' + mut.signif.lower()
+            if mut.incidentalome_reason:
+                row.class_ += ' incidentalome'
         return row
 
 
@@ -1175,4 +1181,4 @@ def tooltip_long(string, max_len=30):
 
 
 def gray(text):
-    return '<span style="color: gray">' + text + '</span>'
+    return '<span class="gray">' + text + '</span>'
