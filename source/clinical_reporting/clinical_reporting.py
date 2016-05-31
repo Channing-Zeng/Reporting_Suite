@@ -803,8 +803,7 @@ class BaseClinicalReporting:
             tooltip = 'Protein length: ' + str(mut.aa_len)
             if mut.exon:
                tooltip += '<br>Exon altered: ' + str(mut.exon)
-            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>'\
-                 + gray(mut.transcript) + '</span>'
+            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>' + gray(mut.transcript) + '</span>'
             str(mut.aa_len)
         return dict(value=t, show_content=mut.is_canonical)
 

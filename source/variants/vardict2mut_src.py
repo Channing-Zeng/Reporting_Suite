@@ -793,8 +793,8 @@ class Filtration:
                     self.apply_reject_counter('not act and in filter_artifacts and AF < 0.5', is_canonical, no_transcript)
                     continue
                 gmaf = fields[headers.index('GMAF')]
-                if gmaf and all(not g or float(g) == 0 or float(g) > self.min_gmaf for g in gmaf.split(',')):
-                    self.apply_reject_counter('not act and all GMAF > ' + str(self.min_gmaf) + ' or zero', is_canonical, no_transcript)
+                if gmaf and all(not g or float(g) > self.min_gmaf for g in gmaf.split(',')):
+                    self.apply_reject_counter('not act and all GMAF > ' + str(self.min_gmaf), is_canonical, no_transcript)
                     continue
                 clncheck = check_clnsig(fields[clnsig_col])
                 if clncheck == 'dbSNP':  # Even if it's COSMIC in status, it's going to be filtered in case of low ClinVar significance

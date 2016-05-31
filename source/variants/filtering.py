@@ -592,7 +592,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
         info('Maximum frequency in cohort is ' + str(max_freq))
         info()
 
-        artefacts_samples = OrderedDefaultDict()
+        artefacts_samples = OrderedDefaultDict(list)
         artefacts_data = OrderedDict()
 
         not_filtered_variants_count = 0
@@ -648,13 +648,14 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
         if len(artefacts_samples.keys()) > 0:
             with file_transaction(cnf.work_dir, artefacts_fpath) as tx:
                 with open(tx, 'w') as f:
-                    f.write('##Novel variants with cohort frequency > ' + str(cnf.variant_filtering.max_ratio)) + \
-                        ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt)
-                    f.write('Chrom\tPos\tID\tRef\tAlt\tN_samples\tPcnt_sample\tSignificance\tReason')
+                    f.write('##Novel variants with cohort frequency > ' + str(cnf.variant_filtering.max_ratio) + \
+                        ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + '\n')
+                    f.write('Chrom\tPos\tID\tRef\tAlt\tSignificance\tReason\nPcnt_sample\tN_samples\tSamples')
                     for vark, samples in artefacts_samples.items():
                         db_id, freq, cnt, status, reason = artefacts_data[vark]
                         chrom, pos, ref, alt = vark.split(':')
-                        f.write('\t'.join([chrom, pos, db_id, ref, alt, cnt, freq, status, reason]) + '\n')
+                        f.write('\t'.join([chrom, pos, db_id, ref, alt, status, reason, str(freq), str(cnt),
+                                           str(', '.join(samples))]) + '\n')
 
             info('Skipped artefacts with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
                  ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + ': ' +
