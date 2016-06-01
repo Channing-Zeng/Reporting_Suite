@@ -511,7 +511,7 @@ def run_vcf2txt_with_retries(cnf, cmdline, output_fpath):
 #     return varks
 
 
-def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
+def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_fpath=None):
     info('Combining vcf2txt variants')
     not_existing_snames = []
     if cnf.reuse_intermediate and isfile(variants_fpath) and verify_file(variants_fpath):
@@ -536,7 +536,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
 
     info()
     info('Combining PASSed mutations')
-    pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+    pass_variants_fpath = pass_variants_fpath or add_suffix(variants_fpath, source.mut_pass_suffix)
     not_existing_pass_snames = []
     if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
         info('Combined PASSed filtered results ' + pass_variants_fpath + ' exist, reusing.')

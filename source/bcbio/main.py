@@ -1,18 +1,25 @@
 from collections import defaultdict
 import os
 import sys
+import shutil
 import time
+import datetime
+from genericpath import exists
 from os.path import join
 from optparse import OptionParser, SUPPRESS_HELP
+from yaml import dump as save_yaml
 
+
+import source
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.bcbio.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
-from source.file_utils import safe_mkdir, adjust_path
+from source.file_utils import safe_mkdir, adjust_path, safe_symlink_to, add_suffix
 from source.targetcov import summarize_targetcov
 from source.variants import summarize_qc
+from source.variants.filtering import combine_results
 
 
 def main():
@@ -77,7 +84,8 @@ def main():
         if cnf_project_name:
             cnf.project_name = cnf_project_name
         else:
-            cnf.project_name = '_'.join([bs.project_name for bs in bcbio_structures])
+            # cnf.project_name = '_'.join([bs.project_name for bs in bcbio_structures])
+            cnf.project_name = 'Combined_project'
 
         if cnf.output_dir is None:
             cnf.output_dir = join(os.getcwd(), cnf.project_name)
@@ -89,8 +97,9 @@ def main():
         safe_mkdir(cnf.log_dir)
         set_up_log(cnf, 'miltiple_projects', cnf.project_name, cnf.output_dir)
 
-        cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
+        cnf.work_dir = adjust_path(join(cnf.output_dir, 'work'))
         safe_mkdir(cnf.work_dir)
+        safe_mkdir(adjust_path(join(cnf.output_dir, 'config')))
 
         combine_projects(cnf, bcbio_structures, tags)
 
@@ -147,18 +156,85 @@ def combine_projects(cnf, bcbio_structures, tags=None):
     #         for s in bs.sampels:
     #             tag_by_sample[s.name] = bs.project_name
 
-    reuse = cnf.reuse_intermediate
+    final_dirpath = adjust_path(join(cnf.output_dir, 'final'))
+    safe_mkdir(final_dirpath)
+
+    merged_bcbio_cnf = merge_bcbio_yamls(cnf, bcbio_structures)
+
+    samples = [s for bs in bcbio_structures for s in bs.samples]
+    dirs_to_reprocess = [source.clinreport_dir, BCBioStructure.var_dir, source.varannotate_name, source.varfilter_name]
+    for s in samples:
+        sample_dir = join(final_dirpath, s.name)
+        sample_var_dirpath = join(sample_dir, BCBioStructure.var_dir)
+        safe_mkdir(sample_var_dirpath)
+        for file_or_dir in os.listdir(s.dirpath):
+            if file_or_dir not in dirs_to_reprocess:
+                safe_symlink_to(join(s.dirpath, file_or_dir), sample_dir)
+        for file in os.listdir(s.var_dirpath):
+            safe_symlink_to(join(s.var_dirpath, file), sample_var_dirpath)
+
+    merged_date_dir = join(final_dirpath, merged_bcbio_cnf['fc_date'] + '_' + merged_bcbio_cnf['fc_name'])
+    merged_bs_var_dirpath = join(merged_date_dir, BCBioStructure.var_dir)
+    merged_bs_raw_var_dirpath = join(merged_bs_var_dirpath, 'raw')
+    safe_mkdir(merged_bs_raw_var_dirpath)
+    for bs in bcbio_structures:
+        for file in os.listdir(bs.raw_var_dirpath):
+            safe_symlink_to(join(bs.raw_var_dirpath, file), merged_bs_raw_var_dirpath)
+
+    variants_fpaths = []
+    vardict_txt_fname = source.mut_fname_template.format(caller_name='vardict')
+    pass_suffix = source.mut_pass_suffix
+    variants_fpath = join(merged_bs_var_dirpath, vardict_txt_fname)
+    pass_variants_fname = add_suffix(vardict_txt_fname, source.mut_pass_suffix)
+    pass_variants_fpath = join(merged_bs_var_dirpath, pass_variants_fname)
+
+    cnf.reuse_intermediate = False
+    cnf.steps = ['Variants']
+
+    for bs_i, bs in enumerate(bcbio_structures):  # re-filtering, perform cohort-based filtering only within sub-projects
+        correct_bs = BCBioStructure(cnf, cnf.output_dir, bs.bcbio_cnf, final_dirpath)
+        bcbio_runner = BCBioRunner(cnf, correct_bs, bs.bcbio_cnf)
+        bcbio_runner.post_jobs()
+        bs_raw_variants_fpath = add_suffix(variants_fpath, str(bs_i))
+        pass_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, pass_suffix)
+        shutil.move(variants_fpath, bs_raw_variants_fpath)
+        shutil.move(pass_variants_fpath, pass_bs_variants_fpath)
+        variants_fpaths.append(bs_raw_variants_fpath)
+
+    merged_bs = BCBioStructure(cnf, cnf.output_dir, merged_bcbio_cnf, final_dirpath)
+    merged_samples = [s for s in merged_bs.samples]
+
+    cnf.variant_filtering.max_ratio = 1
+    combine_results(cnf, merged_samples, variants_fpaths, variants_fpath, pass_variants_fpath=pass_variants_fpath)
+    for fpath in variants_fpaths:
+        if exists(fpath):
+            os.remove(fpath)
+        pass_fpath = add_suffix(fpath, pass_suffix)
+        if exists(pass_fpath):
+            os.remove(pass_fpath)
+
     cnf.reuse_intermediate = True
+    cnf.steps = ['Seq2C', 'Summary']
+    BCBioRunner(cnf, merged_bs, merged_bs.bcbio_cnf).post_jobs()
 
-    combine_varqc(cnf, bcbio_structures, tag_by_sample,
-        varqc_dirname=BCBioStructure.varqc_dir,
-        varqc_name=BCBioStructure.varqc_name,
-        caption='Variant QC')
-    combine_varqc(cnf, bcbio_structures, tag_by_sample,
-        varqc_dirname=BCBioStructure.varqc_after_dir,
-        varqc_name=BCBioStructure.varqc_after_name,
-        caption='Variant QC after filtering')
-    combine_targqc(cnf, bcbio_structures, tag_by_sample)
 
-    cnf.reuse_intermediate = reuse
+def merge_bcbio_yamls(cnf, bcbio_structures):
+    today_date = datetime.datetime.now()
+    today_bcbio_date = today_date.strftime("%Y-%m-%d")
+    safe_mkdir(today_bcbio_date)
+
+    bcbio_cnfs = [bs.bcbio_cnf for bs in bcbio_structures]
+    merged_yaml_fpath = join(cnf.output_dir, 'config', 'bcbio.yaml')
+    merged_bcbio_cnf = dict()
+    merged_bcbio_cnf['fc_date'] = today_bcbio_date
+    merged_bcbio_cnf['fc_name'] = 'bcbio'
+    merged_bcbio_cnf['upload'] = bcbio_cnfs[0]['upload']
+    merged_bcbio_cnf['details'] = []
+    for bs_cnf in bcbio_cnfs:
+        bs_cnf['fc_date'] = today_bcbio_date
+        bs_cnf['fc_name'] = 'bcbio'
+        merged_bcbio_cnf['details'].extend(bs_cnf['details'])
+    with open(merged_yaml_fpath, 'w') as yaml_file:
+        yaml_file.write(save_yaml(merged_bcbio_cnf))
+    return merged_bcbio_cnf
 

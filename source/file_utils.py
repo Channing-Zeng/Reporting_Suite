@@ -963,7 +963,12 @@ def chdir(new_dir):
 
 def safe_symlink_to(fpath, dst_dirpath):
     dst = join(dst_dirpath, basename(fpath))
-    if not isfile(dst):
+    if not exists(dst):
+        try:
+            if os.lstat(dst):  # broken symlink
+                os.remove(dst)
+        except:
+            pass
         os.symlink(fpath, dst)
     return dst
 

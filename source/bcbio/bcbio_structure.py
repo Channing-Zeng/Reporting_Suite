@@ -108,6 +108,8 @@ def process_post_bcbio_args(parser):
     is_rnaseq = None
     genome_build = None
 
+    provided_cnf_fpath = adjust_path(opts.run_cnf)
+
     for dirpath in bcbio_dirpaths:
         bcbio_project_dirpath, final_dirpath, config_dirpath = _detect_bcbio_dirpath(dirpath)
         bcbio_project_dirpaths.append(bcbio_project_dirpath)
@@ -137,6 +139,8 @@ def process_post_bcbio_args(parser):
             critical('Projects are incompatible: RNAseq and non-RNAseq projects are mixed')
         is_rnaseq = _is_rnaseq
 
+        if not provided_cnf_fpath:
+            opts.run_cnf = None
         _detect_move_run_config(config_dirpath, opts, is_wgs=is_wgs, is_rnaseq=is_rnaseq)
 
         _genome_build = None
