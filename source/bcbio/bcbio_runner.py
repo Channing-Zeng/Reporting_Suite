@@ -610,6 +610,7 @@ class BCBioRunner:
         self._symlink_cnv()
         info()
 
+        error_msg = []
         try:
             targqc_wait_for_steps = []
             for sample in self.bcbio_structure.samples:
@@ -917,6 +918,9 @@ class BCBioRunner:
             info('Interrupted.')
         except SystemExit:
             info('Interrupted.')
+        except Exception as e:
+            info('Finished with errors.')
+            error_msg = e.args[0]
         finally:
             info('Deleting running jobs...')
             del_jobs(self.cnf, self.jobs_running)
@@ -928,8 +932,13 @@ class BCBioRunner:
             if isdir(join(self.bcbio_structure.work_dir, '..', 'config')):
                 change_permissions(self.cnf, join(self.bcbio_structure.work_dir, '..', 'config'))
             info()
-            info('Done post-processing.')
-
+            if error_msg:
+                err('Done post-processing with errors:')
+                err('-' * 70)
+                err(error_msg)
+                err('-' * 70)
+            else:
+                info('Done post-processing.')
 
     def _varqc_summary(self, sample_qc_path, summary_qc_path, varqc_level_name):
         jsons_by_sample_by_caller = defaultdict(dict)

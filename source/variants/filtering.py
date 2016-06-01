@@ -608,10 +608,14 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                         with open(mut_pass_fpath) as f, open(fixed_mut_fpath_tx, 'w') as fixed_f_out:
                             for line_i, l in enumerate(f):
                                 fs = l.replace('\n', '').split('\t')
-                                if line_i == 0:
-                                    fixed_f_out.write(l)
                                 if line_i == 0 and sample_i == 0:
                                     out.write(l)
+                                if line_i == 0:
+                                    fixed_f_out.write(l)
+                                    if status_col is not None and status_col != fs.index('Significance'):
+                                        critical('Different format in ' + mut_pass_fpath + ': status_col=' +
+                                                 str(fs.index('Significance')) + ', but the first sample was ' + str(status_col) +
+                                                 ', please rerun VarFilter from the beginning')
                                     status_col = fs.index('Significance')
                                     reason_col = status_col + 1
                                     n_samples_col = fs.index('N_samples')
@@ -633,16 +637,17 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                     fs[ave_af_col] = ''
                                     l = '\t'.join(fs) + '\n'
 
-                                    if fs[status_col] not in ['known', 'likely']:
+                                    print 'status_col=' + str(status_col) + ': ' + fs[status_col]
+                                    if fs[status_col] in ['known', 'likely']:
                                         not_filtered_variants_count += 1
                                     elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
                                         artefacts_samples[vark].append(sample.name)
                                         artefacts_data[vark] = db_id, freq, cnt, fs[status_col], fs[reason_col]
-                                    else:
-                                        good_freq_variants_count += 1
-                                        fixed_f_out.write(l)
-                                        out.write(l)
-                                        written_lines_count += 1
+                                        continue
+                                    good_freq_variants_count += 1
+                                    fixed_f_out.write(l)
+                                    out.write(l)
+                                    written_lines_count += 1
 
         artefacts_fpath = add_suffix(variants_fpath, 'artifacts')
         if len(artefacts_samples.keys()) > 0:
@@ -650,7 +655,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                 with open(tx, 'w') as f:
                     f.write('##Novel variants with cohort frequency > ' + str(cnf.variant_filtering.max_ratio) + \
                         ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + '\n')
-                    f.write('Chrom\tPos\tID\tRef\tAlt\tSignificance\tReason\nPcnt_sample\tN_samples\tSamples')
+                    f.write('Chrom\tPos\tID\tRef\tAlt\tSignificance\tReason\tPcnt_sample\tN_samples\tSamples\n')
                     for vark, samples in artefacts_samples.items():
                         db_id, freq, cnt, status, reason = artefacts_data[vark]
                         chrom, pos, ref, alt = vark.split(':')
@@ -658,14 +663,13 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath):
                                            str(', '.join(samples))]) + '\n')
 
             info('Skipped artefacts with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
-                 ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + ': ' +
-                 str(len(artefacts_samples.keys())))
+                 ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + ': ' + str(len(artefacts_samples.keys())))
             info('Saved artefacts into ' + artefacts_fpath)
 
         info('All variants not under filtering: ' + str(not_filtered_variants_count))
         if len(artefacts_samples.keys()) > 0:
-            info('Variants not under filtering with freq < ' +
-                 str(cnf.variant_filtering.max_ratio) + ': ' + str(good_freq_variants_count))
+            info('Variants not under filtering with freq > ' + str(cnf.variant_filtering.max_ratio) + ': ' + str(good_freq_variants_count))
+
         verify_file(pass_variants_fpath, 'PASS variants file', is_critical=True)
         info('Written ' + str(written_lines_count) + ' records to ' + pass_variants_fpath)
 

@@ -172,7 +172,7 @@ def critical(msg=''):
             return
         for m in msg:
             err(m, severity='critical')
-    sys.exit(1)
+    raise Exception(msg)
 
 
 def _log(out, msg='', ending='\n', print_date=True, severity=None):

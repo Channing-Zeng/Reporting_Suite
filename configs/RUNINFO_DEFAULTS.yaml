@@ -67,26 +67,26 @@ variant_filtering:
 
 
 annotation:
-  dbnsfp:
-    skip-annotation: no
-    annotations:
-    - SIFT_score
-    - Polyphen2_HVAR_score
-    - Polyphen2_HVAR_pred
-    - LRT_score
-    - LRT_pred
-    - MutationTaster_score
-    - MutationTaster_pred
-    - MutationAssessor_score
-    - MutationAssessor_pred
-    - FATHMM_score
-    - Ensembl_geneid
-    - Ensembl_transcriptid
-    - Uniprot_acc
-    - 1000Gp1_AC
-    - 1000Gp1_AF
-    - ESP6500_AA_AF
-    - ESP6500_EA_AF
+#  dbnsfp:
+#    skip-annotation: no
+#    annotations:
+#    - SIFT_score
+#    - Polyphen2_HVAR_score
+#    - Polyphen2_HVAR_pred
+#    - LRT_score
+#    - LRT_pred
+#    - MutationTaster_score
+#    - MutationTaster_pred
+#    - MutationAssessor_score
+#    - MutationAssessor_pred
+#    - FATHMM_score
+#    - Ensembl_geneid
+#    - Ensembl_transcriptid
+#    - Uniprot_acc
+#    - 1000Gp1_AC
+#    - 1000Gp1_AF
+#    - ESP6500_AA_AF
+#    - ESP6500_EA_AF
 
   dbsnp:
     all-annotations: no
