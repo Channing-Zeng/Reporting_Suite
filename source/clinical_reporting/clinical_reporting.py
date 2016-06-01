@@ -871,8 +871,6 @@ class BaseClinicalReporting:
         else:
             if mut.signif:
                 row.class_ += ' ' + mut.signif.lower()
-            if mut.incidentalome_reason:
-                row.class_ += ' incidentalome'
         return row
 
 

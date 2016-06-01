@@ -72,9 +72,15 @@ p {
   margin-left: 20px; }
 
 .incidentalome {
-  color: #b3b3b3; }
-  .incidentalome .gray, .incidentalome .reason, .incidentalome td, .incidentalome a {
+  color: #999999; }
+  .incidentalome .gray, .incidentalome .reason {
     color: #c8c8c8; }
+  .incidentalome a {
+    color: #7da5b5; }
+  .incidentalome a:hover {
+    color: #b54043; }
+  .incidentalome a:visited {
+    color: #9880b2; }
 
 .gray, .reason {
   color: gray; }
