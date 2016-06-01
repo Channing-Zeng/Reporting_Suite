@@ -149,7 +149,7 @@ function drawMutPlot(key, data, placeholder_el) {
 function filterMutPlotInfo(series, minAF) {
     var newSeries = [];
     var table_full = $('.table_full#report_table_mutations')[0];
-    var hiddenStatuses = table_full ? ['incidentalome'] : ['unknown', 'incidentalome'];
+    var hiddenStatuses = table_full ? [] : ['unknown'];
     var minActAF = $('#act_min_af')[0].innerText;
     for (var i = 0; i < series.length; i++) {
         if (checkPlotRow(series[i].status, hiddenStatuses)) {
@@ -162,12 +162,13 @@ function filterMutPlotInfo(series, minAF) {
     barMaxWidth = ticksX / 1.15;
     for (var i = 0; i < newSeries.length; i++) {
         newSeries[i].data = [[ticksX * i, newSeries[i].data[0][1]]];
+        var barOpacity = newSeries[i].status == 'incidentalome' ? 40 : 100;
         newSeries[i].bars = {
             show: true,
             barWidth: barMaxWidth,
             lineWidth: 0,
             order: 1,
-            fillColor: newSeries[i].color
+            fillColor: convertHex(newSeries[i].color, barOpacity)
         };
     }
     return newSeries;
