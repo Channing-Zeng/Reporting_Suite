@@ -46,7 +46,8 @@ def main():
 
     cnf.min_percent = 1 - float(cnf.min_percent)
     cnf.min_ratio = float(cnf.min_ratio)
-    cnf.min_depth = int(cnf.min_depth)
+    if cnf.min_depth:
+        cnf.min_depth = int(cnf.min_depth)
     if cnf.metadata:
         cov_thresholds = {'plasma': 100, 'ffpe': 10, 'cell_line': 10}
         cnf.min_depths = [cov_thresholds[type] for type in cnf.metadata.split(',')]
