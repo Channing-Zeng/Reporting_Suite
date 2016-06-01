@@ -124,7 +124,8 @@ ESR1	D538G	somatic
 ESR1	L536	somatic
 ESR1	P535H	somatic
 ESR1	V534E	somatic
-GNA11	Q209P	somatic
+GNAQ	Q209P	somatic
+GNAQ	Q209L	somatic
 GNA11	Q209L	somatic
 BRCA2	E2663K	5
 BRCA1	M18T	4
