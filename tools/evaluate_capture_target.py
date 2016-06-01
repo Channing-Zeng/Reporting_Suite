@@ -16,9 +16,9 @@ from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
 from source.logger import info, critical, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
-from source.file_utils import safe_mkdir, adjust_path, verify_file
+from source.file_utils import safe_mkdir, adjust_path, verify_file, splitext_plus
 from source.targetcov.bam_and_bed_utils import sort_bed
-from source.targetcov.flag_regions import _intersect_with_tricky_regions
+from source.targetcov.flag_regions import _intersect_with_tricky_regions, tricky_regions_fnames_d
 from source.targetcov.summarize_targetcov import get_val, get_float_val
 from source.tools_from_cnf import get_system_path
 
@@ -119,20 +119,18 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
     regions_overlaps = defaultdict(lambda: defaultdict(list))
     regions = []
     if cnf.tricky_regions:
-        file_names_dict = {'low_gc.bed.gz': 'Low GC', 'high_gc.bed.gz': 'High GC', 'low_complexity.bed.gz': 'Low complexity',
-                      'bad_promoter.bed': 'Bad promoter'}
-        bed_intersect = _intersect_with_tricky_regions(cnf, all_regions_bed_fpath, 'samples', return_intersect=True)
+        intersection_fpath = _intersect_with_tricky_regions(cnf, all_regions_bed_fpath, 'samples')
     else:
         bed_fpath = cnf.bed
-        bed_intersect = join(cnf.work_dir, splitext(basename(all_regions_bed_fpath))[0] + '_bed.intersect')
+        intersection_fpath = join(cnf.work_dir, splitext(basename(all_regions_bed_fpath))[0] + '_bed.intersect')
         bedtools = get_system_path(cnf, 'bedtools')
-        if not cnf.reuse_intermediate or not verify_file(bed_intersect, silent=True, is_critical=False):
+        if not cnf.reuse_intermediate or not verify_file(intersection_fpath, silent=True, is_critical=False):
             cmdline = '{bedtools} intersect -header -a {all_regions_bed_fpath} -b {bed_fpath} -wo'.format(**locals())
-            res = call(cnf, cmdline, output_fpath=bed_intersect, max_number_of_tries=1, exit_on_error=False)
+            res = call(cnf, cmdline, output_fpath=intersection_fpath, max_number_of_tries=1, exit_on_error=False)
             if not res:
                 return None
 
-    with open(bed_intersect) as f:
+    with open(intersection_fpath) as f:
         for l in f:
             l = l.strip()
             if not l or l.startswith('#'):
@@ -142,7 +140,7 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
             overlap_bps = int(fs[-1])
             r = (chrom, start, end, size, symbol, pct_depth, num_samples)
             if cnf.tricky_regions:
-                filename = file_names_dict[basename(fs[7])]
+                filename = tricky_regions_fnames_d[splitext_plus(basename(fs[7]))[0]]
                 regions_overlaps[r][filename].append(overlap_bps)
             else:
                 regions_overlaps[r][basename(cnf.bed)].append(overlap_bps)
@@ -150,11 +148,11 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
         if r in regions_overlaps:
             overlaps = ''
             chrom, start, end, size, symbol, pct_depth, num_samples = r
-            for filename in regions_overlaps[r]:
-                overlaps += filename + ':%.0f' % (sum(regions_overlaps[r][filename]) / float(size) * 100) + '%'
-                overlaps += ','
+            overlaps_txt = ', '.join(
+                fname + ': %.0f' % (sum(regions_overlaps[r][fname]) / float(size) * 100) + '%'
+                for fname in regions_overlaps[r])
             r = list(r)
-            r.append(overlaps[:-1])
+            r.append(overlaps_txt)
         regions.append(r)
     return regions
 

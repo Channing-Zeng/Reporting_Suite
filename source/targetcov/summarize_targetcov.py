@@ -17,7 +17,8 @@ from source.targetcov.cov import get_detailed_metric_storage, get_header_metric_
 
 
 # from source.targetcov.flag_regions import DepthsMetric
-from source.targetcov.flag_regions import DepthsMetric, _intersect_with_tricky_regions
+from source.targetcov.flag_regions import DepthsMetric, _intersect_with_tricky_regions, \
+    _parse_intersection_with_tricky_regions
 from source.tools_from_cnf import get_system_path, get_qualimap_type
 from source.calling_process import call
 from source.file_utils import safe_mkdir, verify_file, verify_dir, intermediate_fname, symlink_plus, adjust_path, \
@@ -258,7 +259,8 @@ def _generate_summary_flagged_regions_report(cnf, bcbio_structure, samples, muta
                 selected_regions_bed_fpath = join(sample.flagged_regions_dirpath, coverage_type + '_cov_' + region_type + '.bed')
                 regions_by_reasons = {}
                 if verify_file(selected_regions_bed_fpath, is_critical=False):
-                    regions_by_reasons = _intersect_with_tricky_regions(cnf, selected_regions_bed_fpath, sample.name)
+                    intersection_fpath = _intersect_with_tricky_regions(cnf, selected_regions_bed_fpath, sample.name)
+                    regions_by_reasons = _parse_intersection_with_tricky_regions(cnf, intersection_fpath)
                 total_report_fpath = add_suffix(add_suffix(sample.flagged_tsv, region_type), coverage_type)
                 if verify_file(total_report_fpath, is_critical=False):
                     with open(total_report_fpath) as f:

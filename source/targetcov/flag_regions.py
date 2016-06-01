@@ -5,7 +5,7 @@ import os
 from os.path import join, splitext, basename, dirname, abspath
 
 from source.calling_process import call
-from source.file_utils import intermediate_fname, verify_file, add_suffix, safe_mkdir, adjust_system_path
+from source.file_utils import intermediate_fname, verify_file, add_suffix, safe_mkdir, adjust_system_path, splitext_plus
 from source.logger import info, err, step_greetings
 from source.reporting.reporting import Metric, MetricStorage, ReportSection, PerRegionSampleReport, load_records
 import source
@@ -373,29 +373,50 @@ single_report_metric_storage = MetricStorage(
     ])])
 
 
-def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample, return_intersect=False):
+
+tricky_regions_fnames_d = {
+    'bad_promoter': 'Bad promoter',
+    'gc0to15': 'GC 0-15%',
+    'gc15to20': 'Low GC 15-20%',
+    'gc20to25': 'Low GC 20-25%',
+    'gc25to30': 'Low GC 25-30%',
+    'gc65to70': 'High GC 65-70%',
+    'gc70to75': 'High GC 70-75%',
+    'gc75to80': 'High GC 75-80%',
+    'gc80to85': 'High GC 80-85%',
+    'gc85to100': 'High GC 85-100%',
+    'low_complexity_lt51bp': 'Low complexity <51bp',
+    'low_complexity_51to200bp': 'Low complexity 51-200bp',
+    'low_complexity_gt200bp': 'Low complexity >200bp',
+    'heng_universal_mask': 'Heng\'s universal mask',
+    'repeats': 'Repeats',
+    'self_chain': 'Self chain',
+}
+
+
+def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
     info()
     info('Detecting problematic regions for ' + sample)
-    tricky_regions = {'low_gc.bed.gz': 'Low GC', 'high_gc.bed.gz': 'High GC', 'low_complexity.bed.gz': 'Low complexity',
-                      'bad_promoter.bed': 'Bad promoter'}
-    bed_filenames = tricky_regions.keys()
 
-    bed_fpaths = [join(cnf.genome.tricky_regions, bed_filename) for bed_filename in bed_filenames]
+    bed_filenames = [fn + '.bed.gz' for fn in tricky_regions_fnames_d.keys()]
+
+    bed_fpaths = [join(cnf.genome.tricky_regions, 'new', bed_filename) for bed_filename in bed_filenames]
 
     info('Intersecting BED ' + selected_bed_fpath + ' using BED files with tricky regions')
 
-    vcf_bed_intersect = join(cnf.work_dir, splitext(basename(selected_bed_fpath))[0] + '_tricky_vcf_bed.intersect')
-    if not cnf.reuse_intermediate or not verify_file(vcf_bed_intersect, silent=True, is_critical=False):
+    intersection_fpath = join(cnf.work_dir, splitext_plus(basename(selected_bed_fpath))[0] + '_tricky_vcf_bed.intersect')
+    if not cnf.reuse_intermediate or not verify_file(intersection_fpath, silent=True, is_critical=False):
         bedtools = get_system_path(cnf, 'bedtools')
         cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wo -filenames'
-        call(cnf, cmdline, output_fpath=vcf_bed_intersect, exit_on_error=False)
+        call(cnf, cmdline, output_fpath=intersection_fpath, exit_on_error=False)
 
-    if return_intersect:
-        return vcf_bed_intersect
+    return intersection_fpath
 
+
+def _parse_intersection_with_tricky_regions(cnf, vcf_bed_intersect_fpath):
     regions_by_reasons = defaultdict(set)
 
-    with open(vcf_bed_intersect) as f:
+    with open(vcf_bed_intersect_fpath) as f:
         for l in f:
             l = l.strip()
             if not l or l.startswith('#'):
@@ -404,9 +425,10 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample, return_inter
             start = int(fs[1])
             end = int(fs[2])
             filename = fs[5]
-            regions_by_reasons[(start, end)].add(tricky_regions[os.path.basename(filename)])
+            regions_by_reasons[(start, end)].add(tricky_regions_fnames_d[os.path.basename(filename)])
 
     return regions_by_reasons
+
 
 def _report_normalize_coverage_for_variant_sites(cnf, sample, ave_sample_depth, vcf_key, bed_fpath, selected_regions,
                                                  depth_cutoff, region_type, coverage_type):
