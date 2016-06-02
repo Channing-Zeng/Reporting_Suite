@@ -830,13 +830,15 @@ class BaseClinicalReporting:
         t = ''
         if is_us() or is_uk() or is_local():  # add button to comment mutation
             t += '<div style="position:relative;"><div class="comment_div" onclick="commentMutation($(this))"></div></div> '
-        t += mut.gene.name
         if mut.transcript:
             tooltip = 'Protein length: ' + str(mut.aa_len)
+            tooltip += '<br>Transcript: ' + str(mut.transcript)
             if mut.exon:
                tooltip += '<br>Exon altered: ' + str(mut.exon)
-            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>' + gray(mut.transcript) + '</span>'
+            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>' + mut.gene.name + '</span>'
             str(mut.aa_len)
+        else:
+            t += mut.gene.name
         return dict(value=t, show_content=mut.is_canonical)
 
     @staticmethod
