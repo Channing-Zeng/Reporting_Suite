@@ -10,7 +10,7 @@ import source
 from source import info, verify_file
 from source.bcbio.project_level_report import get_version
 from source.calling_process import call
-from source.clinical_reporting.clinical_parser import get_sample_num, get_sample_info
+from source.clinical_reporting.clinical_parser import get_sample_info, get_group_num, capitalize_keep_uppercase
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.tools_from_cnf import get_script_cmdline
@@ -54,7 +54,8 @@ class BaseClinicalReporting:
         self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_by_name(self.cnf)
 
-    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, create_venn_diagrams=False, cur_sample_num=None):
+    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, samples_data=None, sample_parameters=None,
+                              create_venn_diagrams=False, cur_group_num=None):
         ms = [
             Metric('Gene'),  # Gene & Transcript
             Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
@@ -79,11 +80,10 @@ class BaseClinicalReporting:
                 Metric('Depth', short_name='Depth', max_width=48, med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
             ])
         else:
-            ms.extend([
-                Metric('Type'),
-                Metric('Sensitivity')
-            ])
-            short_names, full_names = self.format_experiment_names(mutations_by_experiment, cur_sample_num)
+            if sample_parameters:
+                for parameter in sample_parameters.keys():
+                    ms.append(Metric(parameter))
+            short_names, full_names = self.format_experiment_names(mutations_by_experiment, cur_group_num, samples_data)
             for index in range(len(short_names.values())):
                 short_name = short_names.values()[index]
                 full_name = full_names.values()[index]
@@ -99,7 +99,7 @@ class BaseClinicalReporting:
         ms.append(Metric('Indicentalome', short_name='Callability issues'))
 
         if create_venn_diagrams:
-            samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment)
+            samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment, full_names, sample_parameters, samples_data)
 
         clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
         report = PerRegionSampleReport(sample=mutations_by_experiment.keys()[0].sample,
@@ -110,7 +110,7 @@ class BaseClinicalReporting:
         muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         sample_experiments = []
         for e, muts in mutations_by_experiment.items():
-            if cur_sample_num and get_sample_num(e.sample.name) == cur_sample_num:
+            if cur_group_num and get_group_num(e.key) == cur_group_num:
                 sample_experiments.append(e)
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
@@ -193,7 +193,7 @@ class BaseClinicalReporting:
                 row.add_record('Depth', mut.depth if mut else None, show_content=mut.is_canonical)
             else:
                 if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
-                    self._find_other_occurences(row, mut_by_experiment, cur_experiments)
+                    self._find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data)
                 for e, m in mut_by_experiment.items():
                     if cur_experiments and e not in cur_experiments:
                         continue
@@ -209,7 +209,7 @@ class BaseClinicalReporting:
                 if len(mut_by_experiment.keys()) > 1:
                     row.class_ += ' multiple_occurences_row'
             if create_venn_diagrams:
-                self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index)
+                self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index, full_names)
 
             row.class_ += ' ' + row_class
 
@@ -220,57 +220,60 @@ class BaseClinicalReporting:
         return report
 
     @staticmethod
-    def _find_other_occurences(row, mut_by_experiment, cur_experiments):
-        samples = [e.sample.name for e in mut_by_experiment.keys()]
-        sample_parameters = {'Sensitivity': ['Sen', 'Res'], 'Type': ['Plasma', 'Tissue']}
-        for parameter, values in sample_parameters.iteritems():
-            cur_info = set()
-            for value in values:
-                if any(value in sample_name for sample_name in samples):
-                    cur_info.add(value)
-            if cur_info:
-                row.add_record(parameter, ', '.join(sorted(cur_info)))
+    def _find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data):
+        samples = [e.sample for e in mut_by_experiment.keys()]
+        all_parameters = defaultdict(set)
+        for sample in samples:
+            project_dirpath = dirname(dirname(sample.dirpath))
+            sample_info = samples_data[project_dirpath][sample.name]
+            for parameter, value in sample_info.iteritems():
+                all_parameters[parameter].add(value)
+        for parameter, values in all_parameters.iteritems():
+            row.add_record(parameter, ', '.join(sorted(values)))
         if not cur_experiments:
             row.add_record('Samples', len(mut_by_experiment.keys()))
         else:
             num_by_samples = defaultdict(set)
-            cur_sample_num = get_sample_num(cur_experiments[0].sample.name)
-            for i, sample in enumerate(samples):
-                if get_sample_num(sample) == cur_sample_num:
+            cur_group_num = get_group_num(cur_experiments[0].key)
+            for e in mut_by_experiment.keys():
+                if get_group_num(e.key) == cur_group_num:
                     continue
-                sample_type, sample_sens, _ = get_sample_info(sample, mut_by_experiment.keys()[i].project_name, return_info=True)
-                num_by_samples[(sample_type, sample_sens)].add(get_sample_num(sample))
+                sample_parameters = get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True)
+                num_by_samples[tuple(sample_parameters)].add(get_group_num(e.key))
             other_occurences = ' '.join([str(len(v)) + ' ' + ' '.join(k) for k, v in num_by_samples.iteritems()])
-            other_occurences = other_occurences.replace('Sensitive', 'Sen').replace('Resistant', 'Res')
             row.add_record('Other occurrences', other_occurences)
         return row
 
 
-    def format_experiment_names(self, mutations_by_experiment, cur_sample_num):
+    def format_experiment_names(self, mutations_by_experiment, cur_group_num, samples_data):
         formatted_names = []
         for e in mutations_by_experiment.keys():
             formatted_name = ''
-            if get_sample_num(e.sample.name) == cur_sample_num:
-                formatted_name = get_sample_info(e.sample.name, e.project_name)
+            if get_group_num(e.key) == cur_group_num:
+                formatted_name = get_sample_info(e.sample.name, e.sample.dirpath, samples_data)
             elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
                 formatted_name = e.key
             formatted_names.append(formatted_name)
         short_names = OrderedDict()
         full_names = OrderedDict()
+        used_full_names = defaultdict(int)
         if not mutations_by_experiment.keys()[0].is_target2wgs_comparison:
-            prev_type, prev_sens = None, None
+            prev_parameters = []
             for index in range(len(formatted_names)):
                 formatted_name = formatted_names[index]
                 if not formatted_name:
                     continue
+                if formatted_name in used_full_names:
+                    formatted_name += '_' + str(used_full_names[formatted_name])
                 full_names[mutations_by_experiment.keys()[index]] = formatted_name
-                sample_type, sample_sens, project = formatted_name.split()
-                formatted_name = project
-                if not prev_sens or sample_sens != prev_sens:
-                    formatted_name = sample_sens + ' ' + formatted_name
-                if not prev_type or sample_type != prev_type:
-                    formatted_name = sample_type + ' ' + formatted_name
-                prev_type, prev_sens = sample_type, sample_sens
+                used_full_names[formatted_name] += 1
+                parameters = formatted_name.split()
+                formatted_name = parameters[-1]
+                if len(parameters) > 1:
+                    for p in parameters[-2: -len(parameters) - 1: -1]:
+                        if p not in prev_parameters:
+                            formatted_name = p + ' ' + formatted_name
+                prev_parameters = parameters
                 short_names[mutations_by_experiment.keys()[index]] = formatted_name
         else:
             for index, e in enumerate(mutations_by_experiment.keys()):
@@ -278,17 +281,20 @@ class BaseClinicalReporting:
         return short_names, full_names
 
 
-    def group_for_venn_diagram(self, mutations_by_experiment):
+    def group_for_venn_diagram(self, mutations_by_experiment, full_names, sample_parameters, samples_data):
         samples_by_index = dict()
         set_labels = dict()
-        base_groups = [['plasma', 'sensitive'], ['plasma', 'resistant'], ['tissue', 'sensitive'], ['tissue', 'resistant'],
-                       ['sensitive'], ['resistant'], ['plasma'], ['tissue']]
+        parameters = [values for k, values in sample_parameters.iteritems()]
+        base_groups = list(itertools.product(*parameters))
         used_samples = set()
         set_index = 0
         for e in mutations_by_experiment.keys():
-            sample_name = e.sample.name
+            if e not in full_names:
+                continue
+            sample_name = full_names[e]
             for index, g in enumerate(base_groups):
-                if sample_name not in used_samples and all(type in sample_name.lower() for type in g):
+                if sample_name not in used_samples and \
+                        all(capitalize_keep_uppercase(parameter) in get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True) for parameter in g):
                     used_samples.add(sample_name)
                     samples_by_index[sample_name] = index
                     set_labels[index] = ' '.join(g)
@@ -296,16 +302,10 @@ class BaseClinicalReporting:
                     set_index += 1
                     break
 
-        for e in mutations_by_experiment.keys():
-            sample_name = e.sample.name
-            if sample_name not in used_samples:
-                samples_by_index[sample_name] = set_index
-                set_labels[set_index] = sample_name
-                set_index += 1
         return samples_by_index, set_labels
 
-    def update_venn_diagram_data(self, sets, mut_by_experiment, samples_by_index):
-        indexes = sorted(set([samples_by_index[k.sample.name] for k in mut_by_experiment.keys()]))
+    def update_venn_diagram_data(self, sets, mut_by_experiment, samples_by_index, full_names):
+        indexes = sorted(set([samples_by_index[full_names[e]] for e in mut_by_experiment.keys() if e in full_names]))
         for index in indexes:
             sets[index] += 1
         for len_set in range(2, len(indexes) + 1):

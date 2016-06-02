@@ -2,18 +2,20 @@
 # noinspection PyUnresolvedReferences
 import bcbio_postproc
 
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
 import os
 import sys
-from os.path import join
+from os.path import join, abspath
 from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
+from source.clinical_reporting.clinical_parser import capitalize_keep_uppercase
 from source.clinical_reporting.combine_reports import run_combine_clinical_reports
 from source.config import defaults
 from source.logger import info, critical, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.file_utils import safe_mkdir, adjust_path
+from source.utils import OrderedDefaultDict
 
 
 def main():
@@ -26,20 +28,19 @@ def main():
 
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
-    parser.add_option('--jira', dest='jira', help='JIRA case path')
-    parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to run targetSeq and Seq2C analysis on.')
-    parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
-    parser.add_option('--sample-names', dest='sample_names', help='Names of analyzed samples.')
+    parser.add_option('--metadata', dest='metadata_csv', help='CSV file with parameters of each sample.')
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
     is_wgs = cnf.is_wgs = cnf.is_wgs or is_wgs_in_bcbio
-    if cnf.sample_names:
-        cnf.sample_names = cnf.sample_names.split(',')
 
-    if len(bcbio_project_dirpaths) < 1:
-        critical('Usage: ' + __file__ + ' project_bcbio_path [project_bcbio_path] [-o output_dir]')
+    if not cnf.metadata_csv:
+        critical('Provide the path to CSV file with information of each sample')
+        critical('Usage: ' + __file__ + '  project_bcbio_path [project_bcbio_path] --metadata metadata_path [-o output_dir]')
+
+    cnf.sample_names = []
+    sample_parameters, samples_data, samples_by_group = parse_samples_metadata(cnf, cnf.metadata_csv)
 
     info()
     info('*' * 70)
@@ -51,7 +52,7 @@ def main():
         bcbio_structures.append(bs)
 
     if not cnf.project_name:
-        cnf.project_name = bcbio_structures[0].project_name.replace('_WGS', '').replace('WGS', '')
+        cnf.project_name = 'Combined_project'
 
     if cnf.output_dir is None:
         cnf.output_dir = join(os.getcwd(), cnf.project_name)
@@ -74,7 +75,49 @@ def main():
 
     info('')
     info('*' * 70)
-    run_combine_clinical_reports(cnf, bcbio_structures)
+    run_combine_clinical_reports(cnf, bcbio_structures, samples_by_group, sample_parameters, samples_data)
+
+
+def parse_samples_metadata(cnf, csv_fpath):
+    sample_col = None
+    project_col = None
+    group_col = None
+    additional_cols = []
+
+    headers = []
+    parameters = []
+
+    sample_parameters = OrderedDefaultDict(set)
+    samples_by_group = defaultdict(int)
+    samples_data = defaultdict(lambda : defaultdict(OrderedDict))
+    with open(csv_fpath) as input_f:
+        for i, l in enumerate(input_f):
+            l = l.replace('\n', '')
+            if not l:
+                continue
+            if i == 0:
+                headers = l.split(',')
+                sample_col = headers.index('sample')
+                project_col = headers.index('project_path')
+                group_col = headers.index('group')
+                additional_cols = range(group_col + 1, len(headers))
+                parameters = [capitalize_keep_uppercase(col) for col in headers[group_col + 1:]]
+                continue
+            fields = l.split(',')
+            if len(fields) < len(headers):
+                critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(headers)) + ')')
+            sample_name = fields[sample_col]
+            cnf.sample_names.append(sample_name)
+            project_path = abspath(fields[project_col])
+            group = fields[group_col]
+            samples_by_group[(sample_name, project_path)] = group
+            for index, col in enumerate(additional_cols):
+                parameter_name = parameters[index]
+                parameter_value = fields[col]
+                if parameter_value not in sample_parameters[parameter_name]:
+                    sample_parameters[parameter_name].add(parameter_value)
+                samples_data[project_path][sample_name][parameter_name] = parameter_value
+    return sample_parameters, samples_data, samples_by_group
 
 
 if __name__ == '__main__':

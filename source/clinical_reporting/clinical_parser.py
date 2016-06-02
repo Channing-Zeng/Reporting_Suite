@@ -1,9 +1,7 @@
 from collections import OrderedDict
 from itertools import izip
 from json import load
-from os.path import join
-
-import re
+from os.path import join, dirname
 
 import source
 from source import verify_file, info
@@ -705,23 +703,21 @@ def get_total_variants_number(sample, varqc_json_fpath):
     return r.value if r else None
 
 
-def get_sample_info(sample_name, project_name, return_info=False):
-    sample_type = 'Plasma' if 'Plasma' in sample_name else 'Tissue'
-    sample_sens = 'Sensitive' if 'Sensitive' in sample_name else 'Resistant'
-    project_types = ['WGS', 'WES', 'AZ300', 'AZ50', 'Exome']
-    for project_type in project_types:
-        if project_type in project_name:
-            break
+def get_sample_info(sample_name, sample_dirpath, samples_data, return_info=False):
+    project_dirpath = dirname(dirname(sample_dirpath))
+    sample_info = samples_data[project_dirpath][sample_name]
+    sample_parameters = [capitalize_keep_uppercase(v) for k, v in sample_info.iteritems()]
     if return_info:
-        return sample_type, sample_sens, project_type
+        return sample_parameters
 
-    formatted_name = '{sample_type} {sample_sens} {project_type}'.format(**locals())
+    formatted_name = ' '.join(sample_parameters)
     return formatted_name
 
 
-def get_sample_num(sample_name):
-    if '_' in sample_name and sample_name.split('_')[-1].isdigit():
-        return int(sample_name.split('_')[-1])
-    else:
-        return int(''.join(c for c in sample_name if c.isdigit()))
+def get_group_num(key):
+    return key[0]
+
+
+def capitalize_keep_uppercase(text):
+    return text.capitalize() if not text.isupper() else text
 

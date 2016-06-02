@@ -25,6 +25,8 @@ var showBlacklisted = false;
 
 var mutPlotInfo;
 
+var parameters = [];
+
 $(function() {
     var tables_short = $('.table_short');
     var tables_full = $('.table_full');
@@ -55,6 +57,7 @@ $(function() {
 
     $('#variants_table_controls').width($('#report_table_mutations').width() - 5);
     $('#download_mut_table').show();
+    createSelectVariants();
     //if (msieversion() == 0) {
     //    $('table.tableSorter.table_short').tableSort();
     //}
@@ -298,144 +301,87 @@ function correctRowspan(row) {
     });
 }
 
-function showVariantsByProject(switch_id) {
-    if (switch_id[0].id) switch_id = switch_id[0].id;
-    switch_id = switch_id.split("_");
-    var switchValue = switch_id[switch_id.length-1];
-    var switch_el = $('#project_group_switch_type');
-    var parameter = 'Project';
-    var wgs = false;
-    var nonwgs = false;
-    if (switchValue == 'all')
-        switchElContent = '<span>all mutations</span> / ';
-    else
-        switchElContent = '<a class="dotted-link" id="show_projects_all" onclick="showVariantsByProject($(this))"> all mutations</a> / ';
-    if (switchValue == 'wgs')
-        switchElContent += '<span> only WGS</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_projects_wgs" onclick="showVariantsByProject($(this))"> only WGS</a> / ';
-    if (switchValue == 'nonwgs')
-        switchElContent += '<span> only non-WGS</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_projects_nonwgs" onclick="showVariantsByProject($(this))"> only non-WGS</a> / ';
-    if (switchValue == 'common')
-        switchElContent += '<span> only common</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_projects_common" onclick="showVariantsByProject($(this))"> only common</a> / ';
-    switch_el.html(switchElContent);
-    if (switchValue == 'all') {
-        checkVariantsTable(parameter, switchValue);
-        return;
-    }
-    if (switchValue == 'common') {
-        wgs = true;
-        nonwgs = true
-    }
-    else if (switchValue == 'wgs') {
-        wgs = true;
-    }
-    else if (switchValue == 'nonwgs') {
-        nonwgs = true;
-    }
-    checkVariantsTable(wgs, nonwgs, true);
+function createSelectVariants() {
+    var data = readJsonFromElement($('#mut_parameters_data_json'));
+    if (!data) return;
 
+    var selectContainer = $("#select_table_div");
+    var tableHead = document.createElement('thead');
+    var tableBody = document.createElement('tbody');
+    var tableRows = [];
+    var maxRow = 0;
+    for (var i = 0; i < data.length; i++) {
+        maxRow = Math.max(data[i].values.length, maxRow)
+    }
+    for (var r = 0; r < maxRow; r++) {
+        tableRows.push([]);
+        for (var i = 0; i < data.length; i++) {
+            var td = document.createElement('td');
+            tableRows[r].push(td);
+        }
+    }
+
+    for (var i = 0; i < data.length; i++) {
+        values = data[i].values;
+        valuesNames = data[i].valuesNames;
+        parameter = data[i].parameter;
+        parameters.push(parameter);
+        var th = document.createElement('th');
+        th.innerText = parameter;
+        $(tableHead).append(th);
+
+        for (var j = 0; j < values.length; j++) {
+            var radioBtn = document.createElement('input');
+            var radioBtnId = parameter + j;
+            radioBtn.type = "radio";
+            radioBtn.name = parameter;
+            radioBtn.value = values[j];
+            radioBtn.id = radioBtnId;
+            if (j == 0)
+                $(radioBtn).prop("checked", true);
+
+            var label = document.createElement('label');
+            label.htmlFor = radioBtnId;
+            label.appendChild(document.createTextNode(valuesNames[j]));
+            label.className = "parameter_select";
+            $(radioBtn).on("change", function () {
+                checkVariantsTable(this.name, this.value);
+            });
+            td = tableRows[j][i];
+            $(td).append(radioBtn);
+            $(td).append(label);
+        }
+    }
+    for (var row = 0; row < tableRows.length; row++) {
+        var tr = document.createElement('tr');
+        for (var cell = 0; cell < tableRows[row].length; cell++) {
+            $(tr).append(tableRows[row][cell]);
+        }
+        $(tableBody).append(tr);
+    }
+    selectContainer.append(tableHead);
+    selectContainer.append(tableBody);
 }
 
-function showVariantsByType(switch_id) {
-    if (switch_id[0].id) switch_id = switch_id[0].id;
-    switch_id = switch_id.split("_");
-    var switchValue = switch_id[switch_id.length-1];
-    var switch_el = $('#variants_group_switch_type');
-    var parameter = 'Type';
-    if (switchValue == 'all')
-        switchElContent = '<span>all mutations</span> / ';
-    else
-        switchElContent = '<a class="dotted-link" id="show_variants_all" onclick="showVariantsByType($(this))"> all mutations</a> / ';
-    if (switchValue == 'plasma')
-        switchElContent += '<span> only plasma</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))"> only plasma</a> / ';
-    if (switchValue == 'tissue')
-        switchElContent += '<span> only tissue</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))"> only tissue</a> / ';
-    if (switchValue == 'common')
-        switchElContent += '<span> only common</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_variants_sens_common" onclick="showVariantsByType($(this))"> only common</a> / ';
-    if (switchValue == 'common') switchValue = 'plasma, tissue';
-
-    switch_el.html(switchElContent);
-    checkVariantsTable(parameter, switchValue);
-}
-
-function showVariantsBySensitivity(switch_id) {
-    if (switch_id[0].id) switch_id = switch_id[0].id;
-    switch_id = switch_id.split("_");
-    var switchValue = switch_id[switch_id.length-1];
-    var switch_el = $('#variants_group_switch_sens');
-    var parameter = 'Sensitivity';
-    if (switchValue == 'all')
-        switchElContent = '<span>all mutations</span> / ';
-    else
-        switchElContent = '<a class="dotted-link" id="show_variants_all" onclick="showVariantsBySensitivity($(this))"> all mutations</a> / ';
-    if (switchValue == 'sen')
-        switchElContent += '<span> only sensitive</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_variants_sen" onclick="showVariantsBySensitivity($(this))"> only sensitive</a> / ';
-    if (switchValue == 'res')
-        switchElContent += '<span> only resistant</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_variants_res" onclick="showVariantsBySensitivity($(this))"> only resistant</a> / ';
-    if (switchValue == 'common')
-        switchElContent += '<span> only common</span> / ';
-    else
-        switchElContent += '<a class="dotted-link" id="show_variants_common" onclick="showVariantsBySensitivity($(this))"> only common</a> / ';
-    if (switchValue == 'common') switchValue = 'res, sen';
-
-    switch_el.html(switchElContent);
-    checkVariantsTable(parameter, switchValue);
-}
-
-function checkVariantsTable(parameter, switchValue, isWgsCheck) {
+function checkVariantsTable(parameter, switchValue) {
     var table_short = $('.table_short#report_table_mutations');
     var table_full = $('.table_full#report_table_mutations');
     if (table_full[0]) {
         $(table_full).css('height', '');
         $('.table_full#report_table_mutations tbody tr').each(function() {
-            if (isWgsCheck) checkSamplesByProjects(this, parameter, switchValue);
-            else checkSamples(this, parameter, switchValue);
+            checkSamples(this, parameter, switchValue);
         });
     }
     else {
         $(table_short).css('height', '');
         $('.table_short#report_table_mutations tbody tr').each(function() {
-            if (isWgsCheck) checkSamplesByProjects(this, parameter, switchValue);
-            else checkSamples(this, parameter, switchValue);
+            checkSamples(this, parameter, switchValue);
         });
     }
 }
 
-function checkSamplesByProjects(row, wgs, nonwgs) {
-    var isWgs = false;
-    var isNonWgs = false;
-    var metric = 'Project';
-    for (var c = 0, m = row.cells.length; c < m; c++) {
-        var cell = row.cells[c];
-        if (cell.attributes.metric && cell.attributes.metric.value.indexOf('Freq') != -1) {
-            if (cell.innerText.toLowerCase()) {
-                if (cell.attributes.metric.value.indexOf('WGS') != -1)
-                    isWgs = true;
-                else isNonWgs = true
-            }
-        }
-    }
-    if (isWgs != wgs || isNonWgs != nonwgs)
-        $(row).addClass(metric + ' unselected_type');
-    else showHideRow(row, metric);
-}
-
 function checkSamples(row, metric, value) {
+    value = value.toLowerCase();
     if (value == 'all') {
         showHideRow(row, metric);
         return;
@@ -453,8 +399,10 @@ function checkSamples(row, metric, value) {
 function showHideRow(row, metric) {
     if ($(row).hasClass(metric)) {
         $(row).removeClass(metric);
-        if (!$(row).hasClass("Sensitivity") && !$(row).hasClass("Type") && !$(row).hasClass("Project"))
-            $(row).removeClass('unselected_type')
+        for (var p = 0; p < parameters.length; p++)
+            if ($(row).hasClass(parameters[p]))
+                return;
+        $(row).removeClass('unselected_type')
     }
 }
 

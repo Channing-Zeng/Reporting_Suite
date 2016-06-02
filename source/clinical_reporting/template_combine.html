@@ -113,47 +113,8 @@
                     that have been previously implicated in various cancers (see <a class="dotted-link" href="#coverage">the list of genes and coverage information</a>).
                 </p>
                 <div id="variants_table_controls">
-                    <div>
-                        <p id="variants_group_switch_sens">
-                            <span>all mutations</span>
-                            /
-                            <a class="dotted-link" id="show_variants_sen" onclick="showVariantsBySensitivity($(this))">
-                                only sensitive </a>
-                            /
-                            <a class="dotted-link" id="show_variants_res" onclick="showVariantsBySensitivity($(this))">
-                                only resistant </a>
-                            /
-                            <a class="dotted-link" id="show_variants_sens_common" onclick="showVariantsBySensitivity($(this))">
-                                only common </a>
-
-                        </p>
-                        <p id="variants_group_switch_type">
-                            <span>all mutations</span>
-                            /
-                            <a class="dotted-link" id="show_variants_plasma" onclick="showVariantsByType($(this))">
-                                only plasma </a>
-                            /
-                            <a class="dotted-link" id="show_variants_tissue" onclick="showVariantsByType($(this))">
-                                only tissue </a>
-                            /
-                            <a class="dotted-link" id="show_variants_common" onclick="showVariantsByType($(this))">
-                                only common </a>
-
-                        </p>
-                        <p id="project_group_switch_type">
-                            <span>all mutations</span>
-                            /
-                            <a class="dotted-link" id="show_projects_wgs" onclick="showVariantsByProject($(this))">
-                                only WGS </a>
-                            /
-                            <a class="dotted-link" id="show_projects_nonwgs" onclick="showVariantsByProject($(this))">
-                                only non-WGS </a>
-                            /
-                            <a class="dotted-link" id="show_projects_common" onclick="showVariantsByProject($(this))">
-                                only common </a>
-
-                        </p>
-                    </div>
+                    <table id="select_table_div">
+                    </table>
                     <div style="float: right; margin-top: -20px; margin-bottom: 0;">
                         <p>
                             <a class="btn" id="download_mut_table" style="display: none;">Export to Excel</a>
@@ -163,6 +124,9 @@
                 </div>
                 <div id="variants_table_div">
                     {table}
+                </div>
+                <div class="json_code" id="mut_parameters_data_json">
+                    {mut_parameters}
                 </div>
             </div>
             {.section venn_diagram}
