@@ -1,3 +1,12 @@
+#### v1.4.1, 3 Jun 2016
+Filtering
+- Gene blacklist is split into 2 parts: hard-filtered genes, and soft-filtered genes/regions (faded in the reports)
+
+NGS reports 
+- Reporting mutations in regions and genes with poor mapability
+
+Added variant filtering documentation
+
 #### v1.4.0, 26 May 2016
 Filtering
 - Gene and region blacklists introduced to filter variants

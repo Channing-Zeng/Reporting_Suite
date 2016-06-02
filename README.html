@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>README.md</title>
+  <link rel="stylesheet" href="/Users/vlad/vagrant/reporting_suite/docs/style.css">
+</head>
+<body>
+<h1 id="az-post-processing-pipeline">AZ post-processing pipeline</h1>
+<p>for <a href="https://github.com/chapmanb/bcbio-nextgen">BCBio-nextgen</a></p>
+<ul>
+<li>Read and alignment quality via Qualimap, AZ TargQC and FastQC at capture, exon and CDS level</li>
+<li>Variant (SNP, Indel and SV) annotation, QC, filtration and prioritization</li>
+<li>CNV caller Seq2C</li>
+<li>RNAseq QC, expression reporting</li>
+<li>Variant, SV, CNV, coverage reporting via single, easy to interpret HTML Report</li>
+</ul>
+<h3 id="installation">Installation</h3>
+<p>Requirements:</p>
+<ul>
+<li>python 2.7</li>
+<li>bcbio</li>
+<li>virtualenv</li>
+<li>git<pre><code>$ virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
+$ git clone https://github.com/AstraZeneca-NGS/Reporting_Suite.git $AZ_REPORTING
+$ export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
+$ source activate $AZ_REPORTING/virtualenv/bin/activate
+$ pip install -r $AZ_REPORTING/python_requirements.txt
+$ R
+&gt; install.packages(&quot;DESeq2&quot;)
+&gt; install.packages(&quot;RColorBrewer&quot;)
+&gt; install.packages(&quot;gplots&quot;)
+&gt; install.packages(&quot;amap&quot;)
+&gt; install.packages(&quot;ggplot2&quot;)
+&gt; install.packages(&quot;pheatmap&quot;)
+&gt; install.packages(&quot;reshape2&quot;)
+</code></pre></li>
+</ul>
+<p>In Waltham, UK and Sweden AZ HPC, it is already installed under &quot;module load bcbio&quot;. The locations are the following:</p>
+<p>Waltham</p>
+<pre><code>BCBIO=/group/ngs/src/bcbio-nextgen
+AZ_REPORTING=/group/ngs/src/az.reporting
+</code></pre><p>UK</p>
+<pre><code>BCBIO=/apps/bcbio-nextgen
+AZ_REPORTING=/ngs/RDI/SCRIPTS/az.reporting
+</code></pre><p>Sweden</p>
+<pre><code>BCBIO=/ngs/apps/bcbio-nextgen
+AZ_REPORTING=/ngs/apps/az.reporting
+</code></pre><p>China</p>
+<pre><code>AZ_REPORTING=/ngs/RDI/SCRIPTS/az.reporting
+</code></pre><h3 id="usage">Usage</h3>
+<p>Run BCBio in a standard manner, make sure the folder contains at least these non-empty directories:</p>
+<pre><code>config/
+final/
+</code></pre><p>Then load the script path:</p>
+<pre><code>module load bcbio-nextgen
+az-reporting.py [/path/to/bcbio/final/] [--jira https://jira.rd.astrazeneca.net/browse/NGSG-351]
+</code></pre><p>The tool reads the bcbio-nextgen YAML configuration file inside the <code>config</code> directory in order to extract the information on samples, batches, variant callers.</p>
+<h4 id="bed-file">BED file</h4>
+<p>As a default BED file for QC reports and Seq2C, the tool takes <code>cnv_regions</code> BED file from the bcbio-nextgen config. If <code>cnv_regions</code> is not provided, the tools takes RefSeq CDS located at <code>/ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19-chr20.bed</code>. Optionally, the script can be fed with a custom BED file using the --bed option, e.g.:</p>
+<pre><code>bcbio_postproc.py --bed SureSelect_Human_AllExon_V5.bed
+</code></pre><p>The BED file is automatically annotated with gene names based on RefSeq features, first based on intersections with CDS, then for everything remaining - with UTRs and ncRNA exons, then with introns, and finally with other genes: <a href="http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Annotating+a+BED+file+with+HUGO+genes+symbols">http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Annotating+a+BED+file+with+HUGO+genes+symbols</a></p>
+<p>If the BED files contains 8 and more columns, it is assumed to to contain amplicon information for Seq2C.</p>
+<h4 id="sge-decoupling-in-progress-over-to-ipython-">SGE (decoupling in progress over to iPython)</h4>
+<p>The pipeline uses qsub to submit jobs. The qsub command line template is akin to (however does not need to be run manually by the user):</p>
+<pre><code>qsub -pe smp [threads] -S /bin/bash -q batch.q -j n -o [OUT] -e [LOG] -N [NAME] runner_Waltham.sh &quot;[cmdline]&quot;
+</code></pre><h4 id="configuration-files">Configuration files</h4>
+<p>The tool uses a project specific configuration file to tune up the post-processing steps and parameters on variant annotation, filtration, etc. The default parameters are stored in the <code>RUNINFO_DEFAULTS.yaml</code> file (located in the <code>configs</code> directory in the source root. eg. <code>/group/ngs/src/az.reporting/configs/run_info_ExomeSeq.yaml</code>). After the first run, <code>run_info.yaml</code> is put into the <code>config</code> directory. It is almost empty, meaning that all the parameters used are default. We recommend modifying this file if needed, using <code>RUN_INFO_DEFAULTS.yaml</code> as a reference - just copy lines and edit. The file in <code>config/run.yaml</code> will be used as a configuration for the subsequent re-runs. Also, as an alternative, a config file can be explicitly fed to the tool using the <code>--run-cnf</code> option.</p>
+<p>The are 3 pre-set configurations (stored in the <code>configs</code> directory in the source root):</p>
+<ul>
+<li><code>run_info_ExomeSeq.yaml</code> (default, also used for hybrid capture)</li>
+<li><code>run_info_WGS.yaml</code> (used automatically if no <code>variant_regions</code> are specified in the bcbio.yaml, or when the <code>--wgs</code> flag is set)</li>
+<li><code>run_info_DeepSeq.yaml</code> (used automatically if the <code>--deep-seq</code> flag is set)</li>
+</ul>
+<p>For different kinds of analysis, different allele frequencies thresholds are recommended. The default values are the following.</p>
+<ul>
+<li>Exome and hybrid capture: call call with 0.01, filter with 0.05 (tissue) or 0.01 (plasma)</li>
+<li>WGS: call with 0.01, filter with 0.075 (tissue) or 0.01 (plasma)</li>
+<li>Targeted deep sequencing: call with 0.001, filter with 0.005</li>
+</ul>
+<p>But if otherwise is requested, use the <code>-f</code> parameter to forse another value. You can also modify it in the run_info yaml.</p>
+<p>The tool also uses system configuration file with the paths to external tools and reference data. For Waltham, UK, Sweden, China and Cloud, it has presets that are set automatically. For other systems, you can make you own system config based on one of the predefined AstraZeneca YAMLs (<a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/system_info_Waltham.yaml">system_info_Waltham.yaml</a>, <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/system_info_AP.yaml">system_info_AP.yaml</a> or <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/system_info_Sweden.yaml">system_info_Sweden.yaml</a>), and provide it with the <code>--sys-cnf</code> option.</p>
+<h4 id="altering-the-step-list">Altering the step list</h4>
+<p>In <code>run_info.yaml</code>, the pipeline step list is specified, and by default looks the following:</p>
+<pre><code>steps:
+- Variants
+- TargQC
+- Seq2C
+</code></pre><p>The step list is customizable, for example,</p>
+<pre><code>steps:
+#- Variants
+#- TargQC
+- Seq2C
+</code></pre><p>will run only Seq2C.</p>
+<pre><code>steps:
+#- Variants
+- VarFilter
+#- TargQC
+#- Seq2C
+</code></pre><p>Will run only re-filter annotated VCF files and re-generate the <code>*.txt</code> and <code>*.PASS.txt</code> files in the <code>final/YYYY-MM-DD_projectname/</code> folder, as well as <code>*.anno.filt.vcf.gz</code> for each sample, and afterwards re-calculate the VarQC stats for post-filtered variants, and re-build the project-level and sample reports.</p>
+<p>If you want only re-generate only summary project-level reports, just comment out all steps:</p>
+<pre><code>steps:
+#- Variants
+#- TargQC
+#- Seq2C
+</code></pre><h4 id="email-notification">Email notification</h4>
+<p>When all jobs are finished, an email will be sent with the path to the project HTML report, and list of all errors appeared during the processing. You can provide your email-address with the <code>--email</code> option, e.g.:</p>
+<pre><code>az-reporting.py --email Vlad.Saveliev@astrazeneca.com
+</code></pre><p>The default SMTP server address is <code>localhost</code> and can be modified in the bottom of the system_info config file.</p>
+<h4 id="exposing-to-the-ngs-webserver-waltham-and-uk-only-">Exposing to the NGS webserver (Waltham and UK only)</h4>
+<p>When the processing is finished, a record with basic information about project is added to <code>/ngs/oncology/NGS.Projects.csv</code> (US) or <code>/ngs/oncology/reports/NGS.Project.csv</code> (UK). The information includes:</p>
+<ul>
+<li>Project name </li>
+<li>Path to project-level HTML report,</li>
+<li>Jira url (if <code>--jira</code> is provided),</li>
+<li>Information automatically extracted from the Jira case: reporter username, assignee username, project type.<br>This makes the project shown on the <a href="ngs.usbod.astrazeneca.net">NGS website</a> (see <a href="http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Project+Dashboard">SOP</a> for details).</li>
+</ul>
+<p>By default, the project name for reports, email notifications, and the NGS webserver list is extracted from the project path, e.g. <code>/ngs/oncology/Analysis/dev/Dev_0123_WGS_MiSeq_13_BN/bcbio/final</code> becomes <code>Dev_0123_WGS_MiSeq_13_BN_bcbio</code>. You can forse a different name using the --project option:</p>
+<pre><code>bcbio_postproc.py --project Dev_0123_WGS_MiSeq_13_BN
+</code></pre><h4 id="output">Output</h4>
+<h6 id="mutations">Mutations</h6>
+<p>In <code>final/YYYY-MM-DD_projectname/</code>, you can find *.PASS.txt files with all prioritized mutations passed the filtering.<br>The annotated VCF variant files can be found in the individual sample folders <code>final/&lt;sample&gt;/</code> as <code>&lt;sample&gt;-vardict.anno.filt.vcf.gz</code></p>
+<p>You can find detailed information on mutation filtering/prioritization/classification in <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/source/variants/variant_filtering.md">this article</a>.</p>
+<h6 id="cnv">CNV</h6>
+<p>CNV<br>Seq2C CNV calls are located in the <code>final/YYYY-MM-DD_projectname/cnv/</code> folder.</p>
+<h6 id="coverage">Coverage</h6>
+<p>The per-gene, per-exons and per-amplicon coverage reports can be found in the individual sample folders under <code>final/&lt;sample&gt;/targetSeq/&lt;sample&gt;.targetSeq.details.gene.tsv</code></p>
+<h6 id="qc">QC</h6>
+<p>The folder <code>final/YYYY-MM-DD_projectname/</code> contains the project-level summary HTML landing page <code>&lt;projectname&gt;.html</code> that contains links to the following reports:</p>
+<ul>
+<li>NGS oncology reports with mutations, CNV, SV, and coverage stats and visualizations</li>
+<li>VarQC (variant calling stats)</li>
+<li>TargQC (target coverage stats and plots)</li>
+<li>FastQC (reads stats)</li>
+<li>RNAseq QC and expression heatmaps (for RNAseq projects only)</li>
+</ul>
+<h4 id="troubleshooting">Troubleshooting</h4>
+<p>Logs are stored in <code>final/&lt;datestamp&gt;/log/reporting/</code>. The main log is called <code>log.txt</code></p>
+<ul>
+<li>Issues with TargQC reports? May be caused by BAM files located under <code>final/&lt;sample&gt;/&lt;sample&gt;-ready.bam</code>, or a BED file, or memory issues. Look at TargQC reports logs: <code>final/&lt;datestamp&gt;/log/reporting/&lt;sample&gt;/targQC.log</code></li>
+<li>Issues with variants? Look at the VCF files located under <code>final/&lt;datestamp&gt;/var/raw/</code>, also check annotation logs <code>final/&lt;datestamp&gt;/log/reporting/&lt;sample&gt;/varAnnotate-&lt;caller&gt;.log</code> and filtering logs <code>final/&lt;datestamp&gt;/log/reporting/&lt;sample&gt;/varFilter-&lt;caller&gt;.log</code>.</li>
+<li>Issues with Seq2C? Look at the BAMs, BEDs, logs <code>final/&lt;datestamp&gt;/log/reporting/Seq2C.log</code>, and also take a look at the coverage file located in <code>final/&lt;datestamp&gt;/cnv</code>.</li>
+</ul>
+</body>
+<html>

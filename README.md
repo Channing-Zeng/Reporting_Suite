@@ -1,4 +1,5 @@
-### AZ post-processing pipeline for [BCBio-nextgen](https://github.com/chapmanb/bcbio-nextgen)
+# AZ post-processing pipeline
+for [BCBio-nextgen](https://github.com/chapmanb/bcbio-nextgen)
 
 - Read and alignment quality via Qualimap, AZ TargQC and FastQC at capture, exon and CDS level
 - Variant (SNP, Indel and SV) annotation, QC, filtration and prioritization
@@ -6,7 +7,7 @@
 - RNAseq QC, expression reporting
 - Variant, SV, CNV, coverage reporting via single, easy to interpret HTML Report
 
-#### Installation
+### Installation
 Requirements:
 - python 2.7
 - bcbio
