@@ -4,6 +4,8 @@ Filtering
 
 NGS reports 
 - Reporting mutations in regions and genes with poor mapability
+- Add COSMIC and dbSNP links back
+- Transcript, AA len and exon number moved to gene tooltip
 
 Added variant filtering documentation
 
