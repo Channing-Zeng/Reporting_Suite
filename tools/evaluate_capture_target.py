@@ -155,6 +155,7 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
             r = list(r)
             r.append(overlaps_txt)
         regions.append(r)
+    os.remove(intersection_fpath)
     return regions
 
 
