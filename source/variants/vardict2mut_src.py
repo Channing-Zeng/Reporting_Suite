@@ -749,6 +749,13 @@ class Filtration:
                 self.apply_reject_counter('PROTEIN_PROTEIN_CONTACT', is_canonical, no_transcript)
                 continue
 
+            if depth < self.filt_depth:
+                self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
+                continue
+            if fields[vd_col] < self.min_vd and af >= 0.5:
+                self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript)
+                continue
+
             region = ''
             if fields[exon_col]:
                 region = fields[exon_col].split('/')[0]
@@ -790,7 +797,7 @@ class Filtration:
                     self.apply_reject_counter('not act and in filter_common_snp', is_canonical, no_transcript)
                     continue
                 if nt_chg_key in self.filter_artifacts and af < 0.35:
-                    self.apply_reject_counter('not act and in filter_artifacts and AF < 0.5', is_canonical, no_transcript)
+                    self.apply_reject_counter('not act and in filter_artifacts and AF < 0.35', is_canonical, no_transcript)
                     continue
                 gmaf = fields[headers.index('GMAF')]
                 if gmaf and all(not g or float(g) > self.min_gmaf for g in gmaf.split(',')):
@@ -803,13 +810,6 @@ class Filtration:
                 if '-'.join([gene, aa_chg]) in self.snpeff_snp and clncheck != 'ClnSNP_known':
                     self.apply_reject_counter('not act and not ClnSNP_known and in snpeff_snp', is_canonical, no_transcript)
                     continue
-
-            if depth < self.filt_depth:
-                self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
-                continue
-            if fields[vd_col] < self.min_vd and af >= 0.5:
-                self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript)
-                continue
 
             snps = re.findall(r'rs\d+', fields[3])
             if any(snp in self.snpeff_snp_rsids for snp in snps):

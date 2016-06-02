@@ -2,19 +2,19 @@
 
 ### Variant calling
 Variants are found by [VarDict](https://github.com/AstraZeneca-NGS/VarDict) ([Lai Z, 2016](http://www.ncbi.nlm.nih.gov/pubmed/27060149)), a versatile variant caller for cancer samples. In this articles, we focus at the following genomic varaints:
-- Single nucleotide polymorphisms
-- Multiple nucleotide polymorphisms
+- Single nucleotide polymorphisms (SNP)
+- Multiple nucleotide polymorphisms (MNP)
 - Small insertions and deletions
 - Complex composite variants
 - Somatic and LOH variants (in paired samples analysis)
 
-in the following types of sequencing assays:
+And the following types of sequencing assays:
 - Whole genome (usually 20-60x) calling with 1% allele frequency threshold by default
 - Whole exome (usually 100-200x) 1% AF
 - Targeted (usually 300-10000x) 0.1% AF
 
 ##### Target regions
-In exomes, the variant are called in a special target called AZ exome, that combines all Ensembl CDS regions, UTR, plus regions from commonly used panels padded by 50pb:
+In exomes, the variant are called in a special target called AZ exome, that combines all Ensembl CDS and UTR regions, plus regions from commonly used panels padded by 50pb:
 ```
 ExomeSNP_ID.bed
 FM_T5.bed
@@ -31,8 +31,8 @@ SureSelect_Human_AllExon_V5.bed
 Xgen-PanCancer.bed
 ```
 
-### Annotation
-Variants in form of VCF are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on gene function, in respect to RefSeq gene model. It considered canonical (longest) transcripts only, except for the following genes:
+### Variant annotation
+Variants in form of VCF file are annotated using [SnpEff](http://snpeff.sourceforge.net/) tool that predicts effect of variants on gene function, in respect to RefSeq gene model. We predict based on canonical (longest) transcripts only, except for the following genes where the longest trasncript is substituted with a smaller, but more cancer-relevant one:
 ```
 FANCL   NM_018062.3
 MET     NM_000245.2
@@ -53,19 +53,19 @@ The full list is located under `/ngs/reference_data/genomes/Hsapiens/hg19/canoni
 
 SnpEff assigns:
 - gene and transcript IDs
-- gene and transcript biotypes: coding/ncRNA/pseudogene
-- region: coding/splice/intron/upstream/downstream/non-coding
-- functional class: silent/missence/nonsence
+- gene biotype (coding/ncRNA/pseudogene)
+- if the variant is in intron/CDS/upstream/downstream/non-coding/splice site
+- mutation functional class (silent/missence/nonsence)
 - codon change
 - aminoacid change
 
-Variants are also searched against the following mutation databases:
+Variants are also searched against the following variant databases:
 - [COSMIC](http://cancer.sanger.ac.uk/cosmic) - cancer somatic mutations database, assigns ID and hits count
 - [dbSNP](http://www.ncbi.nlm.nih.gov/SNP/) - assigns rsID and CAF (global allele frequencies)
 - [ClinVar](http://www.ncbi.nlm.nih.gov/clinvar/) - assigns CLNSIG (clinical significance)
 
 ### Raw filtering: vardict.txt
-The first filtering step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. It consumes VCF file from VarDict, annotated as described above, and produces `vardict.txt` tab-separated file in a specific format. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex).
+The first filtering step is performed using [vcf2txt.pl](https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl) script from the VarDict package. It consumes an annotated VCF file from VarDict, annotated as described above, and produces `vardict.txt` tab-separated file in a specific format. The program (1) performs hard and soft filtering for low quality variants, (2) assigns _variant class_ ("novelty"), (3) assigns _variant type_ (CNV, MNV, deletion, insertion, compelex).
 
 Hard filtering (where the variants are discarded) is performed using the following parameters:
 - Locus total depth (≥ 3x)
@@ -88,34 +88,61 @@ The mutation class (`Var_Class`) is assigned in the following order:
 The results of the script are saved under `final/YYYY-MM-DD_projectname/var/vardict.txt`
 
 ### Cancer mutation filtering: vardict.PASS.txt
-This step consumes sample-level `vardict.txt` files and produces sample-level `vardict.PASS.txt`. It drops all soft-filtered variants in the previous step, removes cancer non-releveant germline mutations, and potential artefacts, and classifies the remaning mutations based on their "actionability" (see the defenition in [Carr et al. 2015](http://www.nature.com/nrc/journal/v16/n5/full/nrc.2016.35.html)):
-- known (highly actionable)
-- likely (could be actionable in the context of an exploratory trial, but for which the evidence is more equivocal or limited)
-- unknown (remaining variants that were not hard-filtered for any reason, and silent)
+This step consumes sample-level `vardict.txt` files and produces sample-level `vardict.PASS.txt`. It drops all soft-filtered variants in the previous step, removes cancer non-releveant germline mutations, removes potential artefacts, and classifies the remaning mutations based on their "actionability" (see the defenition in [Carr et al. 2015](http://www.nature.com/nrc/journal/v16/n5/full/nrc.2016.35.html)):
+- _known_ (highly actionable)
+- _likely_ (could be actionable, but the evidence is more equivocal or limited)
+- _unknown_ (remaining high-quality variants with moderate impact)
 
-##### Actionable mutations
-Variants are checked against a set of rules that defined "actionable" (known driver) variants. Highly actionable mutations (robust evidence base and/or strong scientific rationale linking the mutation with probable sensitization to drug, and/or high likelihood of response in proposed trial and disease setting) are reported as "known".
+Also see https://docs.google.com/spreadsheets/d/1JvhO9tEWiSyJPr9-8PWI0-CDT6UrI3D8zR7H0iEePnM/edit?usp=sharing
 
-A rules may specify any specific variant feature out of the following:
-- gene
-- exon 
-- genomic position and change 
-- protein position and change
-- genomic region
-- protein region
-- indel type (deletion, frameshift deletion, insertion, frameshift insertion, indel, etc.)
+##### Actionable mutations (_known_)
+Variants are checked against a set of rules that defined _actionable_ (known driver) variants. Highly actionable mutations (robust evidence base and/or strong scientific rationale linking the mutation with probable sensitization to drug, and/or high likelihood of response in proposed trial and disease setting) are reported as _known_.
+
+The rules may specify any specific descriptive feature of a variant, like gene, exon, genomic or protein position and change, genomic or protein region, type of change: deletion, frameshift deletion, insertion, frameshift insertion, indel, etc.
+
+Aminoacid changes, exons and codon numbers that define actionable somatic and germline changes:
+- [actionable_hotspot.txt](
+https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/actionable_hotspot.txt) - everything until records starting with `^`
+- [specific_mutations.tsv](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/specific_mutations.tsv) - mutations under `TIER1` column
+- [TP53 rules](https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/reference_data/filtering/common/rules)
+
+Genomic positions that define actionable germline and somatic variants:
+- [actionable.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/actionable.txt)
+
+##### Removing germline and known common artifacts
+Germline SNPs occur at approximately 100%, 50%, or 0% frequency, and every effort is made to filter out germline variants. However, some germline variants are important, especially for tumor suppressor genes like BRCA1 and BRCA2. Germline mutations may be of variants of uncertain significance (VUS), and may be relevant when heterozygous, or only when the other allele is also affected in the tumor, further complicating decisions on actionability. Currently, the following is done in order to filter gemeline variants:
+- In paired analysis, removing mutations appearing both in tumor and in normal match in similar frequency
+- Removing dbSNP common benign or likely benign (by ClinVar definition) SNPs, unless actionable (`Var_Class` = _dbSNP_)
+- Removing variants with high global minor allele frequenecy (GMAF) in TCGA (> 0.0025), unless actionable
+- Cohort filtering: removing `unknown` variants present in ≥ 40% samples and > 5 samples
+
+Variants are also checked against a list of positions and rules of common germline mutatations and artifacts, similarly to actionable lists:
+- [filter_common_artifacts.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/filter_common_artifacts.txt) - genomic positions and rules. If rule, filter even if actionable. If position, filter if non-actionable and AF < 35%.
+- [actionable_hotspot.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/actionable_hotspot.txt) - aminoacid positions (removed even if actionable), records only starting with `^`, e.g.: 
+  ````
+  - ^RBMX	G356W	1	Artifact in low complexity
+  - ^NQO1	P187S	1	Common germline SNP
+- [filter_common_snp.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/filter_common_snp.txt) - genomic positions, removed if not actionable.
 
 ##### Likely pathogenic
-Not actionable but high-impact:
-- LOF in a suppressor
-- Compendia and COSMIC (more than 5 occurenses) hotspot
-- dbSNP deletion
-- Frame shift
-- Stop gained
-- Start loss
-- Splice site mutations
+Tier 2. Could be actionable, but no strong evidence. Reported as `likely`.
 
-Plus, mutations are checked against a list of potentially actionable changes in exploratory trials: evidence that the mutation is activating (in an oncogene) or inactivating (in a tumour suppressor gene) in models or surrogate assays, although clinical evidence may be lacking.
+- High-impact somatic variants:
+  - Frame shift
+  - Stop gained
+  - Start loss
+  - Splice site mutation
+  - LOF in a tumor suppressor
+- Deletion reported in dbSNP (`Var_Class` = _dbSNP_del_)
+- COSMIC hotspots (only if at least 5 samples reported) (`Var_Class` = _COSMIC_)
+- [Compendia hotspots](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt) (based on TCGA)
+- Mutations under TIER2 column in [specific_mutations.tsv](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/specific_mutations.tsv)
+
+##### Unknown mutations
+Evidence insufficient to classify as actionable or justify using in patient treatment decision at this time. 
+- Moderate impact mutation (missense, inframe indels)
+- ClinVar unkown (mostly reported as "uncertain significance" or "other" in ClinVar)
+- Any silent unknown mutations are reported as `silent` in the `Reason` column (and reproted for driver analysis that compares mutations with silent background)
 
 ##### Allele frequency thresholds
 The AF thresholds are set:
@@ -129,36 +156,35 @@ Thresholds are driven partly by confidence in differentiating real tumor mutatio
 
 When interpreting results, focus on somatic variants above ~30% allele frequency for cell line and explant models, above ~5% and above for tumors, and above ~0.7% for ctDNA.
 
-##### Germline filtering
-Germline SNPs occur at approximately 100%, 50%, or 0% frequency, and every effort is made to filter out germline variants. However, some germline variants are important, especially for tumor suppressor genes like BRCA1 and BRCA2. Germline mutations may be of variants of uncertain significance (VUS), and may be relevant when heterozygous, or only when the other allele is also affected in the tumor, further complicating decisions on actionability. Currently, the following is done in order to filter gemeline variants:
-- In paired analysis, removing mutations appearing both in tumor and in normal match in similar frequency
-- Removing mutations from lists of common germline SNP genomic and aminoacid changes
-- Removing dbSNP common non-pathogenic SNPs, unless actionable
-- Removing variants with high global minor allele frequenecy (GMAF) in TCGA (> 0.0025), unless actionable
-- Removing actionable germline mutations with AF < 0.15
-
-##### Treating non-actionable mutations
 
 ##### Microsatellite instability
 Variations of lengths of long homopolymers often cause false positives, and require special treatment. For 1-nucleotide MSI of different lengths, a special AF cut-off is set: HP less than 7 units long, the AF cut-off is set to 3%; 8 - 6%; 9 - 12,5% 10 - 17.5%; 11- 25%; 12 - 30%; 12+ - 35%.
 
-##### Incidentalome
-We have a list of genes, exons, and regions, that produce many false positives because of low complexity, high/low GC, repeats, and other reasons.
+##### Non-callable genes and regions
+Mutations belonging to any gene from the following blacklist are always removed:
+```
+RBMX
+CRIPAK
+KMT2C
+RBMX2
+RBMXL1
+RBMXL3
+EPPK1	after 2215aa
+TYRO3
+```
 
-1. Gene filtering – exome level
-  a. Filter all variant from the following published genes (from three papers - people agree these genes generate too many false positives and represent (“blacklist” tab, rows 1-158, genes ABCA13 through ZNF407). Rows 74 and 75 – perhaps keep KMT2C and KMT2D from being hard filtered for now, given their prominence on cancer gene panels. But I want them filtered from AZ50/AZ300/targeted panel reports.
-  b. Filter all variants from large gene families and other genome oddities – various ways I’ve found, scanned in a genome viewer, and tagged (“blacklist” tab, rows 159-500). I’ve tried to differentiate when essentially every exon is in a low complexity region, versus some or most. Searching for long regions of low Duke 35 mappability would be a comprehensive way to do this
-  c. (Row 502) We need to flag genes in the MHC region, in particular those in the region but not clearly involved in MHC/HLA/IO, given their high polymorphism and alternate haplotype structure
-  d. Row 503-520 – filter our every olfactory receptor gene – I have had them cluttering up reports for over a decade, if we miss something important someday, blame it on me.
-  e. Row 522 onwards  - I am beginning to hand-check exome reports as well as AZ300 – this will be very tricky as these are small regions of cancer genes with recurrent mutations – often due to low complexity regions (let’s figure out how to systematically filter with that low complexity repeat-masker track) or short interstitial repeats where one copy is deleted and picked up by Vardict as a complex mutation. Also, homopolymer mononucleotide repeats less than 8 can result in a mutation at a lower frequency.
+An extended list of genes, exons, and regions is used to de-prioritize mutations in the reports, but does not affect mutation status.
 
-##### Unknown mutations
-Any mutation that was not reported as likely, known, or incidentalome, is reported as `unknown`. 
+Genes: https://drive.google.com/drive/folders/0B2wwyQzq0BbwWnNjZ055Ri1nRGM
+- Gene filtering – exome level
+  -  Filter all variant from the following published genes from three papers - people agree these genes generate too many false positives and represent (“blacklist” tab, rows 1-158, genes ABCA13 through ZNF407). Rows 74 and 75 – perhaps keep KMT2C and KMT2D from being hard filtered for now, given their prominence on cancer gene panels. But I want them filtered from AZ50/AZ300/targeted panel reports.
+  - Filter all variants from large gene families and other genome oddities – various ways I’ve found, scanned in a genome viewer, and tagged (“blacklist” tab, rows 159-500). I’ve tried to differentiate when essentially every exon is in a low complexity region, versus some or most. Searching for long regions of low Duke 35 mappability would be a comprehensive way to do this
+  - (Row 502) We need to flag genes in the MHC region, in particular those in the region but not clearly involved in MHC/HLA/IO, given their high polymorphism and alternate haplotype structure
+  - Row 503-520 – filter our every olfactory receptor gene – I have had them cluttering up reports for over a decade, if we miss something important someday, blame it on me.
+  - Row 522 onwards  - I am beginning to hand-check exome reports as well as AZ300 – this will be very tricky as these are small regions of cancer genes with recurrent mutations – often due to low complexity regions (let’s figure out how to systematically filter with that low complexity repeat-masker track) or short interstitial repeats where one copy is deleted and picked up by Vardict as a complex mutation. Also, homopolymer mononucleotide repeats less than 8 can result in a mutation at a lower frequency.
 
-Usually it is a moderately disruptive mutation, not currently actionable (insufficient evidence). Unknown significant variants in ClinVar (CLNSIG=255) are also reported as known. Any silent unknown mutations are reported as `silent` in the `Reason` column.
-
-### Cohort filtering
-If the samples are not homogeneous, but come from one sequencer's run, we expect recurring variants to be caused by sequencing artefacts. For all not-known and not-actionable variants, we calcualte the number and the percentage of samples harbouring this variant. If it's more than 40% of all samples and at the same time at least 5 samples, such variants are filtered out. Cohort filtering is done on the stage of merging all sample-level `vardict.PASS.txt` into the project level `vardict.PASS.txt` located in `final/<datestamp>` directory.
+##### Cohort filtering
+If the samples are not homogeneous, but come from single sequencer's run, we expect recurring variants to be caused by sequencing artefacts. Also, too common mutations are expected to be germline. For all not-known and not-actionable variants, we calcualte the number and the percentage of samples harbouring this variant. If it's more than 40% of all samples and at the same time at least 5 samples, such variants are filtered out. Cohort filtering is done on the stage of merging all sample-level `vardict.PASS.txt` into the project level `vardict.PASS.txt` located in `final/<datestamp>` directory.
 
 ### Output format
 `vardict.PASS.txt` is a tab-separated format that contains one record per protein change (e.g. several lines per genomic change can occur in case of overlapping genes or isoforms, although usually only one transcript per gene is analysed). 
@@ -225,10 +251,11 @@ Var_Class           COSMIC
 LOF                 YES                           Loss of function as reported by SnpEff (http://www.sciencemag.org/content/335/6070/823.abstract)
 Significance        likely                        Mutation tier
 Reason              COSMIC_5+, stop_gained        Reason to put this mutation into this tier
+Incidentalome       low complexity gene           If mutation overlaps any region with poor callability
 ```
 
 ### Reporting
-For 820 key cancer genes, or for the target genes if the study is targeted (target less than 2000 genes), mutations are reported into NGS Oncology reports.
+For 820 key cancer genes, or for the target genes if the study is targeted (target less than 2000 genes), mutations are reported into NGS Oncology reports. The mutations overlapping regions with poor callability are faded.
 
 ### Conversion to VCF
 `section in progress`
