@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>CHANGES.md</title>
+  <link rel="stylesheet" href="/Users/vlad/vagrant/reporting_suite/docs/style.css">
+</head>
+<body>
+<h4 id="v1-4-1-3-jun-2016">v1.4.1, 3 Jun 2016</h4>
+<p>Filtering</p>
+<ul>
+<li>Gene blacklist is split into 2 parts: hard-filtered genes, and soft-filtered genes/regions (faded in the reports)</li>
+</ul>
+<p>NGS reports </p>
+<ul>
+<li>Reporting mutations in regions and genes with poor mapability</li>
+</ul>
+<p>Added variant filtering documentation</p>
+<h4 id="v1-4-0-26-may-2016">v1.4.0, 26 May 2016</h4>
+<p>Filtering</p>
+<ul>
+<li>Gene and region blacklists introduced to filter variants</li>
+<li>Checking if ClinVar gene matches SnpEff gene</li>
+<li>Cohort frequency default threshold 1.0 (no filtering) changed to 0.4</li>
+<li>Germline default AF is 15%</li>
+<li>Defailt AF is 7.5% (2.5% for actionable) for exomes, 7.5% (5%) for WGS, 0.5% (0.2%) for deep-seq</li>
+<li>Other default filtering parameters changed (see [configs/RUNINFO_DEFAULT.yaml])</li>
+<li>MSI check constants changed</li>
+<li>If low ClinVar significance, filter even if COSMIC</li>
+<li>Artefacts and actionable filtering rules updated</li>
+</ul>
+<p>NGS Reports</p>
+<ul>
+<li>Unique color scheme for Seq2C report and plot</li>
+<li>Column for HP (homopolymer length if &gt; 3) added</li>
+<li>Indicendalome tab for mutations in blacklisted genes and regions</li>
+<li>SolveBio links for all mutations</li>
+<li>Actioanble mutations shown disregarding of the AF slider</li>
+<li>Buttons to report mutation and send an email</li>
+<li>Reporting for 820 key genes instead of 300</li>
+<li>Showing version and link to changes</li>
+<li>Showing link to documentation</li>
+</ul>
+<h4 id="v1-3-0-21-apr-2016">v1.3.0, 21 Apr 2016</h4>
+<p>Features</p>
+<ul>
+<li>RNA-seq bcbio workflow support. QC reporting, counts heatmaps, RNA-seq Qualimap</li>
+<li>Support Sweden HPC</li>
+<li>Updated Vardict2mut filtering:<ul>
+<li>Keeping silent mutations</li>
+<li>Filtering by MSI</li>
+<li>Filtering by GMAF, AF, cohort frequency, depth after actionable filtering</li>
+<li>Ignoring variants occurring after last known critical amino acid</li>
+</ul>
+</li>
+<li>Using virtualenv to handle python dependencies</li>
+<li>More advanced BED annotation based on RefSeq</li>
+<li>NGS reports:<ul>
+<li>Separate tab for silent mutations</li>
+<li>Key genes coverage theshold for NGS reports is set exactly as half mean coverage</li>
+<li>SolveBio integration</li>
+<li>Dynamic AF filtration slider</li>
+</ul>
+</li>
+<li>Preproc: samblaster to deduplicate</li>
+<li>Add script to prepare canonical transcript list from SnpEff output</li>
+<li>Update script for making RefSeq BED reference data</li>
+<li>VarQC reports: showing cosmic and dbsnp version in tooltips</li>
+<li>Support normal sample only configurations</li>
+</ul>
+<h4 id="v1-2-0-28-mar-2016">v1.2.0, 28 Mar 2016</h4>
+<p>Features</p>
+<ul>
+<li>Circos plots integrated with all mutations visualized by frequency accorss the genome</li>
+<li>SV in NGS oncology reports: more consise, highlighting known fusion, linking to jBrowse.</li>
+</ul>
+<p>Optimization</p>
+<ul>
+<li>New filtration features (vardict2mut):<ul>
+<li>more effective cohort filtering</li>
+<li>cohort filtering performed only in the final step, so known and actionable mutations are not affected</li>
+<li>filtering by MSI</li>
+<li>more comprehensive splice site mutation detection</li>
+<li>filter_artifacts hits AF threshold reduced 50% -&gt; 20%</li>
+</ul>
+</li>
+</ul>
+<h4 id="v1-1-0-24-mar-2016">v1.1.0, 24 Mar 2016</h4>
+<p>Features</p>
+<ul>
+<li>Oncoptints integration</li>
+<li>jBrowse integration with UK</li>
+<li>New sex determining functionality</li>
+<li>TargQC.py can be fed with fastqc files, and accepts the   -downsample-to option</li>
+</ul>
+<p>Optimization</p>
+<ul>
+<li>Seq2C optimized, more time and memory efficient. Using &quot;sambamba depth&quot; to call coverage</li>
+</ul>
+<p>Other</p>
+<ul>
+<li>More clear Download button in NGS oncology report</li>
+<li>Vardict2mut filtering updated, reporting more comprehensive rationale</li>
+</ul>
+<h4 id="v1-0-1-2-mar-2016">v1.0.1, 2 Mar 2016</h4>
+<ul>
+<li>Stanalone variants.py - handling incorrect input</li>
+<li>BED processing scripts updates: annotate_bed.py, sort_bed.py, standardize_bed.py</li>
+<li>Using all transcripts for bed annotation, canonical only for reports and CNV. make_exons.py udpated to make both canon and all</li>
+</ul>
+<p>Optimization</p>
+<ul>
+<li>TargQC memory optimization: Do not keep regions in memory. Run Picard before coverage</li>
+<li>Bam to bigwig converion using bedgraph as intermediate (faster, reduce memory usage)</li>
+</ul>
+<p>Fixes</p>
+<ul>
+<li>More memory allocated to qsub for TargQC - fixes some crashes</li>
+<li>TargQC standalone fix - thanks Sally Luke (<a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/issues/19">https://github.com/AstraZeneca-NGS/Reporting_Suite/issues/19</a>)</li>
+</ul>
+<h4 id="v1-0-0-29-feb-2016">v1.0.0, 29 Feb 2016</h4>
+<p>New features:</p>
+<ul>
+<li>New mutation filtering: using rules and manual curations by Robert McEwen and Hedley Carr. Reporting clasification assignment rationale.</li>
+<li>Standalone script for variant annotation and filtration - variants.py</li>
+<li>TargQC detailed coverage stats for unmerged regions.</li>
+<li>Using canonical RefSeq transcripts (coding and miRNA) for TargQC detailed reports. The same RefSeq canonical transcripts are used to report mutation effects, and RefSeq CDS are used for Seq2C cnv calls.</li>
+<li>Extended summary HTML: phenotype info, project and codebase datestamps, and versions.</li>
+<li>New snpEff 4.2.</li>
+<li>NGS oncology report has many new features: Allele frequency plot, flagged regions, exportable data, Seq2C plos for whole profile, detailed gene-level coverage plot.</li>
+<li>Integration and exposing mutations, regions and alignment data to jBrowse. Includes convertion to BigWig.</li>
+<li>Integration with LIMS to pull sample data.</li>
+<li>Support bcbio 0.9.6.</li>
+</ul>
+<p>Optimization</p>
+<ul>
+<li>Memory efficient vcf2txt.pl (first round filtering script) - saving 80% of memory.</li>
+<li>Using BCFTools, which is faster and memory efficient, but also which addresses problem of compressed VCF reference data in hg19/hg38 notation.</li>
+<li>Using tweaked sambamba for region coverage calculation - faster and memory effecient, and also works for unmerged regions.</li>
+</ul>
+<p>Fixes</p>
+<ul>
+<li>Fix issue when a intergenic/intragenic change is annotated by COSMIC as a missence change from another gene.</li>
+<li>Fix occasionally missing dbSNP annotations in chr1.</li>
+<li>Internally referring to genes by symbol+chromosome rather than by symbol, which fixes some region annotation.</li>
+</ul>
+</body>
+<html>

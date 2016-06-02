@@ -67,7 +67,7 @@ class BaseClinicalReporting:
             Metric('Status', short_name='Status'),     # Somatic
             Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
             Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
-            # Metric('Databases', class_='long_line'),                 # rs352343, COSM2123, SolveBio
+            Metric('Databases'),                 # rs352343, COSM2123, SolveBio
             Metric('Samples', with_heatmap=False),          # 128
             Metric('Other occurrences', class_='long_line', with_heatmap=False),          # 128
             # Metric('ClinVar', short_name='SolveBio ClinVar'),
@@ -185,7 +185,7 @@ class BaseClinicalReporting:
             if mut.incidentalome_reason:
                 row.add_record('Indicentalome', value=mut.incidentalome_reason)
             # row.add_record('VarDict reason', mut.reason)
-            # row.add_record('Databases', **self._db_recargs(mut))
+            row.add_record('Databases', **self._db_recargs(mut))
             # row.add_record('ClinVar', **self._clinvar_recargs(mut))
 
             if len(mutations_by_experiment.values()) == 1:
@@ -808,14 +808,11 @@ class BaseClinicalReporting:
 
         val = OrderedDict()
 
-        if mut.solvebio_url:
-            val['SolveBio'] = mut.solvebio_url
-
         if mut.cosmic_id:
-            val[mut.cosmic_id] = 'http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + \
+            val['COSM'] = 'http://cancer.sanger.ac.uk/cosmic/mutation/overview?id=' + \
                                  filter_digits(mut.cosmic_id)
         if mut.dbsnp_id:
-            val[mut.dbsnp_id] = 'http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + \
+            val['dbSNP'] = 'http://www.ncbi.nlm.nih.gov/SNP/snp_ref.cgi?searchType=adhoc_search&type=rs&rs=' + \
                                 filter_digits(mut.dbsnp_id)
 
         return dict(value=None, html_fpath=val)
@@ -830,12 +827,14 @@ class BaseClinicalReporting:
         t = ''
         if is_us() or is_uk() or is_local():  # add button to comment mutation
             t += '<div style="position:relative;"><div class="comment_div" onclick="commentMutation($(this))"></div></div> '
+
+        t = mut.gene.name
         if mut.transcript:
-            tooltip = 'Protein length: ' + str(mut.aa_len)
-            tooltip += '<br>Transcript: ' + str(mut.transcript)
+            tooltip = mut.transcript
+            tooltip += '<br>AA length: ' + str(mut.aa_len)
             if mut.exon:
-               tooltip += '<br>Exon altered: ' + str(mut.exon)
-            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div>' + mut.gene.name + '</span>'
+               tooltip += '<br>Exon: ' + str(mut.exon)
+            t = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + mut.gene.name + ' </span>'
             str(mut.aa_len)
         else:
             t += mut.gene.name
