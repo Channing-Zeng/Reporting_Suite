@@ -262,11 +262,11 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False, is_rnaseq=False)
                     for fname in os.listdir(config_dirpath)
                     if (fname.startswith('run_info') or 'post' in fname) and fname.endswith('.yaml')]
 
-                if len(run_info_fpaths_in_config) > 0:
-                    warn('Warning: there are run_info files in config directory ' + config_dirpath + '. '
-                         'Provided config will be copied there and can cause ambigity in future.')
-
-                file_util.copy_file(provided_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
+                if len(run_info_fpaths_in_config) == 0:
+                    # warn('Warning: there is a run_info file in config directory ' + config_dirpath + '. '
+                    #      'Provided config will be copied there and can cause ambigity in future.')
+                    file_util.copy_file(provided_cnf_fpath, project_run_cnf_fpath, preserve_times=False)
+                    info('Copied run config ' + provided_cnf_fpath + ' -> ' + project_run_cnf_fpath)
 
     else:
         info('no configs provided in command line options')
