@@ -72,15 +72,26 @@ p {
   margin-left: 20px; }
 
 .incidentalome {
-  color: #999999; }
+  color: gray; }
   .incidentalome .gray, .incidentalome .reason {
-    color: #c8c8c8; }
+    color: #bababa; }
   .incidentalome a {
     color: #7da5b5; }
-  .incidentalome a:hover {
-    color: #b54043; }
   .incidentalome a:visited {
     color: #9880b2; }
+  .incidentalome a:hover {
+    color: #b33; }
+
+.incidentalome:hover {
+  color: black; }
+  .incidentalome:hover .gray, .incidentalome:hover .reason {
+    color: gray; }
+  .incidentalome:hover a {
+    color: #0077B5; }
+  .incidentalome:hover a:visited {
+    color: #8c66b2; }
+  .incidentalome:hover a:hover {
+    color: #b33; }
 
 .gray, .reason {
   color: gray; }
