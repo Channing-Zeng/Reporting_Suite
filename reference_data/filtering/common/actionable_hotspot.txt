@@ -263,3 +263,8 @@ KIT	L576P	somatic	Hotspot
 ^NCOR1	K178N	1	Artifact from pseudogene resolved in hg38
 ^NCOR1	G5V	1	Artifact from pseudogene resolved in hg38
 ^NCOR1	Y20S	1	Artifact from pseudogene resolved in hg38
+^MET	K846fs	1	Homopolymer error: due to adjacent A4, GAAAA>GAAA
+^PTEN	L230fs	1	Homopolymer error: GTTTTT>GTTTT
+^ERBB3	S982fs	1	Homopolymer error (dinucleotide): T(AG)5>T(AG)4
+^ARID1A	Q766fs	1	Homopolymer error: T(C)6>T(C)7
+^TSC2	P1315fs	1	Homopolymer error: G(C)5>G(C)4

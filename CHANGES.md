@@ -1,6 +1,7 @@
 #### v1.4.1, 3 Jun 2016
 Filtering
 - Gene blacklist is split into 2 parts: hard-filtered genes, and soft-filtered genes/regions (faded in the reports)
+- Filter more homopolymer artefacts
 
 NGS reports 
 - Reporting mutations in regions and genes with poor mapability
