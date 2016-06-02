@@ -119,9 +119,10 @@ Germline SNPs occur at approximately 100%, 50%, or 0% frequency, and every effor
 Variants are also checked against a list of positions and rules of common germline mutatations and artifacts, similarly to actionable lists:
 - [filter_common_artifacts.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/filter_common_artifacts.txt) - genomic positions and rules. If rule, filter even if actionable. If position, filter if non-actionable and AF < 35%.
 - [actionable_hotspot.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/actionable_hotspot.txt) - aminoacid positions (removed even if actionable), records only starting with `^`, e.g.: 
-  ````
+  ```
   - ^RBMX	G356W	1	Artifact in low complexity
   - ^NQO1	P187S	1	Common germline SNP
+  ```
 - [filter_common_snp.txt](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/filter_common_snp.txt) - genomic positions, removed if not actionable.
 
 ##### Likely pathogenic
