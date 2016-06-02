@@ -1135,13 +1135,7 @@ def make_cell_th(metric, class_='', sortable=True):
 
 
 def make_cell_td(rec, class_=''):
-    if rec.metric.name == 'Databases':
-        pass
-
     html = ''
-
-    if not rec.metric.values:
-        return html
 
     if rec is None:
         html += "\n<td><span>-</span></td>"
@@ -1150,6 +1144,12 @@ def make_cell_td(rec, class_=''):
     if not rec.metric:
         warn('rec.metric is None. (rec.value = ' + str(rec.value) + ')')
         return ''
+
+    if rec.metric.name == 'Databases':
+        pass
+
+    if not rec.metric.values:
+        return html
 
     if rec.metric.is_hidden:
         return ''

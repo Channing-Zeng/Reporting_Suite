@@ -46,7 +46,6 @@ def run_combine_clinical_reports(cnf, bcbio_structures, samples_by_group, sample
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 info('Preparing ' + sample.name + '...')
                 info('-' * 70)
-                bs.seq2c_fpath = None
                 sample.targetcov_detailed_tsv = None
                 clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
                 group = samples_by_group[(sample.name, bs.bcbio_project_dirpath)]
@@ -73,8 +72,9 @@ def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, sample_para
                 sample_experiments[k] = e
 
         sample_report.experiment_by_key = sample_experiments
-        sample_report.mutations_report, sample_report.venn_plot_data = report.sample_reports[num]
+        sample_report.mutations_report, sample_report.venn_plot_data = report.mutations_reports[num]
         sample_report.mutations_parameters = make_parameters_json(sample_parameters)
+        sample_report.seq2c_report = report.seq2c_reports[num]
         sample_report.write_report(join(output_dirpath, 'report_' + str(num) + '.html'), samples_data=samples_data)
 
 
@@ -117,8 +117,9 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         self.seq2c_report = None
         self.key_genes_report = None
         self.cov_plot_data = None
-        self.sample_reports = dict()
+        self.mutations_reports = dict()
         self.mutations_parameters = None
+        self.seq2c_reports = defaultdict()
 
         self.sample_names = []
         for k, e in experiment_by_key.items():
@@ -147,21 +148,24 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         for e in sorted_experiments.values():
             if e.mutations:
                 mutations_by_experiment[e] = e.mutations
+        group_nums = set(get_group_num(key) for key in self.experiment_by_key.keys())
         if mutations_by_experiment:
             # self.mutations_report, self.venn_plot_data = self.make_mutations_report(mutations_by_experiment, jbrowser_link, create_venn_diagrams=True)
-            group_nums = set(get_group_num(key) for key in self.experiment_by_key.keys())
             for num in group_nums:
                 sample_mut_report, venn_plot_data = self.make_mutations_report(mutations_by_experiment, jbrowser_link,
                                                                                samples_data=samples_data, sample_parameters=sample_parameters,
                                                                                create_venn_diagrams=True, cur_group_num=num)
-                self.sample_reports[num] = (sample_mut_report, venn_plot_data)
+                self.mutations_reports[num] = (sample_mut_report, venn_plot_data)
             # self.mutations_plot_data = self.make_mutations_json(mutations_by_experiment)
             # self.substitutions_plot_data = self.make_substitutions_json(mutations_by_experiment)
         #self.actionable_genes_report = self.make_actionable_genes_report(experiment_by_key.values()[0].actionable_genes_dict)
-        # seq2c_events_by_experiment = {e: e.seq2c_events_by_gene for e in experiment_by_key.values() if e.seq2c_events_by_gene}
-        # if seq2c_events_by_experiment:
-        #    self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
-        #    self.seq2c_report = self.make_seq2c_report(seq2c_events_by_experiment)
+        seq2c_events_by_experiment = {e: e.seq2c_events_by_gene for e in experiment_by_key.values() if e.seq2c_events_by_gene}
+        if seq2c_events_by_experiment:
+            for num in group_nums:
+                seq2c_report = self.make_seq2c_report(seq2c_events_by_experiment, samples_data=samples_data, cur_group_num=num)
+                self.seq2c_reports[num] = seq2c_report
+            # self.seq2c_plot_data = self.make_seq2c_plot_json(self.experiment_by_key)
+            # self.seq2c_report = self.make_seq2c_report(seq2c_events_by_experiment)
         # self.key_genes_report = self.make_key_genes_cov_report(self.experiment_by_key)
         # self.cov_plot_data = self.make_key_genes_cov_json(self.experiment_by_key)
 

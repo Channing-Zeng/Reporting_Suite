@@ -537,7 +537,7 @@ class BaseClinicalReporting:
         else:
             return json.dumps(data) if all(d is not None for d in data.values()) else None
 
-    def make_seq2c_report(self, seq2c_by_experiments):
+    def make_seq2c_report(self, seq2c_by_experiments, samples_data=None, cur_group_num=None):
         ms = [
             Metric('Gene', align='left', sort_direction='ascending'),  # Gene
             Metric('Chr', with_heatmap=False, max_width=20, align='right'),
@@ -546,7 +546,21 @@ class BaseClinicalReporting:
             Metric('BP/Whole'),
         ]
         if len(seq2c_by_experiments.values()) > 1:
-            ms.append(Metric('Samples', max_width=25, align='left'))
+            if cur_group_num:
+                ms = [
+                    Metric('Gene', align='left', sort_direction='ascending'),  # Gene
+                    Metric('Chr', with_heatmap=False, max_width=20, align='right'),
+                    Metric('Amp/Del'),
+                    Metric('BP/Whole'),
+                ]
+                short_names, full_names = self.format_experiment_names(seq2c_by_experiments, cur_group_num, samples_data)
+                for index in range(len(short_names.values())):
+                    short_name = short_names.values()[index]
+                    full_name = full_names.values()[index]
+                    ms.append(Metric(full_name + ' log ratio', short_name='\n'.join(short_name.split()) + '\nlog ratio',
+                                            med=0, quality='Less is better', align='left'))
+            else:
+                ms.append(Metric('Samples', max_width=25, align='left'))
         metric_storage = MetricStorage(sections=[ReportSection(name='seq2c_section', metrics=ms)])
 
         report = PerRegionSampleReport(sample=seq2c_by_experiments.keys()[0].sample,
@@ -560,24 +574,40 @@ class BaseClinicalReporting:
             is_whole_genomic_profile = len(e.seq2c_events_by_gene.values()) > len(key_gene_by_name_chrom.values())
             events = seq2c.values()
             for event in events:
-                seq2c_by_key_by_experiment[(event.gene.name, event.amp_del)][e] = event
+                if event.is_amp() or event.is_del():
+                    seq2c_by_key_by_experiment[(event.gene.name, event.amp_del)][e] = event
 
         for seq2c_by_experiment_key, seq2c_by_experiment in seq2c_by_key_by_experiment.items():
             event = next((e for e in seq2c_by_experiment.values() if e is not None), None)
-            if event.is_amp() or event.is_del():
-                row = report.add_row()
-                row.add_record('Gene', event.gene.name)
-                row.add_record('Chr', event.gene.chrom.replace('chr', ''))
-                if len(seq2c_by_experiments.values()) == 1:
-                    row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
-                row.add_record('Amp/Del', event.amp_del)
-                row.add_record('BP/Whole', event.fragment)
-                if is_whole_genomic_profile and event.gene.key not in key_gene_by_name_chrom:
-                    row.hidden = True
+            if len(seq2c_by_experiments.values()) > 1:
+                is_event_in_this_report = False
+                for e, event in seq2c_by_experiment.iteritems():
+                    if e in full_names:
+                        is_event_in_this_report = True
+                        break
+                if not is_event_in_this_report:
+                    continue
+            row = report.add_row()
+            row.add_record('Gene', event.gene.name)
+            row.add_record('Chr', event.gene.chrom.replace('chr', ''))
+            if len(seq2c_by_experiments.values()) == 1:
+                row.add_record('Log ratio', '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
+            else:
+                for e, event in seq2c_by_experiment.iteritems():
+                    if e not in full_names:
+                        continue
+                    full_name = full_names[e]
+                    row.add_record(full_name + ' log ratio',
+                                   '%.2f' % (event.ab_log2r if event.ab_log2r is not None else event.log2r))
 
-                if len(seq2c_by_experiments.values()) > 1:
-                    num_samples = len(seq2c_by_experiment.keys())
-                    row.add_record('Samples', num_samples)
+            row.add_record('Amp/Del', event.amp_del)
+            row.add_record('BP/Whole', event.fragment)
+            if is_whole_genomic_profile and event.gene.key not in key_gene_by_name_chrom:
+                row.hidden = True
+
+            if len(seq2c_by_experiments.values()) > 1 and not cur_group_num:
+                num_samples = len(seq2c_by_experiment.keys())
+                row.add_record('Samples', num_samples)
 
         return report
 
@@ -704,8 +734,9 @@ class BaseClinicalReporting:
     def seq2c_section(self):
         seq2c_dict = dict()
         seq2c_report = self.seq2c_report
-        if seq2c_report and seq2c_report.rows:
-            not_hidden_rows = [r for r in seq2c_report.rows if not r.hidden]
+        rows = seq2c_report.get_rows_of_records()
+        if seq2c_report and rows:
+            not_hidden_rows = [r for r in rows if not r.hidden]
             if not_hidden_rows:
                 seq2c_dict['short_table'] = self.seq2c_create_tables(not_hidden_rows)
             seq2c_dict['full_table'] = self.seq2c_create_tables(seq2c_report.rows)
@@ -721,7 +752,8 @@ class BaseClinicalReporting:
         printed_genes = 0
         for i in range(GENE_COL_NUM):
             column_dict = dict()
-            column_dict['metric_names'] = [make_cell_th(m) for m in self.seq2c_report.metric_storage.get_metrics()]
+            metrics = self.seq2c_report.metric_storage.get_metrics()
+            column_dict['metric_names'] = [make_cell_th(m) for m in metrics]
             column_dict['rows'] = [
                 dict(records=[make_cell_td(r) for r in region.records])
                     for region in rows[printed_genes:printed_genes + genes_in_col[i]]]
