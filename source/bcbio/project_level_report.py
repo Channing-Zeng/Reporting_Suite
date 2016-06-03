@@ -612,8 +612,8 @@ def get_run_info(cnf, bcbio_structure, dataset_project):
 
     # if bcbio_structure.is_rnaseq:
     base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
-    programs_url = relpath(bcbio_structure.program_versions_fpath, base_dirpath) if verify_file(bcbio_structure.program_versions_fpath) else None
-    if programs_url:
+    if bcbio_structure:
+        programs_url = relpath(bcbio_structure.program_versions_fpath, base_dirpath) if verify_file(bcbio_structure.program_versions_fpath) else None
         run_info_dict['program_versions'] = '<a href="{programs_url}">Program versions</a>'.format(**locals())
 
     # var_filtering_params = []
