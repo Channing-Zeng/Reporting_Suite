@@ -47,6 +47,16 @@
     <div id="clinical_report_header_image"></div>
 </div>
 
+<div id="comment_window">
+    <h2>Comment mutation</h2>
+    <span id="comment_window_text"></span>
+    <br><br>
+    <textarea id="comment_window_textarea" rows="5" placeholder="" style="width:99%"></textarea>
+    <br><br>
+    <div class="btn btn-large" id="comment_window_cancel_btn">Cancel</div>
+    <div class="btn btn-large" id="comment_window_save_btn" style="float:right">Send</div>
+</div>
+
 <div class="content">
     <div style="margin-top: -150px; margin-bottom: 45px; color: white;">
         <h1 style="">Clinical report</h1>
@@ -65,6 +75,7 @@
                 {.repeated section @}
                     <p style="line-height: 1em;">
                         <b>Project: </b><a href="{project_report_rel_path}">{project_name}</a>.
+                        <span id="project_dirpath" style="display: none">{project_dirpath}</span>
                         <b>Sample: </b>{sample}.
                         <!--<b>Study</b>: 9291 First line progressor. Progressed Feb 6 2015 after 13 months on 9291: L858R and T790M+ prior to this 1st line therapy<br>-->
                         {.section sample_type}<b>Sample type: </b>{sample_type}.{.or}{.end}

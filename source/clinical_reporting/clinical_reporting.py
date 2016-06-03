@@ -704,6 +704,7 @@ class BaseClinicalReporting:
                 d['project_report_rel_path'] = experiment.project_report_path
             else:
                 d['project_report_rel_path'] = relpath(experiment.project_report_path, dirname(experiment.sample.clinical_html))
+            d['project_dirpath'] = experiment.cnf.output_dir
         if experiment.target:
             d['target_section'] = dict()
             d['target_section']['panel'] = experiment.target.type

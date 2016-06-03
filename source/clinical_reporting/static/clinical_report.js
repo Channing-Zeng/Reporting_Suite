@@ -408,25 +408,41 @@ function showHideRow(row, metric) {
 
 function commentMutation(caller) {
     var row = $(caller).parents("tr")[0];
-    var gene, mut, pos;
+    var gene, transcript, mut, pos, change, effect, significance;
     for (var c = 0; c < row.cells.length; c++) {
         var cell = row.cells[c];
         if (cell.attributes.metric && cell.attributes.metric.value == "Gene") {
-            console.log(cell.innerText);
-            gene = cell.innerText.split(' ')[0];
+            var geneInfo = cell.innerText.split(/\b(\s)/);
+            if (geneInfo.length > 1) {
+                transcript = geneInfo[0];
+                gene = geneInfo[geneInfo.length-1];
+            }
+            else {
+                transcript = "";
+                gene = geneInfo[0];
+            }
         } else if (cell.attributes.metric && cell.attributes.metric.value == "AA chg") {
             mut = cell.textContent;
         } else if (cell.attributes.metric && cell.attributes.metric.value == "Position") {
             pos = cell.textContent;
+        } else if (cell.attributes.metric && cell.attributes.metric.value == "Change") {
+            change = cell.textContent;
+        } else if (cell.attributes.metric && cell.attributes.metric.value == "Effect") {
+            effect = cell.textContent;
+        } else if (cell.attributes.metric && cell.attributes.metric.value == "VarDict status") {
+            significance = cell.textContent;
         }
     }
+    var projectUrl = window.location.href;
+    var projectPath = document.getElementById('project_dirpath').innerText;
     document.getElementById('comment_window_text').innerText = 'Leave a comment about mutation ' + mut + ' in ' + gene +
         '. This information is going to be sent to Vlad Saveliev and considered to be added into filtering ' +
         'blacklisting or prioritizing rules.';
     document.getElementById('comment_window_save_btn').onclick=function() {
         var comment = document.getElementById('comment_window_textarea').value;
         if (comment) {
-            var data = gene + "," + mut + "," + pos + "," + comment + "\n";
+            var data = projectUrl + "," + projectPath + "," + gene + "," + transcript + "," + mut + "," + pos + "," + change + "," +
+                        effect + "," + significance + "," + comment + "\n";
             var php_path = '/save_comment.php';
             $.post(php_path, {data: data})
              .done(function () {
