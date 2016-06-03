@@ -201,4 +201,7 @@ p {
 #select_table_div th {
   text-align: left; }
 
+.always_hidden_row {
+  display: none; }
+
 /*# sourceMappingURL=clinical_report.css.map */

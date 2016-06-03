@@ -129,6 +129,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             if is_us:
                 e.sample.clinical_html = re.sub('^/ngs/', '/gpfs/ngs/', e.sample.clinical_html)
                 e.project_report_path = re.sub('^/ngs/', '/gpfs/ngs/', e.project_report_path)
+            e.project_report_path = 'report_' + str(get_group_num(k)) + '.html'
             self.sample_names.append(e.sample.name)
         sample_infos = {k: get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True) for k, e in experiment_by_key.iteritems()}
         sorted_sample_infos = sorted(sample_infos.items(), key=lambda x: [x[1][j] for j in range(len(x[1]))])

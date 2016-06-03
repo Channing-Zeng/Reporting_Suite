@@ -419,7 +419,7 @@ class SampleReport(BaseReport):
         if sections:
             recs = []
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
-                if not metric.is_hidden and not metric.name == 'Sample':
+                if not metric.name == 'Sample':
                     rec = BaseReport.find_record(self.records, metric.name)
                     if rec:
                         recs.append(rec)
@@ -555,12 +555,11 @@ class PerRegionSampleReport(SampleReport):
         for i, row in enumerate(self.rows):
             recs = []
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
-                if not metric.is_hidden:
-                    rec = BaseReport.find_record(row.records, metric.name)
-                    if rec:
-                        recs.append(rec)
-                    else:
-                        recs.append(Record(metric=metric, value=None))
+                rec = BaseReport.find_record(row.records, metric.name)
+                if rec:
+                    recs.append(rec)
+                else:
+                    recs.append(Record(metric=metric, value=None))
             row.records = recs
             rows.append(row)
         return rows
@@ -656,8 +655,6 @@ class FullReport(BaseReport):
 
         some_rep = self.sample_reports[0]
         for m in self.metric_storage.general_section.metrics:
-            if m.is_hidden: continue
-
             rec = BaseReport.find_record(some_rep.records, m.name)
             if rec:
                 if human_readable:
@@ -692,7 +689,7 @@ class FullReport(BaseReport):
                 url=sr.url, html_fpath=sr.html_fpath, num=len(self.sample_reports) - i))
 
             for metric in self.metric_storage.get_metrics(sections=sections, skip_general_section=True):
-                if not metric.is_hidden and not metric.name == 'Sample':
+                if not metric.name == 'Sample':
                     rec = BaseReport.find_record(sr.records, metric.name)
                     if rec:
                         recs.append(rec)
@@ -1094,8 +1091,11 @@ def make_cell_th(metric, class_='', sortable=True):
     # return '<th class="' + metric.class_ + '" style="' + metric.style + '">' + metric.name + '</th>'
     html = ''
 
-    if metric.is_hidden or not metric.values:
+    if not metric.values:
         return html
+
+    if metric.is_hidden:
+        class_ += 'always_hidden_row'
 
     style = metric.style
     class_ = class_  + ' ' + metric.class_
@@ -1152,7 +1152,7 @@ def make_cell_td(rec, class_=''):
         return html
 
     if rec.metric.is_hidden:
-        return ''
+        class_ += ' always_hidden_row'
 
     style = ''
     if rec.metric.style:

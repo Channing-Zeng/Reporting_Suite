@@ -56,33 +56,33 @@ class BaseClinicalReporting:
 
     def make_mutations_report(self, mutations_by_experiment, jbrowser_link, samples_data=None, sample_parameters=None,
                               create_venn_diagrams=False, cur_group_num=None):
-        ms = [
-            Metric('Gene'),  # Gene & Transcript
-            Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
-            Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
-            Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
-            Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
-            Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
-            Metric('MSI', short_name='HP', description='Microsatellite instability length', quality='Less is better', with_heatmap=False),
-            Metric('Status', short_name='Status'),     # Somatic
-            Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
-            Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
-            Metric('Databases'),                 # rs352343, COSM2123, SolveBio
-            Metric('Samples', with_heatmap=False),          # 128
-            Metric('Other occurrences', class_='long_line', with_heatmap=False),          # 128
-            # Metric('ClinVar', short_name='SolveBio ClinVar'),
-        ]
-
-        venn_sets = OrderedDefaultDict(int)
         if len(mutations_by_experiment) == 1:
-            ms.extend([
+            ms = [
+                Metric('Gene'),  # Gene & Transcript
+                Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
+                Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
+                Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
+                Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
+                Metric('MSI', short_name='HP', description='Microsatellite instability length', quality='Less is better', with_heatmap=False),
+                Metric('Status', short_name='Status'),     # Somatic
+                Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
+                Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
+                Metric('Databases'),                 # rs352343, COSM2123, SolveBio
+                Metric('Samples', with_heatmap=False),          # 128
+                Metric('Other occurrences', class_='long_line', with_heatmap=False),          # 128
+                # Metric('ClinVar', short_name='SolveBio ClinVar'),
                 Metric('Freq', short_name='Freq', max_width=55, unit='%', with_heatmap=False),          # .19
                 Metric('Depth', short_name='Depth', max_width=48, med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
-            ])
+                Metric('Indicentalome', short_name='Callability issues')
+            ]
+
         else:
-            if sample_parameters:
-                for parameter in sample_parameters.keys():
-                    ms.append(Metric(parameter))
+            ms = [
+                Metric('Gene'),  # Gene & Transcript
+                Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
+                Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
+            ]
             short_names, full_names = self.format_experiment_names(mutations_by_experiment, cur_group_num, samples_data)
             for index in range(len(short_names.values())):
                 short_name = short_names.values()[index]
@@ -95,8 +95,25 @@ class BaseClinicalReporting:
                     Metric(full_name + ' Depth', short_name='depth', min_width=col_width, align='left',
                            med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
                 ])
+            ms.extend([
+                Metric('Samples', with_heatmap=False),          # 128
+                Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
+                Metric('Other occurrences', class_='long_line', with_heatmap=False),          # 128
+                # Metric('ClinVar', short_name='SolveBio ClinVar'),
+                Metric('Indicentalome', short_name='Callability issues'),
+                Metric('Databases'),                 # rs352343, COSM2123, SolveBio
+                Metric('Status', short_name='Status'),     # Somatic
+                Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249
+                Metric('AA len', max_width=50, class_='stick_to_left', with_heatmap=False),          # 128
+                Metric('Change', max_width=100, class_='long_line', description='Genomic change'),       # G>A
+                Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
+                Metric('MSI', short_name='HP', description='Microsatellite instability length', quality='Less is better', with_heatmap=False),
+            ])
+            if sample_parameters:
+                for parameter in sample_parameters.keys():
+                    ms.append(Metric(parameter, is_hidden=True))
 
-        ms.append(Metric('Indicentalome', short_name='Callability issues'))
+        venn_sets = OrderedDefaultDict(int)
 
         if create_venn_diagrams:
             samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment, full_names, sample_parameters, samples_data)
@@ -155,7 +172,7 @@ class BaseClinicalReporting:
             if mut.is_silent:
                 continue
             if len(mutations_by_experiment.values()) > 1 and \
-                    (not mut.signif or mut.signif.lower() in ['unknown', 'incidentalome']):
+                    (not mut.signif or mut.signif.lower() in ['unknown']):
                 continue
             if sample_experiments and all(e not in sample_experiments for e in mut_by_experiment.keys()):
                 continue
@@ -221,26 +238,39 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data):
-        samples = [e.sample for e in mut_by_experiment.keys()]
         all_parameters = defaultdict(set)
-        for sample in samples:
-            project_dirpath = dirname(dirname(sample.dirpath))
-            sample_info = samples_data[project_dirpath][sample.name]
-            for parameter, value in sample_info.iteritems():
-                all_parameters[parameter].add(value)
+        if cur_experiments:
+            cur_group_num = get_group_num(cur_experiments[0].key)
+            for e, m in mut_by_experiment.items():
+                if get_group_num(e.key) != cur_group_num:
+                    continue
+                project_dirpath = dirname(dirname(e.sample.dirpath))
+                sample_info = samples_data[project_dirpath][e.sample.name]
+                for parameter, value in sample_info.iteritems():
+                    all_parameters[parameter].add(value)
         for parameter, values in all_parameters.iteritems():
             row.add_record(parameter, ', '.join(sorted(values)))
         if not cur_experiments:
             row.add_record('Samples', len(mut_by_experiment.keys()))
         else:
             num_by_samples = defaultdict(set)
-            cur_group_num = get_group_num(cur_experiments[0].key)
-            for e in mut_by_experiment.keys():
+            tooltips = []
+            for e, m in mut_by_experiment.items():
                 if get_group_num(e.key) == cur_group_num:
                     continue
                 sample_parameters = get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True)
+                parameters_to_combine = ['WGS', 'AZ300', 'AZ50', 'Exome', 'WES']
+                for parameter in parameters_to_combine:
+                    if parameter in sample_parameters:
+                        sample_parameters.remove(parameter)
                 num_by_samples[tuple(sample_parameters)].add(get_group_num(e.key))
+                report_link = '<a href="' + e.project_report_path + '" target="_blank">' + e.sample.name + '</a>'
+                freq = Metric.format_value(m.freq, is_html=True, unit='%')
+                tooltip = report_link + ':  ' + str(freq) + '  ' + str(m.depth) + '<br>'
+                tooltips.append(e.sample.name, tooltip)
+            tooltips = [tooltip[1] for tooltip in sorted(tooltips)]
             other_occurences = ' '.join([str(len(v)) + ' ' + ' '.join(k) for k, v in num_by_samples.iteritems()])
+            other_occurences = ' <span class="my_hover"><div class="my_tooltip">' + ''.join(tooltips) + '</div> ' + other_occurences + ' </span>'
             row.add_record('Other occurrences', other_occurences)
         return row
 
