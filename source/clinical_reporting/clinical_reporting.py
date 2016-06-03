@@ -828,13 +828,12 @@ class BaseClinicalReporting:
         if is_us() or is_uk() or is_local():  # add button to comment mutation
             t += '<div style="position:relative;"><div class="comment_div" onclick="commentMutation($(this))"></div></div> '
 
-        t = mut.gene.name
         if mut.transcript:
             tooltip = mut.transcript
             tooltip += '<br>AA length: ' + str(mut.aa_len)
             if mut.exon:
                tooltip += '<br>Exon: ' + str(mut.exon)
-            t = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + mut.gene.name + ' </span>'
+            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + mut.gene.name + ' </span>'
             str(mut.aa_len)
         else:
             t += mut.gene.name
