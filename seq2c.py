@@ -112,13 +112,13 @@ def read_samples(sample2bam_fpath):
                 sample_name, bam_fpath = None, l
             if not verify_bam(bam_fpath):
                 bad_bam_fpaths.append(bam_fpath)
-            bam_fpath = verify_bam(bam_fpath)
+            bam_fpath = verify_bam(bam_fpath, is_critical=True)
             bam_fpaths.append(bam_fpath)
 
-            # if not sample_name:
-            #     sample_name = basename(splitext(bam_fpath)[0])
-            #     if sample_name.endswith('-ready'):
-            #         sample_name = sample_name.split('-ready')[0]
+            if sample_name is None:
+                sample_name = basename(splitext(bam_fpath)[0])
+                if sample_name.endswith('-ready'):
+                    sample_name = sample_name.split('-ready')[0]
             sample_names.append(sample_name)
             info(sample_name + ': ' + bam_fpath)
 

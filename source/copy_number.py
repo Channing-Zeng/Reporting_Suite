@@ -3,7 +3,7 @@ import math
 import os
 from collections import defaultdict, OrderedDict
 from json import load
-from os.path import join, splitext, basename, dirname, abspath, isfile
+from os.path import join, splitext, basename, dirname, abspath, isfile, isdir
 from shutil import copyfile
 from time import sleep
 from traceback import format_exc
@@ -213,38 +213,108 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     seq2c_work_dirpath = join(cnf.work_dir, source.seq2c_name)
     safe_mkdir(seq2c_work_dirpath)
     info()
-    for s in samples:
-        info('*' * 50)
-        info(s.name + ':')
-        with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
-            safe_mkdir(cnf.work_dir)
-            seq2cov_output_by_sample[s.name] = join(seq2c_work_dirpath, s.name + '.seq2cov.txt')
 
-            if not cnf.reuse_intermediate and isfile(seq2cov_output_by_sample[s.name]):
-                os.remove(seq2cov_output_by_sample[s.name])
+    total_reused = 0
+    total_processed = 0
+    total_success = 0
+    total_failed = 0
+    not_submitted_samples = samples
+    while not_submitted_samples:
+        jobs_to_wait = []
+        submitted_samples = []
+        reused_samples = []
 
-            if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
-                info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
+        for s in not_submitted_samples:
+            info('*' * 50)
+            info(s.name + ':')
+            with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
+                safe_mkdir(cnf.work_dir)
+                seq2cov_output_by_sample[s.name] = join(seq2c_work_dirpath, s.name + '.seq2cov.txt')
 
-            elif verify_file(s.targetcov_detailed_tsv, silent=True):
-                info('Using targetcov detailed output for Seq2C coverage.')
-                info(s.name + ': using targetseq output')
-                targetcov_details_to_seq2cov(cnf, s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
+                if not cnf.reuse_intermediate and isfile(seq2cov_output_by_sample[s.name]):
+                    os.remove(seq2cov_output_by_sample[s.name])
 
-            else:
-                info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
-                bam_fpath = bams_by_sample[s.name]
-                depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
-                depth_output_by_sample[s.name] = depth_output
-                if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
-                    info(depth_output + ' exists, reusing')
+                if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
+                    info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
+
+                elif verify_file(s.targetcov_detailed_tsv, silent=True):
+                    info('Using targetcov detailed output for Seq2C coverage.')
+                    info(s.name + ': using targetseq output')
+                    targetcov_details_to_seq2cov(cnf, s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
+
                 else:
-                    j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True, sample_name=s.name)
-                    jobs_by_sample[s.name] = j
-        info()
-    info('*' * 50)
+                    info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
+                    bam_fpath = bams_by_sample[s.name]
+                    depth_output = join(seq2c_work_dirpath, s.name + '_depth' + '.txt')
+                    depth_output_by_sample[s.name] = depth_output
+                    if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
+                        info(depth_output + ' exists, reusing')
+                    else:
+                        j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True, sample_name=s.name)
+                        jobs_by_sample[s.name] = j
+                        submitted_samples.append(s)
 
-    wait_for_jobs(cnf, jobs_by_sample.values())
+                        if not j.is_done:
+                            jobs_to_wait.append(j)
+
+                        if len(jobs_to_wait) >= cnf.threads:
+                            not_submitted_samples = [_s for _s in not_submitted_samples if
+                                                     _s not in submitted_samples and
+                                                     _s not in reused_samples]
+
+                            if not_submitted_samples:
+                                info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
+                                         'submitting more ' + str(len(not_submitted_samples)))
+                            else:
+                                info('Submitted ' + str(len(jobs_to_wait)) + ' last jobs.')
+                            info()
+                            break
+                        info()
+
+        info()
+        info('-' * 70)
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No annotation jobs to submit.')
+        info('')
+        info('-' * 70)
+        info('Finihsed annotating ' + str(len(jobs_to_wait)) + ' jobs')
+        for j in jobs_to_wait:
+            if j.is_done and not j.is_failed and not verify_file(j.output_fpath):
+                j.is_failed = True
+            if j.is_done and not j.is_failed:
+                if 'work_dir' in j.__dict__ and isdir(j.work_dir):
+                    os.system('rm -rf ' + j.work_dir)
+
+        processed = sum(1 for j in jobs_to_wait if j.is_done)
+        failed = sum(1 for j in jobs_to_wait if j.is_failed)
+        success = sum(1 for j in jobs_to_wait if j.is_done and not j.is_failed)
+        total_failed += failed
+        total_reused += len(reused_samples)
+        total_processed += processed
+        total_success += success
+        info('Reused: ' + str(len(reused_samples)))
+        info('Processed: ' + str(processed))
+        info('Success: ' + str(success))
+        info('Failed: ' + str(failed))
+        info()
+
+        not_submitted_samples = [s for s in not_submitted_samples if
+                                 s not in submitted_samples and
+                                 s not in reused_samples]
+        info()
+        info('*' * 50)
+
+    info('-' * 70)
+    info('Done with all ' + str(len(samples)) + ' samples.')
+    info('Total reused: ' + str(total_reused))
+    info('Total processed: ' + str(total_processed))
+    info('Total success: ' + str(total_success))
+    info('Total failed: ' + str(total_failed))
+
+    # wait_for_jobs(cnf, jobs_by_sample.values())
     for s_name, j in jobs_by_sample.items():
         if j.is_done and not j.is_failed:
             info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
@@ -570,31 +640,97 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
     mapped_reads_by_sample = OrderedDict()
 
     job_by_sample = dict()
+    total_reused = 0
+    total_processed = 0
+    total_success = 0
+    total_failed = 0
+    not_submitted_samples = samples
+    while not_submitted_samples:
+        jobs_to_wait = []
+        submitted_samples = []
+        reused_samples = []
+        for s in not_submitted_samples:
+            with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
+                safe_mkdir(cnf.work_dir)
+                if verify_file(s.targetcov_json_fpath, silent=True):
+                    info('Parsing targetSeq output ' + s.targetcov_json_fpath)
+                    with open(s.targetcov_json_fpath) as f:
+                        data = load(f, object_pairs_hook=OrderedDict)
+                    cov_report = SampleReport.load(data, s)
+                    mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
+                    info(s.name + ': ')
+                    info('  Mapped reads: ' + str(mapped_reads))
+                    mapped_reads_by_sample[s.name] = mapped_reads
 
-    for s in samples:
-        with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
-            safe_mkdir(cnf.work_dir)
-            if verify_file(s.targetcov_json_fpath, silent=True):
-                info('Parsing targetSeq output ' + s.targetcov_json_fpath)
-                with open(s.targetcov_json_fpath) as f:
-                    data = load(f, object_pairs_hook=OrderedDict)
-                cov_report = SampleReport.load(data, s)
-                mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
-                info(s.name + ': ')
-                info('  Mapped reads: ' + str(mapped_reads))
-                mapped_reads_by_sample[s.name] = mapped_reads
+                else:
+                    if s.name not in bam_by_sample:
+                        err('No BAM for ' + s.name + ', not running Seq2C')
+                        return None, None
 
-            else:
-                if s.name not in bam_by_sample:
-                    err('No BAM for ' + s.name + ', not running Seq2C')
-                    return None, None
+                    info('Submitting a sambamba job to get mapped read numbers')
+                    bam_fpath = bam_by_sample[s.name]
+                    j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True, sample_name=s.name)
+                    job_by_sample[s.name] = j
+                    submitted_samples.append(s)
+                    if not j.is_done:
+                        jobs_to_wait.append(j)
+                    if len(jobs_to_wait) >= cnf.threads:
+                        not_submitted_samples = [_s for _s in not_submitted_samples if
+                                                 _s not in submitted_samples and
+                                                 _s not in reused_samples]
 
-                info('Submitting a sambamba job to get mapped read numbers')
-                bam_fpath = bam_by_sample[s.name]
-                j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True, sample_name=s.name)
-                job_by_sample[s.name] = j
+                        if not_submitted_samples:
+                            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
+                                     'submitting more ' + str(len(not_submitted_samples)))
+                        else:
+                            info('Submitted ' + str(len(jobs_to_wait)) + ' last jobs.')
+                        info()
+                        break
+                    info()
 
-    wait_for_jobs(cnf, job_by_sample.values())
+        info()
+        info('-' * 70)
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No annotation jobs to submit.')
+        info('')
+        info('-' * 70)
+        info('Finihsed annotating ' + str(len(jobs_to_wait)) + ' jobs')
+        for j in jobs_to_wait:
+            if j.is_done and not j.is_failed and not verify_file(j.output_fpath):
+                j.is_failed = True
+            if j.is_done and not j.is_failed:
+                if 'work_dir' in j.__dict__ and isdir(j.work_dir):
+                    os.system('rm -rf ' + j.work_dir)
+
+        processed = sum(1 for j in jobs_to_wait if j.is_done)
+        failed = sum(1 for j in jobs_to_wait if j.is_failed)
+        success = sum(1 for j in jobs_to_wait if j.is_done and not j.is_failed)
+        total_failed += failed
+        total_reused += len(reused_samples)
+        total_processed += processed
+        total_success += success
+        info('Reused: ' + str(len(reused_samples)))
+        info('Processed: ' + str(processed))
+        info('Success: ' + str(success))
+        info('Failed: ' + str(failed))
+        info()
+
+        not_submitted_samples = [s for s in not_submitted_samples if
+                                 s not in submitted_samples and
+                                 s not in reused_samples]
+
+    info('-' * 70)
+    info('Done with all ' + str(len(samples)) + ' samples.')
+    info('Total reused: ' + str(total_reused))
+    info('Total processed: ' + str(total_processed))
+    info('Total success: ' + str(total_success))
+    info('Total failed: ' + str(total_failed))
+    info()
+
+    # wait_for_jobs(cnf, job_by_sample.values())
     for s_name, j in job_by_sample.items():
         if j and j.is_done and not j.is_failed:
             with open(j.output_fpath) as f:
