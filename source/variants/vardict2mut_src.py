@@ -484,7 +484,10 @@ class Filtration:
                     return None
             if gene_aachg in self.tier_by_specific_mutations:
                 tier = self.tier_by_specific_mutations[gene_aachg]
-                self.update_status(Filtration.statuses[tier], 'actionable')
+                if tier == 1:
+                    self.update_status(Filtration.statuses[tier], 'actionable')
+                else:
+                    self.update_status(Filtration.statuses[tier], 'tier2')
                 return True
 
         if region and effect in ['HIGH', 'MODERATE']:
@@ -493,7 +496,10 @@ class Filtration:
             if gene_codon_chg in self.tier_by_specific_mutations:
                 tier = self.tier_by_specific_mutations[gene_codon_chg]
                 # status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated_codon_' + codon + '_in_exon_' + region)
-                self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
+                if tier == 1:
+                    self.update_status(Filtration.statuses[tier], 'tier2_codon_' + codon + '_in_exon_' + region)
+                else:
+                    self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
                 return True
 
     def check_by_general_rules(self, var_type, is_lof, gene):
