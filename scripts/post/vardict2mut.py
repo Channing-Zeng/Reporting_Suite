@@ -5,7 +5,8 @@ import bcbio_postproc
 from optparse import OptionParser
 import sys
 
-from source import verify_file
+import source
+from source import verify_file, add_suffix
 from source.config import Config
 from source import logger
 from source.file_utils import adjust_path, verify_dir
@@ -83,18 +84,22 @@ def main():
         info('Writing info for all transcripts to ' + cnf.all_transcripts_output_file)
     if cnf.fm_output_file:
         info('Writing in FM format to ' + cnf.fm_output_file)
+    rejected_output_fname = cnf.output_file.replace(source.mut_pass_suffix, source.mut_reject_suffix) \
+        if source.mut_pass_suffix in cnf.output_file else add_suffix(cnf.output_file, source.mut_reject_suffix)
+    info('Writing rejected mutations to ' + rejected_output_fname)
 
     f = Filtration(cnf)
 
     input_f = open(verify_file(vcf2txt_res_fpath))
     output_f = open(adjust_path(cnf.output_file), 'w')
+    rejected_output_f = open(adjust_path(rejected_output_fname), 'w')
     fm_output_f = open(adjust_path(cnf.fm_output_file), 'w') if cnf.fm_output_file else None
     all_transcripts_output_f = open(adjust_path(cnf.all_transcripts_output_file), 'w') if cnf.all_transcripts_output_file else None
 
     info()
     info('-' * 70)
     info('Running filtering...')
-    f.do_filtering(input_f, output_f, fm_output_f, all_transcripts_output_f)
+    f.do_filtering(input_f, output_f, fm_output_f, all_transcripts_output_f, rejected_output_f)
 
     input_f.close()
     output_f.close()
@@ -104,6 +109,7 @@ def main():
         all_transcripts_output_f.close()
 
     info()
+    info('Rejected mutations saved to ' + rejected_output_fname)
     info('Saved to ' + cnf.output_file)
 
 

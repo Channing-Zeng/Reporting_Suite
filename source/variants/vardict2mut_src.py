@@ -576,6 +576,14 @@ class Filtration:
         if no_transcript:
             self.no_transcript_counter[reason] += 1
 
+    def reject_mutation(self, reason, is_canonical, no_transcript, rejected_output_f, status, fields):
+        self.apply_reject_counter(reason, is_canonical, no_transcript)
+        if rejected_output_f:
+            self.print_rejected_mutation(rejected_output_f, status, reason, fields)
+
+    def print_rejected_mutation(self, output_f, status, reason, fields):
+        output_f.write('\t'.join(fields + [status] + [reason]) + '\n')
+
     def apply_reject_counter(self, reason, is_canonical, no_transcript):
         self.all_reject_counter[reason] += 1
         if is_canonical:
@@ -616,7 +624,7 @@ class Filtration:
                     reasons.append(reason)
         return reasons
 
-    def do_filtering(self, input_f, output_f, fm_output_f=None, all_transcripts_output_f=None):
+    def do_filtering(self, input_f, output_f, fm_output_f=None, all_transcripts_output_f=None, rejected_output_f=None):
         pass_col = None
         sample_col = None
         chr_col = None
@@ -704,12 +712,16 @@ class Filtration:
                 output_f.write(l)
                 if all_transcripts_output_f:
                     all_transcripts_output_f.write(l)
+                if rejected_output_f:
+                    header = '\t'.join(new_headers[:-1]) + '\n'
+                    rejected_output_f.write(header)
                 continue
 
             fields = l.split('\t')
             if len(fields) < len(headers):
                 critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(headers)) + ')')
 
+            self.status = 'unknown'
             no_transcript = True
             is_canonical = False
             if fields[transcript_col] and fields[gene_coding_col] == 'transcript':
@@ -718,11 +730,11 @@ class Filtration:
                     is_canonical = True
             if not all_transcripts_output_f:
                 if not is_canonical and not no_transcript:
-                    self.apply_reject_counter('not canonical transcript', True, no_transcript)
+                    self.reject_mutation('not canonical transcript', True, no_transcript, rejected_output_f, self.status, fields)
                     continue
 
             if fields[pass_col] != 'TRUE':
-                self.apply_reject_counter('PASS=False', is_canonical, no_transcript)
+                self.reject_mutation('PASS=False', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                 continue
 
             if prev_incidentalome_col:
@@ -747,14 +759,16 @@ class Filtration:
             var_type = var_type.upper()
 
             if var_type.startswith('PROTEIN_PROTEIN_CONTACT'):
-                self.apply_reject_counter('PROTEIN_PROTEIN_CONTACT', is_canonical, no_transcript)
+                self.reject_mutation('PROTEIN_PROTEIN_CONTACT', is_canonical, no_transcript, None, self.status, fields)
                 continue
 
             if depth < self.filt_depth:
-                self.apply_reject_counter('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript)
+                self.reject_mutation('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript,
+                                     rejected_output_f, self.status, fields)
                 continue
             if fields[vd_col] < self.min_vd and af >= 0.5:
-                self.apply_reject_counter('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript)
+                self.reject_mutation('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript,
+                                     rejected_output_f, self.status, fields)
                 continue
 
             region = ''
@@ -765,7 +779,6 @@ class Filtration:
 
             is_lof = fields[lof_col]
 
-            self.status = 'unknown'
             self.reason_by_status = {k: set() for k in Filtration.statuses}
 
             #################################
@@ -779,11 +792,11 @@ class Filtration:
 
             fail_reason = self.fails_filters(chrom, pos, ref, alt, gene, aa_chg)
             if fail_reason:
-                self.apply_reject_counter(fail_reason, is_canonical, no_transcript)
+                self.reject_mutation(fail_reason, is_canonical, no_transcript, rejected_output_f, self.status, fields)
                 continue
 
             if gene in self.common_snps_by_gene and aa_chg in self.common_snps_by_gene[gene]:
-                self.apply_reject_counter('common SNP', is_canonical, no_transcript)
+                self.reject_mutation('common SNP', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                 continue
 
             if is_lof:
@@ -795,26 +808,31 @@ class Filtration:
 
             if not actionability:
                 if nt_chg_key in self.filter_snp:
-                    self.apply_reject_counter('not act and in filter_common_snp', is_canonical, no_transcript)
+                    self.reject_mutation('not act and in filter_common_snp', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
                 if nt_chg_key in self.filter_artifacts and af < 0.35:
-                    self.apply_reject_counter('not act and in filter_artifacts and AF < 0.35', is_canonical, no_transcript)
+                    self.reject_mutation('not act and in filter_artifacts and AF < 0.35', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
                 gmaf = fields[headers.index('GMAF')]
                 if gmaf and all(not g or float(g) > self.min_gmaf for g in gmaf.split(',')):
-                    self.apply_reject_counter('not act and all GMAF > ' + str(self.min_gmaf), is_canonical, no_transcript)
+                    self.reject_mutation('not act and all GMAF > ' + str(self.min_gmaf), is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
                 clncheck = check_clnsig(fields[clnsig_col])
                 if clncheck == 'dbSNP':  # Even if it's COSMIC in status, it's going to be filtered in case of low ClinVar significance
-                    self.apply_reject_counter('clnsig dbSNP', is_canonical, no_transcript)
+                    self.reject_mutation('clnsig dbSNP', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if '-'.join([gene, aa_chg]) in self.snpeff_snp and clncheck != 'ClnSNP_known':
-                    self.apply_reject_counter('not act and not ClnSNP_known and in snpeff_snp', is_canonical, no_transcript)
+                    self.reject_mutation('not act and not ClnSNP_known and in snpeff_snp', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
 
             snps = re.findall(r'rs\d+', fields[3])
             if any(snp in self.snpeff_snp_rsids for snp in snps):
-                self.apply_reject_counter('snp in snpeffect_export_polymorphic', is_canonical, no_transcript)
+                self.reject_mutation('snp in snpeffect_export_polymorphic', is_canonical, no_transcript,
+                                     rejected_output_f, self.status, fields)
                 continue
 
             if sample_regexp:
@@ -835,7 +853,7 @@ class Filtration:
                     msi == 12 and af < 0.3,
                     msi >  12 and af < 0.35])
                 if msi_fail:
-                    self.apply_reject_counter('MSI fail', is_canonical, no_transcript)
+                    self.reject_mutation('MSI fail', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
 
             cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
@@ -849,10 +867,12 @@ class Filtration:
 
             if actionability:
                 if actionability == 'germline' and af < self.germline_min_freq:
-                    self.apply_reject_counter('act germline and AF < ' + str(self.act_min_freq), is_canonical, no_transcript)
+                    self.reject_mutation('act germline and AF < ' + str(self.act_min_freq), is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
                 if af < self.act_min_freq:
-                    self.apply_reject_counter('act somatic and AF < ' + str(self.germline_min_freq), is_canonical, no_transcript)
+                    self.reject_mutation('act somatic and AF < ' + str(self.germline_min_freq), is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
             else:
                 if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
@@ -861,43 +881,47 @@ class Filtration:
                     # so it might filter out some somatic mutation. But keeping those will increase silent
                     # mutation nearly 10 times. Just another evidence how noisy COSMIC is.
                     if var_class == 'dbSNP' or any(f.startswith('rs') for f in fields[headers.index('ID')].split(';')):
-                        self.apply_reject_counter('SYNONYMOUS and dbSNP', is_canonical, no_transcript)
+                        self.reject_mutation('SYNONYMOUS and dbSNP', is_canonical, no_transcript,
+                                             rejected_output_f, self.status, fields)
                         continue
                     self.update_status('unknown', 'silent')
                 if var_type.startswith('INTRON') and self.status == 'unknown':
-                    self.apply_reject_counter('not act and unknown and in INTRON', is_canonical, no_transcript)
+                    self.reject_mutation('not act and unknown and in INTRON', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
                 if 'SPLICE' in var_type and not aa_chg and self.status == 'unknown':
-                    self.apply_reject_counter('not act and SPLICE and no aa_ch\g and unknown', is_canonical, no_transcript)
+                    self.reject_mutation('not act and SPLICE and no aa_ch\g and unknown', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
                 if self.min_freq and af < self.min_freq:
-                    self.apply_reject_counter('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript)
+                    self.reject_mutation('not act and AF < ' + str(self.min_freq) + ' (min_freq)', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
 
             if not actionability and self.status != 'known':
                 if var_type.startswith('UPSTREAM'):
-                    self.apply_reject_counter('not known and UPSTREAM', is_canonical, no_transcript)
+                    self.reject_mutation('not known and UPSTREAM', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if var_type.startswith('DOWNSTREAM'):
-                    self.apply_reject_counter('not known and DOWNSTREAM', is_canonical, no_transcript)
+                    self.reject_mutation('not known and DOWNSTREAM', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if var_type.startswith('INTERGENIC'):
-                    self.apply_reject_counter('not known and INTERGENIC', is_canonical, no_transcript)
+                    self.reject_mutation('not known and INTERGENIC', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if var_type.startswith('INTRAGENIC'):
-                    self.apply_reject_counter('not known and INTRAGENIC', is_canonical, no_transcript)
+                    self.reject_mutation('not known and INTRAGENIC', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if 'UTR_' in var_type and 'CODON' not in var_type:
-                    self.apply_reject_counter('not known and not UTR_/CODON', is_canonical, no_transcript)
+                    self.reject_mutation('not known and not UTR_/CODON', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if 'NON_CODING' in gene_coding.upper():
-                    self.apply_reject_counter('not known and NON_CODING', is_canonical, no_transcript)
+                    self.reject_mutation('not known and NON_CODING', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if fclass.upper().startswith('NON_CODING'):
-                    self.apply_reject_counter('not known and fclass=NON_CODING', is_canonical, no_transcript)
+                    self.reject_mutation('not known and fclass=NON_CODING', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
                 if var_class == 'dbSNP':
-                    self.apply_reject_counter('not known and dbSNP', is_canonical, no_transcript)
+                    self.reject_mutation('not known and dbSNP', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
 
             # Ignore any variants that occur after last known critical amino acid
@@ -906,7 +930,8 @@ class Filtration:
                 aa_pos = int(aa_chg_pos_regexp.findall(aa_chg)[0])
             if aa_pos is not None:
                 if gene in self.last_critical_aa_pos_by_gene and aa_pos >= self.last_critical_aa_pos_by_gene[gene]:
-                    self.apply_reject_counter('variants occurs after last known critical amino acid', is_canonical, no_transcript)
+                    self.reject_mutation('variants occurs after last known critical amino acid', is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
                     continue
 
             # if not actionability and self.status != 'known':
@@ -915,11 +940,11 @@ class Filtration:
             blacklisted_reasons = bl_gene_reasons + bl_region_reasons
             if bl_gene_reasons or bl_region_reasons:
                 # if self.status == 'unknown' and 'silent' in self.reason_by_status[self.status]:
-                #     self.apply_reject_counter('blacklist and silent', is_canonical, no_transcript)
+                #     self.reject_mutation('blacklist and silent', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                 #     continue
                 self.apply_gene_blacklist_counter(', '.join(bl_gene_reasons + bl_region_reasons))
             if 'hardfilter' in bl_gene_reasons and not actionability and self.status != 'known':
-                self.apply_reject_counter('blacklist gene', is_canonical, no_transcript)
+                self.reject_mutation('blacklist gene', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                 continue
 
             # if bl_region_reasons and not actionability and self.status != 'known' and gene not in self.gene_to_soft_filter:
