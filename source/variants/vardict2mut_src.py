@@ -693,7 +693,7 @@ class Filtration:
                 if 'Significance' in headers:
                     prev_status_col = headers.index('Significance')
                     prev_reason_col = headers.index('Reason')
-                    new_headers = headers + ['NewSignificance', 'NewReason']
+                    new_headers = headers + ['NewSignificance', 'NewReason', 'Incidentalome']
                     if 'Incidentalome' in headers:
                         prev_incidentalome_col = headers.index('Incidentalome')
                         new_headers = headers[:-1] + ['NewSignificance', 'NewReason', headers[-1]]
@@ -701,7 +701,7 @@ class Filtration:
                     new_headers = headers + ['Significance', 'Reason']
 
                 l = '\t'.join(new_headers) + '\n'
-                output_f.write(l + '\n')
+                output_f.write(l)
                 if all_transcripts_output_f:
                     all_transcripts_output_f.write(l)
                 continue
