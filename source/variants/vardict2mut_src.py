@@ -230,7 +230,7 @@ class Filtration:
                 self.filter_rules_by_gene[gene].append(rule)
             else:
                 alt = fields[4]
-                self.filter_artifacts.add('-'.join([gene, chrom, start, ref, alt]))
+                self.filter_artifacts.add('-'.join([chrom, start, ref, alt]))
 
         self.actionable_hotspot_by_gene = defaultdict(dict)
         self.common_snps_by_gene = defaultdict(set)
@@ -640,11 +640,12 @@ class Filtration:
         transcript_col = None
         effect_col = None
         exon_col = None
-        status_col = None
-        reason_col = None
-        incidentalome_col = None
         lof_col = None
         clnsig_col = None
+
+        prev_status_col = None
+        prev_reason_col = None
+        prev_incidentalome_col = None
 
         headers = []
 
@@ -687,28 +688,24 @@ class Filtration:
                 transcript_col = headers.index('Transcript')
                 exon_col = headers.index('Exon')
                 clnsig_col = headers.index('CLNSIG')
-                try:
-                    lof_col = headers.index('LOF')
-                except ValueError:
-                    lof_col = None
-                try:
-                    reason_col = headers.index('Reason')
-                except ValueError:
-                    reason_col = None
+                lof_col = headers.index('LOF')
+
+                if 'Significance' in headers:
+                    prev_status_col = headers.index('Significance')
+                    prev_reason_col = headers.index('Reason')
+                    new_headers = headers + ['NewSignificance', 'NewReason']
+                    if 'Incidentalome' in headers:
+                        prev_incidentalome_col = headers.index('Incidentalome')
+                        new_headers = headers[:-1] + ['NewSignificance', 'NewReason', headers[-1]]
                 else:
-                    status_col = reason_col - 1
-                try:
-                    incidentalome_col = headers.index('Incidentalome')
-                except ValueError:
-                    incidentalome_col  = None
-                if not status_col and not reason_col:
-                    l += '\tSignificance\tReason'
-                if not incidentalome_col:
-                    l += '\tIncidentalome'
+                    new_headers = headers + ['Significance', 'Reason']
+
+                l = '\t'.join(new_headers) + '\n'
                 output_f.write(l + '\n')
                 if all_transcripts_output_f:
                     all_transcripts_output_f.write(l + '\n')
                 continue
+
             fields = l.split('\t')
             if len(fields) < len(headers):
                 critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(headers)) + ')')
@@ -728,9 +725,7 @@ class Filtration:
                 self.apply_reject_counter('PASS=False', is_canonical, no_transcript)
                 continue
 
-            if reason_col:
-                fields = fields[:-1]
-            if status_col:
+            if prev_incidentalome_col:
                 fields = fields[:-1]
 
             sample, chrom, pos, ref, alt, aa_chg, cosm_aa_chg, gene, depth = \
@@ -738,7 +733,7 @@ class Filtration:
                 fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
                 float(fields[depth_col])
 
-            if pos == 161518214:  #161514542
+            if pos == 120611964:  #161514542
                 pass
 
             # gene_aachg = '-'.join([gene, aa_chg])
