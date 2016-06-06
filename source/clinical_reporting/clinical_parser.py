@@ -151,11 +151,12 @@ def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wgs_com
     vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
     vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
     mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+    rejected_mutations_fpath = mutations_fpath.replace(source.mut_pass_suffix, source.mut_reject_suffix)
 
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes_fpath=verify_file(adjust_system_path(cnf.key_genes), 'key genes'),
-        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, sv_fpath=sample.find_sv_fpath(),
-        sv_vcf_fpath=verify_file(cnf.sv_vcf_fpath, is_critical=False) if cnf.sv_vcf_fpath else None,
+        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, rejected_mutations_fpath=rejected_mutations_fpath,
+        sv_fpath=sample.find_sv_fpath(), sv_vcf_fpath=verify_file(cnf.sv_vcf_fpath, is_critical=False) if cnf.sv_vcf_fpath else None,
         varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
         project_report_path=bs.project_report_html_fpath, targqc_report_path=bs.targqc_summary_fpath,
@@ -231,7 +232,7 @@ class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes_fpath, target_type,
                  bed_fpath, mutations_fpath, sv_fpath, sv_vcf_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None, targqc_report_path=None,
-                 is_target2wgs_comparison=False):
+                 is_target2wgs_comparison=False, rejected_mutations_fpath=None):
         self.cnf = cnf
         self.sample = sample
         self.project_report_path = project_report_path
@@ -255,6 +256,7 @@ class ClinicalExperimentInfo:
         self.sv_fpath = sv_fpath
         self.sv_vcf_fpath = sv_vcf_fpath
         self.is_target2wgs_comparison = is_target2wgs_comparison
+        self.rejected_mutations = None
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
@@ -309,6 +311,14 @@ class ClinicalExperimentInfo:
                     self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
             info('Retrieving SolveBio...')
             self.get_mut_info_from_solvebio()
+            if rejected_mutations_fpath and verify_file(rejected_mutations_fpath, silent=True):
+                info('Parsing rejected mutations from ' + str(rejected_mutations_fpath))
+                self.rejected_mutations = dict()
+                rejected_mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom,
+                                                          rejected_mutations_fpath, self.genes_collection_type)
+                for mut in rejected_mutations:
+                    self.rejected_mutations[(mut.gene.name, mut.pos)] = mut
+
         else:
             warn('No mutations_fpath provided, skipping mutation stats.')
         info()

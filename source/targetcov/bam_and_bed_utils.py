@@ -542,7 +542,7 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_gr
         return res
 
 
-def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None, sample_name=None):
+def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None, sample_name=None, only_depth=False):
     sample_name = sample_name or splitext_plus(basename(bam))[0]
 
     if not output_fpath:
@@ -556,9 +556,11 @@ def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thres
         else:
             return output_fpath
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
-    depth_thresholds = depth_thresholds or cnf.coverage_reports.depth_thresholds
-    thresholds_str = ' -T'.join([str(d) for d in depth_thresholds])
-    cmdline = 'depth region -F "not duplicate and not failed_quality_control" -L {bed} -T {thresholds_str} {bam}'.format(**locals())
+    thresholds_str = ''
+    if not only_depth:
+        depth_thresholds = depth_thresholds or cnf.coverage_reports.depth_thresholds
+        thresholds_str = '-T ' + ' -T'.join([str(d) for d in depth_thresholds])
+    cmdline = 'depth region -F "not duplicate and not failed_quality_control" -L {bed} {thresholds_str} {bam}'.format(**locals())
 
     return call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam,
         sambamba=sambamba, use_grid=use_grid, command_name='depth_' + splitext_plus(basename(bed))[0],

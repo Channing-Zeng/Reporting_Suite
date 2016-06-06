@@ -60,8 +60,8 @@ def run_combine_clinical_reports(cnf, bcbio_structures, samples_by_group, sample
 
 def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, sample_parameters=None, samples_data=None, is_target2wgs=False):
     report = ComparisonClinicalReporting(cnf, infos_by_key, sample_parameters, samples_data)
-    report.write_report(
-        join(output_dirpath, 'clinical_report.html'), samples_data=samples_data, is_target2wgs=is_target2wgs)
+    # report.write_report(
+    #     join(output_dirpath, 'clinical_report.html'), samples_data=samples_data, is_target2wgs=is_target2wgs)
     report.key_genes_report = None
     sample_nums = set([get_group_num(key) for key in infos_by_key.keys()])
     for num in sample_nums:
@@ -125,11 +125,11 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         for k, e in experiment_by_key.items():
             e.key = k
             import re
-            e.sample.clinical_html = abspath(join(cnf.output_dir, 'clinical_report.html'))
+            e.sample.clinical_html = abspath(join(cnf.output_dir, 'report_' + str(get_group_num(k)) + '.html'))
+            e.cnf.work_dir = cnf.work_dir
             if is_us:
                 e.sample.clinical_html = re.sub('^/ngs/', '/gpfs/ngs/', e.sample.clinical_html)
                 e.project_report_path = re.sub('^/ngs/', '/gpfs/ngs/', e.project_report_path)
-            e.project_report_path = 'report_' + str(get_group_num(k)) + '.html'
             self.sample_names.append(e.sample.name)
         sample_infos = {k: get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True) for k, e in experiment_by_key.iteritems()}
         sorted_sample_infos = sorted(sample_infos.items(), key=lambda x: [x[1][j] for j in range(len(x[1]))])

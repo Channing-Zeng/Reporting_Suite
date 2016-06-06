@@ -13,6 +13,8 @@ from source.calling_process import call
 from source.clinical_reporting.clinical_parser import get_sample_info, get_group_num, capitalize_keep_uppercase
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
+from source.targetcov.bam_and_bed_utils import sambamba_depth
+from source.targetcov.cov import get_mean_cov
 from source.tools_from_cnf import get_script_cmdline
 from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local, gray
 from tools.add_jbrowse_tracks import get_jbrowser_link
@@ -211,20 +213,43 @@ class BaseClinicalReporting:
             else:
                 if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
                     self._find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data)
-                for e, m in mut_by_experiment.items():
-                    if cur_experiments and e not in cur_experiments:
-                        continue
-                    formatted_name = full_names[e]
-                    row.add_record(formatted_name + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
-                    row.add_record(formatted_name + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
+                for e, formatted_name in full_names.items():
+                    if e in mut_by_experiment:
+                        m = mut_by_experiment[e]
+                        row.add_record(formatted_name + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
+                        row.add_record(formatted_name + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
+                    else:
+                        depth = 0
+                        tooltip = ''
+                        if e.rejected_mutations and (mut.gene.name, mut.pos) in e.rejected_mutations:
+                            rejected_mut = e.rejected_mutations[(mut.gene.name, mut.pos)]
+                            depth = gray(str(rejected_mut.depth))
+                            tooltip = str(rejected_mut.reason)
+                            if rejected_mut.alt != mut.alt or mut.aa_change != rejected_mut.aa_change:
+                                tooltip += '<br> Mutation: ' + str(rejected_mut.gene) + ' ' + str(rejected_mut.ref) + '>' + str(rejected_mut.alt) + \
+                                           ' ' + str(rejected_mut.aa_change)
+                            freq = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(rejected_mut.freq * 100) + ' </span>'
+                            row.add_record(formatted_name + ' Freq', freq, show_content=mut.is_canonical, text_color='gray')
+                        if not depth and not e.sample.bam:
+                            continue
+                        if not depth and mut.gene.key in e.key_gene_by_name_chrom:
+                            mut_coord = '{mut.chrom}:{mut.pos}-{mut.pos}'.format(**locals())
+                            sambamba_output_fpath = join(e.cnf.work_dir, formatted_name.replace(' ', '_') + '_pos_depth.txt')
+                            sambamba_depth(e.cnf, mut_coord, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True)
+                            depth = get_mean_cov(sambamba_output_fpath)
+                            depth = gray('%.0f' % depth)
+                            tooltip = 'No mutation'
+                        depth = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + depth + ' </span>'
+                        row.add_record(formatted_name + ' Depth', depth, show_content=mut.is_canonical)
 
             self._highlighting_and_hiding_mut_row(row, mut)
 
+            if len(mutations_by_experiment.values()) > 1:
+                row.class_ = row.class_.replace('incidentalome', '')
             if len(mut_by_experiment.keys()) > 1:
                 # k = float(len(mut_by_experiment.keys())) / len(mutations_by_experiment.keys())
                 # row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
-                if len(mut_by_experiment.keys()) > 1:
-                    row.class_ += ' multiple_occurences_row'
+                row.class_ += ' multiple_occurences_row'
             if create_venn_diagrams:
                 self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index, full_names)
 
@@ -264,10 +289,10 @@ class BaseClinicalReporting:
                     if parameter in sample_parameters:
                         sample_parameters.remove(parameter)
                 num_by_samples[tuple(sample_parameters)].add(get_group_num(e.key))
-                report_link = '<a href="' + e.project_report_path + '" target="_blank">' + e.sample.name + '</a>'
+                report_link = '<a href="' + e.sample.clinical_html + '" target="_blank">' + e.sample.name + '</a>'
                 freq = Metric.format_value(m.freq, is_html=True, unit='%')
                 tooltip = report_link + ':  ' + str(freq) + '  ' + str(m.depth) + '<br>'
-                tooltips.append(e.sample.name, tooltip)
+                tooltips.append((e.sample.name, tooltip))
             tooltips = [tooltip[1] for tooltip in sorted(tooltips)]
             other_occurences = ' '.join([str(len(v)) + ' ' + ' '.join(k) for k, v in num_by_samples.iteritems()])
             other_occurences = ' <span class="my_hover"><div class="my_tooltip">' + ''.join(tooltips) + '</div> ' + other_occurences + ' </span>'
