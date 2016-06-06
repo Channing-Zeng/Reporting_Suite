@@ -235,16 +235,15 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
                     signif_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
                 continue
             fs = l.replace('\n', '').split('\t')
-            sample, gene, chrom, pos, type = fs[sample_col], fs[gene_col], fs[chr_col], fs[pos_col], fs[type_col]
+            sample, gene, chrom, pos, type_ = fs[sample_col], fs[gene_col], fs[chr_col], fs[pos_col], fs[type_col]
             if gene not in key_genes:
                 continue
             mut = OncoprintMutation(chrom, pos, gene)
             mut.aa_change, mut.cdna_change, mut.depth, mut.freq = fs[aa_chg_col], fs[cdna_chg_col], fs[depth_col], float(fs[allele_freq_col])
             mut.status = fs[status_col] if status_col is not None else None
             mut.signif = fs[signif_col] if signif_col is not None else None
-            mut.type = 'Known' if signif_col is not None and \
-                                      fs[signif_col] != 'unknown' else 'Unknown'
-            if 'splice' in type:
+            mut.type = 'Known' if mut.signif != 'unknown' else 'Unknown'
+            if 'splice' in type_:
                 mut.type = 'Splice'
             elif stop_gain_pattern.match(mut.aa_change):
                 mut.type = 'Trunc/FS'
@@ -252,7 +251,7 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
                 mut.type = 'Trunc/FS'
             elif mut.aa_change.startswith('-'):
                 mut.type = 'Trunc/FS'
-            elif aa_chg_pattern.match(mut.aa_change):
+            elif 'missense' in type_:
                 mut.type += '-Missense'
             elif 'ins' in mut.aa_change or 'del' in mut.aa_change:
                 mut.type += '-Indel'

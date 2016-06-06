@@ -3,9 +3,6 @@
 import bcbio_postproc
 
 from optparse import OptionParser
-from os.path import join, abspath, dirname
-from os.path import exists
-import time
 import sys
 
 from source import verify_file
@@ -18,6 +15,10 @@ from source.prepare_args_and_cnf import determine_run_cnf, check_genome_resource
 from source.prepare_args_and_cnf import determine_sys_cnf
 from source.variants.vardict2mut_src import Filtration
 
+
+# Compare with perl version:
+# $ perl /Users/vlad/vagrant/reporting_suite/VarDict/vardict2mut.pl -f 0.075 -F 0.025 -D 3 -V 4
+# $ perl /group/ngs/src/az.reporting/VarDict/vardict2mut.pl t.txt -f 0.075 -F 0.025 -D 3 -V 4
 
 def get_args():
     info(' '.join(sys.argv))

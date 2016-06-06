@@ -564,6 +564,8 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
                 for line_i, l in enumerate(f):
                     if line_i > 0:
                         fs = l.replace('\n', '').split()
+                        if not fs:
+                            continue
                         chrom, pos, db_id, ref, alt = fs[1:6]
                         vark = ':'.join([chrom, pos, ref, alt])
                         if vark in met_in_this_sample:

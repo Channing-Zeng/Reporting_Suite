@@ -24,7 +24,7 @@ from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
 from source.file_utils import safe_mkdir
-from source.logger import info, err, critical, send_email, warn, is_local
+from source.logger import info, err, critical, send_email, warn, is_local, CriticalError
 from source.targetcov.bam_and_bed_utils import verify_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bed, \
     check_md5
 from source.utils import is_us, md5, is_uk, is_sweden
@@ -918,7 +918,7 @@ class BCBioRunner:
             info('Interrupted.')
         except SystemExit:
             info('Interrupted.')
-        except Exception as e:
+        except CriticalError as e:
             info('Finished with errors.')
             error_msg = e.args[0]
         finally:
@@ -936,7 +936,6 @@ class BCBioRunner:
                 err('Done post-processing with errors:')
                 err('-' * 70)
                 err(error_msg)
-                err('-' * 70)
             else:
                 info('Done post-processing.')
 

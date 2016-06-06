@@ -164,6 +164,10 @@ def send_email(msg_other='', subj='', only_me=False):
                 print_msg()
 
 
+class CriticalError(Exception):
+    pass
+
+
 def critical(msg=''):
     if isinstance(msg, basestring):
         err(msg, severity='critical')
@@ -172,7 +176,7 @@ def critical(msg=''):
             return
         for m in msg:
             err(m, severity='critical')
-    raise Exception(msg)
+    raise CriticalError(msg)
 
 
 def _log(out, msg='', ending='\n', print_date=True, severity=None):

@@ -703,7 +703,7 @@ class Filtration:
                 l = '\t'.join(new_headers) + '\n'
                 output_f.write(l + '\n')
                 if all_transcripts_output_f:
-                    all_transcripts_output_f.write(l + '\n')
+                    all_transcripts_output_f.write(l)
                 continue
 
             fields = l.split('\t')
