@@ -698,7 +698,7 @@ class Filtration:
                         prev_incidentalome_col = headers.index('Incidentalome')
                         new_headers = headers[:-1] + ['NewSignificance', 'NewReason', headers[-1]]
                 else:
-                    new_headers = headers + ['Significance', 'Reason']
+                    new_headers = headers + ['Significance', 'Reason', 'Incidentalome']
 
                 l = '\t'.join(new_headers) + '\n'
                 output_f.write(l)
