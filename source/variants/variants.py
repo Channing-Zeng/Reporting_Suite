@@ -4,12 +4,13 @@ from genericpath import isfile, isdir
 from os.path import basename, join
 
 import source
+from source.config import with_cnf
 from source.logger import info, err, debug, critical, warn
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transaction
-from source.variants.filtering import combine_results
+from source.variants.filtering import combine_results, check_filtering_results
 from source.variants.vcf_processing import verify_vcf
 
 
@@ -187,8 +188,8 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
             output_fpath = sample.variants_fpath = join(sample.varfilter_dirpath, variants_fname)
             pass_output_fpath = add_suffix(sample.variants_fpath, source.mut_pass_suffix)
 
-            if cnf.reuse_intermediate and isfile(output_fpath) and verify_file(output_fpath) \
-                    and isfile(pass_output_fpath) and verify_file(pass_output_fpath):
+            if cnf.reuse_intermediate and check_filtering_results(output_fpath) \
+                    and check_filtering_results(pass_output_fpath):
                 info('Filtered results ' + output_fpath + ' and ' + pass_output_fpath + ' exist, reusing.')
                 reused_samples.append(sample)
                 info()
@@ -213,11 +214,12 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                    (' --qc' if cnf.qc else ' --no-qc') +
                    (' --no-tsv' if not cnf.tsv else '')
                 ).format(**locals())
-            j = submit_job(cnf, cmdl,
-                job_name='_filt_' + sample.name,
-                output_fpath=pass_output_fpath,
-                stdout_to_outputfile=False,
-                work_dir=work_dir)
+            with with_cnf(cnf, reuse_intermediate=False):
+                j = submit_job(cnf, cmdl,
+                    job_name='_filt_' + sample.name,
+                    output_fpath=pass_output_fpath,
+                    stdout_to_outputfile=False,
+                    work_dir=work_dir)
             if not j.is_done:
                 jobs_to_wait.append(j)
             submitted_samples.append(sample)
