@@ -7,6 +7,7 @@ import tabix
 from source import verify_file
 from source.file_utils import adjust_path, verify_dir, adjust_system_path
 from source.logger import info, critical, err, warn, debug
+from source.targetcov.flag_regions import tricky_regions_fnames_d
 from source.tools_from_cnf import get_system_path
 from source.utils import OrderedDefaultDict
 
@@ -33,20 +34,20 @@ def _read_list(reason, fpath):
 def parse_gene_blacklists(cnf):
     _d = OrderedDict()
     if 'published' in cnf.variant_filtering.blacklist.genes:
-        _d['freq mut gene in HGMD'] = 'published/flags_in_hgmd.txt'
-        _d['freq mut gene in OMIM'] = 'published/flags_in_omim.txt'
-        _d['freq mut gene'] = 'published/flags.txt'
-        _d['incidentalome gene'] = 'published/incidentalome.txt'
-        _d['mutSigCV gene'] = 'published/mutsigcv.txt'
+        _d['Freq mut gene in HGMD'] = 'published/flags_in_hgmd.txt'
+        _d['Freq mut gene in OMIM'] = 'published/flags_in_omim.txt'
+        _d['Freq mut gene'] = 'published/flags.txt'
+        _d['Incidentalome gene'] = 'published/incidentalome.txt'
+        _d['MutSigCV gene'] = 'published/mutsigcv.txt'
     if 'low_complexity' in cnf.variant_filtering.blacklist.genes:
-        _d['low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
+        _d['Low complexity gene'] = 'low_complexity/low_complexity_entire_gene.txt'
     if 'repetitive_single_exome' in cnf.variant_filtering.blacklist.genes:
-        _d['repetitive single exon gene'] = 'low_complexity/repetitive_single_exon_gene.txt'
+        _d['Repetitive single exon gene'] = 'low_complexity/repetitive_single_exon_gene.txt'
     if 'abnormal_gc' in cnf.variant_filtering.blacklist.genes:
-        _d['low GC gene'] = 'low_complexity/low_gc.txt'
-        _d['high GC gene'] = 'low_complexity/high_gc.txt'
+        _d['Low GC gene'] = 'low_complexity/low_gc.txt'
+        _d['High GC gene'] = 'low_complexity/high_gc.txt'
     if 'too_many_cosmic_mutations' in cnf.variant_filtering.blacklist.genes:
-        _d['gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
+        _d['Gene with too many COSMIC mutations'] = 'low_complexity/too_many_cosmic_mutations.txt'
     _d['hardfilter'] = 'blacklist.txt'
 
     d = OrderedDefaultDict(dict)
@@ -61,13 +62,12 @@ def load_region_blacklists(cnf):
     for region_type in cnf.variant_filtering.blacklist.regions:
         fpath = verify_file(join(cnf.genome.tricky_regions, 'new', region_type + '.bed.gz'),
                             description=region_type + ' tricky regions file', is_critical=True)
-        # d[reason] = build_interval_tree(fpath)
-        reason = region_type.replace('_', ' ').replace('heng', 'Heng\'s').replace('lt51bp', '< 51bp')
-        if 'gc' in reason:
-            reason = reason.replace('to', '-').replace('gc', 'GC ') + '%'
-        if 'complexity' in reason:
-            reason = reason.replace('to', '-')
-        d[reason] = tabix.open(fpath)
+        # reason = region_type.replace('_', ' ').replace('heng', 'Heng\'s').replace('lt51bp', '< 51bp')
+        # if 'gc' in reason:
+        #     reason = reason.replace('to', '-').replace('gc', 'GC ') + '%'
+        # if 'complexity' in reason:
+        #     reason = reason.replace('to', '-')
+        d[tricky_regions_fnames_d[region_type]] = tabix.open(fpath)
     return d
 
 
@@ -223,13 +223,12 @@ class Filtration:
         self.filter_rules_by_gene = defaultdict(list)
         for l in iter_lines(cnf.genome.filter_common_artifacts):
             fields = l.split('\t')
-            gene, chrom, start, ref = fields[:4]
             if fields[5] == 'rule':
-                action = fields[4]
-                rule = Rule(gene, chrom=chrom, start=start, ref=ref, action=action)
+                gene, chrom, start, end, action = fields[:5]
+                rule = Rule(gene, chrom=chrom, start=int(start), end=int(end), action=action)
                 self.filter_rules_by_gene[gene].append(rule)
             else:
-                alt = fields[4]
+                gene, chrom, start, ref, alt = fields[:5]
                 self.filter_artifacts.add('-'.join([chrom, start, ref, alt]))
 
         self.actionable_hotspot_by_gene = defaultdict(dict)
@@ -314,7 +313,6 @@ class Filtration:
 
         info('Parsing spreadsheat with actionable rules...')
         self.tier_by_specific_mutations, \
-        self.genes_with_generic_rules, \
         self.tier_by_type_by_region_by_gene, \
         self.sensitizations_by_gene, \
         self.specific_transcripts_by_aachg = parse_specific_mutations(cnf.specific_mutations)
@@ -501,20 +499,6 @@ class Filtration:
                 else:
                     self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
                 return True
-
-    def check_by_general_rules(self, var_type, is_lof, gene):
-        if gene in self.genes_with_generic_rules:
-            # if 'splice_site' in reasons:
-            #     status, reasons = self.update_status(status, reasons, 'known', ['general_rules'] + reasons)
-            if is_lof:
-                self.update_status('known', 'act_lof' + '_of_gene_' + gene)
-                return True
-            elif 'EXON_LOSS' in var_type or 'EXON_DELETED' in var_type:
-                self.update_status('known', 'act_exon_loss' + '_in_gene_' + gene)
-                return True
-            else:
-                return False
-                # Is in general rules, but does not alter protein function
 
     def check_by_type_and_region(self, cdna_chg, region, gene):
         types_by_region = self.tier_by_type_by_region_by_gene.get(gene)
@@ -745,7 +729,7 @@ class Filtration:
                 fields[alt_col], fields[aa_chg_col], fields[cosmaachg_col], fields[gene_col], \
                 float(fields[depth_col])
 
-            if pos == 120611964:  #161514542
+            if pos == 66512290:  #161514542
                 pass
 
             # gene_aachg = '-'.join([gene, aa_chg])
@@ -766,7 +750,7 @@ class Filtration:
                 self.reject_mutation('depth < ' + str(self.filt_depth) + ' (filt_depth)', is_canonical, no_transcript,
                                      rejected_output_f, self.status, fields)
                 continue
-            if fields[vd_col] < self.min_vd and af >= 0.5:
+            if int(fields[vd_col]) < self.min_vd and af < 0.5:
                 self.reject_mutation('VD < ' + str(self.min_vd) + ' (min_vd) and AF >= 0.5', is_canonical, no_transcript,
                                      rejected_output_f, self.status, fields)
                 continue
@@ -787,8 +771,7 @@ class Filtration:
             actionability = \
                 self.check_actionable(chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, fields[clnsig_col]) or \
                 self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or \
-                self.check_by_type_and_region(cdna_chg, region, gene) or \
-                self.check_by_general_rules(var_type, is_lof, gene)
+                self.check_by_type_and_region(cdna_chg, region, gene)
 
             fail_reason = self.fails_filters(chrom, pos, ref, alt, gene, aa_chg)
             if fail_reason:
@@ -1051,7 +1034,6 @@ aa_snp_chg_pattern = re.compile('^[A-Z]\d+[A-Z]$')
 
 
 def parse_specific_mutations(specific_mut_fpath):
-    genes_with_generic_rules = set()
     tier_by_specific_mutations = dict()
     tier_by_type_by_region_by_gene = defaultdict(dict)
     spec_transcripts_by_aachg = defaultdict()
@@ -1076,9 +1058,7 @@ def parse_specific_mutations(specific_mut_fpath):
                 if line[index]:
                     mut = line[index]
                     tier = index - 1
-                    if mut == 'generic':
-                        genes_with_generic_rules.add(gene)
-                    elif 'types' in mut:
+                    if 'types' in mut:
                         types = mut.split(':')[1].split(',')
                         for region in regions:
                             tier_by_type_by_region_by_gene[gene][region] = dict()
@@ -1109,8 +1089,8 @@ def parse_specific_mutations(specific_mut_fpath):
                             for mut in mutations:
                                 spec_transcripts_by_aachg[mut] = line[-1].strip()
 
-    return tier_by_specific_mutations, genes_with_generic_rules, \
-           tier_by_type_by_region_by_gene, dependent_mutations_by_gene, spec_transcripts_by_aachg
+    return tier_by_specific_mutations, tier_by_type_by_region_by_gene, \
+           dependent_mutations_by_gene, spec_transcripts_by_aachg
 
 
 # def is_loss_of_function(reasons, is_lof=None):

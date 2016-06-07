@@ -54,7 +54,6 @@ PIK3CA	20		N1044Y
 PIK3CA	20		G1049R			
 PIK3CA	20		A1046V			
 AKT1	2	E17K		NM_005163.2		
-PTEN	Exons 1-9	generic	generic	NM_000314.3		
 PTEN	1			NM_000314.4		
 PTEN	2		Y27D			
 PTEN	2		A34D			
@@ -194,7 +193,6 @@ FGFR3	15	K715M
 FGFR3	16					
 FGFR3	INTRON 16-17					
 FGFR3	17					
-STK11	Exons 1-9	generic	generic			
 STK11	1		G56V	NM_000455.4		
 STK11	1		G56W			
 STK11	1		L67P			
@@ -220,7 +218,6 @@ STK11	6
 STK11	7		R304W			
 STK11	8					
 STK11	9					
-TSC1	Exons 1-21	generic	generic			
 TSC1	21					
 TSC1	20					
 TSC1	19		A883T			
@@ -260,7 +257,6 @@ TSC1	2		L61P
 TSC1	2		L61R			
 TSC1	1		L50P	NM_000368.4		
 TSC1	Exons 1-42					
-TSC2	1	generic	generic			
 TSC2	2		S30C	NM_000548.3		
 TSC2	2		R57H			
 TSC2	3		E75G			
@@ -459,7 +455,6 @@ EGFR	21	L861Q (TKI sens)	p.A839T (TKI sens)
 EGFR	21		p.K846R (TKI sens)			
 EGFR	21		p.L861R (TKI sens)			
 EGFR	21		p.G863D (TKI sens)			
-NF1	Exons 1-58	generic	generic			
 NF1	1			NM_001042492.2		
 NF1	2		N45K			
 NF1	3		N45K	NM_000267.3		

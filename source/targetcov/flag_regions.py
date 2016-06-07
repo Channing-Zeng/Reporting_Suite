@@ -373,7 +373,6 @@ single_report_metric_storage = MetricStorage(
     ])])
 
 
-
 tricky_regions_fnames_d = {
     'bad_promoter': 'Bad promoter',
     'gc0to15': 'GC 0-15%',
@@ -388,7 +387,7 @@ tricky_regions_fnames_d = {
     'low_complexity_lt51bp': 'Low complexity <51bp',
     'low_complexity_51to200bp': 'Low complexity 51-200bp',
     'low_complexity_gt200bp': 'Low complexity >200bp',
-    'heng_universal_mask': 'Heng\'s universal mask',
+    'heng_universal_mask': 'Heng\'s mask',
     'repeats': 'Repeats',
     'self_chain': 'Self chain',
 }

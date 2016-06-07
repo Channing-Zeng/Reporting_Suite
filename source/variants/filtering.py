@@ -639,7 +639,6 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
                                     fs[ave_af_col] = ''
                                     l = '\t'.join(fs) + '\n'
 
-                                    print 'status_col=' + str(status_col) + ': ' + fs[status_col]
                                     if fs[status_col] in ['known', 'likely']:
                                         not_filtered_variants_count += 1
                                     elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
