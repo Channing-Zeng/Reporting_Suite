@@ -57,7 +57,7 @@ mut_fname_template = '{caller_name}.' + mut_file_ext
 mut_single_suffix = 'single'
 mut_paired_suffix = 'paired'
 mut_pass_suffix = 'PASS'
-mut_reject_suffix = 'reject'
+mut_reject_suffix = 'REJECT'
 
 
 class BaseSample:

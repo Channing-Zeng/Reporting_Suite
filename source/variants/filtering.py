@@ -112,6 +112,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
     cmdline = None
     if vardict2mut_res_fpath is None:
         vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
+    vardict2mut_reject_fpath = add_suffix(vcf2txt_res_fpath, source.mut_reject_suffix)
 
     if not vardict2mut_executable:
         vardict2mut_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
@@ -143,6 +144,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
         cmdline += (' --reuse ' if cnf.reuse_intermediate else '')
         cmdline += ' --genome ' + cnf.genome.name
         cmdline += ' -o ' + vardict2mut_res_fpath
+        cmdline += ' --o-reject ' + vardict2mut_reject_fpath
 
         # all_transcripts_path = add_suffix(vardict2mut_res_fpath, 'all_transcripts')
         # fm_path = splitext(vardict2mut_res_fpath)[0] + '.fm'

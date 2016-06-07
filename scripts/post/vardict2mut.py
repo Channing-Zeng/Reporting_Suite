@@ -33,6 +33,7 @@ def get_args():
     parser.add_option('-o', dest='output_file')
     parser.add_option('--o-all-transcripts', dest='all_transcripts_output_file')
     parser.add_option('--o-fm', dest='fm_output_file')
+    parser.add_option('--o-reject', dest='rejected_output_file')
 
     parser.add_option('--cohort-freqs', dest='cohort_freqs_fpath')
 
@@ -84,15 +85,14 @@ def main():
         info('Writing info for all transcripts to ' + cnf.all_transcripts_output_file)
     if cnf.fm_output_file:
         info('Writing in FM format to ' + cnf.fm_output_file)
-    rejected_output_fname = cnf.output_file.replace(source.mut_pass_suffix, source.mut_reject_suffix) \
-        if source.mut_pass_suffix in cnf.output_file else add_suffix(cnf.output_file, source.mut_reject_suffix)
-    info('Writing rejected mutations to ' + rejected_output_fname)
+    if cnf.rejected_output_file:
+        info('Writing rejected mutations to ' + cnf.rejected_output_file)
 
     f = Filtration(cnf)
 
     input_f = open(verify_file(vcf2txt_res_fpath))
     output_f = open(adjust_path(cnf.output_file), 'w')
-    rejected_output_f = open(adjust_path(rejected_output_fname), 'w')
+    rejected_output_f = open(adjust_path(cnf.rejected_output_file), 'w') if cnf.rejected_output_file else None
     fm_output_f = open(adjust_path(cnf.fm_output_file), 'w') if cnf.fm_output_file else None
     all_transcripts_output_f = open(adjust_path(cnf.all_transcripts_output_file), 'w') if cnf.all_transcripts_output_file else None
 
@@ -109,7 +109,7 @@ def main():
         all_transcripts_output_f.close()
 
     info()
-    info('Rejected mutations saved to ' + rejected_output_fname)
+    info('Rejected mutations saved to ' + cnf.rejected_output_file)
     info('Saved to ' + cnf.output_file)
 
 
