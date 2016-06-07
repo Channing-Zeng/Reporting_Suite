@@ -539,6 +539,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
     info()
     info('Combining PASSed mutations')
     pass_variants_fpath = pass_variants_fpath or add_suffix(variants_fpath, source.mut_pass_suffix)
+    reject_variants_fpath = add_suffix(variants_fpath, source.mut_reject_suffix)
     not_existing_pass_snames = []
     if cnf.reuse_intermediate and isfile(pass_variants_fpath) and verify_file(pass_variants_fpath):
         info('Combined PASSed filtered results ' + pass_variants_fpath + ' exist, reusing.')
@@ -556,125 +557,31 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
 
         info('Calculating frequences of varaints in the cohort')
         info('*' * 70)
-        count_in_cohort_by_vark = defaultdict(int)
-        total_varks = 0
-        total_duplicated_count = 0
-        total_records_count = 0
-        for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
-            met_in_this_sample = set()
-            with open(add_suffix(vcf2txt_fpath, source.mut_pass_suffix)) as f:
-                for line_i, l in enumerate(f):
-                    if line_i > 0:
-                        fs = l.replace('\n', '').split()
-                        if not fs:
-                            continue
-                        chrom, pos, db_id, ref, alt = fs[1:6]
-                        vark = ':'.join([chrom, pos, ref, alt])
-                        if vark in met_in_this_sample:
-                            warn(vark + ' already met for sample ' + sample.name)
-                            total_duplicated_count += 1
-                        else:
-                            met_in_this_sample.add(vark)
-                            count_in_cohort_by_vark[vark] += 1
-                            total_varks += 1
-                        total_records_count += 1
-        info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
-             'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
-        info('Duplicated varks for this sample: ' + str(total_duplicated_count) + ' out of total '
-             + str(total_records_count) + ' records. Duplicated were not counted into cohort frequencies.')
-        if cnf.variant_filtering.max_ratio < 1.0:
-            info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio) +
-                 ' to ' + pass_variants_fpath)
-
-        freq_in_cohort_by_vark = dict()
-        max_freq = 0
-        for vark, count in count_in_cohort_by_vark.items():
-            f = float(count) / len(samples)
-            freq_in_cohort_by_vark[vark] = f
-            if f > max_freq:
-                max_freq = f
-        info('Maximum frequency in cohort is ' + str(max_freq))
+        freq_in_cohort_by_vark, count_in_cohort_by_vark = count_mutations_freq(cnf, samples, vcf2txt_fpaths, pass_variants_fpath)
+        reject_freq_in_cohort_by_vark, reject_count_in_cohort_by_vark = count_mutations_freq(cnf, samples, vcf2txt_fpaths)
         info()
 
-        artefacts_samples = OrderedDefaultDict(list)
-        artefacts_data = OrderedDict()
-
-        not_filtered_variants_count = 0
-        good_freq_variants_count = 0
-        written_lines_count = 0
-        status_col, reason_col, n_samples_col, n_var_col, pcnt_sample_col, ave_af_col \
-            = None, None, None, None, None, None
-        with file_transaction(cnf.work_dir, pass_variants_fpath) as tx:
-            with open(tx, 'w') as out:
-                for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
-                    mut_pass_fpath = add_suffix(vcf2txt_fpath, source.mut_pass_suffix)
-                    with file_transaction(cnf.work_dir, mut_pass_fpath) as fixed_mut_fpath_tx:
-                        with open(mut_pass_fpath) as f, open(fixed_mut_fpath_tx, 'w') as fixed_f_out:
-                            for line_i, l in enumerate(f):
-                                fs = l.replace('\n', '').split('\t')
-                                if line_i == 0 and sample_i == 0:
-                                    out.write(l)
-                                if line_i == 0:
-                                    fixed_f_out.write(l)
-                                    if status_col is not None and status_col != fs.index('Significance'):
-                                        critical('Different format in ' + mut_pass_fpath + ': status_col=' +
-                                                 str(fs.index('Significance')) + ', but the first sample was ' + str(status_col) +
-                                                 ', please rerun VarFilter from the beginning')
-                                    status_col = fs.index('Significance')
-                                    reason_col = status_col + 1
-                                    n_samples_col = fs.index('N_samples')
-                                    n_var_col = fs.index('N_Var')
-                                    pcnt_sample_col = fs.index('Pcnt_sample')
-                                    ave_af_col = fs.index('Ave_AF')
-                                if line_i > 0:
-                                    fs = l.replace('\n', '').split('\t')
-                                    chrom, pos, db_id, ref, alt = fs[1:6]
-                                    vark = ':'.join([chrom, pos, ref, alt])
-                                    assert len(fs) > reason_col, 'len(fs)=' + str(len(fs)) + ' > reason_col=' + str(reason_col) + \
-                                                                 ' in ' + sample.name + ', ' + vcf2txt_fpath + ' for line\n' + l
-
-                                    freq = freq_in_cohort_by_vark[vark]
-                                    cnt = count_in_cohort_by_vark[vark]
-                                    fs[n_samples_col] = str(len(samples))
-                                    fs[n_var_col] = str(cnt)
-                                    fs[pcnt_sample_col] = str(freq)
-                                    fs[ave_af_col] = ''
-                                    l = '\t'.join(fs) + '\n'
-
-                                    if fs[status_col] in ['known', 'likely']:
-                                        not_filtered_variants_count += 1
-                                    elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
-                                        artefacts_samples[vark].append(sample.name)
-                                        artefacts_data[vark] = db_id, freq, cnt, fs[status_col], fs[reason_col]
-                                        continue
-                                    good_freq_variants_count += 1
-                                    fixed_f_out.write(l)
-                                    out.write(l)
-                                    written_lines_count += 1
-
-        artefacts_fpath = add_suffix(variants_fpath, 'artifacts')
+        artefacts_samples, artefacts_data, variants_count, written_lines_count = write_combined_results(cnf, pass_variants_fpath,
+                                                                                   samples, vcf2txt_fpaths, freq_in_cohort_by_vark, count_in_cohort_by_vark)
+        reject_written_lines_count = write_combined_results(cnf, reject_variants_fpath, samples, vcf2txt_fpaths, reject_freq_in_cohort_by_vark,
+                                                            reject_count_in_cohort_by_vark, is_rejected=True)
         if len(artefacts_samples.keys()) > 0:
-            with file_transaction(cnf.work_dir, artefacts_fpath) as tx:
-                with open(tx, 'w') as f:
-                    f.write('##Novel variants with cohort frequency > ' + str(cnf.variant_filtering.max_ratio) + \
-                        ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + '\n')
-                    f.write('Chrom\tPos\tID\tRef\tAlt\tSignificance\tReason\tPcnt_sample\tN_samples\tSamples\n')
-                    for vark, samples in artefacts_samples.items():
-                        db_id, freq, cnt, status, reason = artefacts_data[vark]
-                        chrom, pos, ref, alt = vark.split(':')
-                        f.write('\t'.join([chrom, pos, db_id, ref, alt, status, reason, str(freq), str(cnt),
-                                           str(', '.join(samples))]) + '\n')
+            with open(reject_variants_fpath, 'a') as f:
+                for vark, samples in artefacts_samples.items():
+                    fs = artefacts_data[vark]
+                    f.write('\t'.join(fs + ['cohort freq > ' + str(cnf.variant_filtering.max_ratio)]) + '\n')
 
             info('Skipped artefacts with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
                  ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + ': ' + str(len(artefacts_samples.keys())))
-            info('Saved artefacts into ' + artefacts_fpath)
+            info('Added artefacts into ' + reject_variants_fpath)
 
-        info('All variants not under filtering: ' + str(not_filtered_variants_count))
+        info('All variants not under filtering: ' + str(variants_count['not_filtered']))
         if len(artefacts_samples.keys()) > 0:
-            info('Variants not under filtering with freq > ' + str(cnf.variant_filtering.max_ratio) + ': ' + str(good_freq_variants_count))
+            info('Variants not under filtering with freq > ' + str(cnf.variant_filtering.max_ratio) + ': ' + str(variants_count['good_freq']))
 
         verify_file(pass_variants_fpath, 'PASS variants file', is_critical=True)
         info('Written ' + str(written_lines_count) + ' records to ' + pass_variants_fpath)
+        info('Written ' + str(reject_written_lines_count + len(artefacts_samples.keys())) + ' rejected records to ' + reject_variants_fpath)
 
         variants_fpath = verify_file(variants_fpath, is_critical=True)
         pass_variants_fpath = verify_file(pass_variants_fpath, is_critical=True)
@@ -683,3 +590,122 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
             return None, None
 
     return variants_fpath, pass_variants_fpath
+
+
+def count_mutations_freq(cnf, samples, vcf2txt_fpaths, pass_variants_fpath=None):
+    count_in_cohort_by_vark = defaultdict(int)
+    total_varks = 0
+    total_duplicated_count = 0
+    total_records_count = 0
+    for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+        met_in_this_sample = set()
+        processed_fpath = add_suffix(vcf2txt_fpath, source.mut_pass_suffix) if pass_variants_fpath else add_suffix(vcf2txt_fpath, source.mut_reject_suffix)
+        with open(processed_fpath) as f:
+            for line_i, l in enumerate(f):
+                if line_i > 0:
+                    fs = l.replace('\n', '').split()
+                    if not fs:
+                        continue
+                    chrom, pos, db_id, ref, alt = fs[1:6]
+                    vark = ':'.join([chrom, pos, ref, alt])
+                    if vark in met_in_this_sample:
+                        if pass_variants_fpath:
+                            warn(vark + ' already met for sample ' + sample.name)
+                            total_duplicated_count += 1
+                    else:
+                        count_in_cohort_by_vark[vark] += 1
+                        if pass_variants_fpath:
+                            met_in_this_sample.add(vark)
+                            total_varks += 1
+                    total_records_count += 1
+
+    if pass_variants_fpath:
+        info('Counted ' + str(len(count_in_cohort_by_vark)) + ' different variants '
+             'in ' + str(len(samples)) + ' samples with total ' + str(total_varks) + ' records')
+        info('Duplicated varks for this sample: ' + str(total_duplicated_count) + ' out of total '
+             + str(total_records_count) + ' records. Duplicated were not counted into cohort frequencies.')
+        if cnf.variant_filtering.max_ratio < 1.0:
+            info('Saving passing threshold if cohort freq < ' + str(cnf.variant_filtering.max_ratio) +
+                 ' to ' + pass_variants_fpath)
+
+    freq_in_cohort_by_vark = dict()
+    max_freq = 0
+    for vark, count in count_in_cohort_by_vark.items():
+        f = float(count) / len(samples)
+        freq_in_cohort_by_vark[vark] = f
+        if f > max_freq:
+            max_freq = f
+
+    if pass_variants_fpath:
+        info('Maximum frequency in cohort is ' + str(max_freq))
+    return freq_in_cohort_by_vark, count_in_cohort_by_vark
+
+
+def write_combined_results(cnf, variants_fpath, samples, vcf2txt_fpaths, freq_in_cohort_by_vark, count_in_cohort_by_vark,
+                           is_rejected=False):
+    artefacts_samples = OrderedDefaultDict(list)
+    artefacts_data = OrderedDict()
+
+    variants_count = defaultdict(int)
+    written_lines_count = 0
+    status_col, reason_col, n_samples_col, n_var_col, pcnt_sample_col, ave_af_col, incidentalome_col \
+        = None, None, None, None, None, None, None
+
+    with file_transaction(cnf.work_dir, variants_fpath) as tx:
+        with open(tx, 'w') as out:
+            for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
+                if is_rejected:
+                    mut_fpath = add_suffix(vcf2txt_fpath, source.mut_reject_suffix)
+                else:
+                    mut_fpath = add_suffix(vcf2txt_fpath, source.mut_pass_suffix)
+                with file_transaction(cnf.work_dir, mut_fpath) as fixed_mut_fpath_tx:
+                    with open(mut_fpath) as f, open(fixed_mut_fpath_tx, 'w') as fixed_f_out:
+                        for line_i, l in enumerate(f):
+                            fs = l.replace('\n', '').split('\t')
+                            if line_i == 0 and sample_i == 0:
+                                out.write(l)
+                            if line_i == 0:
+                                fixed_f_out.write(l)
+                                if status_col is not None and status_col != fs.index('Significance'):
+                                    critical('Different format in ' + mut_fpath + ': status_col=' +
+                                             str(fs.index('Significance')) + ', but the first sample was ' + str(status_col) +
+                                             ', please rerun VarFilter from the beginning')
+                                status_col = fs.index('Significance')
+                                reason_col = status_col + 1
+                                n_samples_col = fs.index('N_samples')
+                                n_var_col = fs.index('N_Var')
+                                pcnt_sample_col = fs.index('Pcnt_sample')
+                                ave_af_col = fs.index('Ave_AF')
+                                if 'Incidentalome' in fs:
+                                    incidentalome_col = fs.index('Incidentalome')
+                            if line_i > 0:
+                                fs = l.replace('\n', '').split('\t')
+                                chrom, pos, db_id, ref, alt = fs[1:6]
+                                vark = ':'.join([chrom, pos, ref, alt])
+                                assert len(fs) > reason_col, 'len(fs)=' + str(len(fs)) + ' > reason_col=' + str(reason_col) + \
+                                                             ' in ' + sample.name + ', ' + vcf2txt_fpath + ' for line\n' + l
+
+                                freq = freq_in_cohort_by_vark[vark]
+                                cnt = count_in_cohort_by_vark[vark]
+                                fs[n_samples_col] = str(len(samples))
+                                fs[n_var_col] = str(cnt)
+                                fs[pcnt_sample_col] = str(freq)
+                                fs[ave_af_col] = ''
+                                l = '\t'.join(fs) + '\n'
+
+                                if not is_rejected:
+                                    if fs[status_col] in ['known', 'likely']:
+                                        variants_count['not_filtered'] += 1
+                                    elif freq >= cnf.variant_filtering.max_ratio and cnt > cnf.variant_filtering.max_sample_cnt:
+                                        artefacts_samples[vark].append(sample.name)
+                                        if incidentalome_col:
+                                            fs.remove(fs[incidentalome_col])
+                                        artefacts_data[vark] = fs
+                                        continue
+                                variants_count['good_freq'] += 1
+                                fixed_f_out.write(l)
+                                out.write(l)
+                                written_lines_count += 1
+    if is_rejected:
+        return written_lines_count
+    return artefacts_samples, artefacts_data, variants_count, written_lines_count
