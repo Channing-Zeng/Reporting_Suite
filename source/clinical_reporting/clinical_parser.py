@@ -143,21 +143,12 @@ class Target:
 
 
 def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wgs_comparison=False):
-    clinical_report_caller = \
-        bs.variant_callers.get('vardict') or \
-        bs.variant_callers.get('vardict-java')
-    if not clinical_report_caller:
-        critical('No vardict or vardict-java variant caller in ' + str(bs.variant_callers.keys()))
-    vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
-    vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
-    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
-    rejected_mutations_fpath = mutations_fpath.replace(source.mut_pass_suffix, source.mut_reject_suffix)
-
+    mutations_fpath, clinical_report_caller_name = get_mutations_fpath_from_bs(bs)
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes_fpath=verify_file(adjust_system_path(cnf.key_genes), 'key genes'),
-        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath, rejected_mutations_fpath=rejected_mutations_fpath,
+        target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,
         sv_fpath=sample.find_sv_fpath(), sv_vcf_fpath=verify_file(cnf.sv_vcf_fpath, is_critical=False) if cnf.sv_vcf_fpath else None,
-        varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json'),
+        varqc_json_fpath=sample.get_varqc_fpath_by_callername(clinical_report_caller_name, ext='.json'),
         seq2c_tsv_fpath=bs.seq2c_fpath, project_name=bs.project_name,
         project_report_path=bs.project_report_html_fpath, targqc_report_path=bs.targqc_summary_fpath,
         is_target2wgs_comparison=is_target2wgs_comparison)
@@ -181,6 +172,18 @@ def clinical_sample_info_from_cnf(cnf):
         project_name=cnf.project_name,
         project_report_path=cnf.project_report_path,
         targqc_report_path=verify_file(cnf.targqc_report_path, silent=False) if cnf.targqc_report_path else None)
+
+
+def get_mutations_fpath_from_bs(bs):
+    clinical_report_caller = \
+        bs.variant_callers.get('vardict') or \
+        bs.variant_callers.get('vardict-java')
+    if not clinical_report_caller:
+        critical('No vardict or vardict-java variant caller in ' + str(bs.variant_callers.keys()))
+    vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
+    vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
+    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+    return mutations_fpath, clinical_report_caller.name
 
 
 class GeneDict(dict):  # supports genes without specified chromosome
@@ -232,7 +235,7 @@ class ClinicalExperimentInfo:
     def __init__(self, cnf, sample, key_genes_fpath, target_type,
                  bed_fpath, mutations_fpath, sv_fpath, sv_vcf_fpath, varqc_json_fpath,
                  project_report_path, project_name, seq2c_tsv_fpath=None, targqc_report_path=None,
-                 is_target2wgs_comparison=False, rejected_mutations_fpath=None):
+                 is_target2wgs_comparison=False):
         self.cnf = cnf
         self.sample = sample
         self.project_report_path = project_report_path
@@ -311,13 +314,6 @@ class ClinicalExperimentInfo:
                     self.key_gene_by_name_chrom[mut.gene.key].mutations.append(mut)
             info('Retrieving SolveBio...')
             self.get_mut_info_from_solvebio()
-            if rejected_mutations_fpath and verify_file(rejected_mutations_fpath, silent=True):
-                info('Parsing rejected mutations from ' + str(rejected_mutations_fpath))
-                self.rejected_mutations = dict()
-                rejected_mutations = parse_mutations(self.cnf, self.sample, self.key_gene_by_name_chrom,
-                                                          rejected_mutations_fpath, self.genes_collection_type)
-                for mut in rejected_mutations:
-                    self.rejected_mutations[(mut.gene.name, mut.pos)] = mut
 
         else:
             warn('No mutations_fpath provided, skipping mutation stats.')
@@ -501,7 +497,8 @@ class ClinicalExperimentInfo:
             #     del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
         info('Keeping ' + str(len(self.key_gene_by_name_chrom)) + ' ' + self.genes_collection_type + ' genes based on targQC reports')
 
-def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type, for_flagged_report=False):
+def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type, for_flagged_report=False,
+                    mutations_dict=None):
     mutations = []
     if for_flagged_report:
         info('Preparing mutations stats for flagged regions report')
@@ -597,7 +594,9 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             reason = fs[reason_col] if reason_col is not None else None
             incidentalome_reason = fs[incidentalome_col] if incidentalome_col is not None else None
 
-            if sample_name == sample.name:
+            if (sample and sample_name == sample.name) or mutations_dict is not None:
+                if mutations_dict is not None:
+                    mutations = mutations_dict[sample_name]
                 if (chrom, start, ref, alt, transcript) in alts_met_before:
                     continue
                 alts_met_before.add((chrom, start, ref, alt, transcript))

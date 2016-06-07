@@ -2,9 +2,11 @@ from collections import OrderedDict, defaultdict
 from itertools import izip
 import json
 from os.path import join, abspath, dirname, relpath, basename
-from source import info
+
+import source
+from source import info, verify_file
 from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Patient, \
-    get_sample_info, get_group_num
+    get_sample_info, get_group_num, parse_mutations, get_mutations_fpath_from_bs
 from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
 from source.file_utils import safe_mkdir
 from source.logger import err
@@ -51,6 +53,21 @@ def run_combine_clinical_reports(cnf, bcbio_structures, samples_by_group, sample
                 group = samples_by_group[(sample.name, bs.bcbio_project_dirpath)]
                 infos_by_key[(group, sample.name)] = clin_info
                 info('')
+        rejected_mutations = defaultdict(dict)
+        pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
+        reject_mutations_fpath = pass_mutations_fpath.replace(source.mut_pass_suffix, source.mut_reject_suffix)
+        if verify_file(reject_mutations_fpath, silent=True):
+            info('Parsing rejected mutations from ' + str(reject_mutations_fpath))
+            rejected_mutations_by_sample = defaultdict(list)
+            parse_mutations(cnf, None, clin_info.key_gene_by_name_chrom, reject_mutations_fpath, clin_info.genes_collection_type,
+                            mutations_dict=rejected_mutations_by_sample)
+            for sample, mutations in rejected_mutations_by_sample.iteritems():
+                for mut in mutations:
+                    rejected_mutations[sample][(mut.gene.name, mut.pos)] = mut
+        for sample in bs.samples:
+            if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
+                group = samples_by_group[(sample.name, bs.bcbio_project_dirpath)]
+                infos_by_key[(group, sample.name)].rejected_mutations = rejected_mutations[sample.name]
 
     info('*' * 70)
     run_sample_combine_clinreport(cnf, infos_by_key, cnf.output_dir, sample_parameters, samples_data)

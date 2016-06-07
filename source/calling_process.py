@@ -335,7 +335,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     if res:
         if output_fpath and not output_is_dir:
-            info('Saved to ' + output_fpath)
+            if not silent:
+                info('Saved to ' + output_fpath)
             if not verify_file(output_fpath, verify_size=verify_output_not_empty):
                 if exit_on_error:
                     clean()

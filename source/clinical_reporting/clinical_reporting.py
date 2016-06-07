@@ -235,7 +235,7 @@ class BaseClinicalReporting:
                         if not depth and mut.gene.key in e.key_gene_by_name_chrom:
                             mut_coord = '{mut.chrom}:{mut.pos}-{mut.pos}'.format(**locals())
                             sambamba_output_fpath = join(e.cnf.work_dir, formatted_name.replace(' ', '_') + '_pos_depth.txt')
-                            sambamba_depth(e.cnf, mut_coord, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True)
+                            sambamba_depth(e.cnf, mut_coord, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True)
                             depth = get_mean_cov(sambamba_output_fpath)
                             depth = gray('%.0f' % depth)
                             tooltip = 'No mutation'

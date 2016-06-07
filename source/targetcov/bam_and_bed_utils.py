@@ -1,5 +1,6 @@
 import os
 import subprocess
+from genericpath import getmtime
 from itertools import dropwhile
 from os.path import isfile, join, abspath, basename, dirname, getctime
 import sys
@@ -23,11 +24,11 @@ def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
 
     sambamba = sambamba or get_system_path(cnf, 'sambamba')
     indexed_bam = bam_fpath + '.bai'
-    if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
+    if not isfile(indexed_bam) or getmtime(indexed_bam) < getmtime(bam_fpath):
         info('Indexing BAM, writing ' + indexed_bam + '...')
         cmdline = '{sambamba} index {bam_fpath}'.format(**locals())
         res = call(cnf, cmdline, exit_on_error=False)
-        if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
+        if not isfile(indexed_bam) or getmtime(indexed_bam) < getmtime(bam_fpath):
             samtools = samtools or get_system_path(cnf, 'samtools')
             cmdline = '{samtools} index {bam_fpath}'.format(**locals())
             call(cnf, cmdline)
@@ -514,7 +515,7 @@ def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
 
 
 def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_grid=False,
-                  command_name='', sample_name=None):
+                  command_name='', sample_name=None, silent=False):
     sambamba = sambamba or get_system_path(cnf, 'sambamba', is_critical=True)
     sample_name = sample_name or basename(bam_fpath).split('.')[0]
     if use_grid:
@@ -530,7 +531,7 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_gr
         index_bam(cnf, bam_fpath, sambamba=sambamba)
         cmdl = sambamba + ' ' + cmdl
         stderr_dump = []
-        res = call(cnf, cmdl, output_fpath=output_fpath, exit_on_error=False, stderr_dump=stderr_dump)
+        res = call(cnf, cmdl, output_fpath=output_fpath, exit_on_error=False, stderr_dump=stderr_dump, silent=silent, print_stderr=not silent)
         if not res:
             for l in stderr_dump:
                 if 'sambamba-view: BAM index file (.bai) must be provided' in l:
@@ -542,7 +543,8 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_gr
         return res
 
 
-def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None, sample_name=None, only_depth=False):
+def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thresholds=None, sample_name=None, only_depth=False,
+                   silent=False):
     sample_name = sample_name or splitext_plus(basename(bam))[0]
 
     if not output_fpath:
@@ -564,7 +566,7 @@ def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thres
 
     return call_sambamba(cnf, cmdline, output_fpath=output_fpath, bam_fpath=bam,
         sambamba=sambamba, use_grid=use_grid, command_name='depth_' + splitext_plus(basename(bed))[0],
-                         sample_name=sample_name)
+                         sample_name=sample_name, silent=silent)
 
 
 def remove_dups(cnf, bam, output_fpath, sambamba=None, use_grid=False):
