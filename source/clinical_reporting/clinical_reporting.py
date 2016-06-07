@@ -289,7 +289,7 @@ class BaseClinicalReporting:
                     if parameter in sample_parameters:
                         sample_parameters.remove(parameter)
                 num_by_samples[tuple(sample_parameters)].add(get_group_num(e.key))
-                report_link = '<a href="' + e.sample.clinical_html + '" target="_blank">' + e.sample.name + '</a>'
+                report_link = '<a href="' + basename(e.sample.clinical_html) + '" target="_blank">' + e.sample.name + '</a>'
                 freq = Metric.format_value(m.freq, is_html=True, unit='%')
                 tooltip = report_link + ':  ' + str(freq) + '  ' + str(m.depth) + '<br>'
                 tooltips.append((e.sample.name, tooltip))
