@@ -179,7 +179,7 @@ def check_system_resources(cnf, required=list(), optional=list()):
         exit()
 
 
-def set_up_dirs(cnf):
+def set_up_dirs(cnf, log_dir_name='log'):
     """ Creates output_dir, work_dir; sets up log
     """
     if cnf.output_dir:
@@ -193,7 +193,7 @@ def set_up_dirs(cnf):
         cnf.log_dir = None
     else:
         if not cnf.log_dir:
-            cnf.log_dir = join(cnf.work_dir, 'log')
+            cnf.log_dir = join(cnf.work_dir, log_dir_name)
         safe_mkdir(cnf.log_dir)
         info('Created log dir ' + cnf.log_dir)
 

@@ -58,6 +58,7 @@ class BaseClinicalReporting:
 
     def make_mutations_report(self, mutations_by_experiment, jbrowser_link, samples_data=None, sample_parameters=None,
                               create_venn_diagrams=False, cur_group_num=None):
+        full_names = []
         if len(mutations_by_experiment) == 1:
             ms = [
                 Metric('Gene'),  # Gene & Transcript
@@ -744,6 +745,7 @@ class BaseClinicalReporting:
         d = dict()
         d['patient'] = {'sex': 'unknown'}
         d['project_report_rel_path'] = 'not generated'
+        d['project_dirpath'] = 'not generated'
         # d['panel'] = 'unknown'
         # d['bed_path'] = 'unknown'
         # d['target_type'] = 'unknown'
@@ -941,13 +943,9 @@ class BaseClinicalReporting:
 
     @staticmethod
     def _significance_field(mut):
-        if mut.signif == 'incidentalome':
-            debug('   _signif_field = incidentalome, txt is ' + mut.reason)
-            txt = mut.reason
-        else:
-            txt = mut.signif
-            if mut.reason:
-                txt += '<span class="reason"> (' + mut.reason + ') </span>'
+        txt = mut.signif
+        if mut.reason:
+            txt += '<span class="reason"> (' + mut.reason + ') </span>'
         txt = '<span class="span_status_' + mut.signif + '">' + txt + '</span>'
         return dict(value=txt)
 

@@ -23,6 +23,28 @@ tr.unselected_type {
   max-width: 160px; }
 .clinical_report table.report_table tr.known {
   background-color: #f5ffa3; }
+.clinical_report table.report_table .incidentalome {
+  color: gray; }
+  .clinical_report table.report_table .incidentalome .gray, .clinical_report table.report_table .incidentalome .reason {
+    color: #bababa; }
+  .clinical_report table.report_table .incidentalome a {
+    color: #7da5b5; }
+  .clinical_report table.report_table .incidentalome a:visited {
+    color: #9880b2; }
+  .clinical_report table.report_table .incidentalome a:hover {
+    color: #b33; }
+.clinical_report table.report_table .incidentalome:hover {
+  color: black; }
+  .clinical_report table.report_table .incidentalome:hover .gray, .clinical_report table.report_table .incidentalome:hover .reason {
+    color: gray; }
+  .clinical_report table.report_table .incidentalome:hover a {
+    color: #0077B5; }
+  .clinical_report table.report_table .incidentalome:hover a:visited {
+    color: #8c66b2; }
+  .clinical_report table.report_table .incidentalome:hover a:hover {
+    color: #b33; }
+.clinical_report table.report_table .gray, .clinical_report table.report_table .reason {
+  color: gray; }
 .clinical_report table.report_table.table_full tr.likely {
   background-color: #f1ffce; }
 .clinical_report .multi-col-layout {
@@ -70,31 +92,6 @@ p {
 
 #extend_link_incidentalome_variants, #incidentalome_span {
   margin-left: 20px; }
-
-.incidentalome {
-  color: gray; }
-  .incidentalome .gray, .incidentalome .reason {
-    color: #bababa; }
-  .incidentalome a {
-    color: #7da5b5; }
-  .incidentalome a:visited {
-    color: #9880b2; }
-  .incidentalome a:hover {
-    color: #b33; }
-
-.incidentalome:hover {
-  color: black; }
-  .incidentalome:hover .gray, .incidentalome:hover .reason {
-    color: gray; }
-  .incidentalome:hover a {
-    color: #0077B5; }
-  .incidentalome:hover a:visited {
-    color: #8c66b2; }
-  .incidentalome:hover a:hover {
-    color: #b33; }
-
-.gray, .reason {
-  color: gray; }
 
 .my_hover {
   position: relative; }

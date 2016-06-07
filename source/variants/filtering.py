@@ -114,6 +114,13 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
         vardict2mut_res_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
     vardict2mut_reject_fpath = add_suffix(vcf2txt_res_fpath, source.mut_reject_suffix)
 
+    if isfile(vardict2mut_res_fpath):
+        with open(vardict2mut_res_fpath) as f:
+            l = next(f, None)
+            if not l or 'CLN_GENE' not in l.split('\t'):
+                info(vardict2mut_res_fpath + ' exists, but CLN_GENE columns not found. Rerunning vardict2mut.py')
+                os.remove(vardict2mut_res_fpath)
+
     if not vardict2mut_executable:
         vardict2mut_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
 
@@ -400,6 +407,13 @@ def run_vcf2txt(cnf, vcf_fpath_by_sample, vcf2txt_out_fpath):
     vcf2txt = get_script_cmdline(cnf, 'perl', 'vcf2txt', is_critical=True)
 
     cmdline = vcf2txt + ' ' + make_vcf2txt_cmdl_params(cnf, vcf_fpath_by_sample)
+
+    if isfile(vcf2txt_out_fpath):
+        with open(vcf2txt_out_fpath) as f:
+            l = next(f, None)
+            if not l or 'CLN_GENE' not in l.split('\t'):
+                info(vcf2txt_out_fpath + ' exists, but CLN_GENE columns not found. Rerunning vcf2txt.pl')
+                os.remove(vcf2txt_out_fpath)
 
     res = run_vcf2txt_with_retries(cnf, cmdline, vcf2txt_out_fpath)
     return res

@@ -24,12 +24,39 @@ tr.unselected_type
     table.report_table
         td, th
             max-width: 160px
+        //tr
+        //    font-weight: bold
         tr.known
             background-color: #f5ffa3
         //tr.multiple_occurences_row
         //    background-color: #c0ffc0
         //tr.multiple_occurences_row.known
         //    background-color: #becfa2
+        .incidentalome
+            //color: #b3b3b3
+            color: gray
+            .gray, .reason
+                color: #bababa
+            a
+                color: #7da5b5
+            a:visited
+                color: #9880b2
+            a:hover
+                color: #b33
+
+        .incidentalome:hover
+            color: black
+            .gray, .reason
+                color: gray
+            a
+                color: #0077B5
+            a:visited
+                color: #8c66b2
+            a:hover
+                color: #b33
+
+        .gray,.reason
+            color: gray
 
     table.report_table.table_full
         tr.likely
@@ -89,32 +116,6 @@ p
 
 #extend_link_incidentalome_variants, #incidentalome_span
     margin-left: 20px
-
-.incidentalome
-    //color: #b3b3b3
-    color: gray
-    .gray, .reason
-        color: #bababa
-    a
-        color: #7da5b5
-    a:visited
-        color: #9880b2
-    a:hover
-        color: #b33
-
-.incidentalome:hover
-    color: black
-    .gray, .reason
-        color: gray
-    a
-        color: #0077B5
-    a:visited
-        color: #8c66b2
-    a:hover
-        color: #b33
-
-.gray,.reason
-    color: gray
 
 //.gray
 //    color: gray
