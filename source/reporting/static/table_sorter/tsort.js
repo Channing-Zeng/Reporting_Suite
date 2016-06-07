@@ -121,14 +121,15 @@ Array - Specifc table
 							tdData.height = cell.parent().height();
 					}
 
+					var cellText = cell[0].innerText;
 					if (cell.attr('data-sortAs') != undefined ) {
 						tdData.td.push(cell.attr('data-sortAs'));
-					} else if (typeof settings['sortAs'] != undefined && settings['sortAs'][cell.text()] != undefined ) {
-						tdData.td.push(settings['sortAs'][cell.text()]);
+					} else if (typeof settings['sortAs'] != undefined && settings['sortAs'][cellText] != undefined ) {
+						tdData.td.push(settings['sortAs'][cellText]);
 					} else if (sorting_criteria[td_index] == 'numeric') {
-						tdData.td.push(getNumber(cell.text()));
+						tdData.td.push(getNumber(cellText));
 					} else {
-						tdData.td.push(cell.text());
+						tdData.td.push(cellText);
 					}
 				}
 				table_data.push(tdData);

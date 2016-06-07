@@ -229,7 +229,7 @@ class BaseClinicalReporting:
                                 tooltip += '<br> Mutation: ' + str(rejected_mut.gene) + ' ' + str(rejected_mut.ref) + '>' + str(rejected_mut.alt) + \
                                            ' ' + str(rejected_mut.aa_change)
                             freq = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(rejected_mut.freq * 100) + ' </span>'
-                            row.add_record(formatted_name + ' Freq', freq, show_content=mut.is_canonical, text_color='gray')
+                            row.add_record(formatted_name + ' Freq', freq, num=rejected_mut.freq, show_content=mut.is_canonical, text_color='gray')
                         if not depth and not e.sample.bam:
                             continue
                         if not depth and mut.gene.key in e.key_gene_by_name_chrom:
@@ -632,6 +632,7 @@ class BaseClinicalReporting:
                 if event.is_amp() or event.is_del():
                     seq2c_by_key_by_experiment[(event.gene.name, event.amp_del)][e] = event
 
+        seq2c_by_key_by_experiment = OrderedDict(sorted(seq2c_by_key_by_experiment.iteritems(), key=lambda x: x[0][0]))
         for seq2c_by_experiment_key, seq2c_by_experiment in seq2c_by_key_by_experiment.items():
             event = next((e for e in seq2c_by_experiment.values() if e is not None), None)
             if len(seq2c_by_experiments.values()) > 1:
