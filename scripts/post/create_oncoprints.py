@@ -242,6 +242,8 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
             mut.aa_change, mut.cdna_change, mut.depth, mut.freq = fs[aa_chg_col], fs[cdna_chg_col], fs[depth_col], float(fs[allele_freq_col])
             mut.status = fs[status_col] if status_col is not None else None
             mut.signif = fs[signif_col] if signif_col is not None else None
+            if mut.signif == 'incidentalome':
+                continue
             mut.type = 'Known' if mut.signif != 'unknown' else 'Unknown'
             if 'splice' in type_:
                 mut.type = 'Splice'
