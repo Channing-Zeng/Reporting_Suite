@@ -236,11 +236,15 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
 
                 if cnf.reuse_intermediate and verify_file(seq2cov_output_by_sample[s.name], silent=True):
                     info(seq2cov_output_by_sample[s.name] + ' exists, reusing')
+                    reused_samples.append(s)
+                    continue
 
                 elif verify_file(s.targetcov_detailed_tsv, silent=True):
                     info('Using targetcov detailed output for Seq2C coverage.')
                     info(s.name + ': using targetseq output')
                     targetcov_details_to_seq2cov(cnf, s.targetcov_detailed_tsv, seq2cov_output_by_sample[s.name], s.name, is_wgs=is_wgs)
+                    reused_samples.append(s)
+                    continue
 
                 else:
                     info(s.name + ': ' + s.targetcov_detailed_tsv + ' does not exist: submitting sambamba depth')
@@ -249,6 +253,8 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
                     depth_output_by_sample[s.name] = depth_output
                     if cnf.reuse_intermediate and verify_file(depth_output, silent=True):
                         info(depth_output + ' exists, reusing')
+                        reused_samples.append(s)
+                        continue
                     else:
                         j = sambamba_depth(cnf, bed_fpath, bam_fpath, depth_output, use_grid=True, sample_name=s.name)
                         jobs_by_sample[s.name] = j
@@ -661,6 +667,8 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
                     info(s.name + ': ')
                     info('  Mapped reads: ' + str(mapped_reads))
                     mapped_reads_by_sample[s.name] = mapped_reads
+                    reused_samples.append(s)
+                    continue
 
                 else:
                     if s.name not in bam_by_sample:
