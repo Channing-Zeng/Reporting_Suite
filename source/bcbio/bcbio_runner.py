@@ -884,7 +884,7 @@ class BCBioRunner:
                 info()
 
             oncoprints_link = None
-            if is_us():
+            if is_us() and not self.bcbio_structure.is_rnaseq:
                 oncoprints_link = get_oncoprints_link(self.cnf, self.bcbio_structure, self.bcbio_structure.project_name)
 
             if self.bcbio_structure.is_rnaseq:
