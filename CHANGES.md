@@ -1,7 +1,8 @@
 #### v1.4.2, 7 Jun 2016
 Filtering
 - Saving rejected variants into vardict.REJECT.txt
-- Small fixes in artefacts filtering that prevented some false positives from being filtered
+- Small fixes in common artifacts filtering that prevented some false positives from being filtered
+- COSMIC v77
 
 #### v1.4.1, 3 Jun 2016
 Filtering

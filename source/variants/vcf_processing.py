@@ -8,6 +8,7 @@ import shutil
 from os.path import basename, join, expanduser, splitext, realpath, dirname, pardir, abspath
 from collections import OrderedDict
 ##from memory_profiler import profile
+import re
 
 from source.variants import vcf_parser
 from source.variants.vcf_parser.model import _Record
@@ -160,16 +161,49 @@ def vcf_is_empty(cnf, vcf_fpath):
     return result
 
 
-def remove_rejected(cnf, input_fpath, output_fpath=None):
-    if not input_fpath.endswith('.gz') or not file_exists(input_fpath + '.tbi'):
-        input_fpath = bgzip_and_tabix(cnf, input_fpath)
+def _get_qual_threshold(input_fpath):
+    qual_threshold = None
+    q_filter_regex = re.compile(r'##FILTER=<ID=q(\d+),Description="Mean Base Quality Below \d+">')
+    with open_gzipsafe(input_fpath) as f:
+        for l in f:
+            if not l.startswith('##'):
+                break
+            m = q_filter_regex.match(l)
+            if m:
+                qual_threshold = int(m.group(1))
+                break
+    return qual_threshold
 
-    bcftools = get_system_path(cnf, 'bcftools')
-    output_fpath = output_fpath or add_suffix(input_fpath, 'pass')
-    if output_fpath.endswith('.gz'):
-        output_fpath = splitext(output_fpath)[0]
-    cmdl = '{bcftools} filter -i \'FILTER="PASS"|FILTER="."\' {input_fpath}'.format(**locals())
-    return call(cnf, cmdl, output_fpath=output_fpath)
+
+def remove_rejected(cnf, input_fpath, output_fpath=None):
+    # if not input_fpath.endswith('.gz') or not file_exists(input_fpath + '.tbi'):
+    #     input_fpath = bgzip_and_tabix(cnf, input_fpath)
+
+    qual_threshold = _get_qual_threshold(input_fpath)
+    info('VCF QUAL threshold is ' + str(qual_threshold))
+    if qual_threshold > cnf.variant_filtering.min_q_mean:
+        info('Requested QUAL threshold is ' + str(cnf.variant_filtering.min_q_mean) +
+             ', which is higher than in VCF, so keeping records with FILTER=q' + str(qual_threshold))
+
+    def fn(l, i):
+        if l.startswith('#'):
+            return l
+        else:
+            fs = l.split('\t')
+            if fs[6] == 'q' + str(qual_threshold) and qual_threshold > cnf.variant_filtering.min_q_mean:
+                fs[6] = 'PASS'
+            if fs[6] == 'PASS':
+                return l
+            else:
+                return None
+    return iterate_file(cnf, input_fpath, fn, suffix='pass')
+
+    # bcftools = get_system_path(cnf, 'bcftools')
+    # output_fpath = output_fpath or add_suffix(input_fpath, 'pass')
+    # if output_fpath.endswith('.gz'):
+    #     output_fpath = splitext(output_fpath)[0]
+    # cmdl = '{bcftools} filter -i \'FILTER="PASS"|FILTER="."\' {input_fpath}'.format(**locals())
+    # return call(cnf, cmdl, output_fpath=output_fpath)
 
 
 def read_samples_info_and_split(common_cnf, options, inputs):

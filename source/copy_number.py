@@ -321,13 +321,12 @@ def __seq2c_coverage(cnf, samples, bams_by_sample, bed_fpath, is_wgs, output_fpa
     info('Total failed: ' + str(total_failed))
 
     # wait_for_jobs(cnf, jobs_by_sample.values())
-    for s_name, j in jobs_by_sample.items():
-        if j.is_done and not j.is_failed:
-            info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
-            bed_col_num = count_bed_cols(bed_fpath)
-            sambamba_depth_to_seq2cov(cnf, j.output_fpath, seq2cov_output_by_sample[s_name], s_name, bed_col_num)
-        else:
-            err('ERROR: ' + s_name + ' could not get coverage stats, log saved to ' + j.log_fpath)
+    for s_name, seq2cov_output_fpath in seq2cov_output_by_sample.items():
+        if not isfile(seq2cov_output_fpath):
+            if verify_file(depth_output_by_sample[s_name], is_critical=True, description='depth_output_by_sample for ' + s_name):
+                info(s_name + ': summarizing bedcoverage output ' + depth_output_by_sample[s_name])
+                bed_col_num = count_bed_cols(bed_fpath)
+                sambamba_depth_to_seq2cov(cnf, depth_output_by_sample[s_name], seq2cov_output_by_sample[s_name], s_name, bed_col_num)
 
             # script = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'find_ave_cov_for_regions.py'),
             #                             is_critical=True)

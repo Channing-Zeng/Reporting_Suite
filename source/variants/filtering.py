@@ -630,6 +630,8 @@ def count_mutations_freq(cnf, samples, vcf2txt_fpaths, suffix=source.mut_pass_su
     for sample_i, (sample, vcf2txt_fpath) in enumerate(zip(samples, vcf2txt_fpaths)):
         met_in_this_sample = set()
         processed_fpath = add_suffix(vcf2txt_fpath, suffix)
+        if not isfile(processed_fpath):
+            critical(processed_fpath + ' does not exist; please, rerun VarFilter.')
         with open(processed_fpath) as f:
             for line_i, l in enumerate(f):
                 if line_i > 0:
