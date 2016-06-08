@@ -391,8 +391,6 @@ function checkSamples(row, metric, value) {
     for (var c = 0, m = row.cells.length; c < m; c++) {
         var cell = row.cells[c];
         if (cell.attributes.metric) {
-            if (sampleFound.length == values.length)
-                break;
             metricName = cell.attributes.metric.value;
             metricValue = cell.innerText;
             if (metricName == metric) {
@@ -400,20 +398,26 @@ function checkSamples(row, metric, value) {
                     $(row).addClass(metric + ' unselected_type');
                 else showHideRow(row, metric);
             }
-            else if (sampleFound.length < values.length && metricName.indexOf('log ratio') != -1) {
+            else if (metricName.indexOf('log ratio') != -1) {
                 logRatioCols = true;
                 if (metricValue) {
+                    var isValueSelected = false;
                     for (var v = 0; v < values.length; v++) {
                         if (sampleFound.indexOf(values[v]) == -1 && metricName.toLowerCase().indexOf(values[v]) != -1) {
                             sampleFound.push(values[v]);
+                            isValueSelected = true;
                         }
+                    }
+                    if (!isValueSelected) {
+                        $(row).addClass(metric + ' unselected_type');
+                        return;
                     }
                 }
             }
         }
     }
     if (logRatioCols) {
-        if (sampleFound.length < values.length)
+        if (sampleFound.length != values.length)
             $(row).addClass(metric + ' unselected_type');
         else showHideRow(row, metric);
     }
