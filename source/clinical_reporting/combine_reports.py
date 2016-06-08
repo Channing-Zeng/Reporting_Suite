@@ -44,6 +44,9 @@ def run_combine_clinical_reports(cnf, bcbio_structures, samples_by_group, sample
 
     infos_by_key = dict()
     for i, bs in enumerate(bcbio_structures):
+        info()
+        info('Preparing ' + bs.project_name + '...')
+        info('-' * 70)
         for sample in bs.samples:
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 info('Preparing ' + sample.name + '...')

@@ -103,7 +103,7 @@ class BaseClinicalReporting:
                 Metric('VarDict status', short_name='Significance', max_width=230, class_='long_line'),     # Likely
                 Metric('Other occurrences', class_='long_line', with_heatmap=False),          # 128
                 # Metric('ClinVar', short_name='SolveBio ClinVar'),
-                Metric('Indicentalome', short_name='Callability issues'),
+                Metric('Indicentalome', short_name='Callability issues', class_='long_line'),
                 Metric('Databases'),                 # rs352343, COSM2123, SolveBio
                 Metric('Status', short_name='Status'),     # Somatic
                 Metric('Position', with_heatmap=False, align='left', sort_direction='ascending'),       # g.47364249

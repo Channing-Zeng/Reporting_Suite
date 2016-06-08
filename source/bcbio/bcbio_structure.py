@@ -232,7 +232,7 @@ def _detect_sys_config(config_dirpath, opts):
             # detect system and use default system config
             opts.sys_cnf = detect_sys_cnf_by_location()
 
-    info('Using system configuarion ' + opts.sys_cnf)
+    info('Using system configuration ' + opts.sys_cnf)
 
 
 def _detect_move_run_config(config_dirpath, opts, is_wgs=False, is_rnaseq=False):
@@ -308,7 +308,7 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False, is_rnaseq=False)
             if not isfile(project_run_cnf_fpath):
                 file_util.copy_file(opts.run_cnf, project_run_cnf_fpath, preserve_times=False)
 
-    info('Using run configuarion ' + opts.run_cnf)
+    info('Using run configuration ' + opts.run_cnf)
 
 
 class BCBioSample(BaseSample):
