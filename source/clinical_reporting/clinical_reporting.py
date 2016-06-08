@@ -326,9 +326,10 @@ class BaseClinicalReporting:
                 parameters = formatted_name.split()
                 formatted_name = parameters[-1]
                 if len(parameters) > 1:
-                    for p in parameters[-2: -len(parameters) - 1: -1]:
+                    for i, p in enumerate(parameters[-2: -len(parameters) - 1: -1]):
                         if p not in prev_parameters:
-                            formatted_name = p + ' ' + formatted_name
+                            first_parameter = -(i + 2)
+                            formatted_name = ' '.join(parameters[first_parameter:])
                 prev_parameters = parameters
                 short_names[mutations_by_experiment.keys()[index]] = formatted_name
         else:
