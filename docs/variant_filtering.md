@@ -257,5 +257,10 @@ Incidentalome       low complexity gene           If mutation overlaps any regio
 ```
 
 ### 5. Reporting
-For 820 key cancer genes, or for the target genes if the study is targeted (target less than 2000 genes), mutations are reported into NGS Oncology reports. The mutations overlapping regions with poor callability are faded.
+Mutations are reported into NGS Oncology reports. For WES and WGS projects, the reports showsonly mutaitons in 817 key cancer genes. If it's a targeted panel (the total number of genes is less than 2000), the target genes are used instead.
+ 
+![NGS report](ngs_report.png)
+ 
+By default, only `known` and `likely` changes are displayed. Clicking the "+ unknown" link will add `unknown` changes into the table too. 
 
+The changes overlapping regions with poor callability are faded.

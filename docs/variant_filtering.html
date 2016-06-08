@@ -254,6 +254,9 @@ Significance        likely                        Mutation tier
 Reason              COSMIC_5+, stop_gained        Reason to put this mutation into this tier
 Incidentalome       low complexity gene           If mutation overlaps any region with poor callability
 </code></pre><h3 id="5-reporting">5. Reporting</h3>
-<p>For 820 key cancer genes, or for the target genes if the study is targeted (target less than 2000 genes), mutations are reported into NGS Oncology reports. The mutations overlapping regions with poor callability are faded.</p>
+<p>Mutations are reported into NGS Oncology reports. For WES and WGS projects, the reports showsonly mutaitons in 817 key cancer genes. If it&#39;s a targeted panel (the total number of genes is less than 2000), the target genes are used instead.</p>
+<p><img src="ngs_report.png" alt="NGS report"></p>
+<p>By default, only <code>known</code> and <code>likely</code> changes are displayed. Clicking the &quot;+ unknown&quot; link will add <code>unknown</code> changes into the table too. </p>
+<p>The changes overlapping regions with poor callability are faded.</p>
 </body>
 <html>
