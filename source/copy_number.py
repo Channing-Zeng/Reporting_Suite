@@ -16,7 +16,8 @@ from source.calling_process import call
 from source.config import with_cnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction
 from source.logger import info, err, step_greetings, critical
-from source.targetcov.bam_and_bed_utils import verify_bed, number_of_mapped_reads, sambamba_depth
+from source.targetcov.bam_and_bed_utils import verify_bed, number_of_mapped_reads, sambamba_depth, \
+    number_of_mapped_not_duplicate_reads
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
@@ -657,43 +658,43 @@ def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):
         for s in not_submitted_samples:
             with with_cnf(cnf, work_dir=join(cnf.work_dir, s.name)) as cnf:
                 safe_mkdir(cnf.work_dir)
-                if verify_file(s.targetcov_json_fpath, silent=True):
-                    info('Parsing targetSeq output ' + s.targetcov_json_fpath)
-                    with open(s.targetcov_json_fpath) as f:
-                        data = load(f, object_pairs_hook=OrderedDict)
-                    cov_report = SampleReport.load(data, s)
-                    mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
-                    info(s.name + ': ')
-                    info('  Mapped reads: ' + str(mapped_reads))
-                    mapped_reads_by_sample[s.name] = mapped_reads
-                    reused_samples.append(s)
-                    continue
+                # if verify_file(s.targetcov_json_fpath, silent=True):
+                #     info('Parsing targetSeq output ' + s.targetcov_json_fpath)
+                #     with open(s.targetcov_json_fpath) as f:
+                #         data = load(f, object_pairs_hook=OrderedDict)
+                #     cov_report = SampleReport.load(data, s)
+                #     mapped_reads = next(rec.value for rec in cov_report.records if rec.metric.name == 'Mapped reads')
+                #     info(s.name + ': ')
+                #     info('  Mapped reads: ' + str(mapped_reads))
+                #     mapped_reads_by_sample[s.name] = mapped_reads
+                #     reused_samples.append(s)
+                #     continue
+                #
+                # else:
+                if s.name not in bam_by_sample:
+                    err('No BAM for ' + s.name + ', not running Seq2C')
+                    return None, None
 
-                else:
-                    if s.name not in bam_by_sample:
-                        err('No BAM for ' + s.name + ', not running Seq2C')
-                        return None, None
+                info('Submitting a sambamba job to get mapped read numbers')
+                bam_fpath = bam_by_sample[s.name]
+                j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True, sample_name=s.name)
+                job_by_sample[s.name] = j
+                submitted_samples.append(s)
+                if not j.is_done:
+                    jobs_to_wait.append(j)
+                if len(jobs_to_wait) >= cnf.threads:
+                    not_submitted_samples = [_s for _s in not_submitted_samples if
+                                             _s not in submitted_samples and
+                                             _s not in reused_samples]
 
-                    info('Submitting a sambamba job to get mapped read numbers')
-                    bam_fpath = bam_by_sample[s.name]
-                    j = number_of_mapped_reads(cnf, bam_fpath, dedup=True, use_grid=True, sample_name=s.name)
-                    job_by_sample[s.name] = j
-                    submitted_samples.append(s)
-                    if not j.is_done:
-                        jobs_to_wait.append(j)
-                    if len(jobs_to_wait) >= cnf.threads:
-                        not_submitted_samples = [_s for _s in not_submitted_samples if
-                                                 _s not in submitted_samples and
-                                                 _s not in reused_samples]
-
-                        if not_submitted_samples:
-                            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
-                                     'submitting more ' + str(len(not_submitted_samples)))
-                        else:
-                            info('Submitted ' + str(len(jobs_to_wait)) + ' last jobs.')
-                        info()
-                        break
+                    if not_submitted_samples:
+                        info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting them to finish before '
+                                 'submitting more ' + str(len(not_submitted_samples)))
+                    else:
+                        info('Submitted ' + str(len(jobs_to_wait)) + ' last jobs.')
                     info()
+                    break
+                info()
 
         info()
         info('-' * 70)

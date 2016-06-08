@@ -28,13 +28,21 @@ def main():
     args = [sambamba] + args
     cmdl = ' '.join((('"' + a + '"') if ' ' in a and not a[0] == '"' else a) for a in args)
     err(cmdl)
-    subprocess.call(cmdl, shell=True)
+    ret_code = subprocess.call(cmdl, shell=True)
+    if ret_code != 0:
+        err()
+        err('Ret code = ' + str(ret_code) + ', retrying...')
+        indexed_bam = bam + '.bai'
+        if isfile(indexed_bam):
+            os.remove(indexed_bam)
+        index_bam(bam, sambamba)
+        subprocess.call(cmdl, shell=True)
 
 
 def index_bam(bam_fpath, sambamba):
     indexed_bam = bam_fpath + '.bai'
     if isfile(indexed_bam):
-        os.remove(indexed_bam)
+        return
     # if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
     err('Indexing BAM, writing ' + indexed_bam + '...')
     cmdline = '{sambamba} index {bam_fpath}'.format(**locals())

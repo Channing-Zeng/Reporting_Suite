@@ -14,9 +14,6 @@ from source.logger import step_greetings, info, warn, err
 from source.targetcov.bam_and_bed_utils import prepare_beds
 from source.targetcov.cov import get_detailed_metric_storage, get_header_metric_storage
 
-
-
-# from source.targetcov.flag_regions import DepthsMetric
 from source.targetcov.flag_regions import DepthsMetric, _intersect_with_tricky_regions, \
     _parse_intersection_with_tricky_regions
 from source.tools_from_cnf import get_system_path, get_qualimap_type

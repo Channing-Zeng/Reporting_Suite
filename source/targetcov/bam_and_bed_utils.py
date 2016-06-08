@@ -7,8 +7,7 @@ import sys
 from subprocess import check_output
 from collections import OrderedDict
 
-from source.calling_process import call, call_pipe
-from source.config import with_cnf
+from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
     safe_mkdir, file_transaction
 from source.logger import info, critical, warn, err, debug
