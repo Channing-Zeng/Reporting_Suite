@@ -19,7 +19,7 @@ from source.variants.vardict2mut_src import Filtration
 
 # Compare with perl version:
 # $ perl /Users/vlad/vagrant/reporting_suite/VarDict/vardict2mut.pl -f 0.075 -F 0.025 -D 3 -V 4
-# $ perl /group/ngs/src/az.reporting/VarDict/vardict2mut.pl t.txt -f 0.075 -F 0.025 -D 3 -V 4
+# $ perl /group/ngs/src/az.reporting/VarDict/vardict2mut.pl -f 0.075 -F 0.025 -D 3 -V 4
 
 def get_args():
     info(' '.join(sys.argv))
@@ -109,7 +109,8 @@ def main():
         all_transcripts_output_f.close()
 
     info()
-    info('Rejected mutations saved to ' + cnf.rejected_output_file)
+    if cnf.rejected_output_file:
+        info('Rejected mutations saved to ' + cnf.rejected_output_file)
     info('Saved to ' + cnf.output_file)
 
 

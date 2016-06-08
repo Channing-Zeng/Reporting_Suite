@@ -765,13 +765,32 @@ class Filtration:
 
             self.reason_by_status = {k: set() for k in Filtration.statuses}
 
-            #################################
-            # Checking actionable mutations #
-            #################################
-            actionability = \
-                self.check_actionable(chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, fields[clnsig_col]) or \
-                self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or \
-                self.check_by_type_and_region(cdna_chg, region, gene)
+            # Filter low AF MSI
+            msi = float(fields[msi_col])
+            if abs(len(ref) - len(alt)) == 1 and msi > 3:
+                msi_fail = any([
+                    msi <=  7 and af < 0.03,
+                    msi ==  8 and af < 0.06,
+                    msi ==  9 and af < 0.125,
+                    msi == 10 and af < 0.175,
+                    msi == 11 and af < 0.25,
+                    msi == 12 and af < 0.3,
+                    msi >  12 and af < 0.35])
+                if msi_fail:
+                    self.reject_mutation('MSI fail', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                    continue
+
+            snps = re.findall(r'rs\d+', fields[3])
+            if any(snp in self.snpeff_snp_rsids for snp in snps):
+                self.reject_mutation('snp in snpeffect_export_polymorphic', is_canonical, no_transcript,
+                                     rejected_output_f, self.status, fields)
+                continue
+
+            if sample_regexp:
+                if sample_regexp.match(sample):
+                    sample = re.findall(self.reg_exp_sample, sample)[0]
+                else:
+                    continue
 
             fail_reason = self.fails_filters(chrom, pos, ref, alt, gene, aa_chg)
             if fail_reason:
@@ -789,7 +808,38 @@ class Filtration:
                 elif gene in self.suppressors:
                     self.update_status('likely', 'suppressor_lof')
 
-            if not actionability:
+            cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
+            clncheck = check_clnsig(fields[clnsig_col])
+            if clncheck == 'ClnSNP_known':
+                var_class = clncheck
+            cosm_aa_chg = self.check_by_var_class(var_class, cosm_aa_chg, cosmic_counts)
+
+            aa_chg = self.check_by_effect(var_type, aa_chg, cdna_chg, effect)
+
+            if is_hotspot_nt(chrom, pos, ref, alt, self.hotspot_nucleotides):
+                self.update_status('likely', 'hotspot_nucl_change')
+            elif is_hotspot_prot(gene, aa_chg, self.hotspot_proteins):
+                self.update_status('likely', 'hotspot_AA_change')
+
+            #################################
+            # Checking actionable mutations #
+            #################################
+            actionability = \
+                self.check_actionable(chrom, pos, ref, alt, gene, aa_chg, cosm_aa_chg, af, fields[clnsig_col]) or \
+                self.check_rob_hedley_actionable(gene, aa_chg, effect, region, transcript) or \
+                self.check_by_type_and_region(cdna_chg, region, gene)
+
+            if actionability:
+                if actionability == 'germline' and af < self.germline_min_freq:
+                    self.reject_mutation('act germline and AF < ' + str(self.act_min_freq), is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
+                    continue
+                if af < self.act_min_freq:
+                    self.reject_mutation('act somatic and AF < ' + str(self.germline_min_freq), is_canonical, no_transcript,
+                                         rejected_output_f, self.status, fields)
+                    continue
+
+            else:
                 if nt_chg_key in self.filter_snp:
                     self.reject_mutation('not act and in filter_common_snp', is_canonical, no_transcript,
                                          rejected_output_f, self.status, fields)
@@ -803,7 +853,6 @@ class Filtration:
                     self.reject_mutation('not act and all GMAF > ' + str(self.min_gmaf), is_canonical, no_transcript,
                                          rejected_output_f, self.status, fields)
                     continue
-                clncheck = check_clnsig(fields[clnsig_col])
                 if clncheck == 'dbSNP':  # Even if it's COSMIC in status, it's going to be filtered in case of low ClinVar significance
                     self.reject_mutation('clnsig dbSNP', is_canonical, no_transcript, rejected_output_f, self.status, fields)
                     continue
@@ -812,52 +861,6 @@ class Filtration:
                                          rejected_output_f, self.status, fields)
                     continue
 
-            snps = re.findall(r'rs\d+', fields[3])
-            if any(snp in self.snpeff_snp_rsids for snp in snps):
-                self.reject_mutation('snp in snpeffect_export_polymorphic', is_canonical, no_transcript,
-                                     rejected_output_f, self.status, fields)
-                continue
-
-            if sample_regexp:
-                if sample_regexp.match(sample):
-                    sample = re.findall(self.reg_exp_sample, sample)[0]
-                else:
-                    continue
-
-            # Filter low AF MSI
-            msi = float(fields[msi_col])
-            if abs(len(ref) - len(alt)) == 1 and msi > 3:
-                msi_fail = any([
-                    msi <=  7 and af < 0.03,
-                    msi ==  8 and af < 0.06,
-                    msi ==  9 and af < 0.125,
-                    msi == 10 and af < 0.175,
-                    msi == 11 and af < 0.25,
-                    msi == 12 and af < 0.3,
-                    msi >  12 and af < 0.35])
-                if msi_fail:
-                    self.reject_mutation('MSI fail', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-
-            cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
-            cosm_aa_chg = self.check_by_var_class(var_class, cosm_aa_chg, cosmic_counts)
-            aa_chg = self.check_by_effect(var_type, aa_chg, cdna_chg, effect)
-
-            if is_hotspot_nt(chrom, pos, ref, alt, self.hotspot_nucleotides):
-                self.update_status('likely', 'hotspot_nucl_change')
-            elif is_hotspot_prot(gene, aa_chg, self.hotspot_proteins):
-                self.update_status('likely', 'hotspot_AA_change')
-
-            if actionability:
-                if actionability == 'germline' and af < self.germline_min_freq:
-                    self.reject_mutation('act germline and AF < ' + str(self.act_min_freq), is_canonical, no_transcript,
-                                         rejected_output_f, self.status, fields)
-                    continue
-                if af < self.act_min_freq:
-                    self.reject_mutation('act somatic and AF < ' + str(self.germline_min_freq), is_canonical, no_transcript,
-                                         rejected_output_f, self.status, fields)
-                    continue
-            else:
                 if var_type.startswith('SYNONYMOUS') or fclass.upper() == 'SILENT':
                     # Discarding any dbSNP silent mutation.
                     # Caveat: any silent mutation with entries in both dbSNP and COSMIC will be filtered,
@@ -881,31 +884,31 @@ class Filtration:
                                          rejected_output_f, self.status, fields)
                     continue
 
-            if not actionability and self.status != 'known':
-                if var_type.startswith('UPSTREAM'):
-                    self.reject_mutation('not known and UPSTREAM', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if var_type.startswith('DOWNSTREAM'):
-                    self.reject_mutation('not known and DOWNSTREAM', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if var_type.startswith('INTERGENIC'):
-                    self.reject_mutation('not known and INTERGENIC', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if var_type.startswith('INTRAGENIC'):
-                    self.reject_mutation('not known and INTRAGENIC', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if 'UTR_' in var_type and 'CODON' not in var_type:
-                    self.reject_mutation('not known and not UTR_/CODON', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if 'NON_CODING' in gene_coding.upper():
-                    self.reject_mutation('not known and NON_CODING', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if fclass.upper().startswith('NON_CODING'):
-                    self.reject_mutation('not known and fclass=NON_CODING', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
-                if var_class == 'dbSNP':
-                    self.reject_mutation('not known and dbSNP', is_canonical, no_transcript, rejected_output_f, self.status, fields)
-                    continue
+                if self.status != 'known':
+                    if var_type.startswith('UPSTREAM'):
+                        self.reject_mutation('not known and UPSTREAM', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if var_type.startswith('DOWNSTREAM'):
+                        self.reject_mutation('not known and DOWNSTREAM', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if var_type.startswith('INTERGENIC'):
+                        self.reject_mutation('not known and INTERGENIC', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if var_type.startswith('INTRAGENIC'):
+                        self.reject_mutation('not known and INTRAGENIC', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if 'UTR_' in var_type and 'CODON' not in var_type:
+                        self.reject_mutation('not known and not UTR_/CODON', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if 'NON_CODING' in gene_coding.upper():
+                        self.reject_mutation('not known and NON_CODING', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if fclass.upper().startswith('NON_CODING'):
+                        self.reject_mutation('not known and fclass=NON_CODING', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
+                    if var_class == 'dbSNP':
+                        self.reject_mutation('not known and dbSNP', is_canonical, no_transcript, rejected_output_f, self.status, fields)
+                        continue
 
             # Ignore any variants that occur after last known critical amino acid
             aa_pos = None
