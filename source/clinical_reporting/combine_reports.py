@@ -84,23 +84,33 @@ def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, sample_para
     #     join(output_dirpath, 'clinical_report.html'), samples_data=samples_data, is_target2wgs=is_target2wgs)
     report.key_genes_report = None
     sample_nums = set([get_group_num(key) for key in infos_by_key.keys()])
-    for num in sample_nums:
+    for group_num in sample_nums:
         sample_report = ComparisonClinicalReporting(cnf, dict())
         sample_experiments = OrderedDict()
         for k, e in report.experiment_by_key.items():
-            if get_group_num(e.key) == num and 'PBMC' not in e.sample.name:
+            if get_group_num(e.key) == group_num and 'PBMC' not in e.sample.name:
                 sample_experiments[k] = e
 
         sample_report.experiment_by_key = sample_experiments
-        sample_report.mutations_report, sample_report.venn_plot_data = report.mutations_reports[num]
-        sample_report.mutations_parameters = make_parameters_json(sample_parameters)
-        sample_report.seq2c_report = report.seq2c_reports[num]
-        sample_report.write_report(join(output_dirpath, 'report_' + str(num) + '.html'), samples_data=samples_data)
+        sample_report.mutations_report, sample_report.venn_plot_data = report.mutations_reports[group_num]
+        sample_report.mutations_parameters = make_parameters_json(sample_parameters, samples_data, sample_experiments, group_num)
+        sample_report.seq2c_report = report.seq2c_reports[group_num]
+        sample_report.write_report(join(output_dirpath, 'report_' + str(group_num) + '.html'), samples_data=samples_data)
 
 
-def make_parameters_json(sample_parameters):
+def make_parameters_json(sample_parameters, samples_data, sample_experiments, group_num):
     parameters_list = []
+    parameters_values = defaultdict(set)
+    for k, e in sample_experiments.iteritems():
+        if get_group_num(e.key) != group_num:
+            continue
+        project_dirpath = dirname(dirname(e.sample.dirpath))
+        sample_info = samples_data[project_dirpath][e.sample.name]
+        for parameter, value in sample_info.iteritems():
+            parameters_values[parameter].add(value)
     for parameter, values in sample_parameters.iteritems():
+        if len(parameters_values[parameter]) < 2:
+            continue
         parameter_info = dict()
         parameter_info['parameter'] = parameter
         sorted_values = sorted(list(values))
