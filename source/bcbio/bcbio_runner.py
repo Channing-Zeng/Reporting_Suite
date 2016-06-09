@@ -140,6 +140,7 @@ class BCBioRunner:
         self.threads_per_sample = 1  # max(self.max_threads / total_samples_num, 1)
 
         target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_bed = self._prep_bed()
+        cnf.bed = target_bed
 
         self._init_steps(cnf, self.run_id, target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_bed)
 

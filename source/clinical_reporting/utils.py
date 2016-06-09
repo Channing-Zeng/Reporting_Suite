@@ -151,7 +151,7 @@ def get_key_or_target_bed_genes(bed_fpath, key_genes_fpath):
     key_gene_names_chroms = None
     if bed_fpath:
         key_gene_names_chroms, gene_names_list = get_gene_keys(bed_fpath)
-        if len(key_gene_names_chroms) < 2000:
+        if key_gene_names_chroms and len(key_gene_names_chroms) < 2000:
             use_custom_panel = True
     if not use_custom_panel:
         key_gene_names = get_key_genes(key_genes_fpath)

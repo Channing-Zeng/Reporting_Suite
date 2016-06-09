@@ -206,6 +206,7 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
     cdna_chg_col = None
     status_col = None
     signif_col = None
+    incidentalome_col = None
 
     stop_gain_pattern = re.compile('^[A-Z]+\d+\*')
     fs_pattern = re.compile('^[A-Z]+(\d+)fs')
@@ -233,6 +234,8 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
                     signif_col = header.index('Significance')
                 else:
                     signif_col = len(header) - header[::-1].index('Status') - 1  # get last index of status
+                if 'Incidentalome' in header:
+                    incidentalome_col = header.index('Incidentalome')
                 continue
             fs = l.replace('\n', '').split('\t')
             sample, gene, chrom, pos, type_ = fs[sample_col], fs[gene_col], fs[chr_col], fs[pos_col], fs[type_col]
@@ -242,7 +245,8 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
             mut.aa_change, mut.cdna_change, mut.depth, mut.freq = fs[aa_chg_col], fs[cdna_chg_col], fs[depth_col], float(fs[allele_freq_col])
             mut.status = fs[status_col] if status_col is not None else None
             mut.signif = fs[signif_col] if signif_col is not None else None
-            if mut.signif == 'incidentalome':
+            incidentalome_reason = fs[incidentalome_col] if incidentalome_col is not None else None
+            if incidentalome_reason:
                 continue
             mut.type = 'Known' if mut.signif != 'unknown' else 'Unknown'
             if 'splice' in type_:
