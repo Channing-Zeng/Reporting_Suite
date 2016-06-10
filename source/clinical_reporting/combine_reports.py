@@ -8,7 +8,6 @@ from source import info, verify_file
 from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Patient, \
     get_sample_info, get_group_num, parse_mutations, get_mutations_fpath_from_bs
 from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
-from source.file_utils import safe_mkdir
 from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html, calc_cell_contents, make_cell_th, make_cell_td

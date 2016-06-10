@@ -597,9 +597,9 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             if (sample and sample_name == sample.name) or mutations_dict is not None:
                 if mutations_dict is not None:
                     mutations = mutations_dict[sample_name]
-                if (chrom, start, ref, alt, transcript) in alts_met_before:
+                if (chrom, start, ref, alt, transcript, sample_name) in alts_met_before:
                     continue
-                alts_met_before.add((chrom, start, ref, alt, transcript))
+                alts_met_before.add((chrom, start, ref, alt, transcript, sample_name))
 
                 if (gname, chrom) not in key_gene_by_name_chrom:
                     # warn('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutation:\n  ' + l)
@@ -627,7 +627,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                     mut.freq = None
                 mut.dbsnp_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('rs')), None)
                 mut.cosmic_id = next((id_.split(',')[0] for id_ in ids.split(';') if id_.startswith('COS')), None)
-                mut.msi = int(float(fs[msi_col]))
+                mut.msi = int(float(fs[msi_col])) if fs[msi_col] else None
                 mut.eff_type = (type_[0] + type_[1:].lower().replace('_', ' ')) if type_ else type_
                 mut.var_type = var_type
                 mut.var_class = var_class
@@ -729,4 +729,36 @@ def get_group_num(key):
 
 def capitalize_keep_uppercase(text):
     return text.capitalize() if not text.isupper() else text
+
+
+def get_record_from_vcf(vcf_reader, mut):
+    records = vcf_reader.fetch(mut.chrom, mut.pos - 1, mut.pos)
+    if records:
+        for record in records:
+            if record.POS != mut.pos:
+                continue
+            if not record.FILTER:
+                continue
+            return record
+    return None
+
+
+def parse_vcf_record(rec, mut, sample_name, vcf_reader):
+    tooltip = ''
+    for i, reason in enumerate(rec.FILTER):
+        if i != 0:
+            tooltip += '<br>'
+        reason_id, reason_desc = vcf_reader.filters[reason]
+        tooltip += reason_desc
+    sample_index = rec._sample_indexes[sample_name]
+    sample_data = rec.samples[sample_index]
+    if not sample_data.is_variant:
+        return None, None, None
+
+    depth = sample_data.data.DP
+    freq = sample_data.data.AF
+    for alt in rec.ALT:
+        if mut.alt != str(alt) or len(rec.ALT) > 1:
+            tooltip += '<br> Mutation: ' + str(mut.gene.name) + ' ' + str(rec.REF) + '>' + str(alt)
+    return depth, freq, tooltip
 

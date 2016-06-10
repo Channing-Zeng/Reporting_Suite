@@ -10,12 +10,15 @@ import source
 from source import info, verify_file
 from source.bcbio.project_level_report import get_version
 from source.calling_process import call
-from source.clinical_reporting.clinical_parser import get_sample_info, get_group_num, capitalize_keep_uppercase
+from source.clinical_reporting.clinical_parser import get_sample_info, get_group_num, capitalize_keep_uppercase, \
+    parse_vcf_record, get_record_from_vcf
+from source.file_utils import open_gzipsafe
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.targetcov.bam_and_bed_utils import sambamba_depth
 from source.targetcov.cov import get_mean_cov
 from source.tools_from_cnf import get_script_cmdline
+from source.variants import vcf_parser as vcf
 from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local, gray
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
@@ -129,9 +132,20 @@ class BaseClinicalReporting:
         print_cdna = False
         muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         sample_experiments = []
+        vcf_readers = dict()
+        filt_vcf_readers = dict()
         for e, muts in mutations_by_experiment.items():
             if cur_group_num and get_group_num(e.key) == cur_group_num:
                 sample_experiments.append(e)
+                variant_caller = 'vardict' if 'vardict' in e.sample.variantcallers else 'vardict-java'
+                if e.sample.vcf_by_callername.get(variant_caller):
+                    vcf_fpath = e.sample.vcf_by_callername.get(variant_caller)
+                    filt_vcf_fpath = e.sample.find_filt_vcf_by_callername(variant_caller)
+                    if vcf_fpath:
+                        vcf_readers[e] = vcf.Reader(open_gzipsafe(vcf_fpath, 'r'))
+                    if filt_vcf_fpath:
+                        filt_vcf_readers[e] = vcf.Reader(open_gzipsafe(filt_vcf_fpath, 'r'))
+
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
                 if mut.cdna_change.strip():
@@ -226,11 +240,25 @@ class BaseClinicalReporting:
                             rejected_mut = e.rejected_mutations[(mut.gene.name, mut.pos)]
                             depth = gray(str(rejected_mut.depth))
                             tooltip = str(rejected_mut.reason)
-                            if rejected_mut.alt != mut.alt or mut.aa_change != rejected_mut.aa_change:
+                            if rejected_mut.alt != mut.alt or (rejected_mut.aa_change and mut.aa_change != rejected_mut.aa_change):
                                 tooltip += '<br> Mutation: ' + str(rejected_mut.gene) + ' ' + str(rejected_mut.ref) + '>' + str(rejected_mut.alt) + \
                                            ' ' + str(rejected_mut.aa_change)
-                            freq = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(rejected_mut.freq * 100) + ' </span>'
-                            row.add_record(formatted_name + ' Freq', freq, num=rejected_mut.freq, show_content=mut.is_canonical, text_color='gray')
+                            freq_rec = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(rejected_mut.freq * 100) + ' </span>'
+                            row.add_record(formatted_name + ' Freq', freq_rec, num=rejected_mut.freq, show_content=mut.is_canonical, text_color='gray')
+                        else:
+                            if e in vcf_readers:
+                                record = get_record_from_vcf(vcf_readers[e], mut)
+                                vcf_reader = vcf_readers[e]
+                            if not record and e in filt_vcf_readers:
+                                record = get_record_from_vcf(filt_vcf_readers[e], mut)
+                                vcf_reader = filt_vcf_readers[e]
+                            if record:
+                                depth, freq, tooltip = parse_vcf_record(record, mut, e.sample.name, vcf_reader)
+                                if depth and freq:
+                                    depth = gray(str(depth))
+                                    freq_rec = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(freq * 100) + ' </span>'
+                                    row.add_record(formatted_name + ' Freq', freq_rec, num=freq, text_color='gray')
+
                         if not depth and not e.sample.bam:
                             continue
                         if not depth and mut.gene.key in e.key_gene_by_name_chrom:
