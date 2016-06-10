@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import izip
 from json import load
 from os.path import join, dirname
@@ -132,6 +132,18 @@ class CDS:
 class Patient:
     def __init__(self, gender=None):
         self.gender = gender
+
+
+class CombinedSampleInfo:
+    def __init__(self, group=0):
+        self.group = group
+        self.data = OrderedDict()
+
+
+class Parameter:
+    def __init__(self):
+        self.values = set()
+        self.prefixes = defaultdict()
 
 
 class Target:
@@ -712,15 +724,11 @@ def get_total_variants_number(sample, varqc_json_fpath):
     return r.value if r else None
 
 
-def get_sample_info(sample_name, sample_dirpath, samples_data, return_info=False):
+def get_sample_info(sample_name, sample_dirpath, samples_data):
     project_dirpath = dirname(dirname(sample_dirpath))
-    sample_info = samples_data[project_dirpath][sample_name]
+    sample_info = samples_data[project_dirpath][sample_name].data
     sample_parameters = [capitalize_keep_uppercase(v) for k, v in sample_info.iteritems()]
-    if return_info:
-        return sample_parameters
-
-    formatted_name = ' '.join(sample_parameters)
-    return formatted_name
+    return sample_parameters
 
 
 def get_group_num(key):

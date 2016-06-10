@@ -9,7 +9,7 @@ from os.path import join, abspath
 from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
-from source.clinical_reporting.clinical_parser import capitalize_keep_uppercase
+from source.clinical_reporting.clinical_parser import capitalize_keep_uppercase, CombinedSampleInfo, Parameter
 from source.clinical_reporting.combine_reports import run_combine_clinical_reports
 from source.config import defaults
 from source.logger import info, critical, err
@@ -40,7 +40,7 @@ def main():
         critical('Usage: ' + __file__ + '  project_bcbio_path [project_bcbio_path] --metadata metadata_path [-o output_dir]')
 
     cnf.sample_names = []
-    sample_parameters, samples_data, samples_by_group = parse_samples_metadata(cnf, cnf.metadata_csv)
+    parameters_info, samples_data = parse_samples_metadata(cnf, cnf.metadata_csv)
 
     info()
     info('*' * 70)
@@ -75,7 +75,7 @@ def main():
 
     info('')
     info('*' * 70)
-    run_combine_clinical_reports(cnf, bcbio_structures, samples_by_group, sample_parameters, samples_data)
+    run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples_data)
 
 
 def parse_samples_metadata(cnf, csv_fpath):
@@ -87,8 +87,7 @@ def parse_samples_metadata(cnf, csv_fpath):
     headers = []
     parameters = []
 
-    sample_parameters = OrderedDefaultDict(set)
-    samples_by_group = defaultdict(int)
+    parameters_info = OrderedDefaultDict(Parameter)
     samples_data = defaultdict(lambda : defaultdict(OrderedDict))
     with open(csv_fpath) as input_f:
         for i, l in enumerate(input_f):
@@ -110,14 +109,27 @@ def parse_samples_metadata(cnf, csv_fpath):
             cnf.sample_names.append(sample_name)
             project_path = abspath(fields[project_col])
             group = fields[group_col]
-            samples_by_group[(sample_name, project_path)] = group
+            sample_info = CombinedSampleInfo(group=group)
+            sample_data = sample_info.data
             for index, col in enumerate(additional_cols):
                 parameter_name = parameters[index]
                 parameter_value = fields[col]
-                if parameter_value not in sample_parameters[parameter_name]:
-                    sample_parameters[parameter_name].add(parameter_value)
-                samples_data[project_path][sample_name][parameter_name] = parameter_value
-    return sample_parameters, samples_data, samples_by_group
+                if parameter_value not in parameters_info[parameter_name].values:
+                    parameters_info[parameter_name].values.add(parameter_value)
+                sample_data[parameter_name] = parameter_value
+            samples_data[project_path][sample_name] = sample_info
+    for parameter_name, parameter in parameters_info.iteritems():
+        values_list = list(parameter.values)
+        values_list = [''] + sorted(values_list) + ['']
+        def get_prefix_len(x):
+            return len(os.path.commonprefix(x))
+        for i, value in enumerate(values_list[:-1]):
+            if i == 0:
+                continue
+            prefix_len = 1 + max(get_prefix_len(values_list[i-1:i+1]), get_prefix_len(values_list[i:i+2]))
+            parameters_info[parameter_name].prefixes[value.lower()] = value[:prefix_len].capitalize()
+
+    return parameters_info, samples_data
 
 
 if __name__ == '__main__':

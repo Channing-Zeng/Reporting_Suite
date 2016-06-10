@@ -59,7 +59,7 @@ class BaseClinicalReporting:
         self.cnf = cnf
         self.chromosomes_by_name = Chromosome.build_chr_by_name(self.cnf)
 
-    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, samples_data=None, sample_parameters=None,
+    def make_mutations_report(self, mutations_by_experiment, jbrowser_link, samples_data=None, parameters_info=None,
                               create_venn_diagrams=False, cur_group_num=None):
         full_names = []
         if len(mutations_by_experiment) == 1:
@@ -115,14 +115,14 @@ class BaseClinicalReporting:
                 Metric('cDNA change', class_='long_line', description='cDNA change'),       # G>A
                 Metric('MSI', short_name='HP', description='Microsatellite instability length', quality='Less is better', with_heatmap=False),
             ])
-            if sample_parameters:
-                for parameter in sample_parameters.keys():
-                    ms.append(Metric(parameter, is_hidden=True))
+            if parameters_info:
+                for parameter_name in parameters_info.keys():
+                    ms.append(Metric(parameter_name, is_hidden=True))
 
         venn_sets = OrderedDefaultDict(int)
 
         if create_venn_diagrams:
-            samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment, full_names, sample_parameters, samples_data)
+            samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment, full_names, parameters_info, samples_data)
 
         clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
         report = PerRegionSampleReport(sample=mutations_by_experiment.keys()[0].sample,
@@ -227,7 +227,7 @@ class BaseClinicalReporting:
                 row.add_record('Depth', mut.depth if mut else None, show_content=mut.is_canonical)
             else:
                 if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
-                    self._find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data)
+                    self._find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data, parameters_info)
                 for e, formatted_name in full_names.items():
                     if e in mut_by_experiment:
                         m = mut_by_experiment[e]
@@ -291,7 +291,7 @@ class BaseClinicalReporting:
         return report
 
     @staticmethod
-    def _find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data):
+    def _find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data, parameters_info):
         all_parameters = defaultdict(set)
         if cur_experiments:
             cur_group_num = get_group_num(cur_experiments[0].key)
@@ -299,7 +299,7 @@ class BaseClinicalReporting:
                 if get_group_num(e.key) != cur_group_num:
                     continue
                 project_dirpath = dirname(dirname(e.sample.dirpath))
-                sample_info = samples_data[project_dirpath][e.sample.name]
+                sample_info = samples_data[project_dirpath][e.sample.name].data
                 for parameter, value in sample_info.iteritems():
                     all_parameters[parameter].add(value)
         for parameter, values in all_parameters.iteritems():
@@ -312,12 +312,13 @@ class BaseClinicalReporting:
             for e, m in mut_by_experiment.items():
                 if get_group_num(e.key) == cur_group_num:
                     continue
-                sample_parameters = get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True)
+                sample_parameters = get_sample_info(e.sample.name, e.sample.dirpath, samples_data)
                 parameters_to_combine = ['WGS', 'AZ300', 'AZ50', 'Exome', 'WES']
                 for parameter in parameters_to_combine:
                     if parameter in sample_parameters:
                         sample_parameters.remove(parameter)
-                num_by_samples[tuple(sample_parameters)].add(get_group_num(e.key))
+                short_parameters = [parameters_info.items()[i][1].prefixes[p.lower()] for i, p in enumerate(sample_parameters)]
+                num_by_samples[tuple(short_parameters)].add(get_group_num(e.key))
                 report_link = '<a href="' + basename(e.sample.clinical_html) + '" target="_blank">' + e.sample.name + '</a>'
                 freq = Metric.format_value(m.freq, is_html=True, unit='%')
                 tooltip = report_link + ':  ' + str(freq) + '  ' + str(m.depth) + '<br>'
@@ -334,7 +335,7 @@ class BaseClinicalReporting:
         for e in mutations_by_experiment.keys():
             formatted_name = ''
             if get_group_num(e.key) == cur_group_num:
-                formatted_name = get_sample_info(e.sample.name, e.sample.dirpath, samples_data)
+                formatted_name = ' '.join(get_sample_info(e.sample.name, e.sample.dirpath, samples_data))
             elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
                 formatted_name = e.key
             formatted_names.append(formatted_name)
@@ -366,10 +367,10 @@ class BaseClinicalReporting:
         return short_names, full_names
 
 
-    def group_for_venn_diagram(self, mutations_by_experiment, full_names, sample_parameters, samples_data):
+    def group_for_venn_diagram(self, mutations_by_experiment, full_names, parameters_info, samples_data):
         samples_by_index = dict()
         set_labels = dict()
-        parameters = [values for k, values in sample_parameters.iteritems()]
+        parameters = [parameter.values for k, parameter in parameters_info.iteritems()]
         base_groups = list(itertools.product(*parameters))
         used_samples = set()
         set_index = 0
@@ -379,7 +380,8 @@ class BaseClinicalReporting:
             sample_name = full_names[e]
             for index, g in enumerate(base_groups):
                 if sample_name not in used_samples and \
-                        all(capitalize_keep_uppercase(parameter) in get_sample_info(e.sample.name, e.sample.dirpath, samples_data, return_info=True) for parameter in g):
+                        all(capitalize_keep_uppercase(parameter) in get_sample_info(e.sample.name, e.sample.dirpath,
+                                                                                    samples_data) for parameter in g):
                     used_samples.add(sample_name)
                     samples_by_index[sample_name] = index
                     set_labels[index] = ' '.join(g)

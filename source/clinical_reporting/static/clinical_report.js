@@ -306,6 +306,7 @@ function createSelectVariants() {
     if (!data) return;
 
     var selectContainer = $("#select_table_div");
+    var backgroundColors = ['#EFF', '#FFE', '#FFEFEE'];
     var tableHead = document.createElement('thead');
     var tableBody = document.createElement('tbody');
     var tableRows = [];
@@ -339,6 +340,10 @@ function createSelectVariants() {
             radioBtn.id = radioBtnId;
             if (j == 0)
                 $(radioBtn).prop("checked", true);
+            if (i == 0 && values[j] != 'all' && values[j] != 'common') {
+                var bgColor = backgroundColors[(j - 1) % backgroundColors.length];
+                $('#report_table_mutations').find('tr:not(.known) td[metric~="' + values[j].capitalize() + '"]').css("backgroundColor", bgColor);
+            }
 
             var label = document.createElement('label');
             label.htmlFor = radioBtnId;
@@ -506,6 +511,10 @@ function convertHex(hex, opacity){
     result = 'rgba('+r+','+g+','+b+','+opacity/100+')';
     return result;
 }
+
+String.prototype.capitalize = function() {
+    return this.charAt(0).toUpperCase() + this.slice(1);
+};
 
 //function extendedClick() {
 //    //$('.row_to_hide').toggleClass('row_hidden');
