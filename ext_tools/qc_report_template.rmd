@@ -5,11 +5,11 @@ output: html_document
 
 ```{{r Load_Libraries, include=FALSE}}
 
+library("ggplot2")
 library(DESeq2)
 library("RColorBrewer")
 library("gplots")
 library(amap)
-library("ggplot2")
 library(pheatmap)
 library(reshape2)
 
