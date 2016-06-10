@@ -566,7 +566,7 @@ class Filtration:
             self.print_rejected_mutation(rejected_output_f, status, reason, fields)
 
     def print_rejected_mutation(self, output_f, status, reason, fields):
-        output_f.write('\t'.join(fields + [status] + [reason]) + '\n')
+        output_f.write('\t'.join(fields + [status] + [reason] + ['']) + '\n')
 
     def apply_reject_counter(self, reason, is_canonical, no_transcript):
         self.all_reject_counter[reason] += 1
@@ -697,8 +697,7 @@ class Filtration:
                 if all_transcripts_output_f:
                     all_transcripts_output_f.write(l)
                 if rejected_output_f:
-                    header = '\t'.join(new_headers[:-1]) + '\n'
-                    rejected_output_f.write(header)
+                    rejected_output_f.write(l)
                 continue
 
             fields = l.split('\t')
