@@ -8,7 +8,7 @@
 <h1 id="mutation-prioritization">Mutation prioritization</h1>
 <p>in <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite">AZ post-processing</a> pipeline for BCBio-nextgen</p>
 <h3 id="1-variant-calling">1. Variant calling</h3>
-<p>Variants are found by <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict</a> (<a href="http://www.ncbi.nlm.nih.gov/pubmed/27060149">Lai Z, 2016</a>), a versatile variant caller for cancer samples. In this articles, we focus at the following genomic varaints:</p>
+<p>Variants are found by <a href="https://github.com/AstraZeneca-NGS/VarDict">VarDict</a> (<a href="http://www.ncbi.nlm.nih.gov/pubmed/27060149">Lai Z, 2016</a>), a versatile variant caller for cancer samples. In this articles, we focus at the following genomic variants:</p>
 <ul>
 <li>Single nucleotide polymorphisms (SNP)</li>
 <li>Multiple nucleotide polymorphisms (MNP)</li>
@@ -38,7 +38,7 @@ SureSelect_Human_AllExon_V4.bed
 SureSelect_Human_AllExon_V5.bed
 Xgen-PanCancer.bed
 </code></pre><h3 id="2-variant-annotation">2. Variant annotation</h3>
-<p>Variants in form of VCF file are annotated using <a href="http://snpeff.sourceforge.net/">SnpEff</a> tool that predicts effect of variants on gene function, in respect to RefSeq gene model. We predict based on canonical (longest) transcripts only, except for the following genes where the longest trasncript is substituted with a smaller, but more cancer-relevant one:</p>
+<p>Variants in form of VCF file are annotated using <a href="http://snpeff.sourceforge.net/">SnpEff</a> tool that predicts effect of variants on gene function, in respect to RefSeq gene model. We predict based on canonical (longest) transcripts only, except for the following genes where the longest transcript is substituted with a smaller, but more cancer-relevant one:</p>
 <pre><code>FANCL   NM_018062.3
 MET     NM_000245.2
 CDKN2A  NM_000077.4
@@ -59,9 +59,9 @@ CHEK1   NM_001274.5
 <li>gene and transcript IDs</li>
 <li>gene biotype (coding/ncRNA/pseudogene)</li>
 <li>if the variant is in intron/CDS/upstream/downstream/non-coding/splice site</li>
-<li>mutation functional class (silent/missence/nonsence)</li>
+<li>mutation functional class (silent/missense/nonsense)</li>
 <li>codon change</li>
-<li>aminoacid change</li>
+<li>amino acid change</li>
 </ul>
 <p>Variants are also searched against the following variant databases:</p>
 <ul>
@@ -70,16 +70,16 @@ CHEK1   NM_001274.5
 <li><a href="http://www.ncbi.nlm.nih.gov/clinvar/">ClinVar</a> &mdash; assigns CLNSIG (clinical significance)</li>
 </ul>
 <h3 id="3-raw-filtering-vardict-txt">3. Raw filtering: vardict.txt</h3>
-<p>The first filtering step is performed using <a href="https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl">vcf2txt.pl</a> script from the VarDict package. It consumes an annotated VCF file from VarDict, annotated as described above, and produces <code>vardict.txt</code> tab-separated file in a specific format. The program (1) performs hard and soft filtering for low quality variants, (2) assigns <em>variant class</em> (&quot;novelty&quot;), (3) assigns <em>variant type</em> (CNV, MNV, deletion, insertion, compelex).</p>
+<p>The first filtering step is performed using <a href="https://github.com/AstraZeneca-NGS/VarDict/blob/master/vcf2txt.pl">vcf2txt.pl</a> script from the VarDict package. It consumes an annotated VCF file from VarDict, annotated as described above, and produces <code>vardict.txt</code> tab-separated file in a specific format. The program (1) performs hard and soft filtering for low quality variants, (2) assigns <em>variant class</em> (&quot;novelty&quot;), (3) assigns <em>variant type</em> (CNV, MNV, deletion, insertion, complex).</p>
 <p>Hard filtering (where the variants are discarded) is performed using the following parameters:</p>
 <ul>
 <li>Locus total depth (&ge; 3x)</li>
 <li>Mean position in reads (&ge; 5)</li>
 <li>Mean base quality phred score (&ge; 25)</li>
 </ul>
-<p>Soft filtering (the variants are reproted into <code>vardict.txt</code> with a reject reason in the <code>PASS</code> column) is done based on the following:</p>
+<p>Soft filtering (the variants are reported into <code>vardict.txt</code> with a reject reason in the <code>PASS</code> column) is done based on the following:</p>
 <ul>
-<li>Variant depth (&ge; 2x for WGS; &ge; 3x for exomes, hybrid capture, and targeted)</li>
+<li>Variant depth (&ge; 3x)</li>
 <li>Mean mapping quality (&ge; 10)</li>
 </ul>
 <p>The thresholds are specified in the run_info.yaml configuration file. Depending on the analysis, it can be either of <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_ExomeSeq.yaml">run_info_ExomeSeq.yaml</a>, <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_WGS.yaml">run_info_WGS.yaml</a>, or <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_DeepSeq.yaml">run_info_DeepSeq.yaml</a>; the defaults are pulled from <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/configs/RUNINFO_DEFAULTS.yaml">RUNINFO_DEFAULTS.yaml</a></p>
@@ -93,7 +93,7 @@ CHEK1   NM_001274.5
 </ul>
 <p>The results of the script are saved under <code>final/YYYY-MM-DD_projectname/var/vardict.txt</code></p>
 <h3 id="4-cancer-mutation-filtering-vardict-pass-txt">4. Cancer mutation filtering: vardict.PASS.txt</h3>
-<p>This step consumes sample-level <code>vardict.txt</code> files and produces sample-level <code>vardict.PASS.txt</code>. It starts with dropping all soft-filtered variants in the previous step, and then removes cancer non-releveant germline mutations and potential artefacts, and classifies the remaning mutations based on their &#39;actionability&#39; (see the defenition in <a href="http://www.nature.com/nrc/journal/v16/n5/full/nrc.2016.35.html">Carr et al. 2015</a>):</p>
+<p>This step consumes sample-level <code>vardict.txt</code> files and produces sample-level <code>vardict.PASS.txt</code>. It starts with dropping all soft-filtered variants in the previous step, and then removes cancer non-relevant germline mutations and potential artefacts, and classifies the remaining mutations based on their &#39;actionability&#39; (see the definition in <a href="http://www.nature.com/nrc/journal/v16/n5/full/nrc.2016.35.html">Carr et al. 2015</a>):</p>
 <ul>
 <li><code>known</code> (highly actionable)</li>
 <li><code>likely</code> (could be actionable, but the evidence is more equivocal or limited)</li>
@@ -103,18 +103,18 @@ CHEK1   NM_001274.5
 <h4 id="germline-and-known-common-artifacts">Germline and known common artifacts</h4>
 <p>Germline SNPs occur at approximately 100%, 50%, or 0% frequency, and every effort is made to filter out germline variants. However, some germline variants are important, especially for tumor suppressor genes like BRCA1 and BRCA2. Germline mutations may be of variants of uncertain significance (VUS), and may be relevant when heterozygous, or only when the other allele is also affected in the tumor, further complicating decisions on actionability. </p>
 <h5 id="heuristics">Heuristics</h5>
-<p>Currently, the following is done in order to filter gemeline variants:</p>
+<p>Currently, the following is done in order to filter germline variants:</p>
 <ul>
 <li>In paired analysis, removing mutations appearing both in tumor and in normal match in similar frequency</li>
 <li>Removing dbSNP common SNPs, reported in ClinVar with <code>CLNSIG</code> = <code>2</code> (<em>Benign</em>) or <code>3</code> (<em>Likely benign</em>), unless actionable</li>
-<li>Removing variants with high global minor allele frequenecy (GMAF) in TCGA (&gt; 0.0025), unless actionable</li>
+<li>Removing variants with high global minor allele frequency (GMAF) in TCGA (&gt; 0.0025), unless actionable</li>
 <li>Cohort filtering: removing <code>unknown</code> variants present in &ge; 40% samples and &gt; 5 samples</li>
 </ul>
 <h5 id="known-common-artifacts">Known common artifacts</h5>
-<p>Variants are also checked against a list of positions and rules of common germline mutatations and artifacts, similarly to actionable lists:</p>
+<p>Variants are also checked against a list of positions and rules of common germline mutations and artifacts, similarly to actionable lists:</p>
 <ul>
 <li><a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/filter_common_artifacts.txt">filter_common_artifacts.txt</a> &mdash; genomic positions and rules. If rule, filter even if actionable. If position, filter if non-actionable and AF &lt; 35%.</li>
-<li><a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/actionable_hotspot.txt">actionable_hotspot.txt</a> &mdash; aminoacid positions (removed even if actionable), records only starting with <code>^</code>, e.g.: <pre><code>- ^RBMX    G356W    1    Artifact in low complexity
+<li><a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/actionable_hotspot.txt">actionable_hotspot.txt</a> &mdash; amino acid positions (removed even if actionable), records only starting with <code>^</code>, e.g.: <pre><code>- ^RBMX    G356W    1    Artifact in low complexity
 - ^NQO1    P187S    1    Common germline SNP
 </code></pre></li>
 <li><a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/hg19/filter_common_snp.txt">filter_common_snp.txt</a> &mdash; genomic positions, removed if not actionable.</li>
@@ -124,7 +124,7 @@ CHEK1   NM_001274.5
 <h4 id="tier-1-mdash-actionable-mutations-mdash-known-">Tier 1 &mdash; actionable mutations &mdash; <code>known</code></h4>
 <p>Variants are checked against a set of rules that defined <em>actionable</em> (known driver) variants. Highly actionable mutations (robust evidence base and/or strong scientific rationale linking the mutation with probable sensitization to drug, and/or high likelihood of response in proposed trial and disease setting) are reported as <code>known</code>.</p>
 <p>The rules may specify any specific descriptive feature of a variant, like gene, exon, genomic or protein position and change, genomic or protein region, type of change: deletion, frameshift deletion, insertion, frameshift insertion, indel, etc.</p>
-<p>Aminoacid changes, exons and codon numbers that define actionable somatic and germline changes:</p>
+<p>Amino acid changes, exons and codon numbers that define actionable somatic and germline changes:</p>
 <ul>
 <li><a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/actionable_hotspot.txt">actionable_hotspot.txt</a> &mdash; everything until records starting with <code>^</code></li>
 <li><a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/reference_data/filtering/common/specific_mutations.tsv">specific_mutations.tsv</a> &mdash; mutations under <code>TIER1</code> column</li>
@@ -139,7 +139,7 @@ CHEK1   NM_001274.5
 <p>This class of mutations could be actionable, but no strong evidence supporting it observed. Reported as <code>likely</code>.</p>
 <ul>
 <li>High-impact somatic variants:<ul>
-<li>Frame shift</li>
+<li>Frameshift</li>
 <li>Stop gained</li>
 <li>Start loss</li>
 <li>Splice site mutation</li>
@@ -156,7 +156,7 @@ CHEK1   NM_001274.5
 <ul>
 <li>Moderate impact mutation (missense, inframe indels)</li>
 <li>Reported in ClinVar with <code>CLNSIG</code> = <code>0</code> (<em>Uncertain significance</em>) or <code>255</code> (<em>other</em>)</li>
-<li>Any silent unknown mutations are reported as <code>silent</code> in the <code>Reason</code> column (and reproted for driver analysis that compares mutations with silent background)</li>
+<li>Any silent unknown mutations are reported as <code>silent</code> in the <code>Reason</code> column (and reported for driver analysis that compares mutations with silent background)</li>
 </ul>
 <h4 id="allele-frequency-thresholds">Allele frequency thresholds</h4>
 <p>The AF thresholds are set:</p>
@@ -191,7 +191,7 @@ TYRO3
 </li>
 </ul>
 <h4 id="cohort-filtering">Cohort filtering</h4>
-<p>If the samples are not homogeneous, but come from single sequencer&#39;s run, we expect recurring variants to be caused by sequencing artefacts. Also, too common mutations are expected to be germline. For all not-known and not-actionable variants, we calcualte the number and the percentage of samples harbouring this variant. If it&#39;s more than 40% of all samples and at the same time at least 5 samples, such variants are filtered out. Cohort filtering is done on the stage of merging all sample-level <code>vardict.PASS.txt</code> into the project level <code>vardict.PASS.txt</code> located in <code>final/&lt;datestamp&gt;</code> directory.</p>
+<p>If the samples are not homogeneous, but come from single sequencer&#39;s run, we expect recurring variants to be caused by sequencing artefacts. Also, too common mutations are expected to be germline. For all non-known and non-actionable variants, we calculate the number and the percentage of samples harbouring this variant. If it&#39;s more than 40% of all samples and at the same time at least 5 samples, such variants are filtered out. Cohort filtering is done on the stage of merging all sample-level <code>vardict.PASS.txt</code> into the project level <code>vardict.PASS.txt</code> located in <code>final/&lt;datestamp&gt;</code> directory.</p>
 <h3 id="output-format">Output format</h3>
 <p><code>vardict.PASS.txt</code> is a tab-separated format that contains one record per protein change (e.g. several lines per genomic change can occur in case of overlapping genes or isoforms, although usually only one transcript per gene is analysed). </p>
 <pre><code>Sample              TCGA-FF-A7CQ-10A-01D-A385-10  
@@ -258,7 +258,7 @@ Significance        likely                        Mutation tier
 Reason              COSMIC_5+, stop_gained        Reason to put this mutation into this tier
 Incidentalome       low complexity gene           If mutation overlaps any region with poor callability
 </code></pre><h3 id="5-reporting">5. Reporting</h3>
-<p>Mutations are reported into NGS Oncology reports. For WES and WGS projects, the reports showsonly mutaitons in 817 key cancer genes. If it&#39;s a targeted panel (the total number of genes is less than 2000), the target genes are used instead.</p>
+<p>Mutations are reported into NGS Oncology reports. For WES and WGS projects, the reports shows only mutations in 817 key cancer genes. If it&#39;s a targeted panel (the total number of genes is less than 2000), the target genes are used instead.</p>
 <p><img src="ngs_report.png" alt="NGS report"></p>
 <p>By default, only <code>known</code> and <code>likely</code> changes are displayed. Clicking the &quot;+ unknown&quot; link will add <code>unknown</code> changes into the table too. </p>
 <p>The changes overlapping regions with poor callability are faded.</p>

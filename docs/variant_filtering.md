@@ -74,7 +74,7 @@ Hard filtering (where the variants are discarded) is performed using the followi
 - Mean base quality phred score (&ge; 25)
 
 Soft filtering (the variants are reported into `vardict.txt` with a reject reason in the `PASS` column) is done based on the following:
-- Variant depth (&ge; 2x for WGS; &ge; 3x for exomes, hybrid capture, and targeted)
+- Variant depth (&ge; 3x)
 - Mean mapping quality (&ge; 10)
 
 The thresholds are specified in the run_info.yaml configuration file. Depending on the analysis, it can be either of [run_info_ExomeSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_ExomeSeq.yaml), [run_info_WGS.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_WGS.yaml), or [run_info_DeepSeq.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/blob/master/configs/run_info_DeepSeq.yaml); the defaults are pulled from [RUNINFO_DEFAULTS.yaml](https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/configs/RUNINFO_DEFAULTS.yaml)
