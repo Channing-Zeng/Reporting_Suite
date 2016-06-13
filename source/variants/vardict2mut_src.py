@@ -461,7 +461,11 @@ class Filtration:
         aa_chg = aa_chg.replace('p.', '')
         aa_num = 0
         if aa_chg:
-            aa_num = int(re.sub('[^0-9]', '', aa_chg))
+            aa_num_str = re.sub('[^0-9]', '', aa_chg)
+            if not aa_num_str:
+                err('TP53: cannot parse aa num from aa_chg=' + str(aa_chg))
+            else:
+                aa_num = int(aa_num_str)
         if aa_snp_chg_pattern.match(aa_chg):
             for i in [1, 2, 3]:
                 if aa_chg in self.tp53_groups['Group ' + str(i)]:
@@ -801,10 +805,10 @@ class Filtration:
                 continue
 
             if is_lof:
-                if gene in self.oncogenes:
-                    for s in Filtration.statuses:
-                        self.reason_by_status[s].add('oncogene_lof')
-                elif gene in self.suppressors:
+                # if gene in self.oncogenes:
+                #     for s in Filtration.statuses:
+                #         self.reason_by_status[s].add('oncogene_lof')
+                if gene in self.suppressors:
                     self.update_status('likely', 'suppressor_lof')
 
             cosmic_counts = map(int, fields[cosmcnt_col].split()) if cosmcnt_col is not None else None
