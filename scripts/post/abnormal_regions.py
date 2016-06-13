@@ -29,7 +29,7 @@ def main(args):
 
     check_system_resources(
         cnf,
-        required=['samtools', 'bedtools'],
+        required=['bedtools'],
         optional=[])
     process_all(cnf, bcbio_structure)
 

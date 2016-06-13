@@ -16,8 +16,7 @@ from source.calling_process import call
 from source.config import with_cnf
 from source.file_utils import verify_file, adjust_path, safe_mkdir, expanduser, file_transaction
 from source.logger import info, err, step_greetings, critical
-from source.targetcov.bam_and_bed_utils import verify_bed, number_of_mapped_reads, sambamba_depth, \
-    number_of_mapped_not_duplicate_reads
+from source.targetcov.bam_and_bed_utils import verify_bed, number_of_mapped_reads, sambamba_depth
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import Region
@@ -100,14 +99,14 @@ def run_seq2c_bcbio_structure(cnf, bcbio_structure):
 #     return amplicons
 
 
-def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2c_output):
-    sample_name = sample.name
-
-    cmdline = '{seq2cov} -m {samtools} -z -b {bam_fpath} -N {sample_name} {amplicons_bed}'.format(**locals())
-    res = call(cnf, cmdline, seq2c_output)
-    if not res:
-        err('Could not run seq2cov.pl for ' + sample.name)
-        return None
+# def seq2c_seq2cov(cnf, seq2cov, samtools, sample, bam_fpath, amplicons_bed, seq2c_output):
+#     sample_name = sample.name
+#
+#     cmdline = '{seq2cov} -m {samtools} -z -b {bam_fpath} -N {sample_name} {amplicons_bed}'.format(**locals())
+#     res = call(cnf, cmdline, seq2c_output)
+#     if not res:
+#         err('Could not run seq2cov.pl for ' + sample.name)
+#         return None
 
 
 def run_seq2c(cnf, output_dirpath, samples, seq2c_bed, is_wgs):
@@ -484,158 +483,158 @@ def save_regions_to_seq2cov_output(cnf, sample_name, regions, output_fpath):
         return output_fpath
 
 
-def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_depths_fpath):
-    info()
-    # info('Combining gene depths...')
-    seq2c_work_dir = join(cnf.work_dir, source.seq2c_name)
-    safe_mkdir(seq2c_work_dir)
-    seq2cov_fpath_by_sample = {s.name: join(seq2c_work_dir, s.name) for s in samples}
-
-    result = []
-    features_bed_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
-    # print any(not verify_file(seq2cov_fpath_by_sample[s.name], silent=True) for s in samples)
-    seq2c_bed = None
-    if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name,
-            silent=True) for s in samples) or not cnf.reuse_intermediate:
-        if cnf._prep_bed is not False:
-            _, _, _, seq2c_bed = \
-                prepare_beds(cnf, features_bed=features_bed_fpath, target_bed=target_bed, seq2c_bed=target_bed)
-        else:
-            seq2c_bed = target_bed or verify_bed(cnf.genome.cds)
-
-    # info('Running first for the de-dupped version, then for the original version.')
-    # Parallel(n_jobs=cnf.threads) \
-    #     (delayed(_run_cov2cnv)(CallCnf(cnf.__dict__), seq2cov, samtools, s, bed_fpath, dedupped_bam_by_sample)
-    #         for s in samples)
-
-    qsub = get_system_path(cnf, 'qsub')
-    runner_script = abspath(expanduser(cnf.qsub_runner))
-    queue = cnf.queue
-    bash = get_system_path(cnf, 'bash')
-
-    seq2cov_wrap = get_system_path(cnf, 'bash', join('Seq2C', 'seq2cov_wrap.sh'), is_critical=True)
-    seq2cov      = get_system_path(cnf, join('Seq2C', 'seq2cov.pl'), is_critical=True)
-    wait_vardict = get_system_path(cnf, 'perl', join('Seq2C', 'waitVardict.pl'), is_critical=True)
-    samtools = get_system_path(cnf, 'samtools')
-
-    to_redo_samples = []
-    for s in samples:
-        if verify_file(seq2cov_fpath_by_sample[s.name], silent=True) and cnf.reuse_intermediate:
-            info(seq2cov_fpath_by_sample[s.name] + ' already exist, reusing')
-        else:
-            if isfile(seq2cov_fpath_by_sample[s.name]):
-                os.remove(seq2cov_fpath_by_sample[s.name])
-            to_redo_samples.append(s)
-
-    tx_output_fpath_by_sn = dict()
-    for i, s in enumerate(to_redo_samples):
-        safe_mkdir(dirname(seq2cov_fpath_by_sample[s.name]))
-        bam_fpath = dedupped_bam_by_sample[s.name]
-        seq2cov_output_log = join(cnf.log_dir, s.name + '.seq2cov.err')
-        tx_output_fpath = join(cnf.work_dir, s.name + '.seq2cov.tx')
-        tx_output_fpath_by_sn[s.name] = tx_output_fpath
-        done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
-        # with file_transaction(cnf.work_dir, seq2cov_fpath_by_sample[s.name]) as tx_fpath:
-        cmdline = (
-            '{seq2cov_wrap} {bam_fpath} {s.name} {seq2c_bed} {s.name} {seq2cov} '
-            '{samtools} {tx_output_fpath} {done_marker}').format(**locals())
-        # print str(cnf.project_name)
-        qsub_cmdline = (
-            '{qsub} -pe smp 1 -S {bash} -q {queue} '
-            '-j n -o {seq2cov_output_log} -e {seq2cov_output_log} -hold_jid \'_\' '
-            '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} {done_marker} '
-            '"{cmdline}"').format(**locals())
-
-        info('Sumbitting seq2cov.pl for ' + s.name)
-        info(qsub_cmdline)
-        if isfile(done_marker):
-            os.remove(done_marker)
-        call(cnf, qsub_cmdline, silent=True)
-        info()
-
-    # cnt = str(len(to_redo_samples))
-    # cmdline = '{wait_vardict} seq2c {cnt}'.format(**locals())
-    # info('Sumbitting waitVardict.pl')
-    # info(cmdline)
-    # call(cnf, cmdline, silent=True)
-    for s in to_redo_samples:
-        tx_output_fpath = tx_output_fpath_by_sn[s.name]
-        info('Waiting for ' + tx_output_fpath + ' to be written...')
-        done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
-        while not isfile(done_marker):
-            sleep(30)
-        verify_file(tx_output_fpath, description='tx_output_fpath for ' + s.name,  is_critical=True)
-        # info('tx_output_fpath = ' + tx_output_fpath)
-        # info('seq2cov_fpath_by_sample[s.name] = ' + seq2cov_fpath_by_sample[s.name])
-        os.rename(tx_output_fpath, seq2cov_fpath_by_sample[s.name])
-        verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name, is_critical=True)
-        info('Done and saved to ' + seq2cov_fpath_by_sample[s.name])
-        os.remove(done_marker)
-
-    # for s in samples:
-    #     if not verify_file(s.seq2cov_output_dup_fpath):
-    #         safe_mkdir(dirname(s.seq2cov_output_dup_fpath))
-    #         qsub_cmdline = (
-    #             '{qsub} -pe smp 1 -q {queue} -V -N {cnf.project_name}_seq2cov_dup_{s.name} '
-    #             '-S /bin/bash {seq2cov_wrap} {s.bam} {s.bam} {bed_fpath} {s.name} {seq2cov} {samtools} {s.seq2cov_output_dup_fpath}'
-    #         ).format(**locals())
-    #
-    #         info('Sumbitting seq2cov.pl on duplicated bam file for ' + s.name)
-    #         info(qsub_cmdline)
-    #         call(cnf, qsub_cmdline, silent=True)
-    #         info()
-    #
-    # cmdline = '{wait_vardict} seq2c $COUNTER'
-    # info('Sumbitting seq2cov.pl for ' + s.name)
-    # info(cmdline)
-    # call(cnf, cmdline, silent=True)
-
-    # while read i; do
-    #   a=(${i//\\t/})
-    #   qsub $SGE_OPT -pe smp 1 -cwd -V -N seq2c_sam${COUNTER} -S /bin/bash ${DIR}/seq2cov_wrap.sh ${a[1]} ${a[0]} $BED $COUNTER ${DIR}/seq2cov.pl
-    # done < $SAM2BAM
-    # perl ${DIR}/waitVardict.pl seq2c $COUNTER
-    # cat cov.txt.* > cov.txt
-
-    # for suf in '', '_dup':
-    with open(combined_gene_depths_fpath, 'w') as out:
-        for i, sample in enumerate(samples):
-            seq2cov_fpath = seq2cov_fpath_by_sample[sample.name]
-
-            if not verify_file(seq2cov_fpath):
-                return None
-            with open(seq2cov_fpath) as inp:
-                for l in inp:
-                    if l.startswith('Sample\tGene\tChr\t'):
-                        if i == 0:
-                            out.write(l)
-                    else:
-                        out.write(l)
-
-    # result.append(combined_gene_depths_fpath)
-    # if combined_gene_depths_fpath:
-    info('Saved to ' + combined_gene_depths_fpath)
-    info()
-
-    return combined_gene_depths_fpath
-
-    # # READ STATS
-    # info('Getting read counts...')
-    # bam2reads = get_script_cmdline(cnf, 'perl', join('Seq2C', 'bam2reads.pl'))
-    # if not bam2reads: sys.exit(1)
-    #
-    # bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
-    # with open(bam2reads_list_of_bams_fpath, 'w') as f:
-    #     for sample in samples:
-    #         dedup_bam_fpath = remove_dups(cnf, sample.bam)
-    #         f.write(sample.name + '\t' + dedup_bam_fpath + '\n')
-    #
-    # samtools = get_system_path(cnf, 'samtools')
-    # read_stats_fpath = join(cnf.work_dir, 'seq2c_read_stats.txt')
-    # cmdline = '{bam2reads} -m {samtools} {bam2reads_list_of_bams_fpath}'.format(**locals())
-    # if not call(cnf, cmdline, read_stats_fpath): return None, None
-    #
-    # return read_stats_fpath, combined_gene_depths_fpath
+# def __cov2cnv(cnf, target_bed, samples, dedupped_bam_by_sample, combined_gene_depths_fpath):
+#     info()
+#     # info('Combining gene depths...')
+#     seq2c_work_dir = join(cnf.work_dir, source.seq2c_name)
+#     safe_mkdir(seq2c_work_dir)
+#     seq2cov_fpath_by_sample = {s.name: join(seq2c_work_dir, s.name) for s in samples}
+#
+#     result = []
+#     features_bed_fpath = adjust_path(cnf.features) if cnf.features else adjust_path(cnf.genome.features)
+#     # print any(not verify_file(seq2cov_fpath_by_sample[s.name], silent=True) for s in samples)
+#     seq2c_bed = None
+#     if any(not verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name,
+#             silent=True) for s in samples) or not cnf.reuse_intermediate:
+#         if cnf._prep_bed is not False:
+#             _, _, _, seq2c_bed = \
+#                 prepare_beds(cnf, features_bed=features_bed_fpath, target_bed=target_bed, seq2c_bed=target_bed)
+#         else:
+#             seq2c_bed = target_bed or verify_bed(cnf.genome.cds)
+#
+#     # info('Running first for the de-dupped version, then for the original version.')
+#     # Parallel(n_jobs=cnf.threads) \
+#     #     (delayed(_run_cov2cnv)(CallCnf(cnf.__dict__), seq2cov, samtools, s, bed_fpath, dedupped_bam_by_sample)
+#     #         for s in samples)
+#
+#     qsub = get_system_path(cnf, 'qsub')
+#     runner_script = abspath(expanduser(cnf.qsub_runner))
+#     queue = cnf.queue
+#     bash = get_system_path(cnf, 'bash')
+#
+#     seq2cov_wrap = get_system_path(cnf, 'bash', join('Seq2C', 'seq2cov_wrap.sh'), is_critical=True)
+#     seq2cov      = get_system_path(cnf, join('Seq2C', 'seq2cov.pl'), is_critical=True)
+#     wait_vardict = get_system_path(cnf, 'perl', join('Seq2C', 'waitVardict.pl'), is_critical=True)
+#     samtools = get_system_path(cnf, 'samtools')
+#
+#     to_redo_samples = []
+#     for s in samples:
+#         if verify_file(seq2cov_fpath_by_sample[s.name], silent=True) and cnf.reuse_intermediate:
+#             info(seq2cov_fpath_by_sample[s.name] + ' already exist, reusing')
+#         else:
+#             if isfile(seq2cov_fpath_by_sample[s.name]):
+#                 os.remove(seq2cov_fpath_by_sample[s.name])
+#             to_redo_samples.append(s)
+#
+#     tx_output_fpath_by_sn = dict()
+#     for i, s in enumerate(to_redo_samples):
+#         safe_mkdir(dirname(seq2cov_fpath_by_sample[s.name]))
+#         bam_fpath = dedupped_bam_by_sample[s.name]
+#         seq2cov_output_log = join(cnf.log_dir, s.name + '.seq2cov.err')
+#         tx_output_fpath = join(cnf.work_dir, s.name + '.seq2cov.tx')
+#         tx_output_fpath_by_sn[s.name] = tx_output_fpath
+#         done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
+#         # with file_transaction(cnf.work_dir, seq2cov_fpath_by_sample[s.name]) as tx_fpath:
+#         cmdline = (
+#             '{seq2cov_wrap} {bam_fpath} {s.name} {seq2c_bed} {s.name} {seq2cov} '
+#             '{samtools} {tx_output_fpath} {done_marker}').format(**locals())
+#         # print str(cnf.project_name)
+#         qsub_cmdline = (
+#             '{qsub} -pe smp 1 -S {bash} -q {queue} '
+#             '-j n -o {seq2cov_output_log} -e {seq2cov_output_log} -hold_jid \'_\' '
+#             '-N SEQ2C_seq2cov_{cnf.project_name}_{s.name} {runner_script} {done_marker} '
+#             '"{cmdline}"').format(**locals())
+#
+#         info('Sumbitting seq2cov.pl for ' + s.name)
+#         info(qsub_cmdline)
+#         if isfile(done_marker):
+#             os.remove(done_marker)
+#         call(cnf, qsub_cmdline, silent=True)
+#         info()
+#
+#     # cnt = str(len(to_redo_samples))
+#     # cmdline = '{wait_vardict} seq2c {cnt}'.format(**locals())
+#     # info('Sumbitting waitVardict.pl')
+#     # info(cmdline)
+#     # call(cnf, cmdline, silent=True)
+#     for s in to_redo_samples:
+#         tx_output_fpath = tx_output_fpath_by_sn[s.name]
+#         info('Waiting for ' + tx_output_fpath + ' to be written...')
+#         done_marker = join(cnf.work_dir, 'seq2c.done.' + s.name)
+#         while not isfile(done_marker):
+#             sleep(30)
+#         verify_file(tx_output_fpath, description='tx_output_fpath for ' + s.name,  is_critical=True)
+#         # info('tx_output_fpath = ' + tx_output_fpath)
+#         # info('seq2cov_fpath_by_sample[s.name] = ' + seq2cov_fpath_by_sample[s.name])
+#         os.rename(tx_output_fpath, seq2cov_fpath_by_sample[s.name])
+#         verify_file(seq2cov_fpath_by_sample[s.name], description='seq2cov_fpath for ' + s.name, is_critical=True)
+#         info('Done and saved to ' + seq2cov_fpath_by_sample[s.name])
+#         os.remove(done_marker)
+#
+#     # for s in samples:
+#     #     if not verify_file(s.seq2cov_output_dup_fpath):
+#     #         safe_mkdir(dirname(s.seq2cov_output_dup_fpath))
+#     #         qsub_cmdline = (
+#     #             '{qsub} -pe smp 1 -q {queue} -V -N {cnf.project_name}_seq2cov_dup_{s.name} '
+#     #             '-S /bin/bash {seq2cov_wrap} {s.bam} {s.bam} {bed_fpath} {s.name} {seq2cov} {samtools} {s.seq2cov_output_dup_fpath}'
+#     #         ).format(**locals())
+#     #
+#     #         info('Sumbitting seq2cov.pl on duplicated bam file for ' + s.name)
+#     #         info(qsub_cmdline)
+#     #         call(cnf, qsub_cmdline, silent=True)
+#     #         info()
+#     #
+#     # cmdline = '{wait_vardict} seq2c $COUNTER'
+#     # info('Sumbitting seq2cov.pl for ' + s.name)
+#     # info(cmdline)
+#     # call(cnf, cmdline, silent=True)
+#
+#     # while read i; do
+#     #   a=(${i//\\t/})
+#     #   qsub $SGE_OPT -pe smp 1 -cwd -V -N seq2c_sam${COUNTER} -S /bin/bash ${DIR}/seq2cov_wrap.sh ${a[1]} ${a[0]} $BED $COUNTER ${DIR}/seq2cov.pl
+#     # done < $SAM2BAM
+#     # perl ${DIR}/waitVardict.pl seq2c $COUNTER
+#     # cat cov.txt.* > cov.txt
+#
+#     # for suf in '', '_dup':
+#     with open(combined_gene_depths_fpath, 'w') as out:
+#         for i, sample in enumerate(samples):
+#             seq2cov_fpath = seq2cov_fpath_by_sample[sample.name]
+#
+#             if not verify_file(seq2cov_fpath):
+#                 return None
+#             with open(seq2cov_fpath) as inp:
+#                 for l in inp:
+#                     if l.startswith('Sample\tGene\tChr\t'):
+#                         if i == 0:
+#                             out.write(l)
+#                     else:
+#                         out.write(l)
+#
+#     # result.append(combined_gene_depths_fpath)
+#     # if combined_gene_depths_fpath:
+#     info('Saved to ' + combined_gene_depths_fpath)
+#     info()
+#
+#     return combined_gene_depths_fpath
+#
+#     # # READ STATS
+#     # info('Getting read counts...')
+#     # bam2reads = get_script_cmdline(cnf, 'perl', join('Seq2C', 'bam2reads.pl'))
+#     # if not bam2reads: sys.exit(1)
+#     #
+#     # bam2reads_list_of_bams_fpath = join(cnf.work_dir, 'seq2c_list_of_bams.txt')
+#     # with open(bam2reads_list_of_bams_fpath, 'w') as f:
+#     #     for sample in samples:
+#     #         dedup_bam_fpath = remove_dups(cnf, sample.bam)
+#     #         f.write(sample.name + '\t' + dedup_bam_fpath + '\n')
+#     #
+#     # samtools = get_system_path(cnf, 'samtools')
+#     # read_stats_fpath = join(cnf.work_dir, 'seq2c_read_stats.txt')
+#     # cmdline = '{bam2reads} -m {samtools} {bam2reads_list_of_bams_fpath}'.format(**locals())
+#     # if not call(cnf, cmdline, read_stats_fpath): return None, None
+#     #
+#     # return read_stats_fpath, combined_gene_depths_fpath
 
 
 def __get_mapped_reads(cnf, samples, bam_by_sample, output_fpath):

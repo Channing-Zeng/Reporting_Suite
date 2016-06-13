@@ -158,17 +158,17 @@ def main():
     run_seq2c(cnf, output_dir, samples, bed_fpath, cnf.is_wgs)
 
 
-def standalone_cnv(cnf, samples, target_bed):
-    sample2bam_tsv_fpath = join(cnf.work_dir, 'seq2c_sample2bam.tsv')
-    with open(sample2bam_tsv_fpath, 'w') as f:
-        for s in samples:
-            f.write(s.name + '\t' + s.bam + '\n')
-
-    seq2c_sh = get_system_path(cnf, join('Seq2C', 'seq2c.sh'))
-    samtools = get_system_path(cnf, 'samtools')
-    cmdl = '{seq2c_sh} {sample2bam_tsv_fpath} {target_bed} {cnf.controls} {cnf.seq2c_opts} "-q {cnf.queue}" {samtools}'.format(**locals())
-    seq2c_report_fpath = join(cnf.output_dir, source.seq2c_name + '.tsv')
-    return call(cnf, cmdl, output_fpath=seq2c_report_fpath)
+# def standalone_cnv(cnf, samples, target_bed):
+#     sample2bam_tsv_fpath = join(cnf.work_dir, 'seq2c_sample2bam.tsv')
+#     with open(sample2bam_tsv_fpath, 'w') as f:
+#         for s in samples:
+#             f.write(s.name + '\t' + s.bam + '\n')
+#
+#     seq2c_sh = get_system_path(cnf, join('Seq2C', 'seq2c.sh'))
+#     samtools = get_system_path(cnf, 'samtools')
+#     cmdl = '{seq2c_sh} {sample2bam_tsv_fpath} {target_bed} {cnf.controls} {cnf.seq2c_opts} "-q {cnf.queue}" {samtools}'.format(**locals())
+#     seq2c_report_fpath = join(cnf.output_dir, source.seq2c_name + '.tsv')
+#     return call(cnf, cmdl, output_fpath=seq2c_report_fpath)
 
 
 if __name__ == '__main__':

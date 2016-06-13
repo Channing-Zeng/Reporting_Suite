@@ -109,7 +109,7 @@ def main(args):
 
     check_system_resources(
         cnf,
-        required=['samtools', 'bedtools'],
+        required=['bedtools'],
         optional=[])
 
     check_genome_resources(cnf)

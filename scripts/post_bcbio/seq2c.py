@@ -65,20 +65,19 @@ def main():
     #
     # bcbio_structure.sv_bed = target_bed or cnf.genome.refseq or seq2c_bed
     # standalone_cnv(cnf, bcbio_structure)
-    # TODO: replace with /group/ngs/src/az.reporting/Seq2C/seq2c.sh sample2bam.tsv seq2c_regions.bed "" "" "-q batch.q"
 
 
-def standalone_cnv(cnf, bcbio_structure):
-    sample2bam_tsv_fpath = join(cnf.work_dir, 'seq2c_sample2bam.tsv')
-    with open(sample2bam_tsv_fpath, 'w') as f:
-        for s in bcbio_structure.samples:
-            f.write(s.name + '\t' + s.bam + '\n')
-
-    seq2c_sh = get_system_path(cnf, join('Seq2C', 'seq2c.sh'))
-    samtools = get_system_path(cnf, 'samtools')
-    cmdl = '{seq2c_sh} {sample2bam_tsv_fpath} {bcbio_structure.bed} {cnf.controls} {cnf.seq2c_opts} "-q {cnf.queue}" {samtools}'.format(**locals())
-    seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
-    return call(cnf, cmdl, output_fpath=seq2c_report_fpath)
+# def standalone_cnv(cnf, bcbio_structure):
+#     sample2bam_tsv_fpath = join(cnf.work_dir, 'seq2c_sample2bam.tsv')
+#     with open(sample2bam_tsv_fpath, 'w') as f:
+#         for s in bcbio_structure.samples:
+#             f.write(s.name + '\t' + s.bam + '\n')
+#
+#     seq2c_sh = get_system_path(cnf, join('Seq2C', 'seq2c.sh'))
+#     samtools = get_system_path(cnf, 'samtools')
+#     cmdl = '{seq2c_sh} {sample2bam_tsv_fpath} {bcbio_structure.bed} {cnf.controls} {cnf.seq2c_opts} "-q {cnf.queue}" {samtools}'.format(**locals())
+#     seq2c_report_fpath = join(cnf.output_dir, BCBioStructure.seq2c_name + '.tsv')
+#     return call(cnf, cmdl, output_fpath=seq2c_report_fpath)
 
 
 if __name__ == '__main__':

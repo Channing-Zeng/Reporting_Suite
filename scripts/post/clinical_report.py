@@ -78,7 +78,7 @@ def main():
     check_genome_resources(cnf)
     check_system_resources(
         cnf,
-        required=['samtools', 'bedtools'],
+        required=['bedtools'],
         optional=[])
 
     clin_info = clinical_sample_info_from_cnf(cnf)

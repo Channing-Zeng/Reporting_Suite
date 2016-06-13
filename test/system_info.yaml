@@ -23,6 +23,10 @@ resources:
     path: /usr/local/bin/seqtk
   qualimap:
     path: ext_tools/qualimap/qualimap
+  bedtools:
+    path: /usr/local/bin/bedtools
+  sambamba:
+    path: /usr/local/bin/sambamba
 #  python:
 #    path: /usr/local/bin/python
 
