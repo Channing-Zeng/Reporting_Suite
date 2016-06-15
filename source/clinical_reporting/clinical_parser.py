@@ -135,8 +135,9 @@ class Patient:
 
 
 class CombinedSampleInfo:
-    def __init__(self, group=0):
+    def __init__(self, group=0, sample_num=0):
         self.group = group
+        self.sample_num = sample_num
         self.data = OrderedDict()
 
 
@@ -731,6 +732,12 @@ def get_sample_info(sample_name, sample_dirpath, samples_data):
     return sample_parameters
 
 
+def get_sample_num(sample_name, sample_dirpath, samples_data):
+    project_dirpath = dirname(dirname(sample_dirpath))
+    sample = samples_data[project_dirpath][sample_name]
+    return str(sample.sample_num)
+
+
 def get_group_num(key):
     return key[0]
 
@@ -754,10 +761,8 @@ def get_record_from_vcf(vcf_reader, mut):
 def parse_vcf_record(rec, mut, sample_name, vcf_reader):
     tooltip = ''
     for i, reason in enumerate(rec.FILTER):
-        if i != 0:
-            tooltip += '<br>'
         reason_id, reason_desc = vcf_reader.filters[reason]
-        tooltip += reason_desc
+        tooltip += reason_desc + '<br>'
     sample_index = rec._sample_indexes[sample_name]
     sample_data = rec.samples[sample_index]
     if not sample_data.is_variant:

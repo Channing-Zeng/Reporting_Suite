@@ -81,6 +81,7 @@ def main():
 def parse_samples_metadata(cnf, csv_fpath):
     sample_col = None
     project_col = None
+    sample_num_col = None
     group_col = None
     additional_cols = []
 
@@ -96,10 +97,15 @@ def parse_samples_metadata(cnf, csv_fpath):
                 continue
             if i == 0:
                 headers = l.split(',')
-                sample_col = headers.index('sample')
-                project_col = headers.index('project_path')
-                group_col = headers.index('group')
-                additional_cols = range(group_col + 1, len(headers))
+                sample_col = headers.index('sample') if 'sample' in headers else None
+                project_col = headers.index('project_path') if 'project_path' in headers else None
+                sample_num_col = headers.index('sample_num') if 'sample_num' in headers else None
+                group_col = headers.index('report_num') if 'report_num' in headers else None
+                if any(col is None for col in [sample_col, project_col, sample_num_col, sample_col, group_col]):
+                    critical('Error: incorrect csv file format. File must have the following fields: sample,project_path,sample_num,report_num')
+
+                additional_cols = [headers.index(col) for col in headers if headers.index(col) not in
+                                   [sample_col, project_col, sample_num_col, group_col]]
                 parameters = [capitalize_keep_uppercase(col) for col in headers[group_col + 1:]]
                 continue
             fields = l.split(',')
@@ -108,8 +114,9 @@ def parse_samples_metadata(cnf, csv_fpath):
             sample_name = fields[sample_col]
             cnf.sample_names.append(sample_name)
             project_path = abspath(fields[project_col])
+            sample_num = fields[sample_num_col]
             group = fields[group_col]
-            sample_info = CombinedSampleInfo(group=group)
+            sample_info = CombinedSampleInfo(group=group, sample_num=sample_num)
             sample_data = sample_info.data
             for index, col in enumerate(additional_cols):
                 parameter_name = parameters[index]

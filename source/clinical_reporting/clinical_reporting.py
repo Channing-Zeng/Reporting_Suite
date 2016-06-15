@@ -4,21 +4,17 @@ from genericpath import exists
 from os.path import join, dirname, abspath, relpath, basename
 
 import re
-import itertools
 
 import source
 from source import info, verify_file
 from source.bcbio.project_level_report import get_version
 from source.calling_process import call
-from source.clinical_reporting.clinical_parser import get_sample_info, get_group_num, capitalize_keep_uppercase, \
-    parse_vcf_record, get_record_from_vcf
-from source.file_utils import open_gzipsafe
+from source.clinical_reporting.clinical_parser import get_group_num
+from source.clinical_reporting.combine_clinical_reporting_utils import get_vcf_readers, add_freq_depth_records,\
+    group_for_venn_diagram, update_venn_diagram_data, save_venn_diagram_data, format_experiment_names, add_tooltip
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
-from source.targetcov.bam_and_bed_utils import sambamba_depth
-from source.targetcov.cov import get_mean_cov
 from source.tools_from_cnf import get_script_cmdline
-from source.variants import vcf_parser as vcf
 from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local, gray
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
@@ -89,11 +85,15 @@ class BaseClinicalReporting:
                 Metric('AA chg', short_name='AA change', max_width=70, class_='long_line'),            # p.Glu82Lys
                 Metric('Effect', max_width=100, class_='long_line'),               # Frameshift
             ]
-            short_names, full_names = self.format_experiment_names(mutations_by_experiment, cur_group_num, samples_data)
+            short_names, full_names = format_experiment_names(mutations_by_experiment, samples_data, cur_group_num)
+            used_full_names = set()
             for index in range(len(short_names.values())):
                 short_name = short_names.values()[index]
                 full_name = full_names.values()[index]
                 next_short_name = short_names.values()[index + 1] if index < len(short_names.values()) - 1 else ''
+                if full_name in used_full_names:
+                    continue
+                used_full_names.add(full_name)
                 col_width = 40 + 15 * len(next_short_name.split())
                 ms.extend([
                     Metric(full_name + ' Freq', short_name='\n'.join(short_name.split()) + '\nfreq', max_width=45,  min_width=45,
@@ -122,7 +122,7 @@ class BaseClinicalReporting:
         venn_sets = OrderedDefaultDict(int)
 
         if create_venn_diagrams:
-            samples_by_index, set_labels = self.group_for_venn_diagram(mutations_by_experiment, full_names, parameters_info, samples_data)
+            samples_by_index, set_labels = group_for_venn_diagram(mutations_by_experiment, full_names, parameters_info, samples_data)
 
         clinical_mut_metric_storage = MetricStorage(sections=[ReportSection(metrics=ms, name='mutations')])
         report = PerRegionSampleReport(sample=mutations_by_experiment.keys()[0].sample,
@@ -132,20 +132,11 @@ class BaseClinicalReporting:
         print_cdna = False
         muts_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         sample_experiments = []
-        vcf_readers = dict()
-        filt_vcf_readers = dict()
+        if samples_data:
+            vcf_readers, filt_vcf_readers = get_vcf_readers(mutations_by_experiment, cur_group_num)
         for e, muts in mutations_by_experiment.items():
-            if cur_group_num and get_group_num(e.key) == cur_group_num:
+            if samples_data and (not cur_group_num or get_group_num(e.key) == cur_group_num):
                 sample_experiments.append(e)
-                variant_caller = 'vardict' if 'vardict' in e.sample.variantcallers else 'vardict-java'
-                if e.sample.vcf_by_callername.get(variant_caller):
-                    vcf_fpath = e.sample.vcf_by_callername.get(variant_caller)
-                    filt_vcf_fpath = e.sample.find_filt_vcf_by_callername(variant_caller)
-                    if vcf_fpath:
-                        vcf_readers[e] = vcf.Reader(open_gzipsafe(vcf_fpath, 'r'))
-                    if filt_vcf_fpath:
-                        filt_vcf_readers[e] = vcf.Reader(open_gzipsafe(filt_vcf_fpath, 'r'))
-
             for mut in muts:
                 muts_by_key_by_experiment[mut.get_key()][e] = mut
                 if mut.cdna_change.strip():
@@ -226,50 +217,8 @@ class BaseClinicalReporting:
                 row.add_record('Freq', mut.freq if mut else None, show_content=mut.is_canonical)
                 row.add_record('Depth', mut.depth if mut else None, show_content=mut.is_canonical)
             else:
-                if not mut_by_experiment.keys()[0].is_target2wgs_comparison:
-                    self._find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data, parameters_info)
-                for e, formatted_name in full_names.items():
-                    if e in mut_by_experiment:
-                        m = mut_by_experiment[e]
-                        row.add_record(formatted_name + ' Freq', m.freq if m else None, show_content=mut.is_canonical)
-                        row.add_record(formatted_name + ' Depth', m.depth if m else None, show_content=mut.is_canonical)
-                    else:
-                        depth = 0
-                        tooltip = ''
-                        if e.rejected_mutations and (mut.gene.name, mut.pos) in e.rejected_mutations:
-                            rejected_mut = e.rejected_mutations[(mut.gene.name, mut.pos)]
-                            depth = gray(str(rejected_mut.depth))
-                            tooltip = str(rejected_mut.reason)
-                            if rejected_mut.alt != mut.alt or (rejected_mut.aa_change and mut.aa_change != rejected_mut.aa_change):
-                                tooltip += '<br> Mutation: ' + str(rejected_mut.gene) + ' ' + str(rejected_mut.ref) + '>' + str(rejected_mut.alt) + \
-                                           ' ' + str(rejected_mut.aa_change)
-                            freq_rec = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(rejected_mut.freq * 100) + ' </span>'
-                            row.add_record(formatted_name + ' Freq', freq_rec, num=rejected_mut.freq, show_content=mut.is_canonical, text_color='gray')
-                        else:
-                            if e in vcf_readers:
-                                record = get_record_from_vcf(vcf_readers[e], mut)
-                                vcf_reader = vcf_readers[e]
-                            if not record and e in filt_vcf_readers:
-                                record = get_record_from_vcf(filt_vcf_readers[e], mut)
-                                vcf_reader = filt_vcf_readers[e]
-                            if record:
-                                depth, freq, tooltip = parse_vcf_record(record, mut, e.sample.name, vcf_reader)
-                                if depth and freq:
-                                    depth = gray(str(depth))
-                                    freq_rec = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + str(freq * 100) + ' </span>'
-                                    row.add_record(formatted_name + ' Freq', freq_rec, num=freq, text_color='gray')
-
-                        if not depth and not e.sample.bam:
-                            continue
-                        if not depth and mut.gene.key in e.key_gene_by_name_chrom:
-                            mut_coord = '{mut.chrom}:{mut.pos}-{mut.pos}'.format(**locals())
-                            sambamba_output_fpath = join(e.cnf.work_dir, formatted_name.replace(' ', '_') + '_pos_depth.txt')
-                            sambamba_depth(e.cnf, mut_coord, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True)
-                            depth = get_mean_cov(sambamba_output_fpath)
-                            depth = gray('%.0f' % depth)
-                            tooltip = 'No mutation'
-                        depth = ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + depth + ' </span>'
-                        row.add_record(formatted_name + ' Depth', depth, show_content=mut.is_canonical)
+                add_freq_depth_records(row, mut, mut_by_experiment, full_names, cur_group_num, samples_data,
+                                            parameters_info, vcf_readers, filt_vcf_readers)
 
             self._highlighting_and_hiding_mut_row(row, mut)
 
@@ -280,138 +229,15 @@ class BaseClinicalReporting:
                 # row.color = 'hsl(100, 100%, ' + str(70 + int(30 * (1 - k))) + '%)'
                 row.class_ += ' multiple_occurences_row'
             if create_venn_diagrams:
-                self.update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index, full_names)
+                update_venn_diagram_data(venn_sets, mut_by_experiment, samples_by_index, full_names)
 
             row.class_ += ' ' + row_class
 
         if create_venn_diagrams:
-            venn_data = self.save_venn_diagram_data(venn_sets, set_labels)
+            venn_data = save_venn_diagram_data(venn_sets, set_labels)
             return report, venn_data
 
         return report
-
-    @staticmethod
-    def _find_other_occurences(row, mut_by_experiment, cur_experiments, samples_data, parameters_info):
-        all_parameters = defaultdict(set)
-        if cur_experiments:
-            cur_group_num = get_group_num(cur_experiments[0].key)
-            for e, m in mut_by_experiment.items():
-                if get_group_num(e.key) != cur_group_num:
-                    continue
-                project_dirpath = dirname(dirname(e.sample.dirpath))
-                sample_info = samples_data[project_dirpath][e.sample.name].data
-                for parameter, value in sample_info.iteritems():
-                    all_parameters[parameter].add(value)
-        for parameter, values in all_parameters.iteritems():
-            row.add_record(parameter, ', '.join(sorted(values)))
-        if not cur_experiments:
-            row.add_record('Samples', len(mut_by_experiment.keys()))
-        else:
-            num_by_samples = defaultdict(set)
-            tooltips = []
-            for e, m in mut_by_experiment.items():
-                if get_group_num(e.key) == cur_group_num:
-                    continue
-                sample_parameters = get_sample_info(e.sample.name, e.sample.dirpath, samples_data)
-                parameters_to_combine = ['WGS', 'AZ300', 'AZ50', 'Exome', 'WES']
-                for parameter in parameters_to_combine:
-                    if parameter in sample_parameters:
-                        sample_parameters.remove(parameter)
-                short_parameters = [parameters_info.items()[i][1].prefixes[p.lower()] for i, p in enumerate(sample_parameters)]
-                num_by_samples[tuple(short_parameters)].add(get_group_num(e.key))
-                report_link = '<a href="' + basename(e.sample.clinical_html) + '" target="_blank">' + e.sample.name + '</a>'
-                freq = Metric.format_value(m.freq, is_html=True, unit='%')
-                tooltip = report_link + ':  ' + str(freq) + '  ' + str(m.depth) + '<br>'
-                tooltips.append((e.sample.name, tooltip))
-            tooltips = [tooltip[1] for tooltip in sorted(tooltips)]
-            other_occurences = ' '.join([str(len(v)) + ' ' + ' '.join(k) for k, v in num_by_samples.iteritems()])
-            other_occurences = ' <span class="my_hover"><div class="my_tooltip">' + ''.join(tooltips) + '</div> ' + other_occurences + ' </span>'
-            row.add_record('Other occurrences', other_occurences)
-        return row
-
-
-    def format_experiment_names(self, mutations_by_experiment, cur_group_num, samples_data):
-        formatted_names = []
-        for e in mutations_by_experiment.keys():
-            formatted_name = ''
-            if get_group_num(e.key) == cur_group_num:
-                formatted_name = ' '.join(get_sample_info(e.sample.name, e.sample.dirpath, samples_data))
-            elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
-                formatted_name = e.key
-            formatted_names.append(formatted_name)
-        short_names = OrderedDict()
-        full_names = OrderedDict()
-        used_full_names = defaultdict(int)
-        if not mutations_by_experiment.keys()[0].is_target2wgs_comparison:
-            prev_parameters = []
-            for index in range(len(formatted_names)):
-                formatted_name = formatted_names[index]
-                if not formatted_name:
-                    continue
-                if formatted_name in used_full_names:
-                    formatted_name += '_' + str(used_full_names[formatted_name])
-                full_names[mutations_by_experiment.keys()[index]] = formatted_name
-                used_full_names[formatted_name] += 1
-                parameters = formatted_name.split()
-                formatted_name = parameters[-1]
-                if len(parameters) > 1:
-                    for i, p in enumerate(parameters[-2: -len(parameters) - 1: -1]):
-                        if p not in prev_parameters:
-                            first_parameter = -(i + 2)
-                            formatted_name = ' '.join(parameters[first_parameter:])
-                prev_parameters = parameters
-                short_names[mutations_by_experiment.keys()[index]] = formatted_name
-        else:
-            for index, e in enumerate(mutations_by_experiment.keys()):
-                short_names[e] = formatted_names[index]
-        return short_names, full_names
-
-
-    def group_for_venn_diagram(self, mutations_by_experiment, full_names, parameters_info, samples_data):
-        samples_by_index = dict()
-        set_labels = dict()
-        parameters = [parameter.values for k, parameter in parameters_info.iteritems()]
-        base_groups = list(itertools.product(*parameters))
-        used_samples = set()
-        set_index = 0
-        for e in mutations_by_experiment.keys():
-            if e not in full_names:
-                continue
-            sample_name = full_names[e]
-            for index, g in enumerate(base_groups):
-                if sample_name not in used_samples and \
-                        all(capitalize_keep_uppercase(parameter) in get_sample_info(e.sample.name, e.sample.dirpath,
-                                                                                    samples_data) for parameter in g):
-                    used_samples.add(sample_name)
-                    samples_by_index[sample_name] = index
-                    set_labels[index] = ' '.join(g)
-                    set_index = max(set_index, index)
-                    set_index += 1
-                    break
-
-        return samples_by_index, set_labels
-
-    def update_venn_diagram_data(self, sets, mut_by_experiment, samples_by_index, full_names):
-        indexes = sorted(set([samples_by_index[full_names[e]] for e in mut_by_experiment.keys() if e in full_names]))
-        for index in indexes:
-            sets[index] += 1
-        for len_set in range(2, len(indexes) + 1):
-            for indexes_subset in itertools.combinations(indexes, len_set):
-                sets[indexes_subset] += 1
-
-    def save_venn_diagram_data(self, venn_sets, set_labels):
-        data = []
-        for venn_set, size in venn_sets.iteritems():
-            set_info = dict()
-            set_info['size'] = size
-            if isinstance(venn_set, tuple):
-                set_info['sets'] = list(venn_set)
-            else:
-                set_info['sets'] = [venn_set]
-            if isinstance(venn_set, int):
-                set_info['label'] = set_labels[venn_set]
-            data.append(set_info)
-        return json.dumps(sorted(data, key=lambda x: x['sets']))
 
     def make_mutations_json(self, mutations_by_experiment):
         data = dict()
@@ -640,7 +466,7 @@ class BaseClinicalReporting:
                     Metric('Amp/Del'),
                     Metric('BP/Whole'),
                 ]
-                short_names, full_names = self.format_experiment_names(seq2c_by_experiments, cur_group_num, samples_data)
+                short_names, full_names = format_experiment_names(seq2c_by_experiments, samples_data, cur_group_num)
                 for index in range(len(short_names.values())):
                     short_name = short_names.values()[index]
                     full_name = full_names.values()[index]
@@ -920,10 +746,11 @@ class BaseClinicalReporting:
 
         if mut.transcript:
             tooltip = mut.transcript
-            tooltip += '<br>AA length: ' + str(mut.aa_len)
+            if mut.aa_len:
+                tooltip += '<br>AA length: ' + str(mut.aa_len)
             if mut.exon:
                tooltip += '<br>Exon: ' + str(mut.exon)
-            t += ' <span class="my_hover"><div class="my_tooltip">' + tooltip + '</div> ' + mut.gene.name + ' </span>'
+            t += add_tooltip(mut.gene.name, tooltip)
             str(mut.aa_len)
         else:
             t += mut.gene.name

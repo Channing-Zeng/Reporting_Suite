@@ -646,8 +646,10 @@ class Reader(object):
                 return self.next()
             except StopIteration:
                 return None
-
-        self.reader = self._tabix.fetch(chrom, start, end)
+        try:
+            self.reader = self._tabix.fetch(chrom, start, end)
+        except ValueError:
+            return None
         return self
 
 
