@@ -4,7 +4,7 @@ from os.path import join, dirname, abspath, basename
 
 import source
 from source import info, verify_file
-from source.clinical_reporting.clinical_parser import get_key_genes
+from source.clinical_reporting.utils import get_key_genes
 from source.file_utils import file_transaction, adjust_system_path
 from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, BaseReport
