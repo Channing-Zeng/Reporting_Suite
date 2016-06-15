@@ -100,7 +100,11 @@ def add_freq_depth_records(row, mut, mut_by_experiment, full_names, cur_group_nu
         if cur_group_num:
             find_other_occurences(row, mut_by_experiment, cur_group_num, samples_data, parameters_info)
         else:
-            row.add_record('Samples', len(mut_by_experiment.keys()))
+            used_names = set()
+            for e, formatted_name in full_names.items():
+                if e in mut_by_experiment:
+                    used_names.add(formatted_name)
+            row.add_record('Samples', len(used_names))
     for e, formatted_name in full_names.items():
         if e in mut_by_experiment:
             m = mut_by_experiment[e]

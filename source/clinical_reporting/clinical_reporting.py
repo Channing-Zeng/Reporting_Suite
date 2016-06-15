@@ -152,7 +152,6 @@ class BaseClinicalReporting:
         for mut_key, mut_by_experiment in muts_by_key_by_experiment.items():
             mut = next((m for m in mut_by_experiment.values() if m is not None), None)
             row_class = ''
-            cur_experiments = []
 
             # if mut.pos not in mut_positions:
             #     mut_positions.append(mut.pos)

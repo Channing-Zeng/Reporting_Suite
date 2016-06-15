@@ -192,6 +192,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
             self.mutations_report, self.venn_plot_data = self.make_mutations_report(self.mutations_by_experiment, jbrowser_link,
                                                                                     samples_data=samples_data, parameters_info=parameters_info,
                                                                                     create_venn_diagrams=True)
+            info('Preparing data for each sample...')
             for num in group_nums:
                 sample_mut_report, venn_plot_data = self.make_mutations_report(self.mutations_by_experiment, jbrowser_link,
                                                                                samples_data=samples_data, parameters_info=parameters_info,
