@@ -9,63 +9,110 @@ resources:
   qualimap:
     path: ext_tools/qualimap/qualimap
   vcfannotate:
-    path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/bin/vcfannotate
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/bin/vcfannotate
   java:
     path: /apps/java/x64/jdk1.7.0_45/bin/java
   python:
-    path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/anaconda/bin/python
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python
   picard:
     path: ext_tools/picard/picard.jar
   samtools:
-    path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/bin/samtools
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/bin/samtools
   bedtools:
-    path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/bin/bedtools
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/bin/bedtools
   perl:
     path: /usr/bin/perl
   tabix:
-    path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/bin/tabix
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/bin/tabix
   bgzip:
-    path: /home/klrl262/bcbio-nextgen/0.9.4/rhel6-x64/bin/bgzip
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/bin/bgzip
   gatk:
     path: /ngs/RDI/PROGRAMS/gatk/CancerAnalysisPackage-2014.3-24-g7dfb931/GenomeAnalysisTK.jar
+  bwa:
+    path: /home/klrl262/bcbio-nextgen/0.9.6/rhel6-x64/bin/bwa
+  sambamba:
+    path: /home/klrl262/bcbio-nextgen/0.9.6/rhel6-x64/bin/sambamba
+  bcftools:
+    path: /home/klrl262/bcbio-nextgen/0.9.6/rhel6-x64/anaconda/bin/bcftools
+  rscript:
+    path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/Rscript
 
 genomes:
+  hg38:
+    seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
+
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_latest.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
+    snpeff:
+      reference: hg38
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
+
+    az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
+
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq.all_features.hg38.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
+
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
+
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions
+
+    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
+
+  hg38-noalt:
+    seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
+    bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
+
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_latest.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_latest.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
+    snpeff:
+      reference: hg38
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
+
+    az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
+
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq.all_features.hg38-noalt.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg38-noalt.bed
+
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
+
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
+
+    tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions
+
+    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
+
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
-#    chr_lengths: /ngs/reference_data/genomes/Hsapiens/hg19/genome/human.hg19.genome
 
     dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/Cosmic-Coding_latest.vcf.gz
-    1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19/variation/1000G_latest.vcf.gz
     clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine_latest.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf.gz
+    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
 
     snpeff:
       reference: hg19
-    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt
+    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
-    exons:    /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/Exons.with_genes.bed
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
-    refseq:   /ngs/reference_data/genomes/Hsapiens/hg19/bed/CDS_RefSeq.bed
+
+    features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed
+    bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq.all_features.hg19.bed
+    cds:                      /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19.bed
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
 
-  GRCh37:
-    seq: /ngs/reference_data/genomes/Hsapiens/GRCh37/seq/GRCh37.fa
-    bwa: /ngs/reference_data/genomes/Hsapiens/GRCh37/bwa/GRCh37.fa
+    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
-    dbsnp: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/dbsnp_138.vcf.gz
-    cosmic: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/CosmicCodingMuts_v68.vcf  # /ngs/reference_data/genomes/Hsapiens/hg19/variation/cosmic-v68-hg19.vcf
-    1000genomes: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/1000G_omni2.5.vcf
-#    clinvar: /ngs/reference_data/genomes/Hsapiens/GRCh37/variation/clinvar_latest.vcf
-
-    snpeff:
-      reference: GRCh37.75
-    canonical_transcripts: /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/canonical_transcripts.txt
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
+    tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions
 
 queue: all.q
 

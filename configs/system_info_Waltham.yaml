@@ -1,6 +1,6 @@
 # /group/ngs/src/az.reporting
 
-ld_library_path: /group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/lib
+ld_library_path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/anaconda/lib
 # export LD_LIBRARY_PATH=/group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
 
 resources:
@@ -25,13 +25,13 @@ resources:
   vcf2txt:
     path: VarDict/vcf2txt.pl
   vcfannotate:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/vcfannotate
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/vcfannotate
   qualimap:
     path: ext_tools/qualimap/qualimap
   samtools:
     path: /group/ngs/src/samtools/samtools
   bedtools:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/bedtools
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bedtools
   igvtools:
     path: /opt/az/local/igvtools/2.3.32/IGVTools/igvtools.jar
   tabix:
@@ -51,17 +51,17 @@ resources:
   bwa:
     path: /opt/az/local/bwa/0.7.12/bwa-0.7.12/bwa
   seqtk:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/seqtk
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/seqtk
   bammarkduplicates:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/bammarkduplicates
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bammarkduplicates
   bamdownsamplerandom:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/bamdownsamplerandom
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bamdownsamplerandom
   sambamba:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/sambamba
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/sambamba
   bcftools:
-    path: /group/ngs/src/bcbio-nextgen/0.9.6/rhel6-x64/bin/bcftools
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bcftools
   rscript:
-    path: /group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/Rscript
+    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/anaconda/bin/Rscript
 
 genomes:
   hg38:

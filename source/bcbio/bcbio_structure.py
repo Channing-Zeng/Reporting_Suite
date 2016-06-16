@@ -950,6 +950,8 @@ class BCBioStructure(BaseProjectStructure):
             if 'batch' in sample_info['metadata']:
                 batch_names = sample_info['metadata']['batch']
 
+        if not isinstance(batch_names, basestring) or not isinstance(batch_names, list):
+            batch_names = str(batch_names)
         if isinstance(batch_names, basestring):
             batch_names = batch_names.split(', ')
 
@@ -1048,7 +1050,7 @@ class BCBioStructure(BaseProjectStructure):
         var_raw_vcf_fpath_gz = adjust_path(join(self.raw_var_dirpath, vcf_fname + '.gz'))  # in datestamp/var/raw
         vcf_fpath = adjust_path(join(self.date_dirpath, vcf_fname))  # in datestamp
         var_vcf_fpath = adjust_path(join(self.var_dirpath, vcf_fname))  # in datestamp/var
-        var_raw_vcf_fpath = adjust_path(join(self.raw_var_dirpath, vcf_fname + '.gz'))  # in datestamp/var/raw
+        var_raw_vcf_fpath = adjust_path(join(self.raw_var_dirpath, vcf_fname))  # in datestamp/var/raw
 
         if isfile(vcf_fpath_gz):
             verify_file(vcf_fpath_gz, is_critical=True)
