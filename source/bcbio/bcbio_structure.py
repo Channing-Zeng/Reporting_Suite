@@ -756,6 +756,9 @@ class BCBioStructure(BaseProjectStructure):
                 vcf_fpath = self._set_vcf_file(caller_name, batch.name)
                 for sample in batch.tumor:
                    if not vcf_fpath:  # in sample dir?
+                       info('-')
+                       info('Not found VCF in the datestamp dir, looking at the sample-level dir')
+                       info('-')
                        vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample, silent=sample.phenotype == 'normal')
                    if vcf_fpath:
                        sample.vcf_by_callername[caller_name] = vcf_fpath
@@ -1056,31 +1059,43 @@ class BCBioStructure(BaseProjectStructure):
             verify_file(vcf_fpath_gz, is_critical=True)
             info('Found VCF in the datestamp dir ' + vcf_fpath_gz)
             return vcf_fpath_gz
+        else:
+            info('Not found VCF in the datestamp dir ' + vcf_fpath_gz)
 
         if isfile(var_raw_vcf_fpath_gz):
             verify_file(var_raw_vcf_fpath_gz, is_critical=True)
             info('Found VCF in the datestamp/var/raw dir ' + var_raw_vcf_fpath_gz)
             return var_raw_vcf_fpath_gz
+        else:
+            info('Not found VCF in the datestamp/var/raw dir ' + var_raw_vcf_fpath_gz)
 
         if isfile(vcf_fpath):
             verify_file(vcf_fpath, is_critical=True)
             info('Found uncompressed VCF in the datestamp dir ' + vcf_fpath)
             return vcf_fpath
+        else:
+            info('Not found uncompressed VCF in the datestamp dir ' + vcf_fpath)
 
         if isfile(var_raw_vcf_fpath):
             verify_file(var_raw_vcf_fpath, is_critical=True)
             info('Found uncompressed VCF in the datestamp/var/raw dir ' + var_raw_vcf_fpath)
             return var_raw_vcf_fpath
+        else:
+            info('Not found uncompressed VCF in the datestamp/var/raw dir ' + var_raw_vcf_fpath)
 
         if isfile(var_vcf_fpath_gz):
             verify_file(var_vcf_fpath_gz, is_critical=True)
             info('Found VCF in the datestamp/var dir ' + var_vcf_fpath_gz)
             return var_vcf_fpath_gz
+        else:
+            info('Not found VCF in the datestamp/var dir ' + var_vcf_fpath_gz)
 
         if isfile(var_vcf_fpath):
             verify_file(var_vcf_fpath, is_critical=True)
             info('Found uncompressed VCF in the datestamp/var dir ' + var_vcf_fpath)
             return var_vcf_fpath
+        else:
+            info('Not found uncompressed VCF in the datestamp/var dir ' + var_vcf_fpath)
 
         if not silent:
             warn('Warning: no VCF found for batch ' + batch_name + ', ' + caller_name + ', gzip or '
@@ -1092,28 +1107,52 @@ class BCBioStructure(BaseProjectStructure):
 
         vcf_fpath_gz = adjust_path(join(sample.dirpath, vcf_fname + '.gz'))  # in var
         var_vcf_fpath_gz = adjust_path(join(sample.var_dirpath, vcf_fname + '.gz'))  # in var
+        var_raw_vcf_fpath_gz = adjust_path(join(sample.var_dirpath, 'raw', vcf_fname + '.gz'))  # in var
         vcf_fpath = adjust_path(join(sample.dirpath, vcf_fname))
         var_vcf_fpath = adjust_path(join(sample.var_dirpath, vcf_fname))  # in var
+        var_raw_vcf_fpath = adjust_path(join(sample.var_dirpath, 'raw', vcf_fname))  # in var
 
         if isfile(vcf_fpath_gz):
             verify_file(vcf_fpath_gz, is_critical=True)
             info('Found VCF ' + vcf_fpath_gz)
             return vcf_fpath_gz
+        else:
+            info('Not found VCF ' + vcf_fpath_gz)
 
         if isfile(var_vcf_fpath_gz):
             verify_file(var_vcf_fpath_gz, is_critical=True)
             info('Found VCF in the var/ dir ' + var_vcf_fpath_gz)
             return var_vcf_fpath_gz
+        else:
+            info('Not found VCF in the var/ dir ' + var_vcf_fpath_gz)
+
+        if isfile(var_raw_vcf_fpath_gz):
+            verify_file(var_raw_vcf_fpath_gz, is_critical=True)
+            info('Found VCF in the var/raw/ dir ' + var_raw_vcf_fpath_gz)
+            return var_raw_vcf_fpath_gz
+        else:
+            info('Not found VCF in the var/raw/ dir ' + var_raw_vcf_fpath_gz)
 
         if isfile(vcf_fpath):
             verify_file(vcf_fpath, is_critical=True)
-            info('Found uncompressed VCF ' + var_vcf_fpath)
+            info('Found uncompressed VCF ' + vcf_fpath)
             return vcf_fpath
+        else:
+            info('Not found uncompressed VCF ' + vcf_fpath)
 
         if isfile(var_vcf_fpath):
             verify_file(var_vcf_fpath, is_critical=True)
             info('Found uncompressed VCF in the var/ dir ' + var_vcf_fpath)
             return var_vcf_fpath
+        else:
+            info('Not found VCF in the var/ dir ' + var_vcf_fpath)
+
+        if isfile(var_raw_vcf_fpath):
+            verify_file(var_raw_vcf_fpath, is_critical=True)
+            info('Found uncompressed VCF in the var/raw/ dir ' + var_raw_vcf_fpath)
+            return var_raw_vcf_fpath
+        else:
+            info('Not found VCF in the var/raw/ dir ' + var_raw_vcf_fpath)
 
         if not silent:
             warn('Warning: no VCF found for ' + sample.name + ', ' + caller_name + ', gzip or uncompressed version in and outside '

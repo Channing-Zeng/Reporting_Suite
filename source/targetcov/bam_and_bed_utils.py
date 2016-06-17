@@ -1,9 +1,5 @@
 import os
-import subprocess
-from genericpath import getmtime
-from itertools import dropwhile
-from os.path import isfile, join, abspath, basename, dirname, getctime
-import sys
+from os.path import isfile, join, abspath, basename, dirname, getctime, getmtime
 from subprocess import check_output
 from collections import OrderedDict
 
@@ -63,7 +59,7 @@ def markdup_sam(cnf, in_sam_fpath, samblaster=None):
     out_sam_fpath = add_suffix(in_sam_fpath, 'markdup')
     tmp_fpath = join(cnf.work_dir, splitext_plus(basename(in_sam_fpath))[0] + '_markdup')
     safe_mkdir(dirname(tmp_fpath))
-    cmdline = ('{samblaster} -i {in_sam_fpath} -o {out_sam_fpath}').format(**locals())
+    cmdline = '{samblaster} -i {in_sam_fpath} -o {out_sam_fpath}'.format(**locals())
     res = call(cnf, cmdline, output_fpath=out_sam_fpath, stdout_to_outputfile=False, exit_on_error=False)
     if res:
         return out_sam_fpath
@@ -916,33 +912,33 @@ class BedFile:
         line = fd.readline()
         fields = line.split('\t')
         lc = 1
-        err = ''
+        error = ''
 
         # Checks that the two columns on the right contain integer values
         try:
             # Parses each line and checks that there are at least 3 fields, the two on the right containing integer values and being the right one
             # greater than the left one
-            while (line <> '' and len(fields) > 2 and int(fields[1]) < int(fields[2])):
+            while line <> '' and len(fields) > 2 and int(fields[1]) < int(fields[2]):
                 lc += 1
                 line = fd.readline()
                 fields = line.split('\t')
         except ValueError:
-            err += 'Incorrect start/end values at line ' + str(lc) + '\n'
-            err += 'Start/End coordinates must be indicated with integer values. The right value must be greater than the left value.\n'
-            err += 'Line found: ' + line
+            error += 'Incorrect start/end values at line ' + str(lc) + '\n'
+            error += 'Start/End coordinates must be indicated with integer values. The right value must be greater than the left value.\n'
+            error += 'Line found: ' + line
             fd.close()
 
-            return err
+            return error
 
         # If it get to this point means that either the file ended or there is a line with less than 3 fields
-        if (line <> ''):
-            err += 'Incorrect line format at line ' + str(lc) + '\n'
-            err += 'At least three columns are expected in each line\n'
-            err += 'The right value must be greater than the left value.\n'
-            err += 'Line found: ' + line
+        if line <> '':
+            error += 'Incorrect line format at line ' + str(lc) + '\n'
+            error += 'At least three columns are expected in each line\n'
+            error += 'The right value must be greater than the left value.\n'
+            error += 'Line found: ' + line
             fd.close()
 
-        return err
+        return error
 
     def count_lines(self, filename=None):
         if filename is None:

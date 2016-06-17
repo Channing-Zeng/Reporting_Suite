@@ -1,4 +1,3 @@
-from collections import namedtuple
 import getpass
 from os import environ
 import socket
@@ -14,11 +13,11 @@ log_fpath = None
 project_name = None
 project_fpath = None
 proc_name = None
-my_address = 'Vlad.Saveliev@astrazeneca.com'
 cnf_address = None
 is_debug = False
 
 smtp_host = None  # set up in source/config.py and system_info.yaml
+my_address = 'Vlad.Saveliev@astrazeneca.com'
 
 
 error_msgs = []
@@ -63,33 +62,21 @@ def err(msg='', ending='\n', print_date=True, severity='error'):
     warn(msg, ending, print_date, severity=severity)
 
 
-email_by_prid = {
-    'klpf990': 'Vlad.Saveliev@astrazeneca.com',
-    'kjgk478': 'Alexey.Gurevich@astrazeneca.com',
-    'kxjn734': 'Justin.Johnson@astrazeneca.com',
-    'knfz728': 'Alla.Bushoy@astrazeneca.com',
-    'klrl262': 'Miika.Ahdesmaki@astrazeneca.com',
-    'kmtc481': 'Sakina.Saif@astrazeneca.com',
-    'kxqf517': 'Tristan.Lubinski@astrazeneca.com',
-    'kdqq790': 'Sally.Luke@astrazeneca.com',
-    'kkjd069': 'Alla.Micheenko@astrazeneca.com',
-}
-
-def send_email(msg_other='', subj='', only_me=False):
+def send_email(cnf, msg_other='', subj='', only_me=False):
     # for addr in [my_address, ]
     if not msg_other or not smtp_host:
         return
 
     prid = getpass.getuser()
 
-    me_address = email_by_prid['klpf990']
+    me_address = cnf.email_by_prid['klpf990']
 
     other_addresses = []
     if not only_me:
         if cnf_address:
             other_addresses.append(cnf_address)
-        if prid in email_by_prid:
-            other_addresses.append(email_by_prid[prid])
+        if prid in cnf.email_by_prid:
+            other_addresses.append(cnf.email_by_prid[prid])
     other_addresses = [a for a in other_addresses if a != me_address]
 
     msg_other += '\n'

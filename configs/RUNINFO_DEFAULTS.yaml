@@ -348,3 +348,14 @@ genomes:
     compendia_ms7_hotspot:        reference_data/filtering/hg19/Compendia.MS7.Hotspot.txt
     splice:                       reference_data/filtering/hg19/SPLICE.txt
 
+
+email_by_prid:
+    klpf990: 'Vlad.Saveliev@astrazeneca.com'
+    kjgk478: 'Alexey.Gurevich@astrazeneca.com'
+    kxjn734: 'Justin.Johnson@astrazeneca.com'
+    knfz728: 'Alla.Bushoy@astrazeneca.com'
+    klrl262: 'Miika.Ahdesmaki@astrazeneca.com'
+    kmtc481: 'Sakina.Saif@astrazeneca.com'
+    kxqf517: 'Tristan.Lubinski@astrazeneca.com'
+    kdqq790: 'Sally.Luke@astrazeneca.com'
+    kkjd069: 'Alla.Micheenko@astrazeneca.com'

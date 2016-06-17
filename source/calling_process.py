@@ -93,7 +93,6 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
 
     env = os.environ.copy()
     if env_vars:
-
         for k, v in env_vars.items():
             if v is None:
                 if k in env:

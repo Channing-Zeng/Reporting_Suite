@@ -40,7 +40,6 @@ def proc_args(argv):
     # parser.add_option('--no-dedup', dest='dedup', action='store_false', default=False, help='not counting duplicates in coverage metrics')
     parser.add_option('-e', '--extended', dest='extended', action='store_true', default=False, help='count missed variants')
     parser.add_option('--deep-seq', dest='deep_seq', action='store_true', default=False, help='deep targeted sequencing')
-    parser.add_option('--no-qualimap', dest='qualimap', action='store_false', default=True, help='do not run qualimap')
     parser.add_option('--bed', dest='bed', help='BED file to run detailed coverage analysis.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
     parser.add_option('--downsample-to', dest='downsample_to', type='int')

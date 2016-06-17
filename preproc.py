@@ -319,7 +319,7 @@ def main():
         txt += 'Report: ' + str(html_report_url) + '\n'
         if jira_url:
             txt += 'Jira: ' + jira_url
-        send_email(txt, subj)
+        send_email(cnf, txt, subj)
 
     info()
     info('*' * 70)

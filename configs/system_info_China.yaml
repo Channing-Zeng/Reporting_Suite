@@ -36,6 +36,8 @@ resources:
     path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/bcftools
   rscript:
     path: /home/klrl262/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/Rscript
+  vcf2txt:
+    path: VarDict/vcf2txt.pl
 
 genomes:
   hg38:
