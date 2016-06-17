@@ -1,6 +1,6 @@
-from collections import defaultdict, OrderedDict
 import math
 import os
+from collections import defaultdict, OrderedDict
 from os.path import isfile
 from source.file_utils import file_transaction, verify_file
 from source.logger import info, err, critical

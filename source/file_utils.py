@@ -3,8 +3,7 @@
 
 import shutil
 import os
-from os.path import isfile, isdir, getsize, exists, basename, join, abspath, splitext, islink, dirname, \
-    pardir, realpath
+from os.path import isfile, isdir, getsize, exists, basename, join, abspath, splitext, islink, dirname, realpath
 import gzip
 import tempfile
 import contextlib
@@ -637,7 +636,7 @@ def verify_obj_by_path(path, description='', silent=False, is_critical=False, ve
 
 def verify_file(fpath, description='', silent=False, is_critical=False, verify_size=True):
     if fpath is None:
-        msg = (description + ': ' if description else ' ') + 'File is None.'
+        msg = (description + ': ' if description else ' ') + 'not specified.'
         _log(msg, silent, is_critical)
         return fpath
 

@@ -3,7 +3,7 @@ from os import environ
 import socket
 import re
 from collections import OrderedDict
-from os.path import join, basename
+from os.path import join, basename, splitext
 
 from source.logger import info, critical, err
 from source.file_utils import file_exists, verify_file, file_transaction, adjust_path
@@ -54,6 +54,9 @@ def human_sorted(l):
 
 def get_chr_lengths_from_seq(seq_fpath):
     chr_lengths = []
+
+    if seq_fpath.endswith('.fai'):
+        seq_fpath = splitext(seq_fpath)[0]
 
     if verify_file(seq_fpath + '.fai', silent=True):
         info('Reading genome index file (.fai) to get chromosome lengths')

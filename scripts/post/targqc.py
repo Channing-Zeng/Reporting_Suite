@@ -11,7 +11,6 @@ from traceback import format_exc
 import shutil
 from optparse import SUPPRESS_HELP
 
-from preproc import align
 from source import BaseSample, TargQC_Sample
 from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
@@ -21,12 +20,12 @@ from source.main import read_opts_and_cnfs
 from source.config import defaults
 from source.prepare_args_and_cnf import check_genome_resources, check_system_resources
 from source.targetcov.bam_and_bed_utils import index_bam, prepare_beds, extract_gene_names_and_filter_exons, verify_bam
-from source.targetcov.cov import make_targetseq_reports
+from source.targetcov.cov import make_targqc_reports
 from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.tools_from_cnf import get_system_path
 from source.utils import info
-from source.file_utils import adjust_path, safe_mkdir, verify_file
+from source.file_utils import adjust_path, safe_mkdir, verify_file, remove_quotes
 
 
 def main(args):
@@ -121,17 +120,13 @@ def main(args):
     else:
         info('No features BED found')
 
-    if cnf.genes:
-        genes_fpath = verify_file(cnf.genes)
-        info('Custom genes list: ' + genes_fpath)
-    else:
-        genes_fpath = None
-
     if cnf.bed:
         cnf.bed = verify_file(cnf.bed, is_critical=True)
         info('Using amplicons/capture panel ' + cnf.bed)
     elif features_bed:
         info('WGS, taking CDS as target')
+
+    cnf.bam = verify_bam(cnf.bam, is_critical=True)
 
     reports = process_one(cnf, cnf.output_dir, cnf.bam,
         features_bed=features_bed, features_no_genes_bed=cnf.features_no_genes)
@@ -212,17 +207,16 @@ def process_one(cnf, output_dir, bam_fpath, features_bed, features_no_genes_bed)
     sample.l_fpath = cnf.l_fpath
     sample.r_fpath = cnf.r_fpath
 
-    if not sample.bam and sample.l_fpath and sample.r_fpath:
-        sample.bam = proc_fastq(cnf, sample, verify_file(cnf.l_fpath), verify_file(cnf.r_fpath))
+    # if not sample.bam and sample.l_fpath and sample.r_fpath:
+    #     sample.bam = proc_fastq(cnf, sample, verify_file(cnf.l_fpath), verify_file(cnf.r_fpath))
 
     info('Using alignment ' + sample.bam)
 
-    bam_fpath = cnf.bam
-    target_bed = cnf.bed
-
-    bam_fpath = bam_fpath
     if not bam_fpath:
         critical(sample.name + ': BAM file is required.')
+
+    target_bed = verify_file(cnf.bed, is_critical=True) if cnf.bed else None
+    bam_fpath = verify_file(sample.bam, is_critical=True)
     index_bam(cnf, bam_fpath)
 
     gene_keys_list = None
@@ -239,7 +233,7 @@ def process_one(cnf, output_dir, bam_fpath, features_bed, features_no_genes_bed)
 
     picard_ins_size_hist(cnf, sample, bam_fpath, output_dir)
 
-    avg_depth, gene_by_name_and_chrom, reports = make_targetseq_reports(
+    avg_depth, gene_by_name_and_chrom, reports = make_targqc_reports(
         cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list)
 
     # #if cnf.extended:

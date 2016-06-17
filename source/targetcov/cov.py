@@ -78,6 +78,7 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
 
     trg_name = 'target' if not is_wgs else 'genome'
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
+        Metric('Median ' + trg_name + ' coverage depth', short_name='median'),
         Metric('Average ' + trg_name + ' coverage depth', short_name='avg'),
         Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='std dev', quality='Less is better'),
         # Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
@@ -184,8 +185,18 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
                 else:
                     cov, bases = map(int, map(float, l.strip().split()))
                     bases_by_depth[cov] = bases
-
         depth_stats['bases_by_depth'] = bases_by_depth
+
+        # calculating median coverage
+        num_counts = sum(bases_by_depth.values())
+        cum_counts = 0
+        median_coverage = None
+        for thiscov, thiscount in bases_by_depth.items():
+            cum_counts += thiscount
+            if cum_counts >= num_counts/2:
+                median_coverage = thiscov
+                break
+        depth_stats['median_depth'] = median_coverage
 
     qualimap_records = parse_qualimap_sample_report(qualimap_html_fpath)
 
@@ -238,8 +249,10 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
 
 chry_key_regions_by_genome = {
     'hg19': join(dirname(abspath(__file__)), 'chrY.hg19.bed'),
+    'hg19-noalt': join(dirname(abspath(__file__)), 'chrY.hg19.bed'),
     'hg19-chr21': join(dirname(abspath(__file__)), 'chrY.hg19.bed'),
     'hg38': join(dirname(abspath(__file__)), 'chrY.hg38.bed'),
+    'hg38-noalt': join(dirname(abspath(__file__)), 'chrY.hg38.bed'),
 }
 MALE_TARGET_REGIONS_FACTOR = 0.7
 AVE_DEPTH_THRESHOLD_TO_DETERMINE_SEX = 5
@@ -323,7 +336,7 @@ def get_mean_cov(bedcov_output_fpath):
     return mean_cov
 
 
-def make_targetseq_reports(cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list):
+def make_targqc_reports(cnf, output_dir, sample, bam_fpath, features_bed, features_no_genes_bed, target_bed, gene_keys_list):
     info('Starting targeqSeq for ' + sample.name + ', saving into ' + output_dir)
     gene_by_name_and_chrom = build_gene_objects_list(cnf, sample.name, features_bed, gene_keys_list)
 
@@ -508,6 +521,7 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     info('')
     report.add_record('Average ' + trg_type + ' coverage depth', depth_stats['ave_depth'])
+    report.add_record('Median ' + trg_type + ' coverage depth', depth_stats['median_depth'])
     report.add_record('Std. dev. of ' + trg_type + ' coverage depth', depth_stats['stddev_depth'])
     # report.add_record('Minimal ' + trg_type + ' coverage depth', depth_stats['min_depth'])
     # report.add_record('Maximum ' + trg_type + ' coverage depth', depth_stats['max_depth'])
