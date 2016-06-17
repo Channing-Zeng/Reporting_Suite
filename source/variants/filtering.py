@@ -471,7 +471,7 @@ def run_vcf2txt_with_retries(cnf, cmdline, output_fpath):
             if tries < MAX_TRIES:
                 msg += '\n\nRerunning in ' + str(WAIT_MINUTES) + ' minutes (tries ' + str(tries) + '/' + str(MAX_TRIES) + ')'
 
-            send_email(msg_other=msg,
+            send_email(cnf, msg_other=msg,
                        subj='vcf2txt.pl crashed [' + str(cnf.project_name) + ']',
                        only_me=True)
             err(msg)

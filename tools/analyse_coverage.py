@@ -83,7 +83,7 @@ def main():
 
     targqc_html_fpath = run_targqc(cnf, cnf.output_dir, bam_fpaths, bed_fpath, features_bed_fpath, genes_fpath)
     if targqc_html_fpath:
-        send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
+        send_email(cnf, 'TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
 
 
 if __name__ == '__main__':

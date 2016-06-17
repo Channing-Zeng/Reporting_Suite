@@ -911,7 +911,7 @@ class BCBioRunner:
                             if '/' + key + '/' in html_report_fpath:
                                 rel_url = html_report_fpath.split('/' + key + '/')[1]
                                 html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/' + key + '/' + rel_url)
-            _final_email_notification(html_report_url, self.cnf.jira, self.bcbio_structure)
+            _final_email_notification(self.cnf, html_report_url, self.cnf.jira, self.bcbio_structure)
             if html_report_url:
                 info()
                 info('HTML report url: ' + html_report_url)
@@ -1075,7 +1075,7 @@ class BCBioRunner:
                             pass
 
 
-def _final_email_notification(html_report_url, jira_url, bs):
+def _final_email_notification(cnf, html_report_url, jira_url, bs):
     subj = bs.small_project_path or bs.project_name
     txt = 'Post-processing finished for ' + bs.project_name + '\n'
     txt += '\n'
@@ -1084,7 +1084,7 @@ def _final_email_notification(html_report_url, jira_url, bs):
     txt += 'Report: ' + (html_report_url or bs.project_report_html_fpath) + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url
-    send_email(txt, subj)
+    send_email(cnf, txt, subj)
 
 
 def change_permissions(cnf, path):

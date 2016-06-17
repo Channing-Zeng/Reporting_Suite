@@ -99,7 +99,7 @@ def main():
     targqc_html_fpath = run_targqc(cnf, cnf.output_dir, samples, target_bed, exons_bed, genes_fpath)
 
     if targqc_html_fpath:
-        send_email('TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
+        send_email(cnf, 'TargQC report for ' + cnf.project_name + ':\n  ' + targqc_html_fpath)
 
 
 def read_samples(args):
