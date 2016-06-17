@@ -440,8 +440,8 @@ class BaseClinicalReporting:
             d['maxY'] = max([e['logRatio'] for e in d['events']] + [2])  # max(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [2]))
             d['minY'] = min([e['logRatio'] for e in d['events']] + [-2])  # min(chain(data['nrm']['ys'], data['amp']['ys'], data['del']['ys'], [-2]))
 
-            if all(e['ampDel'] is None for e in d['events']):
-                d = None
+            # if all(e['ampDel'] is None for e in d['events']):
+            #     d = None
             data[k.lower()] = d
 
         if len(experiment_by_key.keys()) == 1:
