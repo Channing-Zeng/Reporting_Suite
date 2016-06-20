@@ -46,6 +46,7 @@ def main():
     parser.add_option('--no-dedup', dest='no_dedup', action='store_true', help=SUPPRESS_HELP)
     parser.add_option('-f', '--freq', '--min-freq', dest='min_freq', type='float', help='Minimum allele frequency for the filtering.')
     parser.add_option('-o', dest='output_dir', help='Output directory for report combining.')
+    parser.add_option('--no-bam2bigwig', dest='no_bam2bigwig', action='store_true', default=False, help=SUPPRESS_HELP)
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
