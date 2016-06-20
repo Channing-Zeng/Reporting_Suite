@@ -26,15 +26,17 @@ def cols(in_f):
             max_lens = [0 for _ in row[:-1]]
         else:
             row = l.split(delimiter)
-            if len(row) > len(max_lens) + 1:
-                sys.stdout.flush()
-                sys.stderr.write('Error: line #' + str(line_num) + ' is longer than the first line ' +
-                                 '(has ' + str(len(row)) + ' columns instead of ' + str(len(max_lens) + 1) + '):\n' +
-                                 '  ' + l + '\n')
-                sys.stderr.flush()
-                continue
-            if len(row) < len(max_lens) + 1:  # adding empty columns to a shorter row to make it the same size as the rest
-                for _ in range(len(max_lens) + 1 - len(row)):
+            if len(row) > len(max_lens)+1:
+                for i in range(len(max_lens)+1, len(row)):
+                    max_lens.append(len(row[i]))
+            #     sys.stdout.flush()
+            #     sys.stderr.write('Error: line #' + str(line_num) + ' is longer than the first line ' +
+            #                      '(has ' + str(len(row)) + ' columns instead of ' + str(len(max_lens) + 1) + '):\n' +
+            #                      '  ' + l + '\n')
+            #     sys.stderr.flush()
+            #     continue
+            if len(row) < len(max_lens)+1:  # adding empty columns to a shorter row to make it the same size as the rest
+                for _ in range(len(max_lens)+1 - len(row)):
                     row.append('')
         max_lens = map(max, zip(max_lens, map(len, row[:-1])))
         rows.append(row)
