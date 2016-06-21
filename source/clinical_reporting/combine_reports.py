@@ -41,7 +41,7 @@ def run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, output_dir
 def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples_data):
     info('Running clinical reporting comparison')
 
-    infos_by_key = dict()
+    infos_by_key = OrderedDict()
     for i, bs in enumerate(bcbio_structures):
         info()
         info('Preparing ' + bs.project_name + '...')
@@ -56,16 +56,22 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
                 infos_by_key[(group, sample.name)] = clin_info
                 info('')
         rejected_mutations = defaultdict(dict)
+        rejected_mutations_by_sample = defaultdict(list)
+
         pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
-        reject_mutations_fpath = pass_mutations_fpath.replace(source.mut_pass_suffix, source.mut_reject_suffix)
-        if verify_file(reject_mutations_fpath, silent=True):
-            info('Parsing rejected mutations from ' + str(reject_mutations_fpath))
-            rejected_mutations_by_sample = defaultdict(list)
-            parse_mutations(cnf, None, clin_info.key_gene_by_name_chrom, reject_mutations_fpath, clin_info.genes_collection_type,
-                            mutations_dict=rejected_mutations_by_sample)
-            for sample, mutations in rejected_mutations_by_sample.iteritems():
-                for mut in mutations:
-                    rejected_mutations[sample][(mut.gene.name, mut.pos)] = mut
+        mut_basename = pass_mutations_fpath.split('.' + source.mut_pass_suffix)[0]
+        mut_reject_ending = source.mut_reject_suffix + '.' + source.mut_file_ext
+        possible_reject_mutations_fpaths = [mut_basename + '.' + mut_reject_ending,
+                                            mut_basename + '.' + source.mut_paired_suffix + '.' + mut_reject_ending,
+                                            mut_basename + '.' + source.mut_single_suffix + '.' + mut_reject_ending]
+        for reject_mutations_fpath in possible_reject_mutations_fpaths:
+            if verify_file(reject_mutations_fpath, silent=True):
+                info('Parsing rejected mutations from ' + str(reject_mutations_fpath))
+                parse_mutations(cnf, None, clin_info.key_gene_by_name_chrom, reject_mutations_fpath, clin_info.genes_collection_type,
+                                mutations_dict=rejected_mutations_by_sample)
+                for sample, mutations in rejected_mutations_by_sample.iteritems():
+                    for mut in mutations:
+                        rejected_mutations[sample][(mut.gene.name, mut.pos)] = mut
         for sample in bs.samples:
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
@@ -80,11 +86,11 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
 def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, parameters_info=None, samples_data=None, is_target2wgs=False):
     report = ComparisonClinicalReporting(cnf, infos_by_key, parameters_info, samples_data)
     report.mutations_parameters = make_parameters_json(parameters_info, samples_data, report.experiment_by_key)
-    _, new_sample_names = format_experiment_names(report.mutations_by_experiment, samples_data)
-    new_sample_names = OrderedDict({experiment: '<a href="' + basename(experiment.sample.clinical_html) + '" target="_blank">' + name + '</a>'
-                        for experiment, name in new_sample_names.iteritems()})
+    report_sample_names = get_sample_names_for_report(report.experiment_by_key, samples_data)
+    report_sample_names = OrderedDict({experiment: '<a href="' + basename(experiment.sample.clinical_html) + '" target="_blank">' + name + '</a>'
+                        for experiment, name in report_sample_names.iteritems()})
     report.write_report(
-        join(output_dirpath, 'clinical_report.html'), samples_names=new_sample_names, is_target2wgs=is_target2wgs, )
+        join(output_dirpath, 'clinical_report.html'), sample_names=report_sample_names, is_target2wgs=is_target2wgs)
     report.key_genes_report = None
     sample_nums = set([get_group_num(key) for key in infos_by_key.keys()])
     for group_num in sample_nums:
@@ -98,12 +104,16 @@ def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, parameters_
         sample_report.mutations_report, sample_report.venn_plot_data = report.mutations_reports[group_num]
         sample_report.mutations_parameters = make_parameters_json(parameters_info, samples_data, sample_experiments, group_num)
         sample_report.seq2c_report = report.seq2c_reports[group_num]
-        mutations_by_experiment = OrderedDict()
-        for e in sample_experiments.values():
-            if e.mutations:
-                mutations_by_experiment[e] = e.mutations
-        _, new_sample_names = format_experiment_names(mutations_by_experiment, samples_data, cur_group_num=group_num)
-        sample_report.write_report(join(output_dirpath, 'report_' + str(group_num) + '.html'), samples_names=new_sample_names)
+        sample_names = get_sample_names_for_report(sample_experiments, samples_data, cur_group_num=group_num)
+        sample_report.write_report(join(output_dirpath, 'report_' + str(group_num) + '.html'), sample_names=sample_names)
+
+
+def get_sample_names_for_report(report_experiments, samples_data, cur_group_num=None):
+    mutations_by_experiment = OrderedDict()
+    for e in report_experiments.values():
+        mutations_by_experiment[e] = e.mutations
+    _, sample_names = format_experiment_names(mutations_by_experiment, samples_data, cur_group_num=cur_group_num)
+    return sample_names
 
 
 def make_parameters_json(parameters_info, samples_data, sample_experiments, group_num=None):
@@ -170,8 +180,8 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
                 e.sample.clinical_html = re.sub('^/ngs/', '/gpfs/ngs/', e.sample.clinical_html)
                 e.project_report_path = re.sub('^/ngs/', '/gpfs/ngs/', e.project_report_path)
             self.sample_names.append(e.sample.name)
-        sample_infos = {k: get_sample_info(e.sample.name, e.sample.dirpath, samples_data) for k, e in experiment_by_key.iteritems()}
-        sorted_sample_infos = sorted(sample_infos.items(), key=lambda x: [x[1][j] for j in range(len(x[1]))])
+        sample_infos = OrderedDict({k: get_sample_info(e.sample.name, e.sample.dirpath, samples_data) for k, e in experiment_by_key.iteritems()})
+        sorted_sample_infos = sorted(sample_infos.items(), key=lambda x: (x[0][1], [x[1][j] for j in range(len(x[1]))]))
         sorted_experiments = OrderedDict()
         for k, v in sorted_sample_infos:
             sorted_experiments[k] = experiment_by_key[k]
@@ -232,14 +242,15 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
     #
     #     return muts_by_key_by_exper
 
-    def write_report(self, output_fpath, is_target2wgs=False, samples_names=None):
+    def write_report(self, output_fpath, is_target2wgs=False, sample_names=None):
         info('')
 
         data = {
             'key_or_target': self.experiment_by_key.values()[0].genes_collection_type,
             'genes_description': self.experiment_by_key.values()[0].genes_description,
             'sample': {
-                'experiments': [self.sample_section(e, sample_name=e.sample.name + ', ' + samples_names[e]) for k, e in self.experiment_by_key.items()],
+                'experiments': [self.sample_section(e, sample_name=e.sample.name + (', ' + sample_names[e] if
+                                sample_names and e in sample_names else '')) for k, e in self.experiment_by_key.items()],
             },
             # 'patient': self.__patient_section(self.patient),
             # 'sample_name': self.sample_name,

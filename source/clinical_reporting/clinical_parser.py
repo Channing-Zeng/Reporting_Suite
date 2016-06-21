@@ -157,6 +157,13 @@ class Target:
 
 def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wgs_comparison=False):
     mutations_fpath, clinical_report_caller_name = get_mutations_fpath_from_bs(bs)
+    if not verify_file(mutations_fpath):
+        mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
+        mut_basename = mutations_fpath.split('.' + source.mut_pass_suffix)[0]
+        if sample.normal_match:
+            mutations_fpath = mut_basename + '.' + source.mut_paired_suffix + '.' + mut_pass_ending
+        else:
+            mutations_fpath = mut_basename + '.' + source.mut_single_suffix + '.' + mut_pass_ending
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes_fpath=verify_file(adjust_system_path(cnf.key_genes), 'key genes'),
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,

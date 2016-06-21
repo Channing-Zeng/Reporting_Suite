@@ -58,7 +58,8 @@ def get_depth_and_freq(e, mut, formatted_name, vcf_readers, filt_vcf_readers):
     freq_record = None
     if e.rejected_mutations and (mut.gene.name, mut.pos) in e.rejected_mutations:
         rejected_mut = e.rejected_mutations[(mut.gene.name, mut.pos)]
-        depth_str = gray(str(rejected_mut.depth))
+        depth = rejected_mut.depth
+        depth_str = gray(str(depth))
         tooltip = str(rejected_mut.reason)
         if rejected_mut.alt != mut.alt or (rejected_mut.aa_change and mut.aa_change != rejected_mut.aa_change):
             tooltip += '<br> Mutation: ' + str(rejected_mut.gene) + ' ' + str(rejected_mut.ref) + '>' + str(rejected_mut.alt) + \
@@ -80,8 +81,9 @@ def get_depth_and_freq(e, mut, formatted_name, vcf_readers, filt_vcf_readers):
                 freq_record = add_tooltip(str(freq * 100), tooltip)
 
     if not depth_str and not e.sample.bam:
-        return None, None
-    if not depth and mut.gene.key in e.key_gene_by_name_chrom:
+        return None, None, None, None
+
+    if not depth:
         mut_coord = '{mut.chrom}:{mut.pos}-{mut.pos}'.format(**locals())
         sambamba_output_fpath = join(e.cnf.work_dir, formatted_name.replace(' ', '_') + '_pos_depth.txt')
         sambamba_depth(e.cnf, mut_coord, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True)
