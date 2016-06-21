@@ -26,6 +26,7 @@ from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workd
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, adjust_path, \
     add_suffix, file_transaction, splitext_plus
+from source.utils import get_ext_tools_dirname
 from targqc import find_fastq_pairs
 
 NGS_WEBSERVER_PREPROC_DIR = '/opt/lampp/htdocs/reports'
@@ -150,7 +151,7 @@ def main():
         lefts, rights = downsample_fastq(cnf, samples, downsample_to)
 
     bam_by_sample = OrderedDict()
-    sambamba = get_system_path(cnf, 'sambamba')
+    sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     bwa = get_system_path(cnf, 'bwa')
     seqtk = get_system_path(cnf, 'seqtk')
     bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')

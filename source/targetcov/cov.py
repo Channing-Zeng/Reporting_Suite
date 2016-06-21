@@ -22,7 +22,7 @@ from source.targetcov.bam_and_bed_utils import index_bam, total_merge_bed, sort_
     intersect_bed, calc_sum_of_regions, bam_to_bed, number_of_mapped_reads, call_sambamba, count_bed_cols, \
     sambamba_depth
 from source.tools_from_cnf import get_system_path
-from source.utils import get_chr_len_fpath, get_ext_tools_dirname
+from source.utils import get_chr_len_fpath
 
 
 def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):

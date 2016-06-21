@@ -17,7 +17,7 @@ def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
     if use_grid:
         return index_bam_grid(cnf, bam_fpath, sambamba)
 
-    sambamba = sambamba or get_system_path(cnf, 'sambamba')
+    sambamba = sambamba or get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     indexed_bam = bam_fpath + '.bai'
     if not isfile(indexed_bam) or getmtime(indexed_bam) < getmtime(bam_fpath):
         info('Indexing BAM, writing ' + indexed_bam + '...')
@@ -35,9 +35,9 @@ def index_bam_grid(cnf, bam_fpath, sambamba=None):
     indexed_bam = bam_fpath + '.bai'
     if not isfile(indexed_bam) or getctime(indexed_bam) < getctime(bam_fpath):
         info('Indexing BAM, writing ' + indexed_bam + '...')
-        sambamba = sambamba or get_system_path(cnf, 'sambamba')
+        sambamba = sambamba or get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
         if sambamba is None:
-            sambamba = get_system_path(cnf, 'sambamba', is_critical=True)
+            sambamba = sambamba or get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
         cmdline = '{sambamba} index {bam_fpath}'.format(**locals())  # -F (=not) 1024 (=duplicate)
         j = submit_job(cnf, cmdline, basename(bam_fpath) + '_index', output_fpath=indexed_bam, stdout_to_outputfile=False)
         info()
@@ -511,7 +511,7 @@ def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
 
 def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_grid=False,
                   command_name='', sample_name=None, silent=False):
-    sambamba = sambamba or get_system_path(cnf, 'sambamba', is_critical=True)
+    sambamba = sambamba or get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     sample_name = sample_name or basename(bam_fpath).split('.')[0]
     if use_grid:
         grid_sambabma = get_script_cmdline(cnf, 'python', join('tools', 'bed_processing', 'sambamba.py'))
@@ -566,7 +566,7 @@ def sambamba_depth(cnf, bed, bam, output_fpath=None, use_grid=False, depth_thres
 
 def remove_dups(cnf, bam, output_fpath, sambamba=None, use_grid=False):
     cmdline = 'view --format=bam -F "not duplicate" {bam}'.format(**locals())  # -F (=not) 1024 (=duplicate)
-    sambamba = sambamba or get_system_path(cnf, 'sambamba', is_critical=True)
+    sambamba = sambamba or get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     # if use_grid:
     #     j = submit_job(cnf, sambamba + ' ' + cmdline,
     #                    'DEDUP__' + cnf.project_name + '__' + basename(bam).split('.')[0],

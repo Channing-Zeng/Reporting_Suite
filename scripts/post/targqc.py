@@ -24,7 +24,7 @@ from source.targetcov.cov import make_targqc_reports
 from source.runner import run_one
 from source.targetcov.flag_regions import generate_flagged_regions_report
 from source.tools_from_cnf import get_system_path
-from source.utils import info
+from source.utils import info, get_ext_tools_dirname
 from source.file_utils import adjust_path, safe_mkdir, verify_file, remove_quotes
 
 
@@ -168,7 +168,7 @@ def proc_fastq(cnf, sample, l_fpath, r_fpath):
         info('Downsampling the reads to ' + str(cnf.downsample_to))
         l_fpath, r_fpath = downsample(cnf, sample.nname, l_fpath, r_fpath, cnf.downsample_to, output_dir=cnf.work_dir, suffix='subset')
 
-    sambamba = get_system_path(cnf, 'sambamba')
+    sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     bwa = get_system_path(cnf, 'bwa')
     seqtk = get_system_path(cnf, 'seqtk')
     bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')

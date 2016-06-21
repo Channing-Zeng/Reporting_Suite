@@ -168,6 +168,7 @@ def format_experiment_names(mutations_by_experiment, samples_data, cur_group_num
         elif mutations_by_experiment.keys()[0].is_target2wgs_comparison:
             formatted_name = e.key
         formatted_names.append(formatted_name)
+
     if not mutations_by_experiment.keys()[0].is_target2wgs_comparison:
         prev_parameters = []
         for index in range(len(formatted_names)):

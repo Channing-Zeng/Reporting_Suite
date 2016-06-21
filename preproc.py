@@ -26,7 +26,7 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.config import Config, CallCnf
 from source import logger
 from source.logger import info, critical, err, is_local, warn, send_email
-from source.utils import is_az
+from source.utils import is_az, get_ext_tools_dirname
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, determine_sys_cnf, determine_run_cnf, \
     check_genome_resources, set_up_log
 from source.file_utils import safe_mkdir, verify_dir, verify_file, adjust_path, \
@@ -213,7 +213,7 @@ def main():
             lefts, rights = downsample_fastq(cnf, samples, downsample_to)
 
             bam_by_sample = OrderedDict()
-            sambamba = get_system_path(cnf, 'sambamba')
+            sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
             bwa = get_system_path(cnf, 'bwa')
             seqtk = get_system_path(cnf, 'seqtk')
             samblaster = get_system_path(cnf, 'samblaster')

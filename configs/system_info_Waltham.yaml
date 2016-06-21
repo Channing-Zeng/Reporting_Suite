@@ -56,8 +56,6 @@ resources:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bammarkduplicates
   bamdownsamplerandom:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bamdownsamplerandom
-  sambamba:
-    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/sambamba
   bcftools:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bcftools
   rscript:

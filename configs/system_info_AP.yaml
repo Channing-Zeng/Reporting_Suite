@@ -38,8 +38,6 @@ resources:
     path: /apps/sge61/bin/lx24-amd64/qdel
   bwa:
     path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bwa
-  sambamba:
-    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/sambamba
   bcftools:
     path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/anaconda/bin/bcftools
   rscript:
