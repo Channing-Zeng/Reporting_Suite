@@ -17,7 +17,7 @@ from source.config import defaults, Config
 from source.logger import info, critical, warn, err, debug
 from source.file_utils import which, file_exists, safe_mkdir
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
-from source.utils import is_uk, is_us, is_cloud, is_sweden
+from source.utils import is_uk, is_us, is_cloud, is_sweden, is_ace
 from source.utils import is_china
 from source.utils import is_local
 
@@ -287,6 +287,8 @@ def detect_sys_cnf_by_location():
         res = defaults['sys_cnfs']['cloud']
     elif is_local():
         res = defaults['sys_cnfs']['local']
+    elif is_ace():
+        res = defaults['sys_cnfs']['ace']
     else:
         warn('Warning: could not detect location by hostname: ' + socket.gethostname() + '. Using local')
         res = defaults['sys_cnfs']['local']

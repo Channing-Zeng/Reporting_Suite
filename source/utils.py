@@ -198,6 +198,10 @@ def is_sweden():
     hostname = socket.gethostname()
     return 'seml' in hostname
 
+def is_ace():
+    hostname = socket.gethostname()
+    return hostname == 'ace'
+
 
 def md5(fpath):
     hash = hashlib.md5()
