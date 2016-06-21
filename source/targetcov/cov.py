@@ -765,71 +765,11 @@ def _generate_report_from_bam(cnf, sample, bam, target_bed, features_no_genes_be
             continue
         info()
         info('Calculating coverage statistics for ' + ('CDS and miRNA exons...' if feature == 'exons' else 'the regions in the target BED file...'))
-        regions = []
 
         sambamba_depth_output_fpath = sambamba_depth(cnf, bed, bam, depth_thresholds=depth_thresholds)
         if not sambamba_depth_output_fpath:
             continue
-        read_count_col = None
-        mean_cov_col = None
-        min_depth_col = None
-        std_dev_col = None
-
-        #####################################
-        #####################################
-        cur_unannotated_gene = None
-        info('Reading coverage statistics...')
-        with open(sambamba_depth_output_fpath) as sambabma_depth_file:
-            total_regions_count = 0
-            for line in sambabma_depth_file:
-                if line.startswith('#'):
-                    read_count_col = line.split('\t').index('readCount')
-                    mean_cov_col = line.split('\t').index('meanCoverage')
-                    min_depth_col = line.split('\t').index('minDepth')
-                    std_dev_col = line.split('\t').index('stdDev')
-                    continue
-                line_tokens = line.replace('\n', '').split()
-                chrom = line_tokens[0]
-                start, end = map(int, line_tokens[1:3])
-                region_size = end - start
-                gene_name = line_tokens[3] if read_count_col != 3 else None
-                ave_depth = float(line_tokens[mean_cov_col])
-                min_depth = int(line_tokens[min_depth_col])
-                std_dev = float(line_tokens[std_dev_col])
-                rates_within_threshs = line_tokens[std_dev_col + 1:-1]
-
-                extra_fields = tuple(line_tokens[4:read_count_col]) if read_count_col > 4 else ()
-
-                region = Region(
-                    sample_name=sample_name, chrom=chrom,
-                    start=start, end=end, size=region_size,
-                    avg_depth=ave_depth,
-                    gene_name=gene_name, extra_fields=extra_fields)
-                regions.append(region)
-
-                region.rates_within_threshs = OrderedDict((depth, float(rate) / 100.0) for (depth, rate) in zip(depth_thresholds, rates_within_threshs))
-                region.min_depth = min_depth
-                region.std_dev = std_dev
-
-                if feature == 'amplicons':
-                    region.feature = 'Capture'
-                else:
-                    if extra_fields:
-                        region.exon_num = extra_fields[0]
-                        if len(extra_fields) >= 2:
-                            region.strand = extra_fields[1]
-                        if len(extra_fields) >= 3:
-                            region.feature = extra_fields[2]
-                        else:
-                            region.feature = 'CDS'
-                        if len(extra_fields) >= 4:
-                            region.biotype = extra_fields[3]
-                        if len(extra_fields) >= 5:
-                            region.transcript_id = extra_fields[4]
-
-                total_regions_count += 1
-                if total_regions_count > 0 and total_regions_count % 10000 == 0:
-                     info('  Processed {0:,} regions'.format(total_regions_count))
+        regions = parse_sambamba_depth_output(sample_name, sambamba_depth_output_fpath, depth_thresholds, feature)
         info('Total genes: ' + str(len(ready_to_report_genes)) + ', total regions: ' + str(len(regions)))
 
         # #####################################
@@ -928,6 +868,73 @@ def _generate_report_from_bam(cnf, sample, bam, target_bed, features_no_genes_be
     info('Regions (total ' + str(len(report.rows)) + ') saved into:')
     info('  ' + report.txt_fpath)
     return report
+
+
+def parse_sambamba_depth_output(sample_name, sambamba_depth_output_fpath, depth_thresholds=None, feature=None):
+    regions = []
+
+    read_count_col = None
+    mean_cov_col = None
+    min_depth_col = None
+    std_dev_col = None
+
+    #####################################
+    #####################################
+    cur_unannotated_gene = None
+    info('Reading coverage statistics...')
+    with open(sambamba_depth_output_fpath) as sambabma_depth_file:
+        total_regions_count = 0
+        for line in sambabma_depth_file:
+            if line.startswith('#'):
+                read_count_col = line.split('\t').index('readCount')
+                mean_cov_col = line.split('\t').index('meanCoverage')
+                min_depth_col = line.split('\t').index('minDepth')
+                std_dev_col = line.split('\t').index('stdDev')
+                continue
+            line_tokens = line.replace('\n', '').split()
+            chrom = line_tokens[0]
+            start, end = map(int, line_tokens[1:3])
+            region_size = end - start
+            gene_name = line_tokens[3] if read_count_col != 3 else None
+            ave_depth = float(line_tokens[mean_cov_col])
+            min_depth = int(line_tokens[min_depth_col]) if min_depth_col else None
+            std_dev = float(line_tokens[std_dev_col]) if std_dev_col else None
+            rates_within_threshs = line_tokens[std_dev_col + 1:-1]
+
+            extra_fields = tuple(line_tokens[4:read_count_col]) if read_count_col > 4 else ()
+
+            region = Region(
+                sample_name=sample_name, chrom=chrom,
+                start=start, end=end, size=region_size,
+                avg_depth=ave_depth,
+                gene_name=gene_name, extra_fields=extra_fields)
+            regions.append(region)
+
+            if depth_thresholds:
+                region.rates_within_threshs = OrderedDict((depth, float(rate) / 100.0) for (depth, rate) in zip(depth_thresholds, rates_within_threshs))
+            region.min_depth = min_depth
+            region.std_dev = std_dev
+
+            if feature == 'amplicons':
+                region.feature = 'Capture'
+            else:
+                if extra_fields:
+                    region.exon_num = extra_fields[0]
+                    if len(extra_fields) >= 2:
+                        region.strand = extra_fields[1]
+                    if len(extra_fields) >= 3:
+                        region.feature = extra_fields[2]
+                    else:
+                        region.feature = 'CDS'
+                    if len(extra_fields) >= 4:
+                        region.biotype = extra_fields[3]
+                    if len(extra_fields) >= 5:
+                        region.transcript_id = extra_fields[4]
+
+            total_regions_count += 1
+            if total_regions_count > 0 and total_regions_count % 10000 == 0:
+                 info('  Processed {0:,} regions'.format(total_regions_count))
+    return regions
 
 
 def process_gene(gene, depth_thresholds):

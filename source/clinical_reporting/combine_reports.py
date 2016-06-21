@@ -8,10 +8,13 @@ from source.clinical_reporting.clinical_parser import clinical_sample_info_from_
     get_sample_info, get_group_num, parse_mutations, get_mutations_fpath_from_bs
 from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
 from source.clinical_reporting.combine_clinical_reporting_utils import format_experiment_names
+from source.file_utils import file_transaction
 from source.logger import err
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html, calc_cell_contents, make_cell_th, make_cell_td
 from source.reporting.reporting import ReportSection
+from source.targetcov.bam_and_bed_utils import sambamba_depth
+from source.targetcov.cov import parse_sambamba_depth_output
 from source.utils import OrderedDefaultDict, is_us
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
@@ -55,32 +58,63 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
                 infos_by_key[(group, sample.name)] = clin_info
                 info('')
-        rejected_mutations = defaultdict(dict)
-        rejected_mutations_by_sample = defaultdict(list)
 
-        pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
-        mut_basename = pass_mutations_fpath.split('.' + source.mut_pass_suffix)[0]
-        mut_reject_ending = source.mut_reject_suffix + '.' + source.mut_file_ext
-        possible_reject_mutations_fpaths = [mut_basename + '.' + mut_reject_ending,
-                                            mut_basename + '.' + source.mut_paired_suffix + '.' + mut_reject_ending,
-                                            mut_basename + '.' + source.mut_single_suffix + '.' + mut_reject_ending]
-        for reject_mutations_fpath in possible_reject_mutations_fpaths:
-            if verify_file(reject_mutations_fpath, silent=True):
-                info('Parsing rejected mutations from ' + str(reject_mutations_fpath))
-                parse_mutations(cnf, None, clin_info.key_gene_by_name_chrom, reject_mutations_fpath, clin_info.genes_collection_type,
-                                mutations_dict=rejected_mutations_by_sample)
-                for sample, mutations in rejected_mutations_by_sample.iteritems():
-                    for mut in mutations:
-                        rejected_mutations[sample][(mut.gene.name, mut.pos)] = mut
+        rejected_mutations = get_rejected_mutations(cnf, bs, clin_info.key_gene_by_name_chrom, clin_info.genes_collection_type)
         for sample in bs.samples:
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
                 infos_by_key[(group, sample.name)].rejected_mutations = rejected_mutations[sample.name]
 
+    save_all_mutations_depth(cnf, infos_by_key)
+
     info('*' * 70)
     run_sample_combine_clinreport(cnf, infos_by_key, cnf.output_dir, parameters_info, samples_data)
     info('*' * 70)
     info('Successfully finished.')
+
+
+def get_rejected_mutations(cnf, bs, key_gene_by_name_chrom, genes_collection_type):
+    rejected_mutations = defaultdict(dict)
+    rejected_mutations_by_sample = defaultdict(list)
+
+    pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
+    mut_basename = pass_mutations_fpath.split('.' + source.mut_pass_suffix)[0]
+    mut_reject_ending = source.mut_reject_suffix + '.' + source.mut_file_ext
+    possible_reject_mutations_fpaths = [mut_basename + '.' + mut_reject_ending,
+                                        mut_basename + '.' + source.mut_paired_suffix + '.' + mut_reject_ending,
+                                        mut_basename + '.' + source.mut_single_suffix + '.' + mut_reject_ending]
+    for reject_mutations_fpath in possible_reject_mutations_fpaths:
+        if verify_file(reject_mutations_fpath, silent=True):
+            info('Parsing rejected mutations from ' + str(reject_mutations_fpath))
+            parse_mutations(cnf, None, key_gene_by_name_chrom, reject_mutations_fpath, genes_collection_type,
+                            mutations_dict=rejected_mutations_by_sample)
+            for sample, mutations in rejected_mutations_by_sample.iteritems():
+                for mut in mutations:
+                    rejected_mutations[sample][(mut.gene.name, mut.pos)] = mut
+    return rejected_mutations
+
+
+def save_all_mutations_depth(cnf, infos_by_key):
+    mut_bed_fpath = join(cnf.work_dir, 'mutations.bed')
+
+    if not cnf.reuse_intermediate or not verify_file(mut_bed_fpath):
+        all_mutations_pos = defaultdict(set)
+        for e in infos_by_key.values():
+            for mut in e.mutations:
+                all_mutations_pos[mut.chrom].add(mut.pos)
+        with file_transaction(cnf.work_dir, mut_bed_fpath) as tx:
+            with open(tx, 'w') as out_f:
+                for chrom, positions in all_mutations_pos.iteritems():
+                    for pos in positions:
+                        out_f.write('\t'.join([chrom, str(pos - 1), str(pos)]) + '\n')
+    for e in infos_by_key.values():
+        sambamba_output_fpath = join(cnf.work_dir, e.sample.name + '__mutations.bed')
+        sambamba_depth(cnf, mut_bed_fpath, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True)
+        regions = parse_sambamba_depth_output(e.sample.name, sambamba_output_fpath)
+        depth_dict = defaultdict()
+        for region in regions:
+            depth_dict[region.end] = region.avg_depth
+        e.mutations_depth = depth_dict
 
 
 def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, parameters_info=None, samples_data=None, is_target2wgs=False):

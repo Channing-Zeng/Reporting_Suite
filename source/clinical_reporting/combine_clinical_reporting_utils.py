@@ -84,10 +84,7 @@ def get_depth_and_freq(e, mut, formatted_name, vcf_readers, filt_vcf_readers):
         return None, None, None, None
 
     if not depth:
-        mut_coord = '{mut.chrom}:{mut.pos}-{mut.pos}'.format(**locals())
-        sambamba_output_fpath = join(e.cnf.work_dir, formatted_name.replace(' ', '_') + '_pos_depth.txt')
-        sambamba_depth(e.cnf, mut_coord, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True)
-        depth = get_mean_cov(sambamba_output_fpath)
+        depth = e.mutations_depth[mut.pos] if e.mutations_depth else 0
         depth_str = gray('%.0f' % depth)
         tooltip = 'No mutation'
     depth_record = add_tooltip(depth_str, tooltip)

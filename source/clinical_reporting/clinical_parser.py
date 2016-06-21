@@ -280,6 +280,7 @@ class ClinicalExperimentInfo:
         self.sv_vcf_fpath = sv_vcf_fpath
         self.is_target2wgs_comparison = is_target2wgs_comparison
         self.rejected_mutations = None
+        self.mutations_depth = None
 
         info('Sample: ' + str(sample.name))
         info('Match sample name: ' + str(sample.normal_match))
