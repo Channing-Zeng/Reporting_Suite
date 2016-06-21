@@ -92,11 +92,13 @@ def parse_samples_metadata(cnf, csv_fpath):
     samples_data = defaultdict(lambda : defaultdict(OrderedDict))
     with open(csv_fpath) as input_f:
         for i, l in enumerate(input_f):
+            delim = None
             l = l.replace('\n', '')
             if not l:
                 continue
             if i == 0:
-                headers = l.split(',')
+                delim = ',' if ',' in l else '\t'
+                headers = l.split(delim)
                 sample_col = headers.index('sample') if 'sample' in headers else None
                 project_col = headers.index('project_path') if 'project_path' in headers else None
                 sample_num_col = headers.index('sample_num') if 'sample_num' in headers else None
@@ -108,7 +110,7 @@ def parse_samples_metadata(cnf, csv_fpath):
                                    [sample_col, project_col, sample_num_col, group_col]]
                 parameters = [capitalize_keep_uppercase(col) for col in headers[group_col + 1:]]
                 continue
-            fields = l.split(',')
+            fields = l.split(delim)
             if len(fields) < len(headers):
                 critical('Error: len of line ' + str(i) + ' is ' + str(len(fields)) + ', which is less than the len of header (' + str(len(headers)) + ')')
             sample_name = fields[sample_col]
