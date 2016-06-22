@@ -10,6 +10,7 @@ from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinica
 from source.clinical_reporting.combine_clinical_reporting_utils import format_experiment_names
 from source.file_utils import file_transaction
 from source.logger import err
+from source.qsub_utils import wait_for_jobs
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, write_static_html_report, \
     build_report_html, calc_cell_contents, make_cell_th, make_cell_td
 from source.reporting.reporting import ReportSection
@@ -56,21 +57,33 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
                 sample.targetcov_detailed_tsv = None
                 clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
-                infos_by_key[(group, sample.name)] = clin_info
+                uniq_key = get_uniq_sample_key(bs.project_name, sample)
+                infos_by_key[(group, uniq_key)] = clin_info
                 info('')
 
         rejected_mutations = get_rejected_mutations(cnf, bs, clin_info.key_gene_by_name_chrom, clin_info.genes_collection_type)
         for sample in bs.samples:
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
-                infos_by_key[(group, sample.name)].rejected_mutations = rejected_mutations[sample.name]
+                uniq_key = get_uniq_sample_key(bs.project_name, sample)
+                infos_by_key[(group, uniq_key)].rejected_mutations = rejected_mutations[sample.name]
 
+    sample_infos = OrderedDict({k: get_sample_info(e.sample.name, e.sample.dirpath, samples_data) for k, e in infos_by_key.iteritems()})
+    sorted_sample_infos = sorted(sample_infos.items(), key=lambda x: ([x[1][j] for j in range(len(x[1]))], x[0][1]))
+    sorted_experiments = OrderedDict()
+    for k, v in sorted_sample_infos:
+        sorted_experiments[k] = infos_by_key[k]
     save_all_mutations_depth(cnf, infos_by_key)
 
     info('*' * 70)
     run_sample_combine_clinreport(cnf, infos_by_key, cnf.output_dir, parameters_info, samples_data)
     info('*' * 70)
     info('Successfully finished.')
+
+
+def get_uniq_sample_key(project_name, sample):
+    uniq_key = sample.name + '_' + project_name
+    return uniq_key
 
 
 def get_rejected_mutations(cnf, bs, key_gene_by_name_chrom, genes_collection_type):
@@ -107,14 +120,55 @@ def save_all_mutations_depth(cnf, infos_by_key):
                 for chrom, positions in all_mutations_pos.iteritems():
                     for pos in positions:
                         out_f.write('\t'.join([chrom, str(pos - 1), str(pos)]) + '\n')
-    for e in infos_by_key.values():
-        sambamba_output_fpath = join(cnf.work_dir, e.sample.name + '__mutations.bed')
-        sambamba_depth(cnf, mut_bed_fpath, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True)
+
+    sambamba_output_by_experiment = run_sambamba_use_grid(cnf, infos_by_key, mut_bed_fpath)
+
+    for e, sambamba_output_fpath in sambamba_output_by_experiment.iteritems():
         regions = parse_sambamba_depth_output(e.sample.name, sambamba_output_fpath)
         depth_dict = defaultdict()
         for region in regions:
             depth_dict[region.end] = region.avg_depth
         e.mutations_depth = depth_dict
+
+
+def run_sambamba_use_grid(cnf, infos_by_key, mut_bed_fpath):
+    sambamba_output_by_experiment = dict()
+    not_submitted_experiments = infos_by_key.values()
+    while not_submitted_experiments:
+        jobs_to_wait = []
+        submitted_experiments = []
+        reused_experiments = []
+
+        for k, e in infos_by_key.iteritems():
+            if e not in not_submitted_experiments:
+                continue
+            group_num, uniq_key = k
+            sambamba_output_fpath = join(cnf.work_dir, uniq_key + '__mutations.bed')
+            sambamba_output_by_experiment[e] = sambamba_output_fpath
+
+            if cnf.reuse_intermediate and verify_file(sambamba_output_fpath, silent=True):
+                info(sambamba_output_fpath + ' exists, reusing')
+                reused_experiments.append(e)
+                continue
+            else:
+                j = sambamba_depth(cnf, mut_bed_fpath, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True,
+                                   use_grid=True)
+                submitted_experiments.append(e)
+
+                if not j.is_done:
+                    jobs_to_wait.append(j)
+                if len(jobs_to_wait) >= cnf.threads:
+                    break
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No jobs to submit.')
+        not_submitted_experiments = [e for e in not_submitted_experiments if
+                                     e not in submitted_experiments and
+                                     e not in reused_experiments]
+
+    return sambamba_output_by_experiment
 
 
 def run_sample_combine_clinreport(cnf, infos_by_key, output_dirpath, parameters_info=None, samples_data=None, is_target2wgs=False):

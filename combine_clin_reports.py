@@ -24,7 +24,7 @@ def main():
     description = 'This script makes clinical reports based on multiple bcbio projects.'
 
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--email', dest='email', help='E-mail address to send notifications on errors and finished jobs.')
