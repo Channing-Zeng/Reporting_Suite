@@ -807,27 +807,28 @@ class BCBioRunner:
                     self.bcbio_structure.variant_callers.get('vardict') or \
                     self.bcbio_structure.variant_callers.get('vardict-java')
                 if not clinical_report_caller:
-                    err('No vardict or vardict-java in the variants callers: ' + ', '.join(self.bcbio_structure.variant_callers.keys()))
-                else:
-                    seq2c_cmdl = ''
-                    if self.seq2c in self.steps or verify_file(self.bcbio_structure.seq2c_fpath, silent=True):
-                        seq2c_cmdl = ' --seq2c ' + self.bcbio_structure.seq2c_fpath
+                    warn('No vardict or vardict-java in the variants callers: ' + ', '.join(self.bcbio_structure.variant_callers.keys()))
 
-                    for sample in self.bcbio_structure.samples:
-                        varqc_cmdl = ''
-                        mutation_cmdl = ''
-                        match_cmdl = ''
-                        targqc_cmdl = ''
-                        targqc_summary_cmdl = ''
-                        sv_cmdl = ''
-                        sv_vcf_cmdl = ''
+                seq2c_cmdl = ''
+                if self.seq2c in self.steps or verify_file(self.bcbio_structure.seq2c_fpath, silent=True):
+                    seq2c_cmdl = ' --seq2c ' + self.bcbio_structure.seq2c_fpath
 
-                        wait_for_steps = []
-                        wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
-                        wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
+                for sample in self.bcbio_structure.samples:
+                    varqc_cmdl = ''
+                    mutation_cmdl = ''
+                    match_cmdl = ''
+                    targqc_cmdl = ''
+                    targqc_summary_cmdl = ''
+                    sv_cmdl = ''
+                    sv_vcf_cmdl = ''
 
-                        if not sample.phenotype or sample.phenotype != 'normal':
-                            match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
+                    wait_for_steps = []
+                    wait_for_steps += [self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else []
+                    wait_for_steps += [self.seq2c.job_name()] if self.seq2c in self.steps else []
+
+                    if not sample.phenotype or sample.phenotype != 'normal':
+                        match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
+                        if clinical_report_caller:
                             varqc_cmdl = ' --varqc ' + sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json')
                             wait_for_steps += [self.varannotate.job_name(sample.name, caller=clinical_report_caller.name)] if self.varannotate in self.steps else []
                             wait_for_steps += [self.varfilter.job_name(sample.name, caller=clinical_report_caller.name)] if self.varfilter in self.steps else []
@@ -836,37 +837,37 @@ class BCBioRunner:
                             if self.varfilter in self.steps or verify_file(mut_fpath):
                                 mutation_cmdl = ' --mutations ' + mut_fpath
 
-                        targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
-                        if self.targetcov in self.steps or verify_dir(targqc_dirpath):
-                            targqc_cmdl = ' --targqc-dir ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
+                    targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
+                    if self.targetcov in self.steps or verify_dir(targqc_dirpath):
+                        targqc_cmdl = ' --targqc-dir ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
 
-                            targqc_summary_cmdl = ''
-                            if self.targqc_summary in self.steps or verify_file(self.bcbio_structure.targqc_summary_fpath, silent=True):
-                                targqc_summary_cmdl += ' --targqc-html ' + self.bcbio_structure.targqc_summary_fpath
+                        targqc_summary_cmdl = ''
+                        if self.targqc_summary in self.steps or verify_file(self.bcbio_structure.targqc_summary_fpath, silent=True):
+                            targqc_summary_cmdl += ' --targqc-html ' + self.bcbio_structure.targqc_summary_fpath
 
-                        sv_fpath = sample.find_sv_fpath()
-                        if sv_fpath:
-                            sv_cmdl = ' --sv ' + sv_fpath
+                    sv_fpath = sample.find_sv_fpath()
+                    if sv_fpath:
+                        sv_cmdl = ' --sv ' + sv_fpath
 
-                        sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
-                        sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
+                    sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
+                    sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
-                        if exists(sample_cnv_dirpath):
-                            for fname in os.listdir(sample_cnv_dirpath):
-                                if '-manta' in fname and fname.endswith('.vcf.gz'):
-                                    sv_vcf_cmdl = ' --sv-vcf ' + join(sample_cnv_dirpath, fname)
+                    if exists(sample_cnv_dirpath):
+                        for fname in os.listdir(sample_cnv_dirpath):
+                            if '-manta' in fname and fname.endswith('.vcf.gz'):
+                                sv_vcf_cmdl = ' --sv-vcf ' + join(sample_cnv_dirpath, fname)
 
-                        self._submit_job(
-                            self.clin_report,
-                            sample.name,
-                            sample=sample.name, genome=sample.genome,
-                            match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
-                            varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
-                            seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl, sv_vcf_cmdl=sv_vcf_cmdl,
-                            targqc_summary_cmdl=targqc_summary_cmdl,
-                            project_report_path=self.bcbio_structure.project_report_html_fpath,
-                            wait_for_steps=wait_for_steps,
-                            threads=self.threads_per_sample)
+                    self._submit_job(
+                        self.clin_report,
+                        sample.name,
+                        sample=sample.name, genome=sample.genome,
+                        match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
+                        varqc_cmdl=varqc_cmdl, targqc_cmdl=targqc_cmdl,
+                        seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl, sv_vcf_cmdl=sv_vcf_cmdl,
+                        targqc_summary_cmdl=targqc_summary_cmdl,
+                        project_report_path=self.bcbio_structure.project_report_html_fpath,
+                        wait_for_steps=wait_for_steps,
+                        threads=self.threads_per_sample)
 
             self.wait_for_jobs()
             info('NGS oncology reports jobs finished. Jobs done: ' + str(len([j for j in self.jobs_running if j.is_done])) +
