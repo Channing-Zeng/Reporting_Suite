@@ -44,7 +44,7 @@ def find_other_occurences(row, mut_by_experiment, cur_group_num, samples_data, p
             tooltip = report_link + ':  ' + str(freq) + '  ' + str(m.depth) + '<br>'
             tooltips.append((e.sample.name, tooltip))
         tooltips = [tooltip[1] for tooltip in sorted(tooltips)]
-        other_occurences = ' '.join([str(len(v)) + ' ' + ' '.join(k) for k, v in num_by_samples.iteritems()])
+        other_occurences = ', '.join([str(len(v)) + ''.join(k) for k, v in num_by_samples.iteritems()])
         other_occurences = add_tooltip(other_occurences, ''.join(tooltips))
         row.add_record('Other occurrences', other_occurences)
     return row
