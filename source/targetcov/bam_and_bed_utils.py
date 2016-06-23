@@ -739,7 +739,7 @@ def _parse_picard_dup_report(dup_report_fpath):
 
 def count_in_bam(cnf, bam, query, dedup=False, bed=None, use_grid=False, sample_name=None):
     if dedup:
-        query += ' and not duplicate'
+        query += ' and not duplicate and not failed_quality_control'
     name = 'num_' + (query.replace(' ', '_') or 'reads')
     if bed:
         name += '_on_target_' + basename(bed)
