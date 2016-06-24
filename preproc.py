@@ -335,7 +335,7 @@ def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, samblaster, bwa_p
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
 
-    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {bwa_prefix} -'.format(**locals())
+    bwa_cmdline = '{bwa} mem {bwa_prefix} {l_fpath} {r_fpath}'.format(**locals())
     res = call(cnf, bwa_cmdline, output_fpath=sam_fpath, exit_on_error=False)
     if not res:
         return None
