@@ -153,15 +153,13 @@ def main():
     bam_by_sample = OrderedDict()
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     bwa = get_system_path(cnf, 'bwa')
-    seqtk = get_system_path(cnf, 'seqtk')
     bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
-    if sambamba and bwa and seqtk and bammarkduplicates:
+    if sambamba and bwa and bammarkduplicates:
         info()
-        info('Alignming reads to the reference')
+        info('Aligning reads to the reference')
         bam_fpaths = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
             sambamba,
             bwa,
-            seqtk,
             bammarkduplicates,
             cnf.genome.bwa,
             cnf.is_pcr) for s, l, r in zip(samples, lefts, rights))
@@ -230,12 +228,12 @@ def downsample_fastq(cnf, samples, downsample_to=5e5):
     # return lefts, rights
 
 
-def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, bammarkduplicates, bwa_prefix, is_pcr=False):
+def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, bammarkduplicates, bwa_prefix, is_pcr=False):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
 
-    bwa_cmdline = '{seqtk} mergepe {l_fpath} {r_fpath} | {bwa} mem {bwa_prefix} -'.format(**locals())
+    bwa_cmdline = '{bwa} mem {bwa_prefix} {l_fpath} {r_fpath} '.format(**locals())
     res = call(cnf, bwa_cmdline, output_fpath=sam_fpath, exit_on_error=False)
     if not res:
         return None

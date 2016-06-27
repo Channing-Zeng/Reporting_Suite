@@ -43,6 +43,8 @@ def proc_args(argv):
     parser.add_option('--bed', dest='bed', help='BED file to run detailed coverage analysis.')
     parser.add_option('--exons', '--exome', dest='exons', help='Exons BED file to make targetSeq exon/amplicon regions reports.')
     parser.add_option('--downsample-to', dest='downsample_to', type='int')
+    parser.add_option('--downsampled', dest='downsampled', action='store_true', default=False)
+    parser.add_option('--fastqc-dirpath', dest='fastqc_dirpath')
 
     (opts, args) = parser.parse_args()
     logger.is_debug = opts.debug
@@ -92,7 +94,7 @@ def main():
         s.r_fpath = r
         samples.append(s)
     for sname, bam_fpath in bam_by_sample.items():
-        s = source.TargQC_Sample(sname, join(cnf.output_dir, sname), bam=bam_fpath)
+        s = source.TargQC_Sample(sname, join(cnf.output_dir, sname), bam=bam_fpath, fastqc_dirpath=cnf.fastqc_dirpath)
         samples.append(s)
     samples.sort(key=lambda _s: _s.key_to_sort())
 
@@ -187,7 +189,7 @@ def find_fastq_pairs(fpaths):
         if not l:
             err('ERROR: for sample ' + sname + ', left reads not found')
         if not r:
-            err('ERROR: for sample ' + sname + ', left reads not found')
+            err('ERROR: for sample ' + sname + ', right reads not found')
         fixed_fastqs_by_sample_name[sname] = l, r
 
     return fixed_fastqs_by_sample_name

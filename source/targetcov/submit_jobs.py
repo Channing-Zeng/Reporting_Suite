@@ -42,6 +42,8 @@ def run_targqc(cnf, output_dir, samples, target_bed, features_bed, genes_fpath=N
                 input_params = ' --bam ' + sample.bam
             elif sample.l_fpath and sample.r_fpath:
                 input_params = ' -1 ' + sample.l_fpath + ' -2 ' + sample.r_fpath
+            if cnf.downsampled and sample.fastqc_dirpath:
+                input_params += ' --downsampled --fastqc-dirpath ' + sample.fastqc_dirpath
 
             j = _submit_job(cnf, step, sample.name, threads=threads_per_sample, input_params=input_params, targqc_dirpath=sample.targqc_dirpath)
             jobs_to_wait.append(j)

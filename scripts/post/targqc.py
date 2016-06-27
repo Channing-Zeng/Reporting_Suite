@@ -99,6 +99,15 @@ def main(args):
                 type='int',
                 help=SUPPRESS_HELP)
              ),
+            (['--downsampled'], dict(
+                dest='downsampled',
+                action='store_true',
+                help=SUPPRESS_HELP)
+             ),
+            (['--fastqc-dirpath'], dict(
+                dest='fastqc_dirpath',
+                help=SUPPRESS_HELP)
+             )
         ],
         file_keys=['bam', 'l_fpath', 'r_fpath', 'bed'],
         key_for_sample_name='bam')
@@ -170,14 +179,13 @@ def proc_fastq(cnf, sample, l_fpath, r_fpath):
 
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     bwa = get_system_path(cnf, 'bwa')
-    seqtk = get_system_path(cnf, 'seqtk')
     bammarkduplicates = get_system_path(cnf, 'bammarkduplicates')
-    if not (sambamba and bwa and seqtk and bammarkduplicates):
-        critical('sambamba, BWA, seqtk and bammarkduplicates are required to align BAM')
+    if not (sambamba and bwa and bammarkduplicates):
+        critical('sambamba, BWA, and bammarkduplicates are required to align BAM')
     info()
-    info('Alignming reads to the reference')
+    info('Aligning reads to the reference')
     bam_fpath = align(cnf, sample, l_fpath, r_fpath,
-        sambamba, bwa, seqtk, bammarkduplicates,
+        sambamba, bwa, bammarkduplicates,
         cnf.genome.bwa, cnf.is_pcr)
     bam_fpath = verify_bam(bam_fpath)
     if not bam_fpath:

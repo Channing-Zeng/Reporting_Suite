@@ -204,6 +204,12 @@ def main():
         info('Threads number: ' + str(threads))
         project.concat_fastqs(ds.get_fastq_regexp_fn, cnf)
 
+        if cnf.fastqc:
+            if not cnf.expose_to_ngs_server_only:
+                info('Making FastQC reports')
+                safe_mkdir(project.fastqc_dirpath)
+                make_fastqc_reports(cnf, samples, project.fastq_dirpath, project.fastqc_dirpath, project.comb_fastqc_fpath)
+
         if cnf.targqc or cnf.metamapping:
             info()
             downsample_to = cnf.downsample_to
@@ -215,15 +221,13 @@ def main():
             bam_by_sample = OrderedDict()
             sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
             bwa = get_system_path(cnf, 'bwa')
-            seqtk = get_system_path(cnf, 'seqtk')
             samblaster = get_system_path(cnf, 'samblaster')
-            if sambamba and bwa and seqtk and samblaster:
+            if sambamba and bwa and samblaster:
                 info()
                 info('Aligning ' + str(downsample_to) + ' random reads to the reference')
                 aligned = Parallel(n_jobs=threads)(delayed(align)(CallCnf(cnf.__dict__), s, l, r,
                     sambamba,
                     bwa,
-                    seqtk,
                     samblaster,
                     cnf.genome.bwa,
                     cnf.is_pcr) for s, l, r in zip(samples, lefts, rights))
@@ -248,13 +252,7 @@ def main():
                             bed_by_subprj.get(project.name, bed_by_subprj.values()[0] if bed_by_subprj.values() else None))
                         cnf.work_dir = dirname(cnf.work_dir)
             else:
-                err('For downsampled targqc and metamapping, bwa, sambamba, samblaster and seqtk are required.')
-
-        if cnf.fastqc:
-            if not cnf.expose_to_ngs_server_only:
-                info('Making FastQC reports')
-                safe_mkdir(project.fastqc_dirpath)
-                make_fastqc_reports(cnf, samples, project.fastq_dirpath, project.fastqc_dirpath, project.comb_fastqc_fpath)
+                err('For downsampled targqc and metamapping, bwa, sambamba and samblaster are required.')
 
         new_project_symlink = join(dirname(project_dirpath), project.az_project_name)
         if not exists(new_project_symlink):
@@ -330,7 +328,7 @@ def main():
     #         err('Can\'t remove work directory ' + cnf.work_dir + ', please, remove it manually.')
 
 
-def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, seqtk, samblaster, bwa_prefix, is_pcr=False):
+def align(cnf, sample, l_fpath, r_fpath, sambamba, bwa, samblaster, bwa_prefix, is_pcr=False):
     sam_fpath = join(cnf.work_dir, sample.name + '_downsampled.sam')
     bam_fpath = splitext(sam_fpath)[0] + '.bam'
     sorted_bam_fpath = add_suffix(bam_fpath, 'sorted')
@@ -374,9 +372,11 @@ def run_targqc(cnf, project, bam_by_sample, bed_fpath):
         bed_cmdl = '--bed ' + bed_fpath
     cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} {bed_cmdl} ' \
            '--work-dir {targqc_work_dir} --log-dir {targqc_log_dir} --project-name {cnf.project_name} ' \
-           '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name}'.format(**locals())
+           '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name} --downsampled'.format(**locals())
     if cnf.reuse_intermediate:
         cmdl += ' --reuse'
+    if cnf.fastqc:
+        cmdl += ' --fastqc-dirpath ' + project.fastqc_dirpath
     call(cnf, cmdl)
     info('Waiting for targqc to be done...')
     while True:

@@ -216,7 +216,7 @@ class BaseSample:
 
 
 class TargQC_Sample(BaseSample):
-    def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None):
+    def __init__(self, name, dirpath, bam=None, bed=None, vcf=None, genome=None, fastqc_dirpath=None):
         BaseSample.__init__(self, name, dirpath,
             targqc_dirpath=dirpath,
             ngscat_dirpath=join(dirpath, ngscat_name),
@@ -227,6 +227,7 @@ class TargQC_Sample(BaseSample):
         self.bed = bed
         self.vcf = vcf
         self.genome = genome
+        self.fastqc_dirpath = fastqc_dirpath
         self.l_fpath = None
         self.r_fpath = None
 

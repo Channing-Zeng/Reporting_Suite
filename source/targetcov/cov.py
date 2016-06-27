@@ -80,6 +80,9 @@ def get_header_metric_storage(depth_thresholds, is_wgs=False, padding=None):
     depth_section = ReportSection('depth_metrics', ('Target' if not is_wgs else 'Genome') + ' coverage depth', [
         Metric('Median ' + trg_name + ' coverage depth', short_name='median'),
         Metric('Average ' + trg_name + ' coverage depth', short_name='avg'),
+        Metric('Estimated ' + trg_name + ' full coverage', short_name='est full cov',
+               description='Estimated average coverage of full dataset. Calculated as (the total number of raw reads * '
+                           'downsampled mapped reads fraction / total downsampled mapped reads) * downsampled average coverage'),
         Metric('Std. dev. of ' + trg_name + ' coverage depth', short_name='std dev', quality='Less is better'),
         # Metric('Minimal ' + trg_name + ' coverage depth', short_name='Min', is_hidden=True),
         # Metric('Maximum ' + trg_name + ' coverage depth', short_name='Max', is_hidden=True),
@@ -521,6 +524,11 @@ def make_summary_report(cnf, depth_stats, reads_stats, mm_indels_stats, sample, 
 
     info('')
     report.add_record('Average ' + trg_type + ' coverage depth', depth_stats['ave_depth'])
+    if cnf.downsampled and cnf.fastqc_dirpath:
+        full_reads_number = get_total_reads_number_from_fastqc(sample.name, cnf.fastqc_dirpath)
+        if full_reads_number:
+            est_full_cov = (full_reads_number * percent_mapped / reads_stats['total']) * depth_stats['ave_depth']
+            report.add_record('Estimated ' + trg_type + ' full coverage', est_full_cov)
     report.add_record('Median ' + trg_type + ' coverage depth', depth_stats['median_depth'])
     report.add_record('Std. dev. of ' + trg_type + ' coverage depth', depth_stats['stddev_depth'])
     # report.add_record('Minimal ' + trg_type + ' coverage depth', depth_stats['min_depth'])
@@ -797,6 +805,7 @@ def _generate_report_from_bam(cnf, sample, bam, target_bed, features_no_genes_be
         #####################################
         info('Preparing report rows...')
         total_regions_count = 0
+        cur_unannotated_gene = None
         for region in regions:
             if region.feature == 'Capture':
                 if region.gene_name != '.':
@@ -999,6 +1008,31 @@ def add_region_to_report(report, region, depth_threshs, fpaths_to_write=None, co
                     for val, w in izip(flat_row, col_widths):
                                 out.write(val + (' ' * (w - len(val) + 2)))
                     out.write('\n')
+
+
+def get_total_reads_number_from_fastqc(sample, fastqc_dirpath):
+    fastqc_txt_fpaths = find_fastqc_txt(sample, fastqc_dirpath)
+    if not fastqc_txt_fpaths:
+        return
+    num_reads = 0
+    for fpath in fastqc_txt_fpaths:
+        with open(fpath) as f_in:
+            for line in f_in:
+                if 'total sequences' in line.lower():
+                    num_reads += int(line.strip().split('\t')[-1])
+                    break
+    return num_reads
+
+
+def find_fastqc_txt(sample_name, fastqc_dirpath):
+    l_fastqc_dirpath = join(fastqc_dirpath, sample_name + '_R1_fastqc')
+    r_fastqc_dirpath = join(fastqc_dirpath, sample_name + '_R2_fastqc')
+    fastqc_txt_fpaths = [join(l_fastqc_dirpath, 'fastqc_data.txt'), join(r_fastqc_dirpath, 'fastqc_data.txt')]
+    if all(isfile(fpath) for fpath in fastqc_txt_fpaths):
+        return fastqc_txt_fpaths
+    else:
+        return None
+
 
 # def _bases_by_depth(depth_vals, depth_thresholds):
 #     bases_by_min_depth = {depth: 0 for depth in depth_thresholds}
