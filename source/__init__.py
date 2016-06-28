@@ -42,7 +42,6 @@ seq2c_seq2cov_ending     = 'seq2c_seq2cov.txt'
 
 dedup_bam                = 'dedup'  # work/post_processing/dedup and -ready.dedup.bam
 
-ngscat_report_fname             = 'captureQC.html'
 qualimap_report_fname           = 'qualimapReport.html'
 qualimap_genome_results_fname   = 'genome_results.txt'
 qualimap_raw_data_dirname       = 'raw_data_qualimapReport'
@@ -138,10 +137,6 @@ class BaseSample:
             self.clinical_target_tsv            = join(self.clinical_report_dirpath, name + '.target.tsv')
             self.clinical_html                  = join(self.clinical_report_dirpath, name + '.html')
 
-        if ngscat_dirpath:
-            self.ngscat_dirpath                 = ngscat_dirpath
-            self.ngscat_html_fpath              = join(self.ngscat_dirpath, ngscat_report_fname)
- 
         if qualimap_dirpath:
             self.qualimap_dirpath               = qualimap_dirpath
             self.qualimap_html_fpath            = join(self.qualimap_dirpath, qualimap_report_fname)

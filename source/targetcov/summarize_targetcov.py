@@ -87,11 +87,6 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
                                                is_wgs=bed_fpath is not None,
                                                padding=cnf.coverage_reports.padding)
 
-    # targqc_metric_storage = _get_targqc_metric_storage([
-    #     ('targetcov', header_storage),
-    #     ('ngscat', ngscat_report_parser.metric_storage)])
-    #     # ('qualimap', qualimap_report_parser.metric_storage)])
-
     jsons_by_sample = {s.name: s.targetcov_json_fpath for s in samples if verify_file(s.targetcov_json_fpath)}
     htmls_by_sample = {s.name: s.targetcov_html_fpath for s in samples if verify_file(s.targetcov_html_fpath)}
 
@@ -100,33 +95,9 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
 
     targqc_full_report = FullReport.construct_from_sample_report_jsons(samples, output_dir, jsons_by_sample, htmls_by_sample)
 
-    # source.targqc_repr, [], metric_storage=targqc_metric_storage)
-
     for sample_report in targqc_full_report.sample_reports:
-    #     records_by_report_type = []
-    #     if (verify_file(sample.targetcov_json_fpath, True) or
-    #             verify_file(sample.ngscat_html_fpath, True) or
-    #             verify_file(sample.qualimap_html_fpath, True)):
-    #         records_by_report_type.append(('targetcov', load_records(sample.targetcov_json_fpath) if verify_file(
-    #             sample.targetcov_json_fpath, silent=True) else []))
-    #         records_by_report_type.append(('ngscat', ngscat_report_parser.parse_ngscat_sample_report(
-    #             sample.ngscat_html_fpath) if verify_file(sample.ngscat_html_fpath, silent=True) else []))
-    #         records_by_report_type.append(('qualimap', qualimap_report_parser.parse_qualimap_sample_report(
-    #             sample.qualimap_html_fpath) if verify_file(sample.qualimap_html_fpath, silent=True) else []))
-    #
-    #     sample_report = SampleReport(
-    #         sample,
-    #         records=_get_targqc_records(records_by_report_type, header_storage),
-    #         html_fpath=dict(
-    #             targetcov=relpath(sample.targetcov_html_fpath, output_dir) if sample.targetcov_html_fpath else None,
-    #             ngscat=relpath(sample.ngscat_html_fpath, output_dir) if sample.ngscat_html_fpath else None,
-    #             qualimap=relpath(sample.qualimap_html_fpath, output_dir) if sample.qualimap_html_fpath else None
-    #         ),
-    #         metric_storage=targqc_metric_storage)
         if tag_by_sample:
             sample_report.set_project_tag(tag_by_sample[sample_report.sample.name])
-        # if verify_file(sample_report.sample.ngscat_html_fpath):
-        #     sample_report.add_record(metric_name='ngsCAT', value='ngsCAT', html_fpath=sample_report.sample.ngscat_html_fpath, silent=True)
         if verify_file(sample_report.sample.qualimap_html_fpath):
             url = relpath(sample_report.sample.qualimap_html_fpath, output_dir)
             r = sample_report.find_record(sample_report.records, 'Qualimap')
@@ -134,25 +105,8 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
                 r.url = url
             else:
                 sample_report.add_record(metric_name='Qualimap', value='Qualimap', url=url, silent=True)
-        # targqc_full_report.sample_reports.append(sample_report)
 
     _run_multisample_qualimap(cnf, output_dir, samples, targqc_full_report)
-
-    # orig_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target'), None)
-    # ready_bed_rec = next((r for r in targqc_full_report.get_common_records() if r.metric.name == 'Target ready'), None)
-
-    # if not ready_bed_rec:
-    #     ready_bed_rec = orig_bed_rec
-
-    # if ready_bed_rec:
-    #     ready_bed = ready_bed_rec.path
-    #     if verify_bed(ready_bed, 'ready_bed_rec.value'):
-    #         project_ready_bed = join(output_dir, 'target.bed')
-    #         shutil.copy(ready_bed, project_ready_bed)
-    #         ready_bed_rec.value = project_ready_bed
-
-    # if orig_bed_rec and ready_bed_rec:
-    #     orig_bed_rec.value = bed_fpath
 
     txt_fpath = targqc_full_report.save_txt(join(output_dir, BCBioStructure.targqc_name + '.txt'))
     tsv_fpath = targqc_full_report.save_tsv(join(output_dir, BCBioStructure.targqc_name + '.tsv'))
