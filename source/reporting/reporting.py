@@ -14,6 +14,7 @@ from source.bcbio.bcbio_structure import BCBioSample
 from source.file_utils import file_transaction, verify_file, safe_mkdir
 from source.logger import critical, info, err, warn
 from source.utils import mean
+from source.webserver.exposing import convert_path_to_url
 
 
 def get_real_path(path_in_html_saver):
@@ -1700,8 +1701,7 @@ def _embed_css_and_scripts(html, report_dirpath,
             l_tag_formatted = l_tag.format(name=rel_fpath)
 
             if debug:  # not embedding, just adding links
-                fpath = relpath(fpath, report_dirpath)
-                line_formatted = line.replace(rel_fpath, fpath)
+                line_formatted = line.replace(rel_fpath, convert_path_to_url(report_dirpath))
                 html = html.replace(line, line_formatted)
 
             else:
