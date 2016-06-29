@@ -91,13 +91,20 @@ def parse_samples_metadata(cnf, csv_fpath):
     parameters_info = OrderedDefaultDict(Parameter)
     samples_data = defaultdict(lambda : defaultdict(OrderedDict))
     with open(csv_fpath) as input_f:
+        delim = None
         for i, l in enumerate(input_f):
-            delim = None
             l = l.replace('\n', '')
             if not l:
-                continue
+                critical('Line ' + str(i) + ' is empty')
             if i == 0:
-                delim = ',' if ',' in l else '\t'
+                if ',' in l:
+                    delim = ','
+                    info('Interpeting input as comma-separated')
+                elif '\t' in l:
+                    delim = '\t'
+                    info('Interpeting input as tab-separated')
+                else:
+                    critical('Header is not separated by comma or tab: ' + l)
                 headers = l.split(delim)
                 sample_col = headers.index('sample') if 'sample' in headers else None
                 project_col = headers.index('project_path') if 'project_path' in headers else None
