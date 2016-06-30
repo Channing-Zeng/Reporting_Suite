@@ -622,7 +622,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
                     continue
                 alts_met_before.add((chrom, start, ref, alt, transcript, sample_name))
 
-                if (gname, chrom) not in key_gene_by_name_chrom:
+                if key_gene_by_name_chrom and (gname, chrom) not in key_gene_by_name_chrom:
                     # warn('gene ' + gname + ' at ' + chrom + ' not found in coverage reports, but found in mutation:\n  ' + l)
                     continue
 

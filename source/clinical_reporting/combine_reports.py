@@ -86,17 +86,22 @@ def get_uniq_sample_key(project_name, sample):
     return uniq_key
 
 
-def get_rejected_mutations(cnf, bs, key_gene_by_name_chrom, genes_collection_type):
-    rejected_mutations = defaultdict(dict)
-    rejected_mutations_by_sample = defaultdict(list)
-
-    pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
+def get_rejected_mutations_fpaths(pass_mutations_fpath):
     mut_basename = pass_mutations_fpath.split('.' + source.mut_pass_suffix)[0]
     mut_reject_ending = source.mut_reject_suffix + '.' + source.mut_file_ext
     possible_reject_mutations_fpaths = [mut_basename + '.' + mut_reject_ending,
                                         mut_basename + '.' + source.mut_paired_suffix + '.' + mut_reject_ending,
                                         mut_basename + '.' + source.mut_single_suffix + '.' + mut_reject_ending]
-    for reject_mutations_fpath in possible_reject_mutations_fpaths:
+    return possible_reject_mutations_fpaths
+
+
+def get_rejected_mutations(cnf, bs, key_gene_by_name_chrom, genes_collection_type):
+    rejected_mutations = defaultdict(dict)
+    rejected_mutations_by_sample = defaultdict(list)
+
+    pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
+
+    for reject_mutations_fpath in get_rejected_mutations_fpaths(pass_mutations_fpath):
         if verify_file(reject_mutations_fpath, silent=True):
             info('Parsing rejected mutations from ' + str(reject_mutations_fpath))
             parse_mutations(cnf, None, key_gene_by_name_chrom, reject_mutations_fpath, genes_collection_type,
