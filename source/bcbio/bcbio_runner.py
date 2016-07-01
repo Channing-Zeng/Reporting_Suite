@@ -31,7 +31,7 @@ from source.utils import is_us, md5, is_uk, is_sweden
 from source.variants import summarize_qc
 from source.variants.filtering import make_vcf2txt_cmdl_params
 from source.variants.vcf_processing import verify_vcf
-from source.webserver.exposing import sync_with_ngs_server, convert_path_to_url
+from source.webserver.exposing import sync_with_ngs_server, convert_gpfs_path_to_url
 from source.config import defaults, with_cnf
 from tools.add_jbrowse_tracks import add_project_files_to_jbrowse
 
@@ -1081,7 +1081,7 @@ def _final_email_notification(cnf, html_report_url, jira_url, bs):
     txt = 'Post-processing finished for ' + bs.project_name + '\n'
     txt += '\n'
     txt += 'Path: ' + bs.final_dirpath + '\n'
-    txt += 'URL: ' + convert_path_to_url(bs.final_dirpath) + '\n'
+    txt += 'URL: ' + convert_gpfs_path_to_url(bs.final_dirpath) + '\n'
     txt += 'Report: ' + (html_report_url or bs.project_report_html_fpath) + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url

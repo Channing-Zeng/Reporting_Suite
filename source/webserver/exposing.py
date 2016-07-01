@@ -314,9 +314,13 @@ def __requote(s):
     return '"' + s + '"'
 
 
-def convert_path_to_url(path):
+def convert_gpfs_path_to_url(path):
     if is_us():
         return adjust_path(path).replace('/gpfs/ngs/', 'http://blue.usbod.astrazeneca.net/~klpf990/ngs/')
     else:
         return ''
+
+
+def get_base_url_for_source():
+    return 'http://ukapdlnx115.ukapd.astrazeneca.net/ngs/reports/az.reporting/'
 

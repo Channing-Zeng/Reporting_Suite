@@ -19,7 +19,7 @@ from source.variants.vcf_processing import bgzip_and_tabix, verify_vcf
 from source.file_utils import safe_mkdir, add_suffix, verify_file, open_gzipsafe, \
     symlink_plus, file_transaction, num_lines
 from source.logger import info
-from source.webserver.exposing import convert_path_to_url
+from source.webserver.exposing import convert_gpfs_path_to_url
 
 
 def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
@@ -100,7 +100,7 @@ def run_vcf2txt_vardict2mut_for_samples(
     if not res:
         critical('vardict2mut.py run returned non-0')
     mut_fpath = res
-    mut_fpath = convert_path_to_url(mut_fpath)
+    mut_fpath = convert_gpfs_path_to_url(mut_fpath)
     info()
 
     info('Done filtering with vcf2txt/vardict2mut, saved to ' + str(mut_fpath))

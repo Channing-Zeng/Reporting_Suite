@@ -8,13 +8,15 @@ from math import floor
 import traceback
 import datetime
 
+from bcbio_postproc import project_dir
+
 from ext_modules.jsontemplate import jsontemplate
 
 from source.bcbio.bcbio_structure import BCBioSample
 from source.file_utils import file_transaction, verify_file, safe_mkdir
 from source.logger import critical, info, err, warn
 from source.utils import mean
-from source.webserver.exposing import convert_path_to_url
+from source.webserver.exposing import convert_gpfs_path_to_url, get_base_url_for_source
 
 
 def get_real_path(path_in_html_saver):
@@ -1690,7 +1692,7 @@ def _embed_css_and_scripts(html, report_dirpath,
         for rel_fpath in files:
             info('Embedding ' + rel_fpath + '...', ending=' ')
             if verify_file(rel_fpath, silent=True):
-                fpath = rel_fpath
+                fpath = abspath(rel_fpath)
                 rel_fpath = basename(fpath)
             else:
                 fpath = join(static_dirpath, join(*rel_fpath.split('/')))
@@ -1701,7 +1703,8 @@ def _embed_css_and_scripts(html, report_dirpath,
             l_tag_formatted = l_tag.format(name=rel_fpath)
 
             if debug:  # not embedding, just adding links
-                line_formatted = line.replace(rel_fpath, convert_path_to_url(report_dirpath))
+                source_relpath = relpath(fpath, project_dir)
+                line_formatted = line.replace(rel_fpath, get_base_url_for_source() + source_relpath)
                 html = html.replace(line, line_formatted)
 
             else:
