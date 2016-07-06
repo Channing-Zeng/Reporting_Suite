@@ -16,7 +16,7 @@ from source.bcbio.bcbio_runner import BCBioRunner
 from source.config import defaults
 from source.logger import info, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
-from source.file_utils import safe_mkdir, adjust_path, safe_symlink_to, add_suffix
+from source.file_utils import safe_mkdir, adjust_path, safe_symlink_to, add_suffix, safe_remove
 from source.targetcov import summarize_targetcov
 from source.variants import summarize_qc
 from source.variants.filtering import combine_results
@@ -184,10 +184,9 @@ def combine_projects(cnf, bcbio_structures, tags=None):
 
     variants_fpaths = []
     vardict_txt_fname = source.mut_fname_template.format(caller_name='vardict')
-    pass_suffix = source.mut_pass_suffix
     variants_fpath = join(merged_bs_var_dirpath, vardict_txt_fname)
-    pass_variants_fname = add_suffix(vardict_txt_fname, source.mut_pass_suffix)
-    pass_variants_fpath = join(merged_bs_var_dirpath, pass_variants_fname)
+    pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+    reject_variants_fpath = add_suffix(variants_fpath, source.mut_reject_suffix)
 
     cnf.reuse_intermediate = False
     cnf.steps = ['Variants']
@@ -197,9 +196,11 @@ def combine_projects(cnf, bcbio_structures, tags=None):
         bcbio_runner = BCBioRunner(cnf, correct_bs, bs.bcbio_cnf)
         bcbio_runner.post_jobs()
         bs_raw_variants_fpath = add_suffix(variants_fpath, str(bs_i))
-        pass_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, pass_suffix)
+        pass_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, source.mut_pass_suffix)
+        reject_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, source.mut_reject_suffix)
         shutil.move(variants_fpath, bs_raw_variants_fpath)
         shutil.move(pass_variants_fpath, pass_bs_variants_fpath)
+        shutil.move(reject_variants_fpath, reject_bs_variants_fpath)
         variants_fpaths.append(bs_raw_variants_fpath)
 
     merged_bs = BCBioStructure(cnf, cnf.output_dir, merged_bcbio_cnf, final_dirpath)
@@ -207,12 +208,12 @@ def combine_projects(cnf, bcbio_structures, tags=None):
 
     cnf.variant_filtering.max_ratio = 1
     combine_results(cnf, merged_samples, variants_fpaths, variants_fpath, pass_variants_fpath=pass_variants_fpath)
-    for fpath in variants_fpaths:
-        if exists(fpath):
-            os.remove(fpath)
-        pass_fpath = add_suffix(fpath, pass_suffix)
-        if exists(pass_fpath):
-            os.remove(pass_fpath)
+    for variants_fpath in variants_fpaths:
+        safe_remove(variants_fpath)
+        pass_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+        safe_remove(pass_fpath)
+        reject_fpath = add_suffix(variants_fpath, source.mut_reject_suffix)
+        safe_remove(reject_fpath)
 
     cnf.reuse_intermediate = True
     cnf.steps = ['Seq2C', 'Summary']

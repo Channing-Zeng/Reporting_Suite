@@ -79,6 +79,11 @@ def safe_mkdir(dirpath, descriptive_name=''):
     return dirpath
 
 
+def safe_remove(fpath):
+    if exists(fpath):
+        os.remove(fpath)
+
+
 def transform_to(ext):
     """
     Decorator to create an output filename from an output filename with
