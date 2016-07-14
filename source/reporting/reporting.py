@@ -15,7 +15,7 @@ from ext_modules.jsontemplate import jsontemplate
 from source.bcbio.bcbio_structure import BCBioSample
 from source.file_utils import file_transaction, verify_file, safe_mkdir
 from source.logger import critical, info, err, warn
-from source.utils import mean
+from source.utils import mean, is_az
 from source.webserver.exposing import convert_gpfs_path_to_url, get_base_url_for_source
 
 
@@ -1703,9 +1703,14 @@ def _embed_css_and_scripts(html, report_dirpath,
             l_tag_formatted = l_tag.format(name=rel_fpath)
 
             if debug:  # not embedding, just adding links
-                source_relpath = relpath(fpath, project_dir)
-                line_formatted = line.replace(rel_fpath, get_base_url_for_source() + source_relpath)
-                html = html.replace(line, line_formatted)
+                if is_az():
+                    source_relpath = relpath(fpath, project_dir)
+                    line_formatted = line.replace(rel_fpath, get_base_url_for_source() + source_relpath)
+                    html = html.replace(line, line_formatted)
+                else:
+                    # p = relpath(fpath, report_dirpath)
+                    line_formatted = line.replace(rel_fpath, fpath)
+                    html = html.replace(line, line_formatted)
 
             else:
                 with open(fpath) as f:
