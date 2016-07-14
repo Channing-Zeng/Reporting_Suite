@@ -25,69 +25,67 @@ resources:
     path: ext_tools/qualimap/qualimap
   bedtools:
     path: /usr/local/bin/bedtools
-  sambamba:
-    path: /usr/local/bin/sambamba
-#  python:
-#    path: /usr/local/bin/python
 
 
 genomes:
   hg19-chr21:
-    seq: ~/Dropbox/az/reference_data/chr21.fa
+    seq:                      ~/Dropbox/az/reference_data/hg19-chr21/seq/hg19-chr21.fa
+    bwa:                      ~/Dropbox/az/reference_data/hg19-chr21/bwa/hg19-chr21.fa
 
-    dbsnp: ~/Dropbox/az/reference_data/dbsnp.chr21.vcf.gz
-    cosmic: ~/Dropbox/az/reference_data/cosmic.chr21.vcf.gz
-    oncomine: ~/Dropbox/az/reference_data/oncomine.chr21.vcf
-#    dbnsfp: ~/vagrant/bcbio-nextgen/tests/data/genomes/hg19/variation/dbNSFPv2.5.gz
-    clinvar: ~/Dropbox/az/reference_data/clinvar_latest.chr21.vcf
-    1000genomes: ~/Dropbox/az/reference_data/1000G.chr21.vcf
+    dbsnp:                    ~/Dropbox/az/reference_data/hg19-chr21/variation/dbsnp.vcf.gz
+    dbsnp_multi_mafs:         ~/Dropbox/az/reference_data/hg19/variation/dbSNP_multi_mafs_latest.txt
+    cosmic:                   ~/Dropbox/az/reference_data/hg19-chr21/variation/cosmic.vcf.gz
+    clinvar:                  ~/Dropbox/az/reference_data/hg19-chr21/variation/clinvar_latest.vcf
     snpeff:
       reference: hg19
-    snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
+    snpeff_transcripts:       ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
-    features: ~/Dropbox/az/reference_data/Exons/RefSeq/all_features.hg19.canon.bed  # canonical only
-    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/all_features.hg19.canon.bed  # all regions
-    cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
+    features:                 ~/Dropbox/az/reference_data/GeneAnnotation/RefSeq/all_features.hg19-chr20.canon.bed  # canonical only
+    bed_annotation_features:  ~/Dropbox/az/reference_data/GeneAnnotation/RefSeq/all_features.hg19-chr20.canon.bed  # all regions
+    cds:                      ~/Dropbox/az/reference_data/GeneAnnotation/RefSeq/RefSeq_CDS.hg19-chr20.bed
 
-    az_exome: ~/Dropbox/az/reference_data/AZ_Exome.chr21.bed
+    tricky_regions:           ~/Dropbox/az/reference_data/hg19/tricky_regions/
 
-    dbsnp_multi_mafs: ~/Dropbox/az/reference_data/filtering/dbSNP_multi_mafs_latest.txt
+  hg19-chr20:
+    seq:                      ~/Dropbox/az/reference_data/hg19-chr20/seq/hg19-chr20.fa
+    bwa:                      ~/Dropbox/az/reference_data/hg19-chr20/bwa/hg19-chr20.fa
 
-    tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
+    snpeff:
+      reference: hg19
+
+    tricky_regions:           ~/Dropbox/az/reference_data/hg19/tricky_regions/
 
   hg19:
-    seq: ~/Dropbox/az/reference_data/hg19.fa
+    seq:                      ~/Dropbox/az/reference_data/hg19/seq/hg19.fa
 
-    snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
+    snpeff:
+      reference: hg19
+    snpeff_transcripts:       ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
-    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/dbSNP_multi_mafs_latest.txt
+    features:                 ~/Dropbox/az/reference_data/GeneAnnotation/RefSeq/all_features.hg19.canon.bed  # canonical only
+    bed_annotation_features:  ~/Dropbox/az/reference_data/GeneAnnotation/RefSeq/all_features.hg19.canon.bed  # all regions
+    cds:                      ~/Dropbox/az/reference_data/GeneAnnotation/RefSeq/RefSeq_CDS.hg19.bed
 
-    tricky_regions: ~/Dropbox/az/reference_data/tricky_regions/
+    tricky_regions:           ~/Dropbox/az/reference_data/hg19/tricky_regions/
 
-    features: ~/Dropbox/az/reference_data/Exons/RefSeq/all_features.hg19.canon.bed  # canonical only
-    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/all_features.hg19.canon.bed  # all regions
-    cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg19.bed
-    ensembl: ~/Dropbox/az/reference_data/Exons/Ensembl/Exons.full.bed
-    all_transcripts: ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
+#    all_transcripts:          ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 
   hg38:
-    seq: ~/Dropbox/az/reference_data/hg38.fa
+    seq:                      ~/Dropbox/az/reference_data/hg38/seq/hg38.fa
 
-    dbsnp: ~/Dropbox/az/reference_data/dbsnp.chr21.vcf.gz
-    cosmic: ~/Dropbox/az/reference_data/cosmic.chr21.vcf.gz
-    oncomine: ~/Dropbox/az/reference_data/oncomine.chr21.vcf
+    dbsnp:                    ~/Dropbox/az/reference_data/hg38/variation/dbsnp.vcf.gz
+    cosmic:                   ~/Dropbox/az/reference_data/hg38/variation/cosmic.vcf.gz
+    oncomine:                 ~/Dropbox/az/reference_data/hg38/variation/oncomine.vcf
 
-    snpeff_transcripts:           ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt
+    snpeff_transcripts:       ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt
 
-    features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed  # canonical only
-    bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg38.bed  # all regions
-    cds: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg38.bed
+    features:                 ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed  # canonical only
+    bed_annotation_features:  ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg38.bed  # all regions
+    cds:                      ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
-#    dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/filtering.hg38/dbSNP_multi_mafs_latest.txt
+    tricky_regions:           ~/Dropbox/az/reference_data/hg38/tricky_regions/
 
-    tricky_regions: ~/Dropbox/az/reference_data/tricky_regions_hg38/
-
-    all_transcripts:              ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
+#    all_transcripts:          ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
 
 queue: ngs.q
 
