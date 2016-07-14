@@ -2,11 +2,16 @@
 <html>
 <head>
   <title>README.md</title>
-  <link rel="stylesheet" href="/Users/vlad/vagrant/reporting_suite/docs/style.css">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1 id="az-post-processing-pipeline">AZ post-processing pipeline</h1>
-<p>for <a href="https://github.com/chapmanb/bcbio-nextgen">BCBio-nextgen</a></p>
+<h1 id="az-reporting-suite">AZ reporting suite</h1>
+<p>Contents:</p>
+<ul>
+<li>Post-processing and reporting for <a href="https://github.com/chapmanb/bcbio-nextgen">BCBio-nextgen</a></li>
+<li>Pre-alignment processing and reporting</li>
+</ul>
+<h2 id="post-processing-and-reporting-for-bcbio-nextgen">Post-processing and reporting for BCBio-nextgen</h2>
 <ul>
 <li>Read and alignment quality via Qualimap, AZ TargQC and FastQC at capture, exon and CDS level</li>
 <li>Variant (SNP, Indel and SV) annotation, QC, filtration and prioritization</li>
@@ -140,5 +145,79 @@ az-reporting.py [/path/to/bcbio/final/] [--jira https://jira.rd.astrazeneca.net/
 <li>Issues with variants? Look at the VCF files located under <code>final/&lt;datestamp&gt;/var/raw/</code>, also check annotation logs <code>final/&lt;datestamp&gt;/log/reporting/&lt;sample&gt;/varAnnotate-&lt;caller&gt;.log</code> and filtering logs <code>final/&lt;datestamp&gt;/log/reporting/&lt;sample&gt;/varFilter-&lt;caller&gt;.log</code>.</li>
 <li>Issues with Seq2C? Look at the BAMs, BEDs, logs <code>final/&lt;datestamp&gt;/log/reporting/Seq2C.log</code>, and also take a look at the coverage file located in <code>final/&lt;datestamp&gt;/cnv</code>.</li>
 </ul>
+<h2 id="pre-alignment-processing-and-reporting">Pre-alignment processing and reporting</h2>
+<p>This is to be run after the basecalling step. Make sure the bcl2fastq software was ran for the project (see BaseCalling / BaseCalling for HiSeq4000).</p>
+<p>The following script detects the sequencing projects and samples from the SampleSheet.tsv file and the project structure (automatically detecting the type by base directory name: HiSeq / MiSeq / HiSeq4000). Then it does the following steps:</p>
+<ul>
+<li>Get the project name from the JIRA case, and create a symlink in the datasets folder as datasets/&lt;division&gt;/&lt;project_name&gt;</li>
+<li>If the fastq files are not yet merged by lanes, it merges them and saves into:<ul>
+<li><code>Unalign/&lt;project&gt;/fastq</code> (for HiSeq4000)</li>
+<li><code>Unalign/Project_&lt;project&gt;/fastq</code> (for HiSeq)</li>
+<li><code>Data/Intensities/BaseCalls/fastq</code> (for MiSeq)</li>
+</ul>
+</li>
+<li>Runs FastQC for each merged fastq file (separately for left and right reads), then combines them into one per project and saves into fastq/FastQC, and exposes both combined and separate htmls to the NGS webserver.</li>
+<li>Downsamples FastQC files to random 500.000 read pairs, aligns them to the reference, then runs and exposes the TargQC reports on resulting BAM files.</li>
+<li>Exposes the bcl2fastq reports:<ul>
+<li><code>Unalign/Reports/html/index.html</code> (for MiSeq and HiSeq4000)</li>
+<li><code>Unalign/Basecall_Stats_&lt;id&gt;/All.htm</code>, <code>Unalign/Basecall_Stats_&lt;id&gt;/IVC.htm</code>, <code>Unalign/Basecall_Stats_&lt;id&gt;/Demultiplex_Stats.htm</code>, (for HiSeq).</li>
+</ul>
+</li>
+</ul>
+<h3 id="usage">Usage</h3>
+<pre><code>module load bcbio-nextgen
+preproc \
+   /ngs/oncology/datasets/HiSeq/150612_D00443_0168_AHMNFGADXX \
+   [--jira https://jira.rd.astrazeneca.net/browse/NGSG-313] \
+   [--bed target.bed] \
+   [--project-name Dev_0104_HiSeq_DS] \
+   [--expose-only]
+</code></pre><p>Arguments:</p>
+<ul>
+<li>First argument - path to the dataset (which contains &#39;Unalign&#39; folder).</li>
+<li><code>--jira</code>: JIRA case URL.</li>
+<li><code>--bed</code>: optional, used for downsampled TargQC reporting.</li>
+<li><code>--project-name</code>: optional, by default it is retrieved from JIRA.</li>
+<li><code>--expose-only</code>: Skip merging, FastQC, downsampling, TargQC. Only expose available reports to the NGS webserver.</li>
+</ul>
+<h3 id="multiple-project-run">Multiple-project run</h3>
+<pre><code>preproc \
+   /ngs/oncology/Datasets/HiSeq4000/151222_K00172_0042_BH5GTFBBXX \
+   --conf conf.csv
+</code></pre><p>conf.csv</p>
+<pre><code>#project_name,desired_project_name,jira_url,bed
+AZ300.Crown_Rerun,Dev_0138_HiSeq4000_CrownModels_Rerun,https://jira.rd.astrazeneca.net/i#browse/NGSG-440,target.bed
+HyperPlus.Alpha_WGS,Dev_0165_HiSeq4000_AKT.WGS3,https://jira.rd.astrazeneca.net/i#browse/NGSG-436,
+</code></pre><p>Optionally, you can process a subproject separately by providing the exact subproject path in Unalign:</p>
+<pre><code>preproc \
+   /ngs/oncology/datasets/HiSeq/150612_D00443_0168_AHMNFGADXX/Unalign/HyperPlus.Alpha_WGS \
+   [--jira https://jira.rd.astrazeneca.net/i#browse/NGSG-436] \
+   [--project-name Dev_0165_HiSeq4000_AKT.WGS3]
+</code></pre><h3 id="uk-specific-notes">UK specific notes</h3>
+<p>Run bcl2fastq as &#39;sbsuser&#39; first: <a href="http://wiki.rd.astrazeneca.net/display/NG/NextSeq+500+-+Basecalling+UK">http://wiki.rd.astrazeneca.net/display/NG/NextSeq+500+-+Basecalling+UK</a></p>
+<p>As &#39;sbsuser&#39;, run</p>
+<pre><code>screen
+module load bcbio-nextgen
+/ngs/RDI/SCRIPTS/az.reporting/preproc.py /ngs/oncology/datasets/NextSeq500/160318_NB501188_0011_AH3TCVAFXX --jira https://jira.rd.astrazeneca.net/browse/NGSG-536 --genome hg38 --project-name TS_UK_0010_Bladder_2_preqc
+</code></pre><p>where the date stamped folder, Jira URL and project-name must be changed accordingly.</p>
+<hr>
+<p>The following scripts are used inside the pre-processing, but can be used outside as well.</p>
+<ol>
+<li>Running FastQC on qsub:</li>
+</ol>
+<pre><code>/group/ngs/src/az.reporting/scripts/pre/fastqc.py \
+   -1 Colo-829_R1.fastq.gz -2 Colo-829_R2.fastq.gz \
+   -o output/dir/path [--sample Colo-829] [--downsample-to 1e7]
+</code></pre><ol>
+<li><p>Downsampled TargQC on qsub (fastq paired will be automatically detected based on _1 _2 _R1 _R2 suffixes:</p>
+<pre><code>/group/ngs/src/az.reporting/scripts/pre/downsampled_targqc_all.py \
+*.fq.gz -o output/dir/path --genome hg19 [--bed target.bed] [--downsample-to 1e7]
+</code></pre></li>
+<li><p>Combining FastQC reports:</p>
+<pre><code>/group/ngs/src/az.reporting/scripts/pre/fastqc_combine.py \
+/ngs/scratch/vlad/HiSeq/150612_D00443_0168_AHMNFGADXX/Unalign/fastq/fastqc/*.html \
+-o /ngs/scratch/vlad/HiSeq/150612_D00443_0168_AHMNFGADXX/Unalign/fastq/fastqc/FastQC.html
+</code></pre></li>
+</ol>
 </body>
 <html>
