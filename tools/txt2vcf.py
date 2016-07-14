@@ -17,38 +17,39 @@ from source.file_utils import safe_mkdir, adjust_path, add_suffix, file_transact
 from source.logger import info, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.variants import vcf_parser as vcf
-from source.variants.vcf_processing import bgzip_and_tabix
+from source.variants.vcf_processing import bgzip_and_tabix, verify_vcf
 
 filter_descriptions_dict = {
     'not canonical transcript': 'Transcript',
     'PASS=False': 'REJECT',
     'PROTEIN_PROTEIN_CONTACT': 'PROT_PROT',
     'MSI fail': 'MSI',
-    'snp in snpeffect_export_polymorphic': 'PolymorphicSNP',
+    'snp in snpeffect export polymorphic': 'PolymorphicSNP',
     'common SNP': 'SNP',
     'not act': 'Not_act',
-    'not_known': 'Not_known',
+    'not known': 'Not_known',
     'unknown': 'Unknown',
     'act germline': 'Act_germ',
     'act somatic': 'Act_som',
     'SYNONYMOUS': 'Synonymous',
     'not ClnSNP_known': 'Not_ClnSNP_known',
-    'in filter_common_snp': 'filterSNP',
-    'in filter_artifacts': 'Artifact',
+    'in filter common snp': 'filterSNP',
+    'in filter artifacts': 'Artifact',
     'AF < 0.35': 'f0.35',
+    'AF >= 0.5': 'F0.5',
     'clnsig dbSNP': 'clnsig',
     'in snpeff_snp': 'SnpEff_snp',
     'dbSNP': 'dbSNP',
     'in INTRON': 'Intron',
-    'no aa_ch\g': 'no_aa_chg',
+    'no aa ch\g': 'no_aa_chg',
     'SPLICE': 'Splice',
-    'UPSTREAM': 'Upstrean',
+    'UPSTREAM': 'Upstream',
     'DOWNSTREAM': 'Downstream',
     'INTERGENIC': 'Intergenic',
     'INTRAGENIC': 'Intragenic',
     'not UTR /CODON': 'not_UTR_/Codon',
-    'NON_CODING': 'Non_coding',
-    'fclass=NON_CODING': 'Non_coding',
+    'NON CODING': 'Non_coding',
+    'fclass=NON CODING': 'Non_coding',
     'variants occurs after last known critical amino acid': 'CritAA',
     'blacklist gene': 'Blacklist',
 }
@@ -150,7 +151,7 @@ def add_keys_to_header(vcf_reader, filter_values):
     vcf_reader.infos['Status'] = vcf._Info('Status', '.', 'String', 'Status')
     vcf_reader.infos['Reason'] = vcf._Info('Reason', '.', 'String', 'Reason')
     for filt_val in filter_values:
-        filter_id = filter_descriptions_dict[filt_val] if filt_val in filter_descriptions_dict else ''
+        filter_id = filter_descriptions_dict[filt_val.replace('_', ' ')] if filt_val in filter_descriptions_dict else filt_val
         filt = vcf._Filter(filter_id, filt_val)
         vcf_reader.filters[filter_id] = filt
     return vcf_reader
@@ -163,6 +164,9 @@ def convert_vcf_to_txt(cnf, bs, sample):
     output_dir = cnf.output_dir or os.path.dirname(anno_filt_vcf_fpath)
     output_vcf_fpath = join(output_dir, sample.name + '-' + cnf.caller_name + filt_vcf_ending)
     pass_output_vcf_fpath = add_suffix(output_vcf_fpath, 'pass')
+    if cnf.reuse_intermediate and verify_vcf(output_vcf_fpath + '.gz') and verify_vcf(pass_output_vcf_fpath + '.gz'):
+        info(output_vcf_fpath + '.gz and ' + pass_output_vcf_fpath + '.gz exists, reusing')
+        return output_vcf_fpath + '.gz', pass_output_vcf_fpath + '.gz'
 
     info('Parsing PASS and REJECT mutations...')
     pass_mut_dict, reject_mut_dict, filter_values = get_mutation_dicts(cnf, bs, sample)

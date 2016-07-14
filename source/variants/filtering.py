@@ -22,9 +22,9 @@ from source.logger import info
 from source.webserver.exposing import convert_gpfs_path_to_url
 
 
-def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
+def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters=''):
     gatk = get_java_tool_cmdline(cnf, 'gatk')
-    cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq}'.format(**locals())
+    cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq} {additional_parameters}'.format(**locals())
     for s_name, vcf_fpath in vcf_fpath_by_sname.items():
         cmdl += ' --variant:' + s_name + ' ' + vcf_fpath
     if cnf.reuse_intermediate and isfile(combined_vcf_fpath + '.gz') and verify_vcf(combined_vcf_fpath + '.gz'):
