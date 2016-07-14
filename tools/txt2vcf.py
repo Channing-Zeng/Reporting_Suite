@@ -95,7 +95,7 @@ def main():
     info('*' * 70)
     for bs in bcbio_structures:
         for sample in bs.samples:
-            process_one_sample(cnf, bs, sample)
+            convert_vcf_to_txt(cnf, bs, sample)
 
 
 def get_mutation_dicts(cnf, bs, sample):
@@ -130,12 +130,38 @@ def combine_mutations(pass_mut_dict, reject_mut_dict):
     return sorted_combined_dict
 
 
-def process_one_sample(cnf, bs, sample):
+def add_keys_to_header(vcf_reader, filter_values):
+    vcf_reader.formats['ADJAF'] = vcf._Format('ADJAF', 1, 'Float', 'Adjusted AF for indels due to local realignment')
+    vcf_reader.formats['BIAS'] = vcf._Format('BIAS', 1, 'String', 'Strand Bias Info')
+    vcf_reader.formats['HIAF'] = vcf._Format('HIAF', 1, 'Float', 'Allele frequency using only high quality bases')
+    vcf_reader.formats['MQ'] = vcf._Format('MQ', 1, 'Float', 'Mean Mapping Quality')
+    vcf_reader.formats['NM'] = vcf._Format('NM', 1, 'Float', 'Mean mismatches in reads')
+    vcf_reader.formats['ODDRATIO'] = vcf._Format('ODDRATIO', 1, 'Float', 'Strand Bias Oddratio')
+    vcf_reader.formats['PMEAN'] = vcf._Format('PMEAN', 1, 'Float', 'Mean position in reads')
+    vcf_reader.formats['PSTD'] = vcf._Format('PSTD', 1, 'Float', 'Position STD in reads')
+    vcf_reader.formats['QUAL'] = vcf._Format('QUAL', 1, 'Float', 'Mean quality score in reads')
+    vcf_reader.formats['QSTD'] = vcf._Format('QSTD', 1, 'Float', 'Quality score STD in reads')
+    vcf_reader.formats['SBF'] = vcf._Format('SBF', 1, 'Float', 'Strand Bias Fisher p-value')
+    vcf_reader.formats['SN'] = vcf._Format('SN', 1, 'Float', 'Signal to noise')
+    vcf_reader.infos['SOR'] = vcf._Info('SOR', 1, 'Float', 'Odds ratio')
+    vcf_reader.infos['SSF'] = vcf._Info('SSF', 1, 'Float', 'P-value')
+    vcf_reader.infos['StrongSomatic'] = vcf._Info('StrongSomatic', 0, 'Flag', 'Variant is somatic')
+    vcf_reader.infos['Signif'] = vcf._Info('Signif', '.', 'String', 'Significance')
+    vcf_reader.infos['Status'] = vcf._Info('Status', '.', 'String', 'Status')
+    vcf_reader.infos['Reason'] = vcf._Info('Reason', '.', 'String', 'Reason')
+    for filt_val in filter_values:
+        filter_id = filter_descriptions_dict[filt_val] if filt_val in filter_descriptions_dict else ''
+        filt = vcf._Filter(filter_id, filt_val)
+        vcf_reader.filters[filter_id] = filt
+    return vcf_reader
+
+
+def convert_vcf_to_txt(cnf, bs, sample):
     info('')
     info('Preparing data for ' + sample.name)
     anno_filt_vcf_fpath = sample.find_filt_vcf_by_callername(cnf.caller_name)
     output_dir = cnf.output_dir or os.path.dirname(anno_filt_vcf_fpath)
-    output_vcf_fpath = join(output_dir, cnf.caller_name + filt_vcf_ending)
+    output_vcf_fpath = join(output_dir, sample.name + '-' + cnf.caller_name + filt_vcf_ending)
     pass_output_vcf_fpath = add_suffix(output_vcf_fpath, 'pass')
 
     info('Parsing PASS and REJECT mutations...')
@@ -145,21 +171,18 @@ def process_one_sample(cnf, bs, sample):
     info('')
     info('Writing VCFs')
     vcf_reader = vcf.Reader(open_gzipsafe(anno_filt_vcf_fpath, 'r'))
+    vcf_reader = add_keys_to_header(vcf_reader, filter_values)
     with file_transaction(cnf.work_dir, output_vcf_fpath) as filt_tx, \
         file_transaction(cnf.work_dir, pass_output_vcf_fpath) as pass_tx:
         vcf_writer = vcf.Writer(open(filt_tx, 'w'), template=vcf_reader)
         vcf_pass_writer = vcf.Writer(open(pass_tx, 'w'), template=vcf_reader)
-        for filt_val in filter_values:
-            filter_id = filter_descriptions_dict[filt_val] if filt_val in filter_descriptions_dict else ''
-            filt = vcf._Filter(filter_id, filt_val)
-            vcf_reader.filters[filter_id] = filt
         for key, mut in sorted_mut_dict.items():
             record = get_record_from_vcf(vcf_reader, mut)
             if record:
                 if key in pass_mut_dict:
                     record.FILTER = ['PASS']
                     if mut.reason:
-                        record.INFO['Reason'] = mut.reason
+                        record.INFO['Reason'] = mut.reason.replace(' ', '_')
                 elif key in reject_mut_dict:
                     reject_reason_ids = []
                     if mut.reason:
@@ -176,10 +199,13 @@ def process_one_sample(cnf, bs, sample):
             else:
                 warn('No record was found in ' + anno_filt_vcf_fpath + ' for mutation ' + str(mut))
 
+    vcf_writer.close()
+    vcf_pass_writer.close()
     output_gzipped_vcf_fpath = bgzip_and_tabix(cnf, output_vcf_fpath)
     output_gzipped_pass_vcf_fpath = bgzip_and_tabix(cnf, pass_output_vcf_fpath)
     info('VCF file for vardict.txt is saved to ' + output_gzipped_vcf_fpath)
     info('VCF file for vardict.PASS.txt is saved to ' + output_gzipped_pass_vcf_fpath)
+    return output_gzipped_vcf_fpath, output_gzipped_pass_vcf_fpath
 
 
 if __name__ == '__main__':

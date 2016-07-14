@@ -176,6 +176,6 @@ see :doc:`FILTERS` for full description.
 from source.variants.vcf_parser.parser import Reader, Writer
 from source.variants.vcf_parser.parser import VCFReader, VCFWriter
 from source.variants.vcf_parser.filters import Base as Filter
-from source.variants.vcf_parser.parser import RESERVED_INFO, RESERVED_FORMAT, _Filter
+from source.variants.vcf_parser.parser import RESERVED_INFO, RESERVED_FORMAT, _Filter, _Format, _Info
 
 VERSION = '0.6.7'
