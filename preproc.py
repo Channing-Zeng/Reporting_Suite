@@ -361,7 +361,7 @@ def run_metamapping(cnf, samples, bam_by_sample, output_dirpath):
 def run_targqc(cnf, project, bam_by_sample, bed_fpath):
     info('Running TargQC for downsampled BAMs')
 
-    targqc = get_script_cmdline(cnf, 'python', 'targqc.py', is_critical=True)
+    targqc = get_system_path(cnf, 'targqc', is_critical=True)
     bam_fpaths = ' '.join(bam_by_sample[s.name] + ',' + s.name for s in project.sample_by_name.values())
     targqc_work_dir = join(cnf.work_dir, 'TargQC')
     targqc_log_dir = join(cnf.log_dir, 'TargQC')
@@ -370,7 +370,7 @@ def run_targqc(cnf, project, bam_by_sample, bed_fpath):
     bed_cmdl = ''
     if bed_fpath:
         bed_cmdl = '--bed ' + bed_fpath
-    cmdl = '{targqc} --sys-cnf {cnf.sys_cnf} {bam_fpaths} {bed_cmdl} ' \
+    cmdl = '{targqc} {bam_fpaths} {bed_cmdl} ' \
            '--work-dir {targqc_work_dir} --log-dir {targqc_log_dir} --project-name {cnf.project_name} ' \
            '-o {project.downsample_targqc_dirpath} --genome {cnf.genome.name} --downsampled'.format(**locals())
     if cnf.reuse_intermediate:
