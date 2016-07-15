@@ -133,7 +133,7 @@ def main():
     for bs in bcbio_structures:
         for sample in bs.samples:
             vcf_fpath, pass_vcf_fpath = convert_vcf_to_txt(cnf, bs, sample)
-            vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
+            vcf_fpath_by_sname[sample.name] = vcf_fpath
 
     combined_vcf_fpath = join(cnf.output_dir, 'combined.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
