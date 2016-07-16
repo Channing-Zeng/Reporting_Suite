@@ -1,9 +1,10 @@
 import hashlib
+from inspect import getsourcefile
 from os import environ
 import socket
 import re
 from collections import OrderedDict
-from os.path import join, basename, splitext
+from os.path import join, basename, splitext, dirname, abspath
 
 from source.logger import info, critical, err
 from source.file_utils import file_exists, verify_file, file_transaction, adjust_path
@@ -209,6 +210,18 @@ def md5(fpath):
         for chunk in iter(lambda: f.read(4096), b""):
             hash.update(chunk)
     return hash.hexdigest()
+
+
+def get_version():
+    cur_fpath = abspath(getsourcefile(lambda: 0))
+    reporting_suite_dirpath = dirname(dirname(dirname(cur_fpath)))
+
+    version = ''
+    if verify_file(join(reporting_suite_dirpath, 'VERSION.txt')):
+        with open(join(reporting_suite_dirpath, 'VERSION.txt')) as f:
+            version = f.read().strip()
+
+    return version
 
 
 def gray(text):

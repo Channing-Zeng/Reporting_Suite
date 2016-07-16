@@ -7,7 +7,6 @@ import re
 
 import source
 from source import info, verify_file
-from source.bcbio.project_level_report import get_version
 from source.calling_process import call
 from source.clinical_reporting.clinical_parser import get_group_num
 from source.clinical_reporting.combine_clinical_reporting_utils import get_vcf_readers, add_freq_depth_records,\
@@ -15,7 +14,7 @@ from source.clinical_reporting.combine_clinical_reporting_utils import get_vcf_r
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html
 from source.tools_from_cnf import get_script_cmdline
-from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local, gray
+from source.utils import get_chr_lengths, OrderedDefaultDict, is_us, is_uk, is_local, gray, get_version
 from tools.add_jbrowse_tracks import get_jbrowser_link
 
 

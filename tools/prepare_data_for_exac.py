@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import bcbio_postproc
 import os
 import sys
 from collections import defaultdict
@@ -112,11 +113,14 @@ def main():
         bcbio_structures.append(bs)
 
     if not cnf.project_name:
-        cnf.project_name = 'Exac'
+        if len(bcbio_structures) == 1:
+            cnf.project_name = bcbio_structures[0].project_name
+        else:
+            critical('If you combine multiple BCBIO projects you should specify new project name')
     cnf.caller_name = 'vardict'
 
     if cnf.output_dir is None:
-        cnf.output_dir = join(os.getcwd(), cnf.project_name)
+        critical('Please specify path to ExAC data directory.')
     safe_mkdir(cnf.output_dir)
 
     cnf.log_dir = join(cnf.output_dir, 'log')
@@ -124,7 +128,7 @@ def main():
     safe_mkdir(cnf.log_dir)
     set_up_log(cnf, 'prepare_for_exac', cnf.project_name, cnf.output_dir)
 
-    cnf.work_dir = adjust_path(join(cnf.output_dir, 'work'))
+    cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
     safe_mkdir(cnf.work_dir)
 
     samples = [s for bs in bcbio_structures for s in bs.samples]
@@ -135,14 +139,16 @@ def main():
             vcf_fpath, pass_vcf_fpath = convert_vcf_to_txt(cnf, bs, sample)
             vcf_fpath_by_sname[sample.name] = vcf_fpath
 
-    combined_vcf_fpath = join(cnf.output_dir, 'combined.vcf')
+    combined_vcf_fpath = join(cnf.output_dir, 'vardict.' + cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
 
     depths_by_pos = get_regions_depth(cnf, samples)
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
 
     for chrom in depths_by_pos.keys():
-        coverage_data_fpath = join(cnf.output_dir, 'coverage.' + chrom + '.txt')
+        coverage_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
+        safe_mkdir(coverage_dirpath)
+        coverage_data_fpath = join(coverage_dirpath, 'coverage.' + chrom + '.txt')
         chrom = chrom.replace('chr', '')
         with file_transaction(cnf, coverage_data_fpath) as tx:
             with open(tx, 'w') as f:

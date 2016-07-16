@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import bcbio_postproc
 import subprocess
 import sys
 from optparse import OptionParser

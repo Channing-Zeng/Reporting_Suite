@@ -761,7 +761,7 @@ def get_record_from_vcf(vcf_reader, mut):
             if record.POS != mut.pos:
                 continue
             if not record.FILTER:
-                continue
+                record.FILTER = ['PASS']
             return record
     return None
 

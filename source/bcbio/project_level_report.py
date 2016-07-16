@@ -16,7 +16,7 @@ from source.file_utils import verify_file, add_suffix, verify_dir, file_transact
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import get_ext_tools_dirname
+from source.utils import get_ext_tools_dirname, get_version
 
 BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr
@@ -560,18 +560,6 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
             data[k] = v
 
     return write_static_html_report(cnf, data, html_fpath)
-
-
-def get_version():
-    cur_fpath = abspath(getsourcefile(lambda: 0))
-    reporting_suite_dirpath = dirname(dirname(dirname(cur_fpath)))
-
-    version = ''
-    if verify_file(join(reporting_suite_dirpath, 'VERSION.txt')):
-        with open(join(reporting_suite_dirpath, 'VERSION.txt')) as f:
-            version = f.read().strip()
-
-    return version
 
 
 def get_run_info(cnf, bcbio_structure, dataset_project):
