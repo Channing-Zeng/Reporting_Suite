@@ -69,6 +69,7 @@ def get_regions_depth(cnf, samples):
     for s in samples:
         bam_by_key[(s.name, s.name)] = s.bam
     output_by_sample = run_bedtools_use_grid(cnf, bam_by_key, cnf.bed)
+    info()
     info('Parsing bedtools output...')
     for sample, coverage_fpath in output_by_sample.iteritems():
         for line in open(coverage_fpath):
@@ -139,17 +140,18 @@ def main():
             vcf_fpath, pass_vcf_fpath = convert_vcf_to_txt(cnf, bs, sample)
             vcf_fpath_by_sname[sample.name] = vcf_fpath
 
+    info()
     combined_vcf_fpath = join(cnf.output_dir, 'vardict.' + cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
 
     depths_by_pos = get_regions_depth(cnf, samples)
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
 
+    info()
     for chrom in depths_by_pos.keys():
         coverage_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
         safe_mkdir(coverage_dirpath)
         coverage_data_fpath = join(coverage_dirpath, 'coverage.' + chrom + '.txt')
-        chrom = chrom.replace('chr', '')
         with file_transaction(cnf, coverage_data_fpath) as tx:
             with open(tx, 'w') as f:
                 fs = ['#chrom', 'pos', 'mean', 'median'] + [str(t) for t in cov_thresholds]
@@ -160,7 +162,7 @@ def main():
                     mean_coverage = mean(depths)
                     median_coverage = median(depths)
                     pcnt_samples_ge_threshold = [mean([1 if d >= t else 0 for d in depths]) for t in cov_thresholds]
-                    fs = [chrom, pos, mean_coverage, median_coverage] + pcnt_samples_ge_threshold
+                    fs = [chrom.replace('chr', ''), pos, mean_coverage, median_coverage] + pcnt_samples_ge_threshold
                     f.write('\t'.join(str(f) for f in fs) + '\n')
         bgzip_and_tabix(cnf, coverage_data_fpath, tabix_parameters='-p bed')
 
