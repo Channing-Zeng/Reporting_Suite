@@ -42,7 +42,7 @@ def run_bedtools_use_grid(cnf, bam_by_key, bed_fpath):
                 continue
             else:
                 cmdline = get_script_cmdline(cnf, 'python', join('tools', 'get_region_coverage.py'), is_critical=True)
-                cmdline += ' --bed {bed_fpath} --bam {bam} -o {output_fpath} -g {chr_len_fpath} {cnf.output_dir}'.format(**locals())
+                cmdline += ' --bed {bed_fpath} --bam {bam} -o {output_fpath} -g {chr_len_fpath} --work-dir {cnf.work_dir}'.format(**locals())
                 j = submit_job(cnf, cmdline,  basename(bam) + '_coverage')
                 info()
                 submitted_bams.append(bam)
@@ -159,6 +159,8 @@ def main():
                 sorted_positions = sorted(depths_by_pos[chrom].keys())
                 for pos in sorted_positions:
                     depths = depths_by_pos[chrom][pos]
+                    if len(depths) < len(samples):
+                        depths += [0] * (len(samples) - len(depths))
                     mean_coverage = mean(depths)
                     median_coverage = median(depths)
                     pcnt_samples_ge_threshold = [mean([1 if d >= t else 0 for d in depths]) for t in cov_thresholds]

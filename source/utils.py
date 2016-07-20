@@ -108,8 +108,8 @@ def get_ext_tools_dirname(is_common_file=False):
         return 'ext_tools'
 
 
-def get_chr_lengths(cnf):
-    chr_len_fpath = get_chr_len_fpath(cnf)
+def get_chr_lengths(cnf, chr_len_fpath=None):
+    chr_len_fpath = chr_len_fpath or get_chr_len_fpath(cnf)
     if not chr_len_fpath:
         return None
 

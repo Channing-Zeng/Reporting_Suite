@@ -1,8 +1,9 @@
 import os
-from os.path import isfile, join, abspath, basename, dirname, getctime, getmtime
+from os.path import isfile, join, abspath, basename, dirname, getctime, getmtime, splitext
 from subprocess import check_output
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
+import source
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
     safe_mkdir, file_transaction
@@ -10,7 +11,7 @@ from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
 from source.targetcov.Region import SortableByChrom
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.utils import md5, get_chr_lengths_from_seq, get_ext_tools_dirname
+from source.utils import md5, get_chr_lengths_from_seq, get_ext_tools_dirname, get_chr_len_fpath, get_chr_lengths
 
 
 def index_bam(cnf, bam_fpath, sambamba=None, samtools=None, use_grid=False):
@@ -111,6 +112,66 @@ def bam_to_bed_nocnf(bam_fpath, bedtools='bedtools', gzip='gzip'):
     else:
         err('Error, result is non-existent or empty')
     return bam_bed_fpath
+
+
+def get_bedgraph_coverage(cnf, bam_fpath, chr_len_fpath=None, output_fpath=None, bed_fpath=None):
+    chr_len_fpath = chr_len_fpath or get_chr_len_fpath(cnf)
+    dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
+    if not verify_bam(dedup_bam, silent=True):
+        info('Deduplicating bam file ' + bam_fpath)
+        remove_dups(cnf, bam_fpath, dedup_bam)
+    else:
+        info(dedup_bam + ' exists')
+    index_bam(cnf, dedup_bam)
+    bam_bed_fpath = bam_to_bed(cnf, dedup_bam, to_gzip=False)
+    sorted_bed_fpath = sort_bed_by_alphabet(cnf, bam_bed_fpath, chr_len_fpath=chr_len_fpath)
+    if bed_fpath:
+        in_bed_fpath = intersect_bed(cnf, sorted_bed_fpath, bed_fpath)
+    else:
+        in_bed_fpath = sorted_bed_fpath
+    bedgraph_fpath = output_fpath or '%s.bedgraph' % splitext(bam_fpath)[0]
+    with file_transaction(cnf.work_dir, bedgraph_fpath) as tx_fpath:
+        bedtools = get_system_path(cnf, 'bedtools')
+        cmdl = '{bedtools} genomecov -bg -split -g {chr_len_fpath} -i {in_bed_fpath}'.format(**locals())
+        call(cnf, cmdl, exit_on_error=True, output_fpath=tx_fpath)
+    return bedgraph_fpath
+
+
+
+def sort_bed_by_alphabet(cnf, input_bed_fpath, output_bed_fpath=None, chr_len_fpath=None):
+    chr_lengths = get_chr_lengths(cnf, chr_len_fpath)
+    chromosomes = set([c for (c, l) in chr_lengths])
+    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else add_suffix(input_bed_fpath, 'sorted')
+
+    regions = defaultdict(list)
+
+    info('Sorting regions...')
+    chunk_size = 10
+    chunk_counter = 0
+    with open(input_bed_fpath) as f:
+        with file_transaction(cnf.work_dir, output_bed_fpath) as tx:
+            with open(tx, 'w') as out:
+                for l in f:
+                    if not l.strip():
+                        continue
+                    if l.strip().startswith('#'):
+                        out.write(l)
+                        continue
+
+                    fs = l.strip().split('\t')
+                    chrom = fs[0]
+                    if chrom not in chromosomes:
+                        continue
+                    if chunk_counter == chunk_size or not regions[chrom]:
+                        chunk_counter = 0
+                        regions[chrom].append('')
+                    regions[chrom][-1] += l
+                    chunk_counter += 1
+                for chr in sorted(regions.keys()):
+                    for region in regions[chr]:
+                        out.write(region)
+
+    return output_bed_fpath
 
 
 def count_bed_cols(bed_fpath):

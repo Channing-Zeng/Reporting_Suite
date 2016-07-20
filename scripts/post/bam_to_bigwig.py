@@ -26,13 +26,12 @@ import os
 import sys
 from os.path import isfile
 from os.path import splitext, join
-from collections import defaultdict
 
 
 import source
-from source.file_utils import file_transaction, add_suffix, adjust_path, intermediate_fname
-from source.targetcov.bam_and_bed_utils import check_md5, bam_to_bed, remove_dups, index_bam, verify_bam
-from source.utils import get_ext_tools_dirname, get_chr_len_fpath, get_chr_lengths
+from source.file_utils import file_transaction
+from source.targetcov.bam_and_bed_utils import check_md5, get_bedgraph_coverage
+from source.utils import get_ext_tools_dirname, get_chr_len_fpath
 from source.logger import critical, info, err
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_genome_resources
@@ -73,62 +72,12 @@ def process_bam(cnf, bam_fpath, chrom='all', start=0, end=None,
 
     bigwig_fpath = outfile
     if not (cnf.reuse_intermediate and os.path.exists(bigwig_fpath) and check_md5(cnf.work_dir, bam_fpath, 'bam', silent=True)):
+        bedgraph_fpath = get_bedgraph_coverage(cnf, bam_fpath)
         chr_len_fpath = get_chr_len_fpath(cnf)
-        dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
-        if not verify_bam(dedup_bam, silent=True):
-            info('Deduplicating bam file ' + bam_fpath)
-            remove_dups(cnf, bam_fpath, dedup_bam)
-        else:
-            info(dedup_bam + ' exists')
-        index_bam(cnf, dedup_bam)
-        bam_bed_fpath = bam_to_bed(cnf, dedup_bam, to_gzip=False)
-        sorted_bed_fpath = sort_bed_by_alphabet(cnf, bam_bed_fpath)
-        bedgraph_fpath = '%s.bedgraph' % splitext(bam_fpath)[0]
-        with file_transaction(cnf.work_dir, bedgraph_fpath) as tx_fpath:
-            bedtools = get_system_path(cnf, 'bedtools')
-            cmdl = '{bedtools} genomecov -bg -split -g {chr_len_fpath} -i {sorted_bed_fpath}'.format(**locals())
-            call(cnf, cmdl, exit_on_error=True, output_fpath=tx_fpath)
-
         convert_to_bigwig(bedgraph_fpath, cnf, chr_len_fpath, bigwig_fpath)
     else:
         info(outfile + ' exists, reusing')
     return bigwig_fpath
-
-
-def sort_bed_by_alphabet(cnf, input_bed_fpath, output_bed_fpath=None):
-    chr_lengths = get_chr_lengths(cnf)
-    chromosomes = set([c for (c, l) in chr_lengths])
-    output_bed_fpath = adjust_path(output_bed_fpath) if output_bed_fpath else add_suffix(input_bed_fpath, 'sorted')
-
-    regions = defaultdict(list)
-
-    info('Sorting regions...')
-    chunk_size = 10
-    chunk_counter = 0
-    with open(input_bed_fpath) as f:
-        with file_transaction(cnf.work_dir, output_bed_fpath) as tx:
-            with open(tx, 'w') as out:
-                for l in f:
-                    if not l.strip():
-                        continue
-                    if l.strip().startswith('#'):
-                        out.write(l)
-                        continue
-
-                    fs = l.strip().split('\t')
-                    chrom = fs[0]
-                    if chrom not in chromosomes:
-                        continue
-                    if chunk_counter == chunk_size or not regions[chrom]:
-                        chunk_counter = 0
-                        regions[chrom].append('')
-                    regions[chrom][-1] += l
-                    chunk_counter += 1
-                for chr in sorted(regions.keys()):
-                    for region in regions[chr]:
-                        out.write(region)
-
-    return output_bed_fpath
 
 
 def convert_to_bigwig(bedgraph_fpath, cnf, chr_len_fpath, bw_fpath):
