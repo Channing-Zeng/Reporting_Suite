@@ -182,7 +182,7 @@ def is_china():
 
 def is_local():
     hostname = socket.gethostname()
-    return 'local' in hostname or 'Home' in hostname or environ.get('PYTHONUNBUFFERED')
+    return 'local' in hostname or 'Home' in hostname or environ.get('PYTHONUNBUFFERED') or environ.get('DEVELOPMENT')
 
 def is_us():
     hostname = socket.gethostname()

@@ -940,6 +940,17 @@ class BCBioRunner:
                 err(error_msg)
             else:
                 info('Done post-processing.')
+                bcbio_work_dirpath = dirname(self.bcbio_structure.work_dir)
+                if is_us() and '/ngs/oncology/analysis/' in bcbio_work_dirpath:
+                    info()
+                    scratch_root_dirpath = join('/ngs/scratch/')
+                    work_scratch_dirpath = bcbio_work_dirpath.replace('/ngs/oncology/analysis/', scratch_root_dirpath)
+                    assert work_scratch_dirpath != bcbio_work_dirpath, (work_scratch_dirpath, bcbio_work_dirpath)
+                    safe_mkdir(dirname(work_scratch_dirpath))
+                    info('Moving work directory to scratch: ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
+                    shutil.move(bcbio_work_dirpath, work_scratch_dirpath)
+                    os.symlink(work_scratch_dirpath, bcbio_work_dirpath)
+                    info('Symlinked work directory ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
 
     def _varqc_summary(self, sample_qc_path, summary_qc_path, varqc_level_name):
         jsons_by_sample_by_caller = defaultdict(dict)
