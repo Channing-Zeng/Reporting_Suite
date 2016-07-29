@@ -17,9 +17,7 @@ from source.config import defaults, Config
 from source.logger import info, critical, warn, err, debug
 from source.file_utils import which, file_exists, safe_mkdir
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed
-from source.utils import is_uk, is_us, is_cloud, is_sweden, is_ace
-from source.utils import is_china
-from source.utils import is_local
+from source.utils import is_uk, is_us, is_cloud, is_sweden, is_ace, is_china, is_local
 
 
 def add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=defaults['bcbio_postproc_threads']):

@@ -358,12 +358,17 @@ class ClinicalExperimentInfo:
         return hash((self.sample.name, self.project_name))
 
     def get_mut_info_from_solvebio(self):
-        for m in self.mutations:
-            m.solvebio_url = 'https://astrazeneca.solvebio.com/variant/GRCH37-{chrom}-{start}-{stop}-{alt}'.format(
-                chrom=m.chrom,
-                start=m.pos,
-                stop=m.pos + len(m.ref) - 1,
-                alt=m.alt)
+        genome = None
+        if self.cnf.genome.name.startswith('hg19'):
+            genome = 'GRCH37'
+        if genome:
+            for m in self.mutations:
+                m.solvebio_url = 'https://astrazeneca.solvebio.com/variant/{genome}-{chrom}-{start}-{stop}-{alt}'.format(
+                    genome=genome,
+                    chrom=m.chrom,
+                    start=m.pos,
+                    stop=m.pos + len(m.ref) - 1,
+                    alt=m.alt)
         # query_mutations(self.cnf, self.mutations)
 
     def parse_sv(self, sv_fpath, key_gene_by_name_chrom):
