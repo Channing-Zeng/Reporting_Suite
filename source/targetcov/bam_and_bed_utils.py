@@ -241,7 +241,7 @@ def prepare_beds(cnf, features_bed=None, target_bed=None, seq2c_bed=None):
         target_bed = sort_bed(cnf, target_bed)
 
         cols = count_bed_cols(target_bed)
-        if True or cnf.reannotate or cols < 4:
+        if cnf.reannotate or cols < 4:
             info()
             if not features_bed:
                 critical(str(cols) + ' columns (less than 4), and no features to annotate regions '
