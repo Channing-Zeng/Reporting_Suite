@@ -757,14 +757,13 @@ class BaseClinicalReporting:
     @staticmethod
     def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None):
         c = (chrom.replace('chr', '')) if chrom else ''
-        p = Metric.format_value(start, human_readable=True, is_html=True) + \
+        p_html = Metric.format_value(start, human_readable=True, is_html=True) + \
             ('-' + Metric.format_value(end, human_readable=True, is_html=True) if end else '') if start else ''
-        p = gray(c + ':') + p
+        p_html = gray(c + ':') + p_html
         if jbrowser_link:
-            p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' +
-                 Metric.format_value(start, human_readable=True, is_html=True) + '...' + str(end or start) +
-                 '" target="_blank">' + p + '</a>')
-        return dict(value=p, num=chrom_key * 100000000000 + start)
+            p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + start + '...' + str(end or start) +
+                 '" target="_blank">' + p_html + '</a>')
+        return dict(value=p_html, num=chrom_key * 100000000000 + start)
 
     cdna_chg_regexp = re.compile(r'([c,n]\.)([-\d_+*]+)(.*)')
     @staticmethod
