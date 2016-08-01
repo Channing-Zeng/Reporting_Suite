@@ -761,7 +761,7 @@ class BaseClinicalReporting:
             ('-' + Metric.format_value(end, human_readable=True, is_html=True) if end else '') if start else ''
         p_html = gray(c + ':') + p_html
         if jbrowser_link:
-            p = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + start + '...' + str(end or start) +
+            p_html = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '...' + str(end or start) +
                  '" target="_blank">' + p_html + '</a>')
         return dict(value=p_html, num=chrom_key * 100000000000 + start)
 
