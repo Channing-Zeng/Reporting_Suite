@@ -54,7 +54,6 @@ def main():
             (['--jira'], dict(
                 dest='jira_url',
             )),
-
         ],
         key_for_sample_name=None,
         required_keys=[],
