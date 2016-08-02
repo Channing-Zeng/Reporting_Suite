@@ -8,10 +8,12 @@ from optparse import OptionParser
 from os.path import join, basename
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
-from source.file_utils import safe_mkdir, adjust_path, file_transaction, verify_file
+from source.calling_process import call
+from source.file_utils import safe_mkdir, adjust_path, file_transaction, verify_file, add_suffix, which
 from source.logger import critical, info
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.qsub_utils import wait_for_jobs, submit_job
+from source.targetcov.bam_and_bed_utils import call_sambamba
 from source.tools_from_cnf import get_script_cmdline
 from source.utils import mean, get_chr_len_fpath
 from source.utils import median
@@ -82,6 +84,110 @@ def get_regions_depth(cnf, samples):
     return depths_by_pos
 
 
+def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
+    jobs_to_wait = []
+    not_submitted_samples = [sample for sample in samples]
+    done_samples = []
+    while not_submitted_samples:
+        jobs_to_wait = []
+        submitted_samples = []
+        reused_samples = []
+
+        for sample in not_submitted_samples:
+            if do_sort:
+                output_bam_fpath = join(cnf.work_dir, sample.name + '.dedup.sorted.bam')
+            else:
+                output_bam_fpath = join(cnf.work_dir, sample.name + '.dedup.bam')
+
+            if cnf.reuse_intermediate and verify_file(output_bam_fpath, silent=True):
+                info(output_bam_fpath + ' exists, reusing')
+                sample.bam = output_bam_fpath
+                done_samples.append(sample)
+                continue
+            else:
+                if do_sort:
+                    cmdline = 'sort {sample.bam} -o {output_bam_fpath}'.format(**locals())
+                    j = call_sambamba(cnf, cmdline, output_fpath=output_bam_fpath, bam_fpath=sample.bam,
+                                    use_grid=True, command_name='sort', sample_name=sample.name)
+                else:
+                    cmdline = 'view -f bam -F "not duplicate and not failed_quality_control" {sample.bam}'.format(**locals())
+                    j = call_sambamba(cnf, cmdline, output_fpath=output_bam_fpath, bam_fpath=sample.bam,
+                                      use_grid=True, command_name='dedup', sample_name=sample.name)
+                info()
+                sample.bam = output_bam_fpath
+                done_samples.append(sample)
+
+                if not j.is_done:
+                    jobs_to_wait.append(j)
+                if len(jobs_to_wait) >= cnf.threads:
+                    break
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No jobs to submit.')
+        not_submitted_samples = [sample for sample in not_submitted_samples if
+                                          sample not in submitted_samples and
+                                          sample not in reused_samples]
+    return done_samples
+
+
+def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath):
+    sambamba = which('sambamba')
+    samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False)
+    samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=True)
+
+    chromosomes = ['chr%s' % x for x in range(1, 23)]
+    chromosomes.extend(['chrX', 'chrY', 'chrM'])
+    vcfs_by_chrom = dict()
+    for chrom in chromosomes:
+        vcf_fpath = join(cnf.work_dir, str(chrom) + '.vcf')
+        cmdline = 'tabix -h {combined_vcf_fpath} {chrom} > {vcf_fpath}'.format(**locals())
+        call(cnf, cmdline)
+        if verify_file(vcf_fpath):
+            vcfs_by_chrom[chrom] = vcf_fpath
+
+    not_submitted_chroms = vcfs_by_chrom.keys()
+    sample_names = ','.join(sample.name for sample in samples)
+    sample_bams = ','.join(sample.bam for sample in samples)
+    while not_submitted_chroms:
+        jobs_to_wait = []
+        submitted_chroms = []
+        reused_chroms = []
+
+        for chrom, vcf_fpath in vcfs_by_chrom.iteritems():
+            if chrom not in not_submitted_chroms:
+                continue
+            output_fpaths = [join(cnf.output_dir, chrom + '-' + sample.name.replace('-', '_') + '.bam'.format(**locals()))
+                             for sample in samples]
+            if cnf.reuse_intermediate and all(verify_file(output_fpath, silent=True) for output_fpath in output_fpaths):
+                info('BAM files for ' + chrom + ' chromosome exists, reusing')
+                reused_chroms.append(chrom)
+                continue
+            else:
+                cmdline = get_script_cmdline(cnf, 'python', join('tools', 'split_bams_by_variants.py'), is_critical=True)
+                cmdline += ' --chr {chrom} --vcf {vcf_fpath} --samples {sample_names} --bams {sample_bams} ' \
+                           '-o {cnf.output_dir} --work-dir {cnf.work_dir} -g {cnf.genome.name} '.format(**locals())
+                if cnf.reuse_intermediate:
+                    cmdline += ' --reuse'
+                j = submit_job(cnf, cmdline,  chrom + '_split')
+                info()
+                submitted_chroms.append(chrom)
+
+                if not j.is_done:
+                    jobs_to_wait.append(j)
+                if len(jobs_to_wait) >= cnf.threads:
+                    break
+        if jobs_to_wait:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No jobs to submit.')
+        not_submitted_chroms = [chrom for chrom in not_submitted_chroms if
+                                          chrom not in submitted_chroms and
+                                          chrom not in reused_chroms]
+
+
 def main():
     info(' '.join(sys.argv))
     info()
@@ -143,6 +249,7 @@ def main():
     info()
     combined_vcf_fpath = join(cnf.output_dir, 'vardict.' + cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
+    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz')
 
     depths_by_pos = get_regions_depth(cnf, samples)
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
