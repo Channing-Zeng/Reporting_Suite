@@ -892,6 +892,11 @@ class ClinicalReporting(BaseClinicalReporting):
             data['circos'] = {'circos_img': basename(circos_plot_fpath)}
             image_by_key = {'circos': circos_plot_fpath}
 
+        comment_php_path = '/save_comment.php'
+        if is_uk():
+            comment_php_path = '/ngs/reports/save_comment.php'
+        data['comment_php_path'] = json.dumps(comment_php_path)
+
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),

@@ -473,9 +473,9 @@ function commentMutation(caller) {
     document.getElementById('comment_window_save_btn').onclick=function() {
         var comment = document.getElementById('comment_window_textarea').value;
         if (comment) {
-            var data = projectUrl + "," + projectPath + "," + gene + "," + transcript + "," + mut + "," + pos + "," + change + "," +
-                        effect + "," + significance + "," + comment + "\n";
-            var php_path = '/save_comment.php';
+            var data = projectUrl + "," + projectPath + "," + gene + "," + transcript + "," + mut + "," + pos + "," + change +
+                "," + effect + "," + significance + "," + comment + "," + getTodayDate() + "\n";
+            var php_path = readJsonFromElement($('#comment_php_json'));
             $.post(php_path, {data: data})
              .done(function () {
                   alert('Comment was successfully sent!');
@@ -500,6 +500,15 @@ function commentMutation(caller) {
     //        document.getElementById("comment_window_save_btn").click();
     //    }
     //})
+}
+
+function getTodayDate(){
+    var today = new Date();
+    var dd = today.getDate();
+    var mm = today.getMonth() + 1;
+    var yyyy = today.getFullYear();
+    today = dd + '/' + mm + '/' + yyyy;
+    return today;
 }
 
 function convertHex(hex, opacity){
