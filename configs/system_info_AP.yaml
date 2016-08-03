@@ -1,7 +1,5 @@
 # /ngs/RDI/SCRIPTS/az.reporting
 
-ld_library_path: /group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/lib
-
 resources:
   python:
     path: /apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python

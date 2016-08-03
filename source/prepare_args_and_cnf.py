@@ -134,9 +134,6 @@ def input_fpaths_from_cnf(cnf, required_inputs, optional_inputs):
 
 
 def check_system_resources(cnf, required=list(), optional=list()):
-    if cnf.ld_library_path:
-        os.environ['LD_LIBRARY_PATH'] = cnf.ld_library_path
-
     to_exit = False
 
     for program in required:

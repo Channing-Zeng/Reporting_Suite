@@ -1,4 +1,4 @@
-# Mutation prioritization 
+# Mutation prioritization
 in [AZ post-processing](https://github.com/AstraZeneca-NGS/Reporting_Suite) pipeline for BCBio-nextgen
 
 ### 1. Variant calling

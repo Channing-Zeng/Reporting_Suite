@@ -1,8 +1,5 @@
 # /group/ngs/src/az.reporting
 
-ld_library_path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/anaconda/lib
-# export LD_LIBRARY_PATH=/group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
-
 resources:
   python:
     path: /group/ngs/src/az.reporting/virtualenv/bin/python

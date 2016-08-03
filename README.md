@@ -22,7 +22,6 @@ Requirements:
 ```
 $ virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
 $ git clone https://github.com/AstraZeneca-NGS/Reporting_Suite.git $AZ_REPORTING
-$ export LD_LIBRARY_PATH=$BCBIO/0.9.7/rhel6-x64/anaconda/lib:$LD_LIBRARY_PATH
 $ source activate $AZ_REPORTING/virtualenv/bin/activate
 $ pip install -r $AZ_REPORTING/python_requirements.txt
 $ R
