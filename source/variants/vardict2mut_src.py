@@ -450,7 +450,7 @@ class Filtration:
                     if any([r.indel_type == 'ins' and change_len > 0,
                             r.indel_type == 'del' and change_len < 0,
                             r.indel_type == 'indel' and change_len != 0]):
-                        self.update_status('known', 'act_somatic_' + r.aa_chg)
+                        self.update_status('known', 'act_somatic_' + r.indel_type)
                         return 'somatic'
         return None
 
