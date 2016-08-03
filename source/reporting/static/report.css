@@ -51,7 +51,7 @@
     #report table.report_table tr.highlighted_green_row td {
       background-color: #daffde; }
 
-tr.af_less_threshold {
+tr.less_threshold {
   display: none; }
 
 #contigs_are_ordered {

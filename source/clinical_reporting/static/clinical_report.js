@@ -71,7 +71,18 @@ function extendClick(switch_id) {
     var table_id = switch_id[switch_id.length - 1];
     var switch_el = $('#' + table_id + '_switch');
     if (table_id == 'seq2c') {
-      switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">' + key_or_target + ' genes</a> / <span>all genes</span>')
+      switch_el.html('<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">' + key_or_target + ' genes</a> / ' +
+          '<span>all genes</span>')
+    }
+    else if (table_id == 'sv') {
+        switchElContent = '';
+        switchElContent += '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this), 1)">' +
+            'known fusions</a> / ';
+        switchElContent += '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this), 2)">' +
+            '+ whole exon deletions</a>';
+        switchElContent += '<span id="fusions_span">fusions in the AZ priority genes</span>';
+        switch_el.html(switchElContent);
+        $('#slider_sv_div').show();
     } else {
         switchElContent = '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this))">known, likely</a> / ';
         if (showBlacklisted) {
@@ -102,13 +113,9 @@ function extendClick(switch_id) {
     if (table_full) {
         if (table_id == 'variants') {
             $(table_full).css('height', '');
-            $('.table_full#report_table_mutations tr').each(function() {
+            $('#report_table_mutations').find('tr').each(function() {
                 checkBlacklisted(this, showBlacklisted);
                 checkAF(this, minAF);
-                if ($('#show_variants_all')[0]) {
-                    showVariantsBySensitivity('show_variants_all');
-                    showVariantsByType('show_variants_all');
-                }
             });
         }
         $(table_full).show();
@@ -120,22 +127,13 @@ function extendClick(switch_id) {
     if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
 }
 
-function reduceClick(switch_id) {
+function reduceClick(switch_id, groupPriority) {
     if (switch_id[0].id) switch_id = switch_id[0].id;
     showBlacklisted = false;
     switch_id = switch_id.split("_");
     var table_id = switch_id[switch_id.length - 1];
     // Showing reduced
     var switch_el = $('#' + table_id + '_switch');
-    if (table_id == 'seq2c') {
-      switch_el.html('<span>'  + key_or_target + ' genes</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">all genes</a>')
-    }
-    else {
-        html = '<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
-          'onclick="extendClick($(this))">+ unknown</a>'
-        //html += '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>'
-      switch_el.html(html)
-    }
     var table_div = $('#' + table_id + '_table_div');
     var table_full = table_div.find('.table_full');
     if (table_full) table_full.remove();
@@ -148,15 +146,24 @@ function reduceClick(switch_id) {
     }
     table_div.prepend(table_short_clone);
     var table_short = table_div.find('.table_short');
+    if (table_id == 'seq2c') {
+      switch_el.html('<span>'  + key_or_target + ' genes</span> / <a class="dotted-link" id="extend_link_' + table_id + '" onclick="extendClick($(this))">all genes</a>')
+    }
+    else if (table_id == 'sv') {
+        filterSVTable(groupPriority);
+        $('#slider_sv_div').hide();
+    }
+    else {
+        html = '<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
+          'onclick="extendClick($(this))">+ unknown</a>';
+        //html += '<a class="dotted-link" id="extend_link_incidentalome_' + table_id + '" onclick="extendClick($(this))">incidentalome</a>'
+        switch_el.html(html)
+    }
     if (table_short) {
       if (table_id == 'variants') {
         $(table_short).css('height', '');
-        $('.table_short#report_table_mutations tr').each(function() {
+        $(table_short).find('tr').each(function() {
             checkAF(this, minAF);
-            if ($('#show_variants_all')[0]) {
-                showVariantsBySensitivity('show_variants_all');
-                showVariantsByType('show_variants_all');
-            }
         });
       }
       table_short.show();
@@ -166,6 +173,29 @@ function reduceClick(switch_id) {
     }
     table_short_clones.push({'id_': table_id, 'table': table_short_clone.clone()});
     if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
+}
+
+function filterSVTable(groupPriority) {
+    var switch_el = $('#sv_switch');
+    switchElContent = '';
+    if (groupPriority == 2) {
+        switchElContent += '<a class="dotted-link" id="reduce_link_sv" onclick="filterSVTable(1)">known fusions</a> / ';
+        switchElContent += '<span> + whole exon deletions</span>';
+        priorities = ['1', '2'];
+    }
+    else {
+        switchElContent += '<span>known fusions</span> / ';
+        switchElContent += '<a class="dotted-link" id="reduce_link_sv" onclick="filterSVTable(2)">+ whole exon deletions</a>';
+        priorities = ['1'];
+    }
+    switchElContent += '<a class="dotted-link" id="extend_link_sv" onclick="extendClick($(this))">' +
+            'fusions in the AZ priority genes</a>';
+    switch_el.html(switchElContent);
+    var sv_table =  $('#report_table_main_sv_section');
+    sv_table.css('height', '');
+    sv_table.find('tr').each(function() {
+        showSVEvents(this, priorities);
+    });
 }
 
 function write_to_excel(table) {
@@ -233,6 +263,19 @@ function checkBlacklisted(row, showBlacklisted) {
     }
 }
 
+function showSVEvents(row, priorities) {
+    for (var c = 0, m = row.cells.length; c < m; c++) {
+        var cell = row.cells[c];
+        if (cell.attributes.metric && cell.attributes.metric.value == 'Priority') {
+            if (priorities && priorities.indexOf(cell.attributes.number.value) == -1) {
+                $(row).addClass('row_hidden');
+            }
+            else
+                $(row).removeClass('row_hidden');
+        }
+    }
+}
+
 function filterMutationsByAF(thresholdValue) {
     minAF = thresholdValue;
     var table_short = $('.table_short#report_table_mutations');
@@ -240,26 +283,53 @@ function filterMutationsByAF(thresholdValue) {
     var table_actionable = $('#report_table_actionable');
     if (table_short) {
         $(table_short).css('height', '');
-        $('.table_short#report_table_mutations tr').each(function() {
+        $(table_short).find('tr').each(function() {
             checkAF(this, minAF);
         });
     }
     if (table_full) {
         $(table_full).css('height', '');
-        $('.table_full#report_table_mutations tr').each(function() {
+        $(table_full).find('tr').each(function () {
             checkAF(this, minAF);
         });
     }
     if (table_actionable) {
         $(table_actionable).css('height', '');
-        $('#report_table_actionable tr').each(function() {
+        $(table_actionable).find('tr').each(function() {
             checkAF(this, minAF);
         });
-        $('#report_table_actionable tr').each(function() {
+        $(table_actionable).find('tr').each(function() {
             correctRowspan(this);
         });
     }
     if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
+}
+
+function filterSVByDepth(minDepth) {
+    var sv_table =  $('.table_full#report_table_main_sv_section');
+    sv_table.css('height', '');
+    sv_table.find('tbody').find('tr').each(function() {
+        checkDepth(this, minDepth);
+    });
+}
+
+function checkDepth(row, minDepth) {
+    var numReads = 0;
+    for (var c = 0, m = row.cells.length; c < m; c++) {
+        var cell = row.cells[c];
+        if (cell.attributes.metric) {
+            metric = cell.attributes.metric.value;
+            if (metric.indexOf('Reads') != -1 && cell.attributes.number)
+                numReads += cell.attributes.number.value * 1;
+            /*else if (metric.indexOf('Type') != -1 && cell.innerText.indexOf('Fusion') != -1)
+                isFusion = true;
+            else if (metric.indexOf('Priority') != -1 && cell.attributes.number.value == 1)
+                isKnown = true;*/
+        }
+    }
+    if (numReads < minDepth)
+        $(row).addClass('less_threshold');
+    else $(row).removeClass('less_threshold');
 }
 
 function checkAF(row, minAF) {
@@ -276,15 +346,16 @@ function checkAF(row, minAF) {
       for (var c = 0, m = row.cells.length; c < m; c++) {
         if (row.cells[c].attributes.metric && row.cells[c].attributes.number && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
             if ((isKnown && row.cells[c].attributes.number.value * 100 >= minActAF) || row.cells[c].attributes.number.value * 100 >= minAF)
-                $(row).removeClass('af_less_threshold');
-            else $(row).addClass('af_less_threshold');
+                $(row).removeClass('less_threshold');
+            else $(row).addClass('less_threshold');
         }
     }
 }
+
 function correctRowspan(row) {
     if (!$(row).find("td:first-child")[0])
         return;
-    if ($(row).hasClass("af_less_threshold")) return;
+    if ($(row).hasClass("less_threshold")) return;
 
     var rowspan = 1;
     var nextRow = $(row).next("tr");
@@ -292,7 +363,7 @@ function correctRowspan(row) {
     while ($(nextRow).find("td:first-child")[0]) {
         if (nextRow.find("td:first-child")[0].attributes.metric.value == "Gene")
             break;
-        if (!$(nextRow).hasClass("af_less_threshold"))
+        if (!$(nextRow).hasClass("less_threshold"))
             rowspan++;
         nextRow = $(nextRow).next("tr");
     }

@@ -6,12 +6,20 @@ from source.targetcov.bam_and_bed_utils import get_gene_keys
 
 
 class SVEvent(SortableByChrom):
+    min_sv_depth = 15
+
     class Annotation:
+        KNOWN = 1
+        ON_PRIORITY_LIST = 2
+        NOT_PRIORITISED = 3
+
         def __init__(self):
             self.type = None
             self.effect = None
             self.genes = []
             self.transcript = None
+            self.priority = None
+            self.prioritisation = None
 
             self.known = False
             self.event = None
@@ -22,6 +30,9 @@ class SVEvent(SortableByChrom):
 
         @staticmethod
         def parse_annotation(string):
+            def filter_digits(s):
+                return ''.join(c for c in s if c.isdigit())
+
             fs = string.split('|')
             a = SVEvent.Annotation()
             a.type = fs[0]
@@ -30,18 +41,27 @@ class SVEvent(SortableByChrom):
             if a.type == 'BND':
                 if '/' in genes_val:
                     a.genes = sorted(genes_val.split('/'))
+                elif '&' in genes_val:
+                    a.genes = sorted(genes_val.split('&'))
                 elif genes_val.count('-') == 1:
                     a.genes = sorted(genes_val.split('-'))
                 else:
                     return None
             elif genes_val:
-                a.genes = [genes_val]
+                if '&' in genes_val:
+                    a.genes = sorted(genes_val.split('&'))
+                else:
+                    a.genes = [genes_val]
             a.transcript = fs[3]
             a.exon_info = fs[4]
+            if len(fs) > 5:
+                a.exon_info = filter_digits(a.exon_info)
+                a.prioritisation = fs[4]
+                a.priority = int(fs[5])
             return a
 
     @staticmethod
-    def parse_sv_event(chr_order, **kwargs):  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
+    def parse_sv_event(chr_order, key_gene_by_name_chrom, **kwargs):  # caller  sample  chrom  start  end  svtype  lof  annotation  split_read_support  paired_support_PE  paired_support_PR
         e = SVEvent(chrom=kwargs.get('chrom'), chrom_ref_order=chr_order.get(kwargs.get('chrom')))
         e.caller = kwargs.get('caller')
         e.start = int(kwargs.get('start'))
@@ -62,8 +82,8 @@ class SVEvent(SortableByChrom):
                 e.id = m.group('id1')
                 e.mate_id = m.group('id2')
 
-        e.known_gene_val = kwargs.get('known')
-        e.known_gene = e.known_gene_val.split('-with-')[1] if '-with-' in e.known_gene_val else e.known_gene_val
+        # e.known_gene_val = kwargs.get('known')
+        # e.known_gene = e.known_gene_val.split('-with-')[1] if '-with-' in e.known_gene_val else e.known_gene_val
         if kwargs.get('end_gene'):
             e.end_genes = kwargs.get('end_gene').split(',')
         else:
@@ -76,10 +96,17 @@ class SVEvent(SortableByChrom):
                 if a:
                     assert a.type == e.type, 'Annotation type and event type does not match: ' + str(e.type) + ', ' + str(a.type)
                     e.annotations.append(a)
-
-        e.split_read_support = kwargs.get('split_read_support').split(',') if kwargs.get('split_read_support') else []
-        e.paired_end_support = kwargs.get('paired_end_support').split(',') if kwargs.get('paired_end_support') else []
-
+                    known_genes = [g for g in a.genes if (g, e.chrom) in key_gene_by_name_chrom]
+                    if known_genes:
+                        e.known_gene = known_genes[0]
+        paired_end_manta_header = 'paired_support_PR' if 'paired_support_PR' in kwargs else 'paired_end_support'
+        paired_end_lumpy_header = 'paired_support_PE' if 'paired_support_PE' in kwargs else 'paired_end_support'
+        if e.caller == 'manta':  # Manta has comma separated REF/ALT depths in third last and last column
+            e.split_read_support = int(kwargs.get('split_read_support').split(',')[1]) if kwargs.get('split_read_support') else None
+            e.paired_end_support = int(kwargs.get(paired_end_manta_header).split(',')[1]) if kwargs.get(paired_end_manta_header) else None
+        else:
+            e.split_read_support = int(kwargs.get('split_read_support').split(',')[0]) if kwargs.get('split_read_support') else None
+            e.paired_end_support = int(kwargs.get(paired_end_lumpy_header).split(',')[0]) if kwargs.get(paired_end_lumpy_header) else None
         return e
 
         # lof_genes = []
@@ -95,17 +122,21 @@ class SVEvent(SortableByChrom):
         self.start = None
         self.sample = None
         self.end = None
+        self.chrom2 = None
         self.type = None
         self.id = None
         self.mate_id = None
         self.known_gene_val = None
-        self.known_gene = None
+        self.known_gene = ''
         self.end_genes = []
         self.lof = None
         self.annotations = []
         self.key_annotations = set()
         self.split_read_support = None
         self.paired_end_support = None
+
+    def is_known_fusion(self, annotation):
+        return annotation.prioritisation and 'KNOWN_FUSION' in annotation.prioritisation
 
     def is_fusion(self):
         return self.type == 'BND'

@@ -275,7 +275,8 @@ class BaseReport:
     def __init__(self, sample=None, html_fpath=None, url=None, json_fpath=None,
                  records=None, plots=None, metric_storage=None, display_name='',
                  report_name='', caller_tag=None, project_tag=None, expandable=False,
-                 unique=False, keep_order=False, large_table=False, heatmap_by_rows=False, vertical_sample_names=False, **kwargs):
+                 unique=False, keep_order=False, large_table=False, only_hidden_rows_in_full_table=False,
+                 heatmap_by_rows=False, vertical_sample_names=False, **kwargs):
         self.sample = sample
         self.html_fpath = html_fpath
         self.plots = plots or []  # TODO: make real JS plots, not just included PNG
@@ -303,6 +304,7 @@ class BaseReport:
 
         self.keep_order = keep_order
         self.large_table = large_table
+        self.only_hidden_rows_in_full_table = only_hidden_rows_in_full_table
         self.heatmap_by_rows = heatmap_by_rows
         self.vertical_sample_names = vertical_sample_names
 
@@ -1295,8 +1297,9 @@ def build_section_html(report, section, sortable=True):
             tr += make_cell_td(rec, class_='left_column_td' if col_num == 0 else '')
         tr += '\n</tr>'
 
-        if report.expandable and not report.unique:
-            full_table += '\n' + tr
+        if full_table:
+            if row.hidden or not report.only_hidden_rows_in_full_table:
+                full_table += '\n' + tr
             if not row.hidden:
                 table += '\n' + tr
         else:

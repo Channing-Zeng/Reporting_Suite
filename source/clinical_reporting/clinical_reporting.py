@@ -9,6 +9,7 @@ import source
 from source import info, verify_file
 from source.calling_process import call
 from source.clinical_reporting.clinical_parser import get_group_num
+from source.clinical_reporting.utils import SVEvent
 from source.clinical_reporting.combine_clinical_reporting_utils import get_vcf_readers, add_freq_depth_records,\
     group_for_venn_diagram, update_venn_diagram_data, save_venn_diagram_data, format_experiment_names, add_tooltip
 from source.logger import warn, err, debug
@@ -301,49 +302,58 @@ class BaseClinicalReporting:
 
     def make_sv_report(self, svs_by_experiment, jbrowser_link):
         ms = [
-            Metric('Genes'),
+            Metric('Genes', min_width=100),
             # Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
-            Metric('Type'),
+            Metric('Type', min_width=50),
             Metric('Location', with_heatmap=False, align='left', sort_direction='ascending', style="width: 500px"),
             Metric('Transcript', align='left', style="width: 300px"),
+            Metric('Priority', is_hidden=True),
+            Metric('Reads', is_hidden=True),
             # Metric('Status', with_heatmap=False, align='left', sort_direction='ascending'),
             # Metric('Effects', with_heatmap=False, align='left', class_='long_line'),
         ]
 
         if len(svs_by_experiment) == 1:
             ms.extend([
-                Metric('Split read support', short_name='Split /'),
-                Metric('Paired read support', short_name='paired read support'),
+                Metric('Split read support', short_name='Split /', min_width=30),
+                Metric('Paired read support', short_name='paired read support', min_width=50),
             ])
         else:
             for e in svs_by_experiment.keys():
                 ms.extend([
-                    Metric(e.key + ' Split read support', short_name='Split /'),
-                    Metric(e.key + ' Paired read support', short_name='paired read support'),
+                    Metric(e.key + ' Split read support', short_name='Split /', min_width=30),
+                    Metric(e.key + ' Paired read support', short_name='paired read support', min_width=50),
                 ])
 
         metric_storage = MetricStorage(sections=[ReportSection(name='main_sv_section', metrics=ms)])
         report = PerRegionSampleReport(sample=svs_by_experiment.keys()[0].sample,
-                                       metric_storage=metric_storage)
+                                       metric_storage=metric_storage, expandable=True, large_table=True,
+                                       only_hidden_rows_in_full_table=True)
 
         # Writing records
         svanns_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
         for e, svs in svs_by_experiment.items():
-            exon_dels_cnt = 0
             known_cnt = 0
-            affecting_2_genes_cnt = 0
+            exon_dels_cnt = 0
+            fusions_cnt = 0
             other_cnt = 0
             for sv_event in svs:
                 for an in sv_event.key_annotations:
+                    # reporting all known (fusion) by default
+                    if an.known:
+                        svanns_by_key_by_experiment[an.get_key()][e] = an
+                        known_cnt += 1
+
                     # reporting all whole exon deletions
-                    if sv_event.is_deletion() and ('exon_del' in an.effect.lower() or 'exon_loss' in an.effect.lower()):
+                    elif sv_event.is_deletion() and ('exon_del' in an.effect.lower() or 'exon_loss' in an.effect.lower()) \
+                            and (not an.priority or an.priority == SVEvent.Annotation.ON_PRIORITY_LIST):
                         svanns_by_key_by_experiment[an.get_key()][e] = an
                         exon_dels_cnt += 1
 
-                    # reporting all known (fusion)
-                    elif an.known:
+                    # reporting fusions in the AZ priority genes
+                    elif sv_event.is_fusion() and (not an.priority or an.priority == SVEvent.Annotation.ON_PRIORITY_LIST):
                         svanns_by_key_by_experiment[an.get_key()][e] = an
-                        known_cnt += 1
+                        fusions_cnt += 1
 
                     # # reporting all non-fusion events affecting 2 or more genes (start and end should not be the same gene. handling overlapping gene cases.)
                     # elif sv_event.end_genes and all(ann_g not in sv_event.end_genes for ann_g in an.genes):
@@ -353,9 +363,10 @@ class BaseClinicalReporting:
                     else:
                         other_cnt += 1
 
-            info('exon_dels_cnt: ' + str(exon_dels_cnt))
             info('known_cnt: ' + str(known_cnt))
-            info('affecting_2_genes_cnt: ' + str(affecting_2_genes_cnt))
+            info('exon_dels_cnt: ' + str(exon_dels_cnt))
+            info('fusions_cnt: ' + str(fusions_cnt))
+            # info('affecting_2_genes_cnt: ' + str(affecting_2_genes_cnt))
             info('other_cnt: ' + str(other_cnt))
 
         for sv_key, svann_by_experiment in svanns_by_key_by_experiment.items():
@@ -364,21 +375,28 @@ class BaseClinicalReporting:
             row = report.add_row()
 
             row.add_record('Genes', '/'.join(set(sv_ann.genes)) if sv_ann else None)
+            read_support = max(sum(filter(None, (sv_ann.event.split_read_support, sv_ann.event.paired_end_support))) for sv_ann in
+                               svann_by_experiment.values())
 
             type_str = None
             if sv_ann:
                 type_str = BaseClinicalReporting.sv_type_dict.get(sv_ann.event.type, sv_ann.event.type)
                 if sv_ann.effect == 'EXON_DEL':
                     type_str += ' ' + sv_ann.exon_info
-                if type_str == 'Fusion':
+                if sv_ann.priority == SVEvent.Annotation.KNOWN:
                     type_str = 'Known fusion'
+                if type_str == 'Fusion':
+                    row.hidden = True
+                    if read_support < SVEvent.min_sv_depth:
+                        row.class_ += ' less_threshold'
 
             row.add_record('Type', type_str)
+            row.add_record('Priority', sv_ann.priority)
 
             if sv_ann and sv_ann.event.start:
                 row.add_record('Location',
                     **self._pos_recargs(sv_ann.event.chrom, sv_ann.event.get_chrom_key(),
-                                        sv_ann.event.start, sv_ann.event.end, jbrowser_link))
+                                        sv_ann.event.start, sv_ann.event.end, jbrowser_link, end_chrom=sv_ann.event.chrom2))
             else:
                 row.add_record('Location', None)
 
@@ -386,6 +404,7 @@ class BaseClinicalReporting:
             # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
             # row.add_record('Effects', ', '.join(set(a.effect.lower().replace('_', ' ') for a  in sv.annotations if a in ['EXON_DEL', 'FUSION'])))
 
+            row.add_record('Reads', read_support)
             if len(svann_by_experiment.values()) == 1:
                 row.add_record('Split read support', sv_ann.event.split_read_support if sv_ann else None)
                 row.add_record('Paired read support', sv_ann.event.paired_end_support if sv_ann else None)
@@ -755,14 +774,23 @@ class BaseClinicalReporting:
         return dict(value=t, show_content=mut.is_canonical)
 
     @staticmethod
-    def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None):
+    def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None, end_chrom=None):
         c = (chrom.replace('chr', '')) if chrom else ''
-        p_html = Metric.format_value(start, human_readable=True, is_html=True) + \
-            ('-' + Metric.format_value(end, human_readable=True, is_html=True) if end else '') if start else ''
-        p_html = gray(c + ':') + p_html
-        if jbrowser_link:
-            p_html = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '...' + str(end or start) +
-                 '" target="_blank">' + p_html + '</a>')
+        if not end or not end_chrom or chrom == end_chrom:
+            p_html = Metric.format_value(start, human_readable=True, is_html=True) + \
+                ('-' + Metric.format_value(end, human_readable=True, is_html=True) if end else '') if start else ''
+            p_html = gray(c + ':') + p_html
+            if jbrowser_link:
+                p_html = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '...' + str(end or start) +
+                     '" target="_blank">' + p_html + '</a>')
+        else:
+            end_c = (end_chrom.replace('chr', ''))
+            start_html = gray(c + ':') + Metric.format_value(start, human_readable=True, is_html=True)
+            end_html = gray(end_c + ':') + Metric.format_value(end, human_readable=True, is_html=True)
+            if jbrowser_link:
+                p_html = ('<a href="' + jbrowser_link + '&loc=chr' + c + ':' + str(start) + '" target="_blank">' + start_html + '</a>')
+                p_html += '-'
+                p_html += '<a href="' + jbrowser_link + '&loc=chr' + end_c + ':' + str(end) + '" target="_blank">' + end_html + '</a>'
         return dict(value=p_html, num=chrom_key * 100000000000 + start)
 
     cdna_chg_regexp = re.compile(r'([c,n]\.)([-\d_+*]+)(.*)')
@@ -872,7 +900,8 @@ class ClinicalReporting(BaseClinicalReporting):
             data['sv'] = {}
             section = self.__sv_section()
             if section:
-                data['sv'] = {'report': section, 'sv_link': relpath(self.experiment.sv_fpath, start=dirname(output_fpath))}
+                data['sv'] = {'report': section, 'sv_link': relpath(self.experiment.sv_fpath, start=dirname(output_fpath)),
+                              'default_sv_depth': SVEvent.min_sv_depth}
         if self.seq2c_plot_data:
             data['seq2c'] = {'plot_data': self.seq2c_plot_data}
             if self.seq2c_report:

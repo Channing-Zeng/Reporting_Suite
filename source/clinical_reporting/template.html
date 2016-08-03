@@ -185,7 +185,7 @@
                                 <!--incidentalome</a>-->
                         </p>
                     </div>
-                        <div id="slider_div">
+                    <div id="slider_div">
                         Hide "likely" with AF below
                         <input type="range" id="mut_af_slider" min="0" max="100" value="{min_af}" style="vertical-align: middle;"
                                onchange="filterMutationsByAF(this.value)" oninput="mut_af_textbox.value=this.value" />
@@ -267,15 +267,35 @@
         {.section sv}
             <a name="sv"></a>
             <h1>Structural variants in {total_key_genes} {key_or_target} genes</h1>
-            <p>Reported only and whole exon deletions and known fusions. See <a href="{sv_link}">the full list here</a>.</p>
+            <p>Reported only known fusions, whole exon deletions, and fusions in the AZ priority genes.
+                See <a href="{sv_link}">the full list here</a>.</p>
             {.section report}
+                <div>
+                    <p id="sv_switch">
+                        <span>known fusions</span>
+                        /
+                        <a class="dotted-link" id="reduce_link_sv" onclick="reduceClick($(this), 2)">
+                            + whole exon deletions</a>
+                        <a class="dotted-link" id="extend_link_sv" onclick="extendClick($(this))">
+                            fusions in the AZ priority genes</a>
+                    </p>
+                </div>
+                <div id="slider_sv_div" style="display: none">
+                    Hide events with the sum of the supporting reads less than
+                    <input type="range" id="sv_depth_slider" min="0" max="100" value="{default_sv_depth}" style="vertical-align: middle;"
+                           onchange="filterSVByDepth(this.value)" oninput="sv_depth_textbox.value=this.value" />
+                    <input type="text" id="sv_depth_textbox" min="0" max="100" value="{default_sv_depth}" maxlength="3" size="3"
+                           onchange="filterSVByDepth(this.value)" oninput="sv_depth_slider.value=this.value" style="text-align: right"/>
+                </div>
+                <div style="clear: both"></div>
                 <div id="sv_div">
                     <div id="sv_table_div">
                         {table}
                     </div>
                 </div>
             {.or}
-                <p>No whole exon deletion or known fusions detected in {total_key_genes} {key_or_target} regions.</p>
+                <p>No whole exon deletion, fusions in the AZ priority genes, or known fusions detected in {total_key_genes}
+                    {key_or_target} regions.</p>
             {.end}
         {.or}
         {.end}

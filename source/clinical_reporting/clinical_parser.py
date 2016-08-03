@@ -5,7 +5,6 @@ from os.path import join, dirname
 
 import source
 from source import verify_file, info
-from source.clinical_reporting.known_sv import fusions as known_fusions
 from source.clinical_reporting.utils import SVEvent, get_key_or_target_bed_genes
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path, verify_dir, \
     adjust_system_path
@@ -373,10 +372,9 @@ class ClinicalExperimentInfo:
 
     def parse_sv(self, sv_fpath, key_gene_by_name_chrom):
         info('Parsing prioritized SV events from ' + sv_fpath)
+        all_events = dict()
         sv_events = set()
         sv_events_by_gene_name = OrderedDict()
-
-        sorted_known_fusions = [sorted(p) for p in known_fusions['homo_sapiens']]
 
         chr_order = get_chrom_order(self.cnf)
 
@@ -387,11 +385,12 @@ class ClinicalExperimentInfo:
                 if i == 0:
                     header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
                 else:
-                    event = SVEvent.parse_sv_event(chr_order, **dict(zip(header_rows, fs)))
+                    event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, **dict(zip(header_rows, fs)))
                     if event and event.sample == self.sample.name:
+                        all_events[(event.sample, event.id)] = event
                         for annotation in event.annotations:
-                            if event.is_fusion() and sorted(annotation.genes) in sorted_known_fusions:
-                                info('Found ' + '/'.join(annotation.genes) + ' in known')
+                            if event.is_known_fusion(annotation):
+                                # info('Found ' + '/'.join(annotation.genes) + ' in known')
                                 annotation.known = True
 
                             for g in annotation.genes:
@@ -401,6 +400,11 @@ class ClinicalExperimentInfo:
                                     key_gene_by_name_chrom[(g, event.chrom)].sv_events.add(event)
                                     event.key_annotations.add(annotation)
                                     annotation.event = event
+        for event in sv_events:
+            if not event.end and event.mate_id:
+                event_mate = all_events[(event.sample, event.mate_id)]
+                event.end = event_mate.start
+                event.chrom2 = event_mate.chrom
         return sv_events
 
     def parse_seq2c_report(self, seq2c_tsv_fpath, key_gene_by_name_chrom, genes_collection_type):

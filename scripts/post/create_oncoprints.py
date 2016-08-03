@@ -14,7 +14,6 @@ from source.file_utils import verify_file, add_suffix, file_transaction, adjust_
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.logger import critical, warn, err, step_greetings
 from source.prepare_args_and_cnf import check_genome_resources
-from source.clinical_reporting.known_sv import fusions as known_fusions
 from source.targetcov.Region import get_chrom_order
 from source.utils import is_uk
 from source.utils import is_us
@@ -152,13 +151,12 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
     bed_fpath = verify_file(cnf.bed, is_critical=False) if cnf.bed else None
     key_gene_by_name_chrom, _ = get_key_or_target_bed_genes(bed_fpath, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
-    key_genes = [g for (g, c) in key_gene_by_name_chrom]
 
     altered_genes = set()
 
-    mut_by_samples, altered_genes = parse_mutations(mutations_fpath, altered_genes, key_genes)
-    seq2c_events_by_sample, altered_genes = parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes)
-    sv_events_by_samples, altered_genes = parse_sv_files(cnf, samples, altered_genes, key_genes)
+    mut_by_samples, altered_genes = parse_mutations(mutations_fpath, altered_genes, key_gene_by_name_chrom)
+    seq2c_events_by_sample, altered_genes = parse_seq2c(seq2c_tsv_fpath, altered_genes, key_gene_by_name_chrom)
+    sv_events_by_samples, altered_genes = parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom)
 
     with file_transaction(cnf.work_dir, data_fpath) as tx:
         with open(tx, 'w') as out_f:
@@ -187,7 +185,7 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
     return altered_genes
 
 
-def parse_mutations(mutations_fpath, altered_genes, key_genes):
+def parse_mutations(mutations_fpath, altered_genes, key_gene_by_name_chrom):
     mut_by_samples = defaultdict(list)
     
     if not mutations_fpath or not verify_file(mutations_fpath):
@@ -239,7 +237,7 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
                 continue
             fs = l.replace('\n', '').split('\t')
             sample, gene, chrom, pos, type_ = fs[sample_col], fs[gene_col], fs[chr_col], fs[pos_col], fs[type_col]
-            if gene not in key_genes:
+            if (gene, chrom) not in key_gene_by_name_chrom:
                 continue
             mut = OncoprintMutation(chrom, pos, gene)
             mut.aa_change, mut.cdna_change, mut.depth, mut.freq = fs[aa_chg_col], fs[cdna_chg_col], fs[depth_col], float(fs[allele_freq_col])
@@ -269,7 +267,7 @@ def parse_mutations(mutations_fpath, altered_genes, key_genes):
     return mut_by_samples, altered_genes
 
 
-def parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes):
+def parse_seq2c(seq2c_tsv_fpath, altered_genes, key_gene_by_name_chrom):
     seq2c_events_by_sample = defaultdict(list)
     
     if not seq2c_tsv_fpath or not verify_file(seq2c_tsv_fpath):
@@ -282,14 +280,12 @@ def parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes):
             for i, l in enumerate(f_inp):
                 if i == 0: continue
                 fs = l.replace('\n', '').split('\t')
-                sname, gname = fs[0], fs[1]
-                if gname not in key_genes: continue
+                sname, gname, chrom = fs[0], fs[1], fs[2]
+                if (gname, chrom) not in key_gene_by_name_chrom: continue
 
                 sname, gname, chrom, start, end, length, log2r, sig, fragment, amp_del, ab_seg, total_seg, \
                     ab_log2r, log2r_diff, ab_seg_loc, ab_samples, ab_samples_pcnt = fs[:17]
                 if not amp_del:
-                    continue
-                if gname not in key_genes:
                     continue
                 if fragment == 'BP':
                     exons = str(ab_seg) + ' of ' + total_seg
@@ -316,15 +312,13 @@ def parse_seq2c(seq2c_tsv_fpath, altered_genes, key_genes):
     return seq2c_events_by_sample, altered_genes
 
 
-def parse_sv_files(cnf, samples, altered_genes, key_genes):
+def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
     sv_events_by_samples = defaultdict(set)
     sv_fpaths = [sample.find_sv_fpath() for sample in samples]
     sv_fpaths = [f for f in sv_fpaths if f]
 
     if not sv_fpaths:
         return sv_events_by_samples, altered_genes
-    
-    sorted_known_fusions = [sorted(p) for p in known_fusions['homo_sapiens']]
 
     chr_order = get_chrom_order(cnf)
 
@@ -341,14 +335,14 @@ def parse_sv_files(cnf, samples, altered_genes, key_genes):
                     sample_col = header_rows.index('sample')
                     known_col = header_rows.index('known')
                 else:
-                    event = SVEvent.parse_sv_event(chr_order, **dict(zip(header_rows, fs)))
+                    event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, **dict(zip(header_rows, fs)))
                     sample = fs[sample_col]
                     if event:
                         for annotation in event.annotations:
                             if event.is_fusion():
-                                if sorted(annotation.genes) in sorted_known_fusions:
+                                if event.is_known_fusion(annotation):
                                     annotation.known = True
-                                key_altered_genes = [g for g in annotation.genes if g in key_genes]
+                                key_altered_genes = [g for g in annotation.genes if (g, event.chrom) in key_gene_by_name_chrom]
                                 if annotation.effect == 'FUSION' and key_altered_genes:
                                     event.key_annotations.add(annotation)
                                     event.supplementary = '-with-' in fs[known_col]
@@ -364,9 +358,6 @@ def parse_sv_files(cnf, samples, altered_genes, key_genes):
                 continue
             suppl_event = suppl_events[event.id]
             event.end = suppl_event.chrom + ':' + str(suppl_event.start)
-            for ann in event.key_annotations:
-                if ann.genes[0] != event.known_gene:
-                    ann.genes[0], ann.genes[1] = ann.genes[1], ann.genes[0]
         sv_events_by_samples[sample] = main_events
 
     return sv_events_by_samples, altered_genes
