@@ -108,8 +108,9 @@ p {
   padding: 2px 4px;
   top: -3px;
   left: -120px;
-  min-width: 107px;
-  color: black; }
+  min-width: 97px;
+  color: black;
+  text-align: left; }
 
 .my_hover:hover .my_tooltip {
   display: block;

@@ -331,7 +331,7 @@ class BaseClinicalReporting:
                                        only_hidden_rows_in_full_table=True)
 
         # Writing records
-        svanns_by_key_by_experiment = OrderedDefaultDict(OrderedDict)
+        svanns_by_key_by_experiment = OrderedDefaultDict(lambda : OrderedDefaultDict(SVEvent.Annotation))
         for e, svs in svs_by_experiment.items():
             known_cnt = 0
             exon_dels_cnt = 0
@@ -341,18 +341,18 @@ class BaseClinicalReporting:
                 for an in sv_event.key_annotations:
                     # reporting all known (fusion) by default
                     if an.known:
-                        svanns_by_key_by_experiment[an.get_key()][e] = an
+                        svanns_by_key_by_experiment[an.get_key()][e].update_annotation(an)
                         known_cnt += 1
 
                     # reporting all whole exon deletions
                     elif sv_event.is_deletion() and ('exon_del' in an.effect.lower() or 'exon_loss' in an.effect.lower()) \
                             and (not an.priority or an.priority == SVEvent.Annotation.ON_PRIORITY_LIST):
-                        svanns_by_key_by_experiment[an.get_key()][e] = an
+                        svanns_by_key_by_experiment[an.get_key()][e].update_annotation(an)
                         exon_dels_cnt += 1
 
                     # reporting fusions in the AZ priority genes
                     elif sv_event.is_fusion() and (not an.priority or an.priority == SVEvent.Annotation.ON_PRIORITY_LIST):
-                        svanns_by_key_by_experiment[an.get_key()][e] = an
+                        svanns_by_key_by_experiment[an.get_key()][e].update_annotation(an)
                         fusions_cnt += 1
 
                     # # reporting all non-fusion events affecting 2 or more genes (start and end should not be the same gene. handling overlapping gene cases.)
@@ -375,8 +375,6 @@ class BaseClinicalReporting:
             row = report.add_row()
 
             row.add_record('Genes', '/'.join(set(sv_ann.genes)) if sv_ann else None)
-            read_support = max(sum(filter(None, (sv_ann.event.split_read_support, sv_ann.event.paired_end_support))) for sv_ann in
-                               svann_by_experiment.values())
 
             type_str = None
             if sv_ann:
@@ -387,7 +385,7 @@ class BaseClinicalReporting:
                     type_str = 'Known fusion'
                 if type_str == 'Fusion':
                     row.hidden = True
-                    if read_support < SVEvent.min_sv_depth:
+                    if sv_ann.event.read_support < SVEvent.min_sv_depth:
                         row.class_ += ' less_threshold'
 
             row.add_record('Type', type_str)
@@ -404,14 +402,15 @@ class BaseClinicalReporting:
             # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
             # row.add_record('Effects', ', '.join(set(a.effect.lower().replace('_', ' ') for a  in sv.annotations if a in ['EXON_DEL', 'FUSION'])))
 
-            row.add_record('Reads', read_support)
-            if len(svann_by_experiment.values()) == 1:
-                row.add_record('Split read support', sv_ann.event.split_read_support if sv_ann else None)
-                row.add_record('Paired read support', sv_ann.event.paired_end_support if sv_ann else None)
+            row.add_record('Reads', sv_ann.event.read_support)
+            if len(svann_by_experiment.values()) == 1 and sv_ann:
+                row.add_record('Split read support', **self._reads_recargs(sv_ann.event.split_read_support))
+                row.add_record('Paired read support', **self._reads_recargs(sv_ann.event.paired_end_support))
             else:
                 for _sv_ann, m in svann_by_experiment.items():
-                    row.add_record(e.key + ' Split read support', _sv_ann.event.split_read_support if _sv_ann else None)
-                    row.add_record(e.key + ' Paired read support', _sv_ann.event.paired_end_support if _sv_ann else None)
+                    if _sv_ann:
+                        row.add_record(e.key + ' Split read support', **self._reads_recargs(_sv_ann.event.split_read_support))
+                        row.add_record(e.key + ' Paired read support', **self._reads_recargs(_sv_ann.event.paired_end_support))
 
             if any(an.known for an in svann_by_experiment.values()):
                 row.highlighted = True
@@ -845,6 +844,17 @@ class BaseClinicalReporting:
             if mut.signif:
                 row.class_ += ' ' + mut.signif.lower()
         return row
+
+    @staticmethod
+    def _reads_recargs(read_support_dict):
+        tooltip = ''
+        for caller, reads_num in read_support_dict.iteritems():
+            reads = str(reads_num) if reads_num is not None else 'no reads'
+            tooltip += caller + ': ' + reads + '<br>'
+        read_support_num = read_support_dict['manta'] if 'manta' in read_support_dict else read_support_dict['lumpy']
+        read_support = str(read_support_num) if read_support_num is not None else '.'
+        t = add_tooltip(read_support, tooltip)
+        return dict(value=t, num=read_support_num)
 
 
 class ClinicalReporting(BaseClinicalReporting):

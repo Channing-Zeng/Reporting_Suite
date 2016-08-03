@@ -1,4 +1,5 @@
 import re
+from copy import copy
 
 from source import verify_file
 from source.targetcov.Region import SortableByChrom
@@ -26,7 +27,20 @@ class SVEvent(SortableByChrom):
 
         def get_key(self):
             if self.event:
-                return self.event.get_key(), self.type, self.effect, self.transcript
+                return self.event.get_key(), self.type, self.effect, self.transcript, ','.join(self.genes)
+
+        def update_annotation(self, annotation):
+            split_read_support = annotation.event.split_read_support
+            paired_end_support = annotation.event.paired_end_support
+            if not self.event:
+                self.__dict__.update(annotation.__dict__)
+                self.event = copy(annotation.event)
+                self.event.split_read_support = dict()
+                self.event.paired_end_support = dict()
+            self.event.split_read_support[annotation.event.caller] = split_read_support
+            self.event.paired_end_support[annotation.event.caller] = paired_end_support
+            if annotation.event.caller == 'manta' or not self.event.read_support:
+                self.event.read_support = sum(filter(None, (split_read_support, paired_end_support)))
 
         @staticmethod
         def parse_annotation(string):
@@ -134,6 +148,7 @@ class SVEvent(SortableByChrom):
         self.key_annotations = set()
         self.split_read_support = None
         self.paired_end_support = None
+        self.read_support = 0
 
     def is_known_fusion(self, annotation):
         return annotation.prioritisation and 'KNOWN_FUSION' in annotation.prioritisation
@@ -162,6 +177,11 @@ class SVEvent(SortableByChrom):
 
     def __hash__(self):
         return hash((self.caller, self.chrom, self.start, self.type, self.id, self.mate_id))
+
+    def __copy__(self):
+      new_event = SVEvent(self.chrom, self.chrom_ref_order)
+      new_event.__dict__.update(self.__dict__)
+      return new_event
 
     def get_key(self):
         return self.chrom, self.type  #, tuple(tuple(sorted(a.genes)) for a in self.annotations)
