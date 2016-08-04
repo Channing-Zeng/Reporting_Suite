@@ -115,7 +115,7 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
     info_fpath = join(zhongwu_data_query_dirpath, study_name + '.info.txt')
     altered_genes = print_data_txt(cnf, cnf.mutations_fpath, cnf.seq2c_tsv_fpath, samples, data_fpath)
     if not altered_genes:
-        err('No altered genes!')
+        err('No altered genes in ' + cnf.mutations_fpath + ' or ' + cnf.seq2c_tsv_fpath + ', not generating Oncoptints.')
         return None
 
     print_info_txt(cnf, samples, info_fpath)

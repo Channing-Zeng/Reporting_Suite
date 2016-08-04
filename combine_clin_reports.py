@@ -51,11 +51,14 @@ def main():
                             is_wgs=is_wgs, is_rnaseq=is_rnaseq)
         bcbio_structures.append(bs)
 
+    if cnf.output_dir is None and cnf.project_name is None:
+        critical('Either -o (output dir) or --project (project name) has to be specified')
+
+    if not cnf.output_dir:
+        cnf.output_dir = join(os.getcwd(), cnf.project_name)
     if not cnf.project_name:
         cnf.project_name = 'Combined_project'
 
-    if cnf.output_dir is None:
-        cnf.output_dir = join(os.getcwd(), cnf.project_name)
     safe_mkdir(cnf.output_dir)
 
     cnf.log_dir = join(cnf.output_dir, 'log')
