@@ -261,9 +261,7 @@ def get_vcf_readers(mutations_by_experiment, cur_group_num):
 
 def remove_parameters_to_combine(parameters):
     parameters_to_combine = ['WGS', 'AZ300', 'AZ50', 'Exome', 'WES']
-    for parameter in parameters_to_combine:
-        if parameter in parameters:
-            parameters.remove(parameter)
+    parameters = [p for p in parameters if p not in parameters_to_combine]
     return parameters
 
 

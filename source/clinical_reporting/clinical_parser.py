@@ -778,8 +778,9 @@ def get_record_from_vcf(vcf_reader, mut):
 def parse_vcf_record(rec, mut, sample_name, vcf_reader):
     tooltip = ''
     for i, reason in enumerate(rec.FILTER):
-        reason_id, reason_desc = vcf_reader.filters[reason]
-        tooltip += reason_desc + '<br>'
+        if reason != 'PASS':
+            reason_id, reason_desc = vcf_reader.filters[reason]
+            tooltip += reason_desc + '<br>'
     sample_index = rec._sample_indexes[sample_name]
     sample_data = rec.samples[sample_index]
     if not sample_data.is_variant:

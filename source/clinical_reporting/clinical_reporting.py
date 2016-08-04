@@ -341,19 +341,22 @@ class BaseClinicalReporting:
                 for an in sv_event.key_annotations:
                     # reporting all known (fusion) by default
                     if an.known:
+                        if e not in svanns_by_key_by_experiment[an.get_key()]:
+                            known_cnt += 1
                         svanns_by_key_by_experiment[an.get_key()][e].update_annotation(an)
-                        known_cnt += 1
 
                     # reporting all whole exon deletions
                     elif sv_event.is_deletion() and ('exon_del' in an.effect.lower() or 'exon_loss' in an.effect.lower()) \
                             and (not an.priority or an.priority == SVEvent.Annotation.ON_PRIORITY_LIST):
+                        if e not in svanns_by_key_by_experiment[an.get_key()]:
+                            exon_dels_cnt += 1
                         svanns_by_key_by_experiment[an.get_key()][e].update_annotation(an)
-                        exon_dels_cnt += 1
 
                     # reporting fusions in the AZ priority genes
                     elif sv_event.is_fusion() and (not an.priority or an.priority == SVEvent.Annotation.ON_PRIORITY_LIST):
+                        if e not in svanns_by_key_by_experiment[an.get_key()]:
+                            fusions_cnt += 1
                         svanns_by_key_by_experiment[an.get_key()][e].update_annotation(an)
-                        fusions_cnt += 1
 
                     # # reporting all non-fusion events affecting 2 or more genes (start and end should not be the same gene. handling overlapping gene cases.)
                     # elif sv_event.end_genes and all(ann_g not in sv_event.end_genes for ann_g in an.genes):

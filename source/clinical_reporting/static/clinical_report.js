@@ -25,8 +25,6 @@ var showBlacklisted = false;
 
 var mutPlotInfo;
 
-var parameters = [];
-
 $(function() {
     var tables_short = $('.table_short');
     var tables_full = $('.table_full');
@@ -57,7 +55,6 @@ $(function() {
 
     $('#variants_table_controls').width($('#report_table_mutations').width() - 5);
     $('#download_mut_table').show();
-    createSelectVariants();
     //if (msieversion() == 0) {
     //    $('table.tableSorter.table_short').tableSort();
     //}
@@ -236,14 +233,6 @@ function write_to_excel(table) {
     attr("download", "mutations.xls");
 }
 
-jQuery(function($) {
-    if (!$('#circos_zoom')[0]) return;
-    $('#circos_zoom').easyZoom({
-        parent: '#circos_plot_div',
-        append: false
-    });
-});
-
 function checkBlacklisted(row, showBlacklisted) {
     for (var c = 0, m = row.cells.length; c < m; c++) {
         var cell = row.cells[c];
@@ -305,6 +294,26 @@ function filterMutationsByAF(thresholdValue) {
     if (mutPlotInfo) showPlotWithInfo(mutPlotInfo, minAF);
 }
 
+function checkAF(row, minAF) {
+      var isKnown = false;
+      if (!$('#mut_af_textbox')[0]) return;
+      var minActAF = $('#act_min_af')[0].innerText;
+      for (var c = 0, m = row.cells.length; c < m; c++) {
+          if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value.indexOf('status') != -1) {
+              if (row.cells[c].innerText.indexOf('known') == 0)
+                  isKnown = true;
+              break;
+          }
+      }
+      for (var c = 0, m = row.cells.length; c < m; c++) {
+        if (row.cells[c].attributes.metric && row.cells[c].attributes.number && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
+            if ((isKnown && row.cells[c].attributes.number.value * 100 >= minActAF) || row.cells[c].attributes.number.value * 100 >= minAF)
+                $(row).removeClass('less_threshold');
+            else $(row).addClass('less_threshold');
+        }
+    }
+}
+
 function filterSVByDepth(minDepth) {
     var sv_table =  $('.table_full#report_table_main_sv_section');
     sv_table.css('height', '');
@@ -332,26 +341,6 @@ function checkDepth(row, minDepth) {
     else $(row).removeClass('less_threshold');
 }
 
-function checkAF(row, minAF) {
-      var isKnown = false;
-      if (!$('#mut_af_textbox')[0]) return;
-      var minActAF = $('#act_min_af')[0].innerText;
-      for (var c = 0, m = row.cells.length; c < m; c++) {
-          if (row.cells[c].attributes.metric && row.cells[c].attributes.metric.value.indexOf('status') != -1) {
-              if (row.cells[c].innerText.indexOf('known') == 0)
-                  isKnown = true;
-              break;
-          }
-      }
-      for (var c = 0, m = row.cells.length; c < m; c++) {
-        if (row.cells[c].attributes.metric && row.cells[c].attributes.number && row.cells[c].attributes.metric.value.indexOf('Freq') != -1) {
-            if ((isKnown && row.cells[c].attributes.number.value * 100 >= minActAF) || row.cells[c].attributes.number.value * 100 >= minAF)
-                $(row).removeClass('less_threshold');
-            else $(row).addClass('less_threshold');
-        }
-    }
-}
-
 function correctRowspan(row) {
     if (!$(row).find("td:first-child")[0])
         return;
@@ -370,143 +359,6 @@ function correctRowspan(row) {
     $("td[rowspan]", $(row)).each(function() {
         $(this).attr("rowspan", rowspan);
     });
-}
-
-function createSelectVariants() {
-    var data = readJsonFromElement($('#mut_parameters_data_json'));
-    if (!data) return;
-
-    var selectContainer = $("#select_table_div");
-    var backgroundColors = ['#EFF', '#FFE', '#FFEFEE'];
-    var tableHead = document.createElement('thead');
-    var tableBody = document.createElement('tbody');
-    var tableRows = [];
-    var maxRow = 0;
-    for (var i = 0; i < data.length; i++) {
-        maxRow = Math.max(data[i].values.length, maxRow)
-    }
-    for (var r = 0; r < maxRow; r++) {
-        tableRows.push([]);
-        for (var i = 0; i < data.length; i++) {
-            var td = document.createElement('td');
-            tableRows[r].push(td);
-        }
-    }
-
-    for (var i = 0; i < data.length; i++) {
-        values = data[i].values;
-        valuesNames = data[i].valuesNames;
-        parameter = data[i].parameter;
-        parameters.push(parameter);
-        var th = document.createElement('th');
-        th.innerText = parameter;
-        $(tableHead).append(th);
-
-        for (var j = 0; j < values.length; j++) {
-            var radioBtn = document.createElement('input');
-            var radioBtnId = parameter + j;
-            radioBtn.type = "radio";
-            radioBtn.name = parameter;
-            radioBtn.value = values[j];
-            radioBtn.id = radioBtnId;
-            if (j == 0)
-                $(radioBtn).prop("checked", true);
-            if (i == 0 && values[j] != 'all' && values[j] != 'common') {
-                var bgColor = backgroundColors[(j - 1) % backgroundColors.length];
-                $('#report_table_mutations').find('tr:not(.known) td[metric~="' + values[j].capitalize() + '"]').css("backgroundColor", bgColor);
-            }
-
-            var label = document.createElement('label');
-            label.htmlFor = radioBtnId;
-            label.appendChild(document.createTextNode(valuesNames[j]));
-            label.className = "parameter_select";
-            $(radioBtn).on("change", function () {
-                checkVariantsTable(this.name, this.value);
-            });
-            td = tableRows[j][i];
-            $(td).append(radioBtn);
-            $(td).append(label);
-        }
-    }
-    for (var row = 0; row < tableRows.length; row++) {
-        var tr = document.createElement('tr');
-        for (var cell = 0; cell < tableRows[row].length; cell++) {
-            $(tr).append(tableRows[row][cell]);
-        }
-        $(tableBody).append(tr);
-    }
-    selectContainer.append(tableHead);
-    selectContainer.append(tableBody);
-}
-
-function checkVariantsTable(parameter, switchValue) {
-    var tables_short = $('.table_short');
-    for (var t = 0; t < tables_short.length; t++){
-        var table_short = $(tables_short[t]);
-        if (table_short[0]) {
-            $(table_short).css('height', '');
-            $(table_short).find('tbody tr').each(function() {
-                checkSamples(this, parameter, switchValue);
-            });
-        }
-    }
-}
-
-function checkSamples(row, metric, value) {
-    value = value.toLowerCase();
-    if (value == 'all') {
-        showHideRow(row, metric);
-        return;
-    }
-    if ($(row).attr('class') && $(row).attr('class').indexOf('top_row_tr') != -1)
-        return;
-
-    var sampleFound = [];
-    var logRatioCols = false;
-    var values = value.split(', ');
-    for (var c = 0, m = row.cells.length; c < m; c++) {
-        var cell = row.cells[c];
-        if (cell.attributes.metric) {
-            metricName = cell.attributes.metric.value;
-            metricValue = cell.innerText;
-            if (metricName == metric) {
-                if (metricValue.toLowerCase() != value)
-                    $(row).addClass(metric + ' unselected_type');
-                else showHideRow(row, metric);
-            }
-            else if (metricName.indexOf('log ratio') != -1) {
-                logRatioCols = true;
-                if (metricValue) {
-                    var isValueSelected = false;
-                    for (var v = 0; v < values.length; v++) {
-                        if (sampleFound.indexOf(values[v]) == -1 && metricName.toLowerCase().indexOf(values[v]) != -1) {
-                            sampleFound.push(values[v]);
-                            isValueSelected = true;
-                        }
-                    }
-                    if (!isValueSelected) {
-                        $(row).addClass(metric + ' unselected_type');
-                        return;
-                    }
-                }
-            }
-        }
-    }
-    if (logRatioCols) {
-        if (sampleFound.length != values.length)
-            $(row).addClass(metric + ' unselected_type');
-        else showHideRow(row, metric);
-    }
-}
-
-function showHideRow(row, metric) {
-    if ($(row).hasClass(metric)) {
-        $(row).removeClass(metric);
-        for (var p = 0; p < parameters.length; p++)
-            if ($(row).hasClass(parameters[p]))
-                return;
-        $(row).removeClass('unselected_type')
-    }
 }
 
 function commentMutation(caller) {
@@ -591,6 +443,14 @@ function convertHex(hex, opacity){
     result = 'rgba('+r+','+g+','+b+','+opacity/100+')';
     return result;
 }
+
+jQuery(function($) {
+    if (!$('#circos_zoom')[0]) return;
+    $('#circos_zoom').easyZoom({
+        parent: '#circos_plot_div',
+        append: false
+    });
+});
 
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
