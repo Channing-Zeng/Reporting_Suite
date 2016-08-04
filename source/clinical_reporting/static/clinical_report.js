@@ -76,8 +76,8 @@ function extendClick(switch_id) {
         switchElContent += '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this), 1)">' +
             'known fusions</a> / ';
         switchElContent += '<a class="dotted-link" id="reduce_link_' + table_id + '" onclick="reduceClick($(this), 2)">' +
-            '+ whole exon deletions</a>';
-        switchElContent += '<span id="fusions_span">fusions in the AZ priority genes</span>';
+            '+ whole exon deletions</a> / ';
+        switchElContent += '<span id="fusions_span">+ other fusions</span>';
         switch_el.html(switchElContent);
         $('#slider_sv_div').show();
     } else {
@@ -148,7 +148,6 @@ function reduceClick(switch_id, groupPriority) {
     }
     else if (table_id == 'sv') {
         filterSVTable(groupPriority);
-        $('#slider_sv_div').hide();
     }
     else {
         html = '<span>known, likely</span> / <a class="dotted-link" id="extend_link_' + table_id + '" ' +
@@ -177,22 +176,25 @@ function filterSVTable(groupPriority) {
     switchElContent = '';
     if (groupPriority == 2) {
         switchElContent += '<a class="dotted-link" id="reduce_link_sv" onclick="filterSVTable(1)">known fusions</a> / ';
-        switchElContent += '<span> + whole exon deletions</span>';
+        switchElContent += '<span> + whole exon deletions</span> / ';
         priorities = ['1', '2'];
     }
     else {
         switchElContent += '<span>known fusions</span> / ';
-        switchElContent += '<a class="dotted-link" id="reduce_link_sv" onclick="filterSVTable(2)">+ whole exon deletions</a>';
+        switchElContent += '<a class="dotted-link" id="reduce_link_sv" onclick="filterSVTable(2)">+ whole exon deletions</a> / ';
         priorities = ['1'];
     }
     switchElContent += '<a class="dotted-link" id="extend_link_sv" onclick="extendClick($(this))">' +
-            'fusions in the AZ priority genes</a>';
+            '+ other fusions</a>';
     switch_el.html(switchElContent);
     var sv_table =  $('#report_table_main_sv_section');
     sv_table.css('height', '');
     sv_table.find('tr').each(function() {
         showSVEvents(this, priorities);
     });
+    if (!groupPriority || groupPriority == 1)
+        $('#slider_sv_div').hide();
+    else $('#slider_sv_div').show();
 }
 
 function write_to_excel(table) {
@@ -315,9 +317,9 @@ function checkAF(row, minAF) {
 }
 
 function filterSVByDepth(minDepth) {
-    var sv_table =  $('.table_full#report_table_main_sv_section');
+    var sv_table =  $('#report_table_main_sv_section');
     sv_table.css('height', '');
-    sv_table.find('tbody').find('tr').each(function() {
+    sv_table.find('tbody').find('.depth_filterable').each(function() {
         checkDepth(this, minDepth);
     });
 }

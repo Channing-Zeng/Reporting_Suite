@@ -267,7 +267,7 @@
         {.section sv}
             <a name="sv"></a>
             <h1>Structural variants in {total_key_genes} {key_or_target} genes</h1>
-            <p>Reported only known fusions, whole exon deletions, and fusions in the AZ priority genes.
+            <p>Reported only fusions and whole exon deletions.
                 See <a href="{sv_link}">the full list here</a>.</p>
             {.section report}
                 <div>
@@ -275,9 +275,9 @@
                         <span>known fusions</span>
                         /
                         <a class="dotted-link" id="reduce_link_sv" onclick="reduceClick($(this), 2)">
-                            + whole exon deletions</a>
+                            + whole exon deletions</a> /
                         <a class="dotted-link" id="extend_link_sv" onclick="extendClick($(this))">
-                            fusions in the AZ priority genes</a>
+                            + other fusions</a>
                     </p>
                 </div>
                 <div id="slider_sv_div" style="display: none">
@@ -294,7 +294,7 @@
                     </div>
                 </div>
             {.or}
-                <p>No whole exon deletion, fusions in the AZ priority genes, or known fusions detected in {total_key_genes}
+                <p>No fusions or whole exon deletion detected in {total_key_genes}
                     {key_or_target} regions.</p>
             {.end}
         {.or}

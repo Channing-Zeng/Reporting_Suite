@@ -391,6 +391,8 @@ class ClinicalExperimentInfo:
                         for annotation in event.annotations:
                             if event.is_known_fusion(annotation):
                                 # info('Found ' + '/'.join(annotation.genes) + ' in known')
+                                if event.end:
+                                    event.chrom2 = event.chrom
                                 annotation.known = True
 
                             for g in annotation.genes:

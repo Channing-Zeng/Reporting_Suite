@@ -305,7 +305,7 @@ class BaseClinicalReporting:
             Metric('Genes', min_width=100),
             # Metric('Chr', with_heatmap=False, max_width=50, align='left', sort_direction='ascending'),
             Metric('Type', min_width=50),
-            Metric('Location', with_heatmap=False, align='left', sort_direction='ascending', style="width: 500px"),
+            Metric('Location', with_heatmap=False, align='left', sort_direction='ascending', style="width: 550px"),
             Metric('Transcript', align='left', style="width: 300px"),
             Metric('Priority', is_hidden=True),
             Metric('Reads', is_hidden=True),
@@ -327,8 +327,7 @@ class BaseClinicalReporting:
 
         metric_storage = MetricStorage(sections=[ReportSection(name='main_sv_section', metrics=ms)])
         report = PerRegionSampleReport(sample=svs_by_experiment.keys()[0].sample,
-                                       metric_storage=metric_storage, expandable=True, large_table=True,
-                                       only_hidden_rows_in_full_table=True)
+                                       metric_storage=metric_storage, expandable=True, large_table=True)
 
         # Writing records
         svanns_by_key_by_experiment = OrderedDefaultDict(lambda : OrderedDefaultDict(SVEvent.Annotation))
@@ -386,10 +385,12 @@ class BaseClinicalReporting:
                     type_str += ' ' + sv_ann.exon_info
                 if sv_ann.priority == SVEvent.Annotation.KNOWN:
                     type_str = 'Known fusion'
-                if type_str == 'Fusion':
-                    row.hidden = True
+                else:
+                    row.class_ += ' depth_filterable'
                     if sv_ann.event.read_support < SVEvent.min_sv_depth:
                         row.class_ += ' less_threshold'
+                if type_str == 'Fusion':
+                    row.hidden = True
 
             row.add_record('Type', type_str)
             row.add_record('Priority', sv_ann.priority)
@@ -778,7 +779,7 @@ class BaseClinicalReporting:
     @staticmethod
     def _pos_recargs(chrom=None, chrom_key=None, start=None, end=None, jbrowser_link=None, end_chrom=None):
         c = (chrom.replace('chr', '')) if chrom else ''
-        if not end or not end_chrom or chrom == end_chrom:
+        if not end or not end_chrom:
             p_html = Metric.format_value(start, human_readable=True, is_html=True) + \
                 ('-' + Metric.format_value(end, human_readable=True, is_html=True) if end else '') if start else ''
             p_html = gray(c + ':') + p_html
