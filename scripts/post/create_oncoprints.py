@@ -86,17 +86,22 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
         loc = exposing.local
         return None
 
+    if not bcbio_structure.variant_callers:
+        info('No varianting calling performed, not generating Oncoprints')
+        return None
+    clinical_report_caller = \
+        bcbio_structure.variant_callers.get('vardict') or \
+        bcbio_structure.variant_callers.get('vardict-java')
+    if not clinical_report_caller:
+        err('Warning: vardict is not in the variant callers list, this not generating Oncoprints')
+        return None
+
     step_greetings('Creating Oncoprints link')
     zhongwu_data_query_dirpath = '/home/kdld047/public_html/cgi-bin/TS'
     if not isdir(zhongwu_data_query_dirpath):
         warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
         return None
 
-    clinical_report_caller = \
-        bcbio_structure.variant_callers.get('vardict') or \
-        bcbio_structure.variant_callers.get('vardict-java')
-    if not clinical_report_caller:
-        critical('No vardict or vardict-java variant caller in ' + str(bcbio_structure.variant_callers.keys()))
     vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
     vardict_txt_fpath = join(bcbio_structure.var_dirpath, vardict_txt_fname)
     cnf.mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)

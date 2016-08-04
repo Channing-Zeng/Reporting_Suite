@@ -1,8 +1,8 @@
 # /group/ngs/src/az.reporting
 
 resources:
-  python:
-    path: /group/ngs/src/az.reporting/virtualenv/bin/python
+#  python:
+#    path: /group/ngs/src/az.reporting/virtualenv/bin/python
     # path: /group/ngs/src/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python
     # path: /opt/az/local/psf/python/64_2.7.3/python
     # path: /opt/az/local/psf/python/2.7.8/Python-2.7.8/installdir/bin/python
@@ -56,7 +56,7 @@ resources:
   bcftools:
     path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/bin/bcftools
   rscript:
-    path: /group/ngs/src/bcbio-nextgen/latest/rhel6-x64/anaconda/bin/Rscript
+    path: /opt/az/local/R/R-3.2.5/installdir/bin/Rscript
 
 genomes:
   hg38:

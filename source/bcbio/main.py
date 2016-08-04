@@ -14,7 +14,7 @@ import source
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.bcbio.bcbio_runner import BCBioRunner
 from source.config import defaults
-from source.logger import info, err
+from source.logger import info, err, critical
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
 from source.file_utils import safe_mkdir, adjust_path, safe_symlink_to, add_suffix, safe_remove
 from source.targetcov import summarize_targetcov
@@ -85,10 +85,9 @@ def main():
         if cnf_project_name:
             cnf.project_name = cnf_project_name
         else:
-            # cnf.project_name = '_'.join([bs.project_name for bs in bcbio_structures])
-            cnf.project_name = 'Combined_project'
+            cnf.project_name = '_'.join([bs.project_name for bs in bcbio_structures])
 
-        if cnf.output_dir is None:
+        if not cnf.output_dir:
             cnf.output_dir = join(os.getcwd(), cnf.project_name)
 
         safe_mkdir(cnf.output_dir)
@@ -188,7 +187,6 @@ def combine_projects(cnf, bcbio_structures, tags=None):
     pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
     reject_variants_fpath = add_suffix(variants_fpath, source.mut_reject_suffix)
 
-    cnf.reuse_intermediate = False
     cnf.steps = ['Variants']
 
     for bs_i, bs in enumerate(bcbio_structures):  # re-filtering, perform cohort-based filtering only within sub-projects

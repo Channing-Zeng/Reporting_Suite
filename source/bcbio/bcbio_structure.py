@@ -767,6 +767,7 @@ class BCBioStructure(BaseProjectStructure):
         info('-' * 70)
 
         self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
+        self.multiqc_fpath =              join(self.date_dirpath, 'multiqc', 'multiqc_report.html')
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
         self.flagged_regions_dirpath =    join(self.date_dirpath, BCBioStructure.flagged_dir)

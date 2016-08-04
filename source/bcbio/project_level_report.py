@@ -33,6 +33,7 @@ CLINICAL_NAME         = 'Oncology NGS report'
 PHENOTYPE             = 'Phenotype'
 NORM_MATCH            = 'Normal Match'
 ABNORMAL_NAME         = 'Flagged regions'
+MULTIQC_NAME          = 'MultiQC'
 
 ## RNAseq reports
 QC_REPORT_NAME        = 'QC report'
@@ -59,7 +60,8 @@ metric_storage = MetricStorage(
         Metric(GENE_COUNTS_NAME),
         Metric(EXON_COUNTS_NAME),
         Metric(GENE_TPM_NAME),
-        Metric(ISOFORM_TPM_NAME)
+        Metric(ISOFORM_TPM_NAME),
+        Metric(MULTIQC_NAME),
     ]),
     sections=[ReportSection(metrics=[
         Metric(PRE_FASTQC_NAME),
@@ -211,6 +213,9 @@ def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_str
         recs.append(_make_url_record(dataset_project.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
+        if isfile(bcbio_structure.multiqc_fpath):
+            recs.append(_make_url_record(bcbio_structure.multiqc_fpath, general_section.find_metric(MULTIQC_NAME), base_dirpath))
+
         if isfile(bcbio_structure.fastqc_summary_fpath):
             recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
         if not bcbio_structure.is_rnaseq:
