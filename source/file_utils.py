@@ -65,6 +65,7 @@ def safe_mkdir(dirpath, descriptive_name=''):
 
     num_tries = 0
     max_tries = 10
+    os.umask(0)
 
     while not exists(dirpath):
         # we could get an error here if multiple processes are creating

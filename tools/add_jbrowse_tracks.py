@@ -33,7 +33,9 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
             index_bam(cnf, sample.bam, use_grid=True)
 
     for sample in bcbio_structure.samples:
-        if all(isfile(join(jbrowse_project_dirpath, sample.name + ext)) for ext in ['.bam', '.bam.bai', '.vcf.gz', '.vcf.gz.tbi', '.bigwig']):
+        if all(isfile(join(jbrowse_project_dirpath, sample.name + ext)) for ext in ['.bam', '.bam.bai', '.vcf.gz', '.vcf.gz.tbi', '.bigwig'])\
+                and check_tracks_in_configs(sample.name, bcbio_structure.project_name, jbrowse_tracks_fpath, vcf_fpath_by_sample):
+            info(sample.name + ' was exported to jBrowse previously.')
             continue
         vcf_link = None
         if vcf_fpath_by_sample:
@@ -51,6 +53,25 @@ def add_project_files_to_jbrowse(cnf, bcbio_structure):
             bigwig_link = create_jbrowse_symlink(genome, bcbio_structure.project_name, sample.name, splitext(sample.bam)[0] + '.bigwig')
             print_sample_tracks_info(sample.name, bcbio_structure.project_name, trunc_symlink(bam_link),
                                      trunc_symlink(bigwig_link), trunc_symlink(vcf_link), jbrowse_tracks_fpath)
+
+
+def check_tracks_in_configs(sample_name, project_name, jbrowse_tracks_fpath, vcf_fpath_by_sample):
+    patterns_to_found = [sample_name, sample_name + '_coverage', sample_name + '_coverage_bam']
+    if vcf_fpath_by_sample:
+        patterns_to_found.append(sample_name + '_variants')
+    is_project_found = False
+    with open(jbrowse_tracks_fpath) as f_in:
+        for line in f_in:
+            if 'category = ' in line:
+                value = line.split(' = ')[1].strip()
+                is_project_found = value == project_name
+            if is_project_found and 'key  = ' in line:
+                value = line.split(' = ')[1].strip()
+                if value in patterns_to_found:
+                    patterns_to_found.remove(value)
+            if not patterns_to_found:
+                break
+    return not patterns_to_found
 
 
 def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_link, jbrowse_tracks_fpath):
@@ -86,6 +107,7 @@ def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_li
                          '\ncategory = {project_name}' \
                          '\ntype = JBrowse/View/Track/CanvasVariants' \
                          '\nkey  = {sample}_variants\n'.format(**locals())
+    info(sample.name + ' was successfully exported to jBrowse!')
 
 
 def trunc_symlink(link):
@@ -140,7 +162,6 @@ def create_jbrowse_symlink(genome, project_name, sample, file_fpath):
     if isfile(sym_link):
         change_permissions(sym_link)
     return sym_link
-
 
 
 def change_permissions(path):
