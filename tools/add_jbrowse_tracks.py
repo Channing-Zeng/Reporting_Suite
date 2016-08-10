@@ -74,9 +74,9 @@ def check_tracks_in_configs(sample_name, project_name, jbrowse_tracks_fpath, vcf
     return not patterns_to_found
 
 
-def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_link, jbrowse_tracks_fpath):
+def print_sample_tracks_info(sample_name, project_name, bam_link, bigwig_link, vcf_link, jbrowse_tracks_fpath):
     with open(jbrowse_tracks_fpath, 'a') as tracks:
-        print >> tracks, '\n[ tracks.{sample} ]\n' \
+        print >> tracks, '\n[ tracks.{sample_name} ]\n' \
                          '\nstoreClass     = JBrowse/Store/SeqFeature/BAM' \
                          '\nurlTemplate    = {bam_link}' \
                          '\nbaiUrlTemplate = {bam_link}.bai' \
@@ -84,30 +84,30 @@ def print_sample_tracks_info(sample, project_name, bam_link, bigwig_link, vcf_li
                          '\nmaxHeight      = 10000' \
                          '\ncategory = {project_name}' \
                          '\ntype = JBrowse/View/Track/Alignments2' \
-                         '\nkey  = {sample}\n'.format(**locals())
-        print >> tracks, '\n[ tracks.{sample}_cov ]\n' \
+                         '\nkey  = {sample_name}\n'.format(**locals())
+        print >> tracks, '\n[ tracks.{sample_name}_cov ]\n' \
                          '\nstoreClass     = JBrowse/Store/SeqFeature/BAM' \
                          '\nurlTemplate    = {bam_link}' \
                          '\nbaiUrlTemplate = {bam_link}.bai' \
                          '\nchunkSizeLimit = 100000000' \
                          '\ncategory = {project_name}' \
                          '\ntype = SNPCoverage' \
-                         '\nkey  = {sample}_coverage_bam\n'.format(**locals())
-        print >> tracks, '\n[ tracks.{sample}_bigwig ]\n' \
+                         '\nkey  = {sample_name}_coverage_bam\n'.format(**locals())
+        print >> tracks, '\n[ tracks.{sample_name}_bigwig ]\n' \
                          '\nstoreClass     = JBrowse/Store/SeqFeature/BigWig' \
                          '\nurlTemplate    = {bigwig_link}' \
                          '\ncategory = {project_name}' \
                          '\ntype = JBrowse/View/Track/Wiggle/XYPlot' \
                          '\nautoscale = local' \
-                         '\nkey  = {sample}_coverage\n'.format(**locals())
+                         '\nkey  = {sample_name}_coverage\n'.format(**locals())
         if vcf_link:
-            print >> tracks, '\n[ tracks.{sample}_vcf ]\n' \
+            print >> tracks, '\n[ tracks.{sample_name}_vcf ]\n' \
                          '\nstoreClass     = JBrowse/Store/SeqFeature/VCFTabix' \
                          '\nurlTemplate    = {vcf_link}' \
                          '\ncategory = {project_name}' \
                          '\ntype = JBrowse/View/Track/CanvasVariants' \
-                         '\nkey  = {sample}_variants\n'.format(**locals())
-    info(sample.name + ' was successfully exported to jBrowse!')
+                         '\nkey  = {sample_name}_variants\n'.format(**locals())
+    info(sample_name + ' was successfully exported to jBrowse!')
 
 
 def trunc_symlink(link):
