@@ -168,12 +168,15 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 if proc.stdout:
                     for line in iter(proc.stdout.readline, ''):
                         if stderr == subprocess.PIPE:
-                            silent_err('   ' + line.strip())
+                            if not silent:
+                                silent_err('   ' + line.strip())
                         else:
-                            info('   ' + line.strip())
+                            if not silent:
+                                info('   ' + line.strip())
                 elif proc.stderr and print_stderr:
                     for line in iter(proc.stderr.readline, ''):
-                        silent_err('   ' + line.strip())
+                        if not silent:
+                            silent_err('   ' + line.strip())
                         stderr_dump.append(line)
                     info()
 
@@ -183,9 +186,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
                         os.remove(to_remove_fpath)
-                warn()
-                warn('Command returned status ' + str(ret_code) +
-                    ('. Log saved to ' + cnf.log if cnf.log is not None else '.'))
+                if not silent:
+                    warn()
+                    warn('Command returned status ' + str(ret_code) +
+                        ('. Log saved to ' + cnf.log if cnf.log is not None else '.'))
 
                 msg = 'Command returned status ' + str(ret_code)
                 if cnf.log: msg += '. Log saved to ' + cnf.log
@@ -224,9 +228,11 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     stdout = open(out_fpath, 'w')
                     if err_fpath_:
                         stderr = open(err_fpath_, 'a')
-                        info('Writing err to ' + err_fpath_)
+                        if not silent:
+                            info('Writing err to ' + err_fpath_)
                     else:
-                        info('Writing err to /dev/null')
+                        if not silent:
+                            info('Writing err to /dev/null')
                         stderr = open('/dev/null')
                 else:
                 # STDOUT TO PIPE
@@ -237,15 +243,17 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     stdout = subprocess.STDOUT
                     if err_fpath_:
                         stderr = open(err_fpath_, 'a')
-                        info('Writing err to ' + err_fpath_)
+                        if not silent:
+                            info('Writing err to ' + err_fpath_)
                     else:
-                        info('Writing err to /dev/null')
+                        if not silent:
+                            info('Writing err to /dev/null')
                         stderr = open('/dev/null')
             else:
                 if not silent:
                     info(cmdl + (' < ' + stdin_fpath if stdin_fpath else ''))
-                    stderr = None
-                    stdout = None    # goes to proc.stdout
+                stderr = None
+                stdout = None    # goes to proc.stdout
 
             ret_code = subprocess.call(
                 cmdl, shell=True, stdout=stdout, stderr=stderr,
@@ -258,9 +266,10 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                     with open(err_fpath_) as err_f:
                         stderr_dump = err_f.read()
 
-                    info('')
-                    warn(stderr_dump)
-                    info('')
+                    if not silent:
+                        info('')
+                        warn(stderr_dump)
+                        info('')
 
                 for to_remove_fpath in to_remove:
                     if to_remove_fpath and isfile(to_remove_fpath):
@@ -278,9 +287,11 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                         msg += stderr_dump
                 if exit_on_error:
                     clean()
-                    critical(msg)
+                    if not silent:
+                        critical(msg)
                 else:
-                    err(msg)
+                    if not silent:
+                        err(msg)
                     return None
             else:
                 if cnf.log and err_fpath_ and isfile(err_fpath_):
@@ -305,19 +316,22 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
                 counter += 1
                 if counter >= max_number_of_tries:
                     break
-                err('OSError: ' + str(e))
-                err()
+                if not silent:
+                    err('OSError: ' + str(e))
+                    err()
                 if 'Cannot allocate memory' not in str(e):
                     break
                 else:
                     if slept >= limit:
                         return None
                     else:
-                        err('Waiting ' + str(timeout) + ' seconds...')
+                        if not silent:
+                            err('Waiting ' + str(timeout) + ' seconds...')
                         time.sleep(timeout)
                         slept += timeout
-                        err('Retrying...')
-                        err()
+                        if not silent:
+                            err('Retrying...')
+                            err()
         return res_
 
     res = None  # = proc or output_fpath
@@ -339,7 +353,8 @@ def call_subprocess(cnf, cmdline, input_fpath_to_remove=None, output_fpath=None,
             if not verify_file(output_fpath, verify_size=verify_output_not_empty):
                 if exit_on_error:
                     clean()
-                    critical('Error: the output file for the program is empty or does not exist; exiting.')
+                    if not silent:
+                        critical('Error: the output file for the program is empty or does not exist; exiting.')
                 else:
                     return None
 

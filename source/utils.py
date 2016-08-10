@@ -9,6 +9,8 @@ from os.path import join, basename, splitext, dirname, abspath
 from source.logger import info, critical, err
 from source.file_utils import file_exists, verify_file, file_transaction, adjust_path
 
+import bcbio_postproc
+
 
 class OrderedDefaultDict(OrderedDict):
     def __init__(self, *args, **kwargs):
@@ -213,12 +215,9 @@ def md5(fpath):
 
 
 def get_version():
-    cur_fpath = abspath(getsourcefile(lambda: 0))
-    reporting_suite_dirpath = dirname(dirname(dirname(cur_fpath)))
-
     version = ''
-    if verify_file(join(reporting_suite_dirpath, 'VERSION.txt')):
-        with open(join(reporting_suite_dirpath, 'VERSION.txt')) as f:
+    if bcbio_postproc.project_dir and verify_file(join(bcbio_postproc.project_dir, 'VERSION.txt')):
+        with open(join(bcbio_postproc.project_dir, 'VERSION.txt')) as f:
             version = f.read().strip()
 
     return version
