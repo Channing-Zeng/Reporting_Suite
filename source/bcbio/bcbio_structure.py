@@ -954,8 +954,6 @@ class BCBioStructure(BaseProjectStructure):
             if 'batch' in sample_info['metadata']:
                 batch_names = sample_info['metadata']['batch']
 
-        if not isinstance(batch_names, basestring) or not isinstance(batch_names, list):
-            batch_names = str(batch_names)
         if isinstance(batch_names, basestring):
             batch_names = batch_names.split(', ')
 
@@ -984,8 +982,8 @@ class BCBioStructure(BaseProjectStructure):
         sample.variantcallers = variantcallers
         for batch_name in batch_names:
             if self.batches[batch_name].variantcallers:
-                assert self.batches[batch_name].variantcallers == variantcallers, 'batch ' + \
-                    batch_name + ' variantcallers ' + str(self.batches[batch_name].variantcallers) + ' != sample ' + \
+                assert self.batches[batch_name].variantcallers == variantcallers, 'batch\'s "' + \
+                    batch_name + '" variantcallers ' + str(self.batches[batch_name].variantcallers) + ' != sample ' + \
                     sample.name + ' variantcallers ' + str(variantcallers)
             else:
                 self.batches[batch_name].variantcallers = variantcallers

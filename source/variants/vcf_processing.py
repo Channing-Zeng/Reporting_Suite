@@ -67,29 +67,29 @@ def verify_vcf(vcf_fpath, silent=False, is_critical=False):
     try:
         reader = vcf_parser.Reader(vcf)
     except:
-        (critical if is_critical else err)('Error: cannot open the VCF file ' + vcf_fpath)
-        return None
+        err('Error: cannot open the VCF file ' + vcf_fpath)
+        if is_critical: raise
     else:
         debug('File ' + vcf_fpath + ' opened as VCF')
         try:
             rec = next(reader)
         except IndexError:
-            (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            err('Error: cannot parse records in the VCF file ' + vcf_fpath)
             debug('IndexError parsing VCF file ' + vcf_fpath)
-            return None
+            if is_critical: raise
         except ValueError:
-            (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            err('Error: cannot parse records in the VCF file ' + vcf_fpath)
             debug('ValueError parsing VCF file ' + vcf_fpath)
-            return None
+            if is_critical: raise
         except StopIteration:
             debug('No records in the VCF file ' + vcf_fpath)
             if not silent:
                 warn('VCF file ' + vcf_fpath + ' has no records.')
             return vcf_fpath
         except:
-            (critical if is_critical else err)('Error: cannot parse records in the VCF file ' + vcf_fpath)
+            err('Error: cannot parse records in the VCF file ' + vcf_fpath)
             debug('Other error parsing VCF file ' + vcf_fpath)
-            return None
+            if is_critical: raise
         else:
             debug('A record was read from the VCF file ' + vcf_fpath)
             return vcf_fpath
@@ -575,7 +575,7 @@ def bgzip_and_tabix(cnf, vcf_fpath, tabix_parameters='', **kwargs):
     tbi_fpath = gzipped_fpath + '.tbi'
 
     if cnf.reuse_intermediate and \
-           file_exists(gzipped_fpath) and (getctime(gzipped_fpath) >= getctime(vcf_fpath) if file_exists(vcf_fpath) else True) and \
+           file_exists(gzipped_fpath) and \
            file_exists(tbi_fpath) and getctime(tbi_fpath) >= getctime(gzipped_fpath):
         info('Actual compressed VCF and index exist, reusing')
         return gzipped_fpath
@@ -590,12 +590,17 @@ def bgzip_and_tabix(cnf, vcf_fpath, tabix_parameters='', **kwargs):
     if not bgzip and not tabix:
         return vcf_fpath
 
-    if isfile(gzipped_fpath): os.remove(gzipped_fpath)
     if isfile(tbi_fpath): os.remove(tbi_fpath)
-
-    info('BGzipping VCF')
-    cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
-    call(cnf, cmdline, None, **kwargs)
+    if isfile(vcf_fpath):
+        if isfile(gzipped_fpath):
+             os.remove(gzipped_fpath)
+        info('BGzipping VCF')
+        cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
+        call(cnf, cmdline, None, **kwargs)
+    else:
+        if not verify_file(gzipped_fpath):
+            err('Neither uncompressed ' + vcf_fpath + ' nor ' + gzipped_fpath + ' exist')
+            return None
 
     info('Tabixing VCF')
     cmdline = '{tabix} {tabix_parameters} {gzipped_fpath}'.format(**locals())
