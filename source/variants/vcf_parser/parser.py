@@ -82,7 +82,7 @@ class _vcf_metadata_parser(object):
         super(_vcf_metadata_parser, self).__init__()
         self.info_pattern = re.compile(r'''\#\#INFO=<
             ID=(?P<id>[^,]+),\s*
-            Number=(?P<number>-?\d+|\.|[AG]),\s*
+            Number=(?P<number>-?\d+|\.|[AGR]),\s*
             Type=(?P<type>Integer|Float|Flag|Character|String),\s*
             Description="(?P<desc>[^"]*)"
             >''', re.VERBOSE)
@@ -96,7 +96,7 @@ class _vcf_metadata_parser(object):
             >''', re.VERBOSE)
         self.format_pattern = re.compile(r'''\#\#FORMAT=<
             ID=(?P<id>.+),\s*
-            Number=(?P<number>-?\d+|\.|[AG]),\s*
+            Number=(?P<number>-?\d+|\.|[AGR]),\s*
             Type=(?P<type>.+),\s*
             Description="(?P<desc>.*)"
             >''', re.VERBOSE)
@@ -116,7 +116,11 @@ class _vcf_metadata_parser(object):
         """Cast vcf header numbers to integer or None"""
         if num_str not in field_counts:
             # Fixed, specified number
-            return int(num_str)
+            try:
+                num = int(num_str)
+            except ValueError:
+                num = num_str
+            return num
         else:
             return field_counts[num_str]
 
