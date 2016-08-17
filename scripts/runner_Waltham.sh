@@ -10,8 +10,7 @@ hostname >&2
 finger $(whoami) | head -n1 >&2
 echo "" >&2
 source /etc/profile.d/modules.sh >&2
-module load python
-export PATH=/group/ngs/src/TargQC/venv/bin:$PATH
+source /users/klpf990/load_postproc.sh
 #module unload python >&2 2>&2
 #module unload gcc >&2 2>&2
 #module load gcc/4.9.2 sge bedtools/2.24.0 bcbio bedops aws/2.7.8 >&2 2>&2
