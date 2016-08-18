@@ -1,3 +1,9 @@
+#### v1.5.0, 18 Aug 2016
+- New SV reporting
+- Exposing coverage reports for reporting in Exac server
+- Option to set custom transcripts
+- SEveral bug fixes
+
 #### v1.4.2, 7 Jun 2016
 Filtering
 - Saving rejected variants into vardict.REJECT.txt

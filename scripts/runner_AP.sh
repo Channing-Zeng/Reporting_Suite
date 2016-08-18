@@ -10,10 +10,10 @@ hostname >&2
 finger $(whoami) | head -n1 >&2
 echo "" >&2
 source /etc/profile.d/modules.sh >&2
+source /home/klpf990/load_postproc.sh
 #module unload python >&2 2>&2
 #module unload gcc >&2 2>&2
 #module load java perl bedtools samtools bcbio-nextgen >&2 2>&2
-module load python
 echo >&2
 echo "${CMDLINE}" >&2
 echo >&2

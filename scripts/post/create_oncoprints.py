@@ -337,8 +337,9 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
                 fs = l.strip().split('\t')
                 if i == 0:
                     header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
+                    header_rows = fs  # caller  sample  chrom  start  end  svtype                   lof  annotation  split_read_support  paired_support_PE   paired_support_PR
                     sample_col = header_rows.index('sample')
-                    known_col = header_rows.index('known')
+                    # known_col = header_rows.index('known')
                 else:
                     event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, **dict(zip(header_rows, fs)))
                     sample = fs[sample_col]
@@ -350,19 +351,19 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
                                 key_altered_genes = [g for g in annotation.genes if (g, event.chrom) in key_gene_by_name_chrom]
                                 if annotation.effect == 'FUSION' and key_altered_genes:
                                     event.key_annotations.add(annotation)
-                                    event.supplementary = '-with-' in fs[known_col]
+                                    # event.supplementary = '-with-' in fs[known_col]
                                     sv_events_by_samples[sample].add(event)
                                     for g in key_altered_genes:
                                         altered_genes.add(g)
 
     for sample, events in sv_events_by_samples.iteritems():  # combine two annotations of fusion in one
-        suppl_events = {e.mate_id: e for e in events if e.supplementary}
+        # suppl_events = {e.mate_id: e for e in events if e.supplementary}
         main_events = [e for e in events if not e.supplementary]
-        for event in main_events:
-            if event.id not in suppl_events:
-                continue
-            suppl_event = suppl_events[event.id]
-            event.end = suppl_event.chrom + ':' + str(suppl_event.start)
+        # for event in main_events:
+            # if event.id not in suppl_events:
+            #     continue
+            # suppl_event = suppl_events[event.id]
+            # event.end = suppl_event.chrom + ':' + str(suppl_event.start)
         sv_events_by_samples[sample] = main_events
 
     return sv_events_by_samples, altered_genes
