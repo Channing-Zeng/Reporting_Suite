@@ -1,11 +1,15 @@
+import traceback
 from collections import OrderedDict
 import getpass
 import os
 from os.path import join, isfile, basename, dirname, abspath, isdir, relpath, realpath, pardir
 from traceback import print_exc, format_exc
+
+from datetime import datetime
+
 from source import verify_file
 from source.file_utils import file_transaction, safe_mkdir, adjust_path
-from source.logger import info, critical, err, is_local, warn
+from source.logger import info, critical, err, is_local, warn, timestamp
 from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import is_uk, is_us, is_az, is_sweden
 from source.webserver.ssh_utils import connect_to_server
@@ -185,7 +189,12 @@ def local_symlink(src, dst):
 
 
 def symlink_to_ngs(src_path, dst_fpath):
-    ssh = connect_to_server(ngs_server_url, ngs_server_username, ngs_server_password)
+    try:
+        ssh = connect_to_server(ngs_server_url, ngs_server_username, ngs_server_password)
+    except:
+        err(traceback.format_exc())
+        return None
+
     if ssh is None:
         return None
 
@@ -216,7 +225,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
 
     header = uncom_lines[0].strip()
     info('header: ' + header)
-    header_keys = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Why_IfNoReport,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
+    header_keys = header.split(',')  # 'Updated By,PID,Name,JIRA URL,HTML report path,Datestamp,Data Hub,Analyses directory UK,Analyses directory US,Type,Division,Department,Sample Number,Reporter,Assignee,Description,IGV,Notes'
     index_of_pid = header_keys.index('PID')
     if index_of_pid == -1: index_of_pid = 1
 
@@ -269,6 +278,7 @@ def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, proje
                 d['Reporter'] = jira_case.reporter
         if samples_num:
             d['Sample Number'] = str(samples_num)
+        d['Datestamp'] = timestamp()
 
         new_line = ','.join(__requote(d.get(k, '').replace(',', ';').replace('\n', ' | ')) or '' for k in header_keys)
 
