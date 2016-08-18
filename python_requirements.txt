@@ -1,7 +1,8 @@
-numpy
-pybedtools
-joblib
 pyyaml
+pybedtools
+numpy
+pandas
+joblib
 ssh
 paramiko
 Crypto
@@ -13,13 +14,7 @@ requests
 xlwt
 pysam
 pytabix
-multiqc
-ipython
-ipython-cluster-helper
-ipython-genutils
-ipyparallel
 HTSeq
-CrossMap
 biopython
 jsontemplate
 solvebio

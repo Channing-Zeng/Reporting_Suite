@@ -214,7 +214,10 @@ def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_str
 
     if bcbio_structure:
         if isfile(bcbio_structure.multiqc_fpath):
+            info('Found MultiQC report ' + bcbio_structure.multiqc_fpath)
             recs.append(_make_url_record(bcbio_structure.multiqc_fpath, general_section.find_metric(MULTIQC_NAME), base_dirpath))
+        else:
+            warn('MultiQC report ' + bcbio_structure.multiqc_fpath + ' not found')
 
         if isfile(bcbio_structure.fastqc_summary_fpath):
             recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
