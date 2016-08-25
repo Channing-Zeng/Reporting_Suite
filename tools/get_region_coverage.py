@@ -24,7 +24,7 @@ def main():
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), {})
 
-    if not cnf.output_fpath:
+    if not cnf.output_fpath or not cnf.bam:
         critical(parser.usage)
     get_bedgraph_coverage(cnf, cnf.bam, chr_len_fpath=opts.chr_len_fpath, output_fpath=cnf.output_fpath, bed_fpath=cnf.bed)
     info('Done.')

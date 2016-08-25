@@ -183,6 +183,8 @@ class BCBioRunner:
         from sys import platform as _platform
         if 'linux' in _platform and not self.cnf.no_bam2bigwig:
             self.steps.append(self.bw_converting)
+        if is_us():
+            self.steps.append(self.prepare_for_exac)
 
         # self.vardict_steps.extend(
         #     [s for s in [
@@ -488,6 +490,18 @@ class BCBioRunner:
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
+        exac_cmdline = summaries_cmdline_params + ' ' + self.final_dir
+        if target_bed:
+            exac_cmdline += ' --bed ' + target_bed
+
+        self.prepare_for_exac = Step(cnf, run_id,
+            name='prepare_data_for_exac', short_name='exac',
+            interpreter='python',
+            script=join('tools', 'prepare_data_for_exac.py'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath,  'exac.log'),
+            paramln=exac_cmdline + ' --genome {cnf.genome.name}'
+        )
+
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
         if sample_name:
             base_output_dirpath = abspath(join(self.final_dir, sample_name))
@@ -510,7 +524,7 @@ class BCBioRunner:
 
 
     def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
-                    log_out_fpath=None, wait_for_steps=None, threads=1, mem_m=None, **kwargs):
+                    log_out_fpath=None, wait_for_steps=None, threads=1, mem_m=None, not_wait=False, **kwargs):
         job_name = step.job_name(sample_name, caller_suf)
 
         for job_id_to_wait in wait_for_steps or []:
@@ -588,7 +602,7 @@ class BCBioRunner:
         if isfile(done_marker_fpath): os.remove(done_marker_fpath)
         if isfile(error_marker_fpath): os.remove(error_marker_fpath)
         job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline,
-                         done_marker_fpath, error_marker_fpath, threads=threads, not_wait=BCBioStructure.bigwig_name in step.name)
+                         done_marker_fpath, error_marker_fpath, threads=threads, not_wait=not_wait)
         self.jobs_running.append(job)
         call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars, exit_on_error=is_local())
 
@@ -754,7 +768,7 @@ class BCBioRunner:
                         self._submit_job(self.bw_converting, sample.name,
                             sample=sample.name, genome=sample.genome, bam=sample.bam,
                             # wait_for_steps=[self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else [],
-                            mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
+                            not_wait=True, mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
 
             if self.bcbio_structure.is_rnaseq and self.gene_expression in self.steps:
                 self._submit_job(self.gene_expression)
@@ -875,6 +889,13 @@ class BCBioRunner:
                  ', jobs didn\'t run: ' + str(len([j for j in self.jobs_running if not j.is_done])) +
                  ', total was: ' + str(len([j for j in self.jobs_running])))
             info()
+
+            if self.prepare_for_exac in self.steps:
+                info('Exposing to ExAC browser...')
+                info()
+                self._submit_job(
+                    self.prepare_for_exac,
+                    not_wait=True)
 
             if is_us() or is_uk():
                 info('Exposing to jBrowse')

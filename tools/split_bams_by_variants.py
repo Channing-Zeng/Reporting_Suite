@@ -15,7 +15,8 @@ from source.config import Config
 from source.file_utils import which, open_gzipsafe, verify_file, safe_mkdir
 from source.logger import info, critical, err
 from source.prepare_args_and_cnf import determine_sys_cnf, add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
-from source.utils import get_chr_lengths_from_seq
+from source.tools_from_cnf import get_system_path
+from source.utils import get_chr_lengths_from_seq, get_ext_tools_dirname
 
 
 def parse_variants(vcf_fpath):
@@ -106,7 +107,7 @@ def get_minimal_representation(pos, ref, alt):
 
 def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples, chrom, variant, bams_created_before):
     padding = 500
-    sambamba = which('sambamba')
+    sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     transcript_names = None
     pos, ref, alt, variant_transcripts = variant['pos'], variant['ref'], variant['alt'], variant['transcripts']
     for transcript in variant_transcripts:
@@ -128,7 +129,7 @@ def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples
         if output_bam_fpath in bams_created_before:
             continue
         if not cnf.reuse_intermediate or not verify_file(output_bam_fpath, silent=True):
-            cmdline = '{sambamba} slice -h {sample.bam} {chrom}:{start}-{end} > {output_bam_fpath}'.format(**locals())
+            cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end} > {output_bam_fpath}'.format(**locals())
             call(cnf, cmdline)
             cmdline = '{sambamba} index {output_bam_fpath}'.format(**locals())
             call(cnf, cmdline)
@@ -184,12 +185,12 @@ def generate_combined_bam(cnf, bam_fpaths, temp_combined_bam_fpath, combined_bam
     if out_bam is not None:
         out_bam.close()
 
-    sambamba = which('sambamba')
+    sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     cmdline = '{sambamba} sort -t {cnf.threads} {temp_combined_bam_fpath} -o {combined_bam_fpath}'.format(**locals())
     call(cnf, cmdline)
-    cmdline = '{sambamba} index -o {combined_bam_fpath}'.format(**locals())
+    cmdline = '{sambamba} index {combined_bam_fpath}'.format(**locals())
     call(cnf, cmdline)
-    print combined_bam_fpath + ' saved!'
+    info(combined_bam_fpath + ' saved!')
 
 
 def get_transcipts_with_exons_from_features(features_file, cur_chrom=None):
@@ -242,9 +243,10 @@ def main():
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), {})
     cnf.verbose = True
 
-    if not cnf.output_dir or not cnf.vcf or not cnf.features or not cnf.chrom:
+    if not cnf.output_dir or not cnf.vcf_fpath or not cnf.chrom:
         critical(parser.usage)
 
+    cnf.features = cnf.features or cnf.genome.features
     samples = [BaseSample(sample_name, None, bam=bam) for (sample_name, bam) in zip(cnf.sample_names.split(','), cnf.bams.split(','))]
     split_bams(cnf, samples, cnf.vcf_fpath)
     info('Done.')

@@ -678,7 +678,8 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
 
                 mutations.append(mut)
 
-    info('Found ' + str(len(mutations)) + ' mutations in ' + str(len(key_gene_by_name_chrom)) + ' ' + key_collection_type + ' genes')
+    info('Found ' + str(len(mutations)) + ' mutations' +
+         (' in ' + str(len(key_gene_by_name_chrom)) + ' ' + key_collection_type + ' genes' if key_gene_by_name_chrom else ''))
     return mutations
 
 

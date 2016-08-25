@@ -157,11 +157,12 @@ def add_keys_to_header(vcf_reader, filter_values):
     return vcf_reader
 
 
-def convert_vcf_to_txt(cnf, bs, sample):
+def convert_vcf_to_txt(cnf, bs, sample, output_dir=None):
     info('')
     info('Preparing data for ' + sample.name)
     anno_filt_vcf_fpath = sample.find_filt_vcf_by_callername(cnf.caller_name)
-    output_dir = cnf.output_dir or os.path.dirname(anno_filt_vcf_fpath)
+    if not output_dir:
+        output_dir = cnf.output_dir or os.path.dirname(anno_filt_vcf_fpath)
     output_vcf_fpath = join(output_dir, sample.name + '-' + cnf.caller_name + filt_vcf_ending)
     pass_output_vcf_fpath = add_suffix(output_vcf_fpath, 'pass')
     if cnf.reuse_intermediate and verify_vcf(output_vcf_fpath + '.gz') and verify_vcf(pass_output_vcf_fpath + '.gz'):
