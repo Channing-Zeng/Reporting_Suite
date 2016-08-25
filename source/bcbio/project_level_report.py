@@ -91,8 +91,12 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
     #     dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
     #     dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
 
-    general_records = _add_summary_reports(cnf, metric_storage.general_section, bcbio_structure, dataset_structure, dataset_project)
-    sample_reports_records = _add_per_sample_reports(cnf, metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
+    bcbio_multiqc_available = bcbio_structure and isfile(bcbio_structure.multiqc_fpath)
+    if bcbio_multiqc_available:
+        info('Found MultiQC report ' + bcbio_structure.multiqc_fpath)
+
+    general_records = _add_summary_reports(cnf, bcbio_multiqc_available, metric_storage.general_section, bcbio_structure, dataset_structure, dataset_project)
+    sample_reports_records = _add_per_sample_reports(cnf, bcbio_multiqc_available, metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
 
     sample_reports = []
     samples = []
@@ -196,7 +200,7 @@ def get_base_dirpath(bcbio_structure, dataset_project):
         return bcbio_structure.date_dirpath
     return dirname(dataset_project.project_report_html_fpath)
 
-def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
+def _add_summary_reports(cnf, bcbio_multiqc_available, general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     """ We want links to be relative, so we make paths relative to the project-level-report parent directory.
         - If the bcbio_structure is set, project-level report is located at bcbio_structure.date_dirpath
         - If dataset_dirpath is set, project-level report is located right at dataset_dirpath
@@ -213,17 +217,17 @@ def _add_summary_reports(cnf, general_section, bcbio_structure=None, dataset_str
         recs.append(_make_url_record(dataset_project.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
 
     if bcbio_structure:
-        if isfile(bcbio_structure.multiqc_fpath):
-            info('Found MultiQC report ' + bcbio_structure.multiqc_fpath)
+        if bcbio_multiqc_available:
             recs.append(_make_url_record(bcbio_structure.multiqc_fpath, general_section.find_metric(MULTIQC_NAME), base_dirpath))
+            recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME), base_dirpath))
         else:
             warn('MultiQC report ' + bcbio_structure.multiqc_fpath + ' not found')
+            if not bcbio_structure.is_rnaseq:
+                recs = add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
+            if isfile(bcbio_structure.fastqc_summary_fpath):
+                recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
 
-        if isfile(bcbio_structure.fastqc_summary_fpath):
-            recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
-        if not bcbio_structure.is_rnaseq:
-            recs = add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
-        else:
+        if bcbio_structure.is_rnaseq:
             recs = add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
         # if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
         #     url_val = OrderedDict(
@@ -299,7 +303,7 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
         return None
 
 
-def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
+def _add_per_sample_reports(cnf, bcbio_multiqc_available, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
     base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
 
     sample_reports_records = defaultdict(list)
@@ -329,8 +333,9 @@ def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=Non
 
         normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
         for s in bcbio_structure.samples:
-            if s.fastqc_html_fpath and isfile(s.fastqc_html_fpath):
-                sample_reports_records[s.name].append(_make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME), base_dirpath))
+            if not bcbio_multiqc_available:
+                if s.fastqc_html_fpath and isfile(s.fastqc_html_fpath):
+                    sample_reports_records[s.name].append(_make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME), base_dirpath))
 
             if gender_record_by_sample.get(s.name):
                 sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
@@ -348,7 +353,7 @@ def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure=Non
             if bcbio_structure.is_rnaseq:
                 sample_reports_records[s.name].extend(add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
             else:
-                sample_reports_records[s.name].extend(add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
+                sample_reports_records[s.name].extend(add_dna_sample_records(bcbio_multiqc_available, s, individual_reports_section, bcbio_structure, base_dirpath))
 
     # for (repr_name, links_by_sample) in to_add:
     #     cur_metric = Metric(repr_name)
@@ -411,12 +416,9 @@ def add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_
     return recs
 
 
-def add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
+def add_dna_sample_records(bcbio_multiqc_available, s, individual_reports_section, bcbio_structure, base_dirpath):
     recs = []
-    targqc_d = OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)])
-    _make_url_record(targqc_d, individual_reports_section.find_metric(SEQQC_NAME), base_dirpath)
-
-    if not s.phenotype or s.phenotype != 'normal':
+    if not bcbio_multiqc_available and not s.phenotype or s.phenotype != 'normal':
         varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
         varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
         recs.extend([

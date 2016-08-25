@@ -2,7 +2,8 @@
 - New SV reporting
 - Exposing coverage reports for reporting in Exac server
 - Option to set custom transcripts
-- SEveral bug fixes
+- Several bug fixes
+- Added MultiQC reports
 
 #### v1.4.2, 7 Jun 2016
 Filtering
