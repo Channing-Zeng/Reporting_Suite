@@ -51,7 +51,6 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
-    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
@@ -76,7 +75,6 @@ genomes:
     cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
     snpeff:
       reference: hg38
-    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
 
@@ -104,7 +102,6 @@ genomes:
 
     snpeff:
       reference: hg19
-    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 
@@ -130,7 +127,6 @@ genomes:
 
     snpeff:
       reference: hg19
-    snpeff_transcripts:       /ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt
 
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
 

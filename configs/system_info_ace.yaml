@@ -41,7 +41,6 @@ genomes:
     1000genomes: ~/Dropbox/az/reference_data/1000G.chr21.vcf
     snpeff:
       reference: hg19
-    snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
     features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed  # canonical only
     bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg19.bed  # all regions
@@ -55,8 +54,6 @@ genomes:
 
   hg19:
     seq: ~/Dropbox/az/reference_data/hg19.fa
-
-    snpeff_transcripts: ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt
 
     dbsnp_multi_mafs:             ~/Dropbox/az/reference_data/dbSNP_multi_mafs_latest.txt
 
@@ -74,8 +71,6 @@ genomes:
     dbsnp: ~/Dropbox/az/reference_data/dbsnp.chr21.vcf.gz
     cosmic: ~/Dropbox/az/reference_data/cosmic.chr21.vcf.gz
     oncomine: ~/Dropbox/az/reference_data/oncomine.chr21.vcf
-
-    snpeff_transcripts:           ~/Dropbox/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt
 
     features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed  # canonical only
     bed_annotation_features: ~/Dropbox/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg38.bed  # all regions

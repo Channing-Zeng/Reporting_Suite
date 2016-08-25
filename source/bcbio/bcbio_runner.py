@@ -298,7 +298,7 @@ class BCBioRunner:
             script=join('scripts', 'post', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varannotate_name + '-{caller}.log'),
-            paramln=anno_paramline,
+            paramln=anno_paramline + ((' --transcripts ' + cnf.transcripts) if cnf.transcripts else ''),
         )
         # self.varqc = Step(cnf, run_id,
         #     name=BCBioStructure.varqc_name, short_name='vq',
@@ -319,7 +319,7 @@ class BCBioRunner:
         #             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
         #             '--proc-name ' + BCBioStructure.varqc_after_name
         # )
-
+ 
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')

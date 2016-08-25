@@ -9,8 +9,9 @@ from os.path import join, pardir, isfile, isdir, expanduser, dirname, abspath, b
 from os import getcwd
 import datetime
 import tempfile
-from source import logger
 
+import bcbio_postproc
+from source import logger
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, verify_obj_by_path, \
     remove_quotes, file_exists
 from source.config import defaults, Config
@@ -60,25 +61,10 @@ def check_genome_resources(cnf):
     if not cnf.genome.features or not cnf.genome.bed_annotation_features or not cnf.genome.cds:
         critical('features and bed_annotation_features and cds in the system config (' + cnf.sys_cnf + ') must be specified.')
 
-    custom_transcripts_fpath = None
-    if cnf.canonical_transcripts:
-        custom_transcripts_fpath = cnf.canonical_transcripts
-    if cnf.genome.canonical_transcripts:
-        custom_transcripts_fpath = cnf.genome.canonical_transcripts
-
-    canonical_transcripts_fpath = None
-    if cnf.snpeff_transcripts:
-        canonical_transcripts_fpath = cnf.snpeff_transcripts
-    if cnf.genome.snpeff_transcripts:
-        canonical_transcripts_fpath = cnf.genome.snpeff_transcripts
-    if cnf.genome.snpeff and cnf.genome.snpeff.transcripts:
-        canonical_transcripts_fpath = cnf.genome.snpeff.transcripts
-
-    if custom_transcripts_fpath:
-        canonical_transcripts_fpath = custom_transcripts_fpath
-    cnf.canonical_transcripts = verify_file(canonical_transcripts_fpath, description='Canonical transcripts')
-    if not cnf.canonical_transcripts:
-        critical('Please, specify canonical_transcripts or in snpeff transcripts in ' + cnf.sys_cnf)
+    if not cnf.transcripts_fpath:
+        g = 'hg19' if ('hg19' or 'GRCh37' in cnf.genome.name) else 'hg38'
+        cnf.transcripts_fpath = verify_file(join(bcbio_postproc.project_dir,
+            'reference_data', 'canonical_transcripts_' + g + '.txt'), description='Canonical transcripts')
 
 
 def check_keys_presence(cnf, required_keys):
