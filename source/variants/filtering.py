@@ -576,7 +576,7 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
         else:
             info('Max ratio set to ' + str(cnf.variant_filtering.max_ratio) + ', i.e. no filter')
 
-        info('Calculating frequences of varaints in the cohort')
+        info('Calculating frequences of variants in the cohort')
         info('*' * 70)
         freq_in_cohort_by_vark, count_in_cohort_by_vark = count_mutations_freq(cnf, samples, vcf2txt_fpaths)
         reject_freq_in_cohort_by_vark, reject_count_in_cohort_by_vark = count_mutations_freq(
@@ -596,10 +596,18 @@ def combine_results(cnf, samples, vcf2txt_fpaths, variants_fpath, pass_variants_
             suffix=source.mut_reject_suffix, do_cohort_filtering=False)
 
         if len(artefacts_samples.keys()) > 0:
+            reason = 'cohort freq > ' + str(cnf.variant_filtering.max_ratio)
+            with open(reject_variants_fpath) as f:
+                line = f.readline().split()
+                reason_col = line.index('Reason') if 'Reason' in line else None
             with open(reject_variants_fpath, 'a') as f:
                 for vark, samples in artefacts_samples.items():
                     fs = artefacts_data[vark]
-                    f.write('\t'.join(fs + ['cohort freq > ' + str(cnf.variant_filtering.max_ratio)]) + '\n')
+                    if reason_col:
+                        fs[reason_col] = reason
+                    else:
+                        fs.append(reason)
+                    f.write('\t'.join(fs) + '\n')
 
             info('Skipped artefacts with cohort freq > ' + str(cnf.variant_filtering.max_ratio) +
                  ' and sample count > ' + str(cnf.variant_filtering.max_sample_cnt) + ': ' + str(len(artefacts_samples.keys())))

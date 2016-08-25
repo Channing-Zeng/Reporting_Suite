@@ -19,7 +19,7 @@ from source.utils import mean, get_chr_len_fpath, is_us
 from source.utils import median
 from source.variants.filtering import combine_vcfs
 from source.variants.vcf_processing import bgzip_and_tabix
-from tools.txt2vcf import convert_vcf_to_txt
+from tools.txt2vcf import convert_txt_to_vcf
 
 
 def run_bedtools_use_grid(cnf, bam_by_key, bed_fpath):
@@ -250,7 +250,7 @@ def main():
     vcf_fpath_by_sname = dict()
     for bs in bcbio_structures:
         for sample in bs.samples:
-            vcf_fpath, pass_vcf_fpath = convert_vcf_to_txt(cnf, bs, sample, output_dir=cnf.work_dir)
+            vcf_fpath, pass_vcf_fpath = convert_txt_to_vcf(cnf, bs, sample, output_dir=cnf.work_dir)
             vcf_fpath_by_sname[sample.name] = vcf_fpath
 
     info()

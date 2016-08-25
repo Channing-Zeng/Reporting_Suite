@@ -59,6 +59,7 @@ filter_patterns_dict = {
     re.compile('VD < (\d+)'): 'v',
     re.compile('AF < ([0-9.]+)'): 'f',
     re.compile('all GMAF > ([0-9.]+)'): 'GMAF',
+    re.compile('cohort freq > ([0-9.]+)'): 'CohortFreq',
 }
 
 
@@ -96,7 +97,7 @@ def main():
     info('*' * 70)
     for bs in bcbio_structures:
         for sample in bs.samples:
-            convert_vcf_to_txt(cnf, bs, sample)
+            convert_txt_to_vcf(cnf, bs, sample)
 
 
 def get_mutation_dicts(cnf, bs, sample):
@@ -157,7 +158,7 @@ def add_keys_to_header(vcf_reader, filter_values):
     return vcf_reader
 
 
-def convert_vcf_to_txt(cnf, bs, sample, output_dir=None):
+def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
     info('')
     info('Preparing data for ' + sample.name)
     anno_filt_vcf_fpath = sample.find_filt_vcf_by_callername(cnf.caller_name)
@@ -189,10 +190,10 @@ def convert_vcf_to_txt(cnf, bs, sample, output_dir=None):
                     if mut.reason:
                         record.INFO['Reason'] = mut.reason.replace(' ', '_')
                 elif key in reject_mut_dict:
-                    reject_reason_ids = []
-                    if mut.reason:
-                        reject_reason_ids = [filter_descriptions_dict[reason] if reason in filter_descriptions_dict else reason
-                                             for reason in mut.reason.split(' and ')]
+                    if not mut.reason:
+                        continue
+                    reject_reason_ids = [filter_descriptions_dict[reason] if reason in filter_descriptions_dict else reason
+                                         for reason in mut.reason.split(' and ')]
                     record.FILTER = [';'.join(reject_reason_ids)]
                 if mut.signif:
                     record.INFO['Signif'] = mut.signif
