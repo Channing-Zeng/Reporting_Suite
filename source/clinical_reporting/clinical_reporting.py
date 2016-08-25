@@ -374,40 +374,41 @@ class BaseClinicalReporting:
         for sv_key, svann_by_experiment in svanns_by_key_by_experiment.items():
             sv_ann = next((s for s in svann_by_experiment.values() if s is not None), None)
 
+            if not sv_ann or not sv_ann.event:
+                continue
+
             row = report.add_row()
 
-            row.add_record('Genes', '/'.join(set(sv_ann.genes)) if sv_ann else None)
+            row.add_record('Genes', '/'.join(set(sv_ann.genes)))
 
-            type_str = None
-            if sv_ann:
-                type_str = BaseClinicalReporting.sv_type_dict.get(sv_ann.event.type, sv_ann.event.type)
-                if sv_ann.effect == 'EXON_DEL':
-                    type_str += ' ' + sv_ann.exon_info
-                if sv_ann.priority == SVEvent.Annotation.KNOWN:
-                    type_str = 'Known fusion'
-                else:
-                    row.class_ += ' depth_filterable'
-                    if sv_ann.event.read_support < SVEvent.min_sv_depth:
-                        row.class_ += ' less_threshold'
-                if type_str == 'Fusion':
-                    row.hidden = True
+            type_str = BaseClinicalReporting.sv_type_dict.get(sv_ann.event.type, sv_ann.event.type)
+            if sv_ann.effect == 'EXON_DEL':
+                type_str += ' ' + sv_ann.exon_info
+            if sv_ann.priority == SVEvent.Annotation.KNOWN:
+                type_str = 'Known fusion'
+            else:
+                row.class_ += ' depth_filterable'
+                if sv_ann.event.read_support < SVEvent.min_sv_depth:
+                    row.class_ += ' less_threshold'
+            if type_str == 'Fusion':
+                row.hidden = True
 
             row.add_record('Type', type_str)
             row.add_record('Priority', sv_ann.priority)
 
-            if sv_ann and sv_ann.event.start:
+            if sv_ann.event.start:
                 row.add_record('Location',
                     **self._pos_recargs(sv_ann.event.chrom, sv_ann.event.get_chrom_key(),
                                         sv_ann.event.start, sv_ann.event.end, jbrowser_link, end_chrom=sv_ann.event.chrom2))
             else:
                 row.add_record('Location', None)
 
-            row.add_record('Transcript', sv_ann.transcript if sv_ann else None)
+            row.add_record('Transcript', sv_ann.transcript)
             # row.add_record('Status', 'known' if any(a.known for a in sv.annotations) else None)
             # row.add_record('Effects', ', '.join(set(a.effect.lower().replace('_', ' ') for a  in sv.annotations if a in ['EXON_DEL', 'FUSION'])))
 
             row.add_record('Reads', sv_ann.event.read_support)
-            if len(svann_by_experiment.values()) == 1 and sv_ann:
+            if len(svann_by_experiment.values()) == 1:
                 row.add_record('Split read support', **self._reads_recargs(sv_ann.event.split_read_support))
                 row.add_record('Paired read support', **self._reads_recargs(sv_ann.event.paired_end_support))
             else:

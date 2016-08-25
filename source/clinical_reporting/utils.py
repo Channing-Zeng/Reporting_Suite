@@ -30,17 +30,19 @@ class SVEvent(SortableByChrom):
                 return self.event.get_key(), self.type, self.effect, self.transcript, ','.join(self.genes)
 
         def update_annotation(self, annotation):
-            split_read_support = annotation.event.split_read_support
-            paired_end_support = annotation.event.paired_end_support
+            if annotation.event.caller not in ['manta', 'lumpy']:
+                return
+            split_read_count = annotation.event.split_read_support
+            paired_end_count = annotation.event.paired_end_support
             if not self.event:
                 self.__dict__.update(annotation.__dict__)
                 self.event = copy(annotation.event)
                 self.event.split_read_support = dict()
                 self.event.paired_end_support = dict()
-            self.event.split_read_support[annotation.event.caller] = split_read_support
-            self.event.paired_end_support[annotation.event.caller] = paired_end_support
+            self.event.split_read_support[annotation.event.caller] = split_read_count
+            self.event.paired_end_support[annotation.event.caller] = paired_end_count
             if annotation.event.caller == 'manta' or not self.event.read_support:
-                self.event.read_support = sum(filter(None, (split_read_support, paired_end_support)))
+                self.event.read_support = sum(filter(None, (split_read_count, paired_end_count)))
 
         @staticmethod
         def parse_annotation(string):
