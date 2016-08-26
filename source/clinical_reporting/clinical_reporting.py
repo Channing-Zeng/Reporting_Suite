@@ -936,7 +936,7 @@ class ClinicalReporting(BaseClinicalReporting):
             data['circos'] = {'circos_img': basename(circos_plot_fpath)}
             image_by_key = {'circos': circos_plot_fpath}
 
-        comment_php_path = '/save_comment.php'
+        comment_php_path = 'http://ngs.usbod.astrazeneca.net/save_comment.php'
         if is_uk():
             comment_php_path = '/ngs/reports/save_comment.php'
         data['comment_php_path'] = json.dumps(comment_php_path)
