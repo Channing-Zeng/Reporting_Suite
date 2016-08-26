@@ -15,10 +15,13 @@ from source.prepare_args_and_cnf import check_system_resources
 from source.prepare_args_and_cnf import check_genome_resources
 from source.targetcov.Region import SortableByChrom, get_chrom_order
 from source.targetcov.bam_and_bed_utils import intersect_bed, verify_bed
-from source.utils import OrderedDefaultDict
+from source.utils import OrderedDefaultDict, is_local
 from collections import defaultdict, OrderedDict
 from os.path import getsize
 from source.file_utils import verify_file, adjust_path
+
+if is_local():
+    os.environ['PATH'] = '/usr/local/bin:' + os.environ['PATH']
 from pybedtools import BedTool
 
 

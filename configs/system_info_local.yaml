@@ -25,6 +25,8 @@ resources:
     path: ext_tools/qualimap/qualimap
   bedtools:
     path: /usr/local/bin/bedtools
+  python:
+    path: /Users/vlad/vagrant/venv/bin/python
 
 
 genomes:

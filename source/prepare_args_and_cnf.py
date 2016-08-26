@@ -64,7 +64,7 @@ def check_genome_resources(cnf):
     if not cnf.transcripts_fpath:
         g = 'hg19' if ('hg19' or 'GRCh37' in cnf.genome.name) else 'hg38'
         cnf.transcripts_fpath = verify_file(join(bcbio_postproc.project_dir,
-            'reference_data', 'canonical_transcripts_' + g + '.txt'), description='Canonical transcripts')
+            'reference_data', 'canonical_transcripts', 'canonical_transcripts_' + g + '.txt'), description='Canonical transcripts')
 
 
 def check_keys_presence(cnf, required_keys):

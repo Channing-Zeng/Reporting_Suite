@@ -261,6 +261,8 @@ class BCBioRunner:
         return project_name + '_' + path_hash
 
     def _init_steps(self, cnf, run_id, target_bed, exons_bed, exons_no_genes_bed, genes_fpath, seq2c_bed, original_bed):
+        print cnf.transcripts_fpath
+
         basic_params = \
             ' --sys-cnf ' + self.cnf.sys_cnf + \
             ' --run-cnf ' + self.cnf.run_cnf + \
@@ -292,13 +294,14 @@ class BCBioRunner:
         #      (step.name + ('_' + sample_name if sample_name else '') +
         #                   ('_' + caller if caller else '')) + '.log')
 
+        ann_cmdl = anno_paramline + ((' --transcripts ' + cnf.transcripts_fpath) if cnf.transcripts_fpath else '')
         self.varannotate = Step(cnf, run_id,
             name=BCBioStructure.varannotate_name, short_name='va',
             interpreter='python',
             script=join('scripts', 'post', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varannotate_name + '-{caller}.log'),
-            paramln=anno_paramline + ((' --transcripts ' + cnf.transcripts_fpath) if cnf.transcripts_fpath else ''),
+            paramln=ann_cmdl,
         )
         # self.varqc = Step(cnf, run_id,
         #     name=BCBioStructure.varqc_name, short_name='vq',
@@ -319,11 +322,11 @@ class BCBioRunner:
         #             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varqc_after_name) + '_{sample}_{caller}\' ' +
         #             '--proc-name ' + BCBioStructure.varqc_after_name
         # )
- 
+
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
             '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ' +
-            '--transcripts ' + cnf.transcripts_fpath)
+          ((' --transcripts ' + cnf.transcripts_fpath) if cnf.transcripts_fpath else ''))
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vf',
@@ -435,7 +438,7 @@ class BCBioRunner:
               (' --bed ' + target_bed if target_bed else '') +
               (' --jira ' + self.cnf.jira if self.cnf.jira else '') +
                ' -o {output_dir} ' +
-               ' --transcripts {transcripts_fpath} ' +
+             ((' --transcripts ' + transcripts_fpath) if transcripts_fpath else '') +
                ' --project-level-report {project_report_path}')
             self.clin_report = Step(cnf, run_id,
                 name=source.clinreport_name, short_name='clin',
