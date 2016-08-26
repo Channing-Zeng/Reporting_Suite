@@ -36,6 +36,7 @@ def get_args():
     parser.add_option('--o-reject', dest='rejected_output_file')
 
     parser.add_option('--cohort-freqs', dest='cohort_freqs_fpath')
+    parser.add_option('--transcripts', dest='transcripts_fpath')
 
     parser.add_option('-D', '--min-depth', dest='filt_depth', type='int', help='The minimum total depth')
     parser.add_option('-V', '--min-vd', dest='min_vd', type='int', help='The minimum reads supporting variant')

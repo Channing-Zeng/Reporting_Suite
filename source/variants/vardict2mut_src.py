@@ -160,7 +160,7 @@ class Filtration:
         self.reg_exp_sample = cnf.reg_exp_sample
         self.platform = cnf.platform
 
-        canon_tr_fpath = verify_file(cnf.canonical_transcripts, is_critical=True)
+        canon_tr_fpath = verify_file(cnf.transcripts_fpath, is_critical=True)
         info('Using canonical transcripts from ' + canon_tr_fpath)
         with open(canon_tr_fpath) as f:
             self.canonical_transcripts = [tr.strip().split('.')[0] for tr in f]

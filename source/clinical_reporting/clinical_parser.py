@@ -549,7 +549,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             err('Cannot find PASSed mutations fpath')
             return []
 
-    with open(cnf.canonical_transcripts) as f:
+    with open(cnf.transcripts_fpath) as f:
         canonical_transcripts = [tr.strip() for tr in f]
 
     info('Reading mutations from ' + mutations_fpath)

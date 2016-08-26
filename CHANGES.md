@@ -1,6 +1,9 @@
+#### v1.5.1, 26 Aug 2016
+- Exposing coverage reports for reporting in Exac server
+- TargQC integrated into bcbio's MultiQC. VarQC removed.
+
 #### v1.5.0, 18 Aug 2016
 - New SV reporting
-- Exposing coverage reports for reporting in Exac server
 - Option to set custom transcripts
 - Several bug fixes
 - Added MultiQC reports

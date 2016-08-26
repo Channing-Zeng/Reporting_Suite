@@ -298,7 +298,7 @@ class BCBioRunner:
             script=join('scripts', 'post', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varannotate_name + '-{caller}.log'),
-            paramln=anno_paramline + ((' --transcripts ' + cnf.transcripts) if cnf.transcripts else ''),
+            paramln=anno_paramline + ((' --transcripts ' + cnf.transcripts_fpath) if cnf.transcripts_fpath else ''),
         )
         # self.varqc = Step(cnf, run_id,
         #     name=BCBioStructure.varqc_name, short_name='vq',
@@ -322,7 +322,8 @@ class BCBioRunner:
  
         varfilter_paramline = params_for_one_sample + (' ' +
             '-o {output_dir} --output-file {output_file} -s {sample} -c {caller} --vcf {vcf} {vcf2txt_cmdl} --qc ' +
-            '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ')
+            '--work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ' +
+            '--transcripts ' + cnf.transcripts_fpath)
 
         self.varfilter = Step(cnf, run_id,
             name=BCBioStructure.varfilter_name, short_name='vf',
@@ -419,6 +420,7 @@ class BCBioRunner:
                 paramln=abnormal_regions_cmdl
             )
 
+            transcripts_fpath = self.cnf.transcripts_fpath
             clinreport_paramline = (params_for_one_sample +
                ' -s {sample}' +
                ' {targqc_cmdl}' +
@@ -433,6 +435,7 @@ class BCBioRunner:
               (' --bed ' + target_bed if target_bed else '') +
               (' --jira ' + self.cnf.jira if self.cnf.jira else '') +
                ' -o {output_dir} ' +
+               ' --transcripts {transcripts_fpath} ' +
                ' --project-level-report {project_report_path}')
             self.clin_report = Step(cnf, run_id,
                 name=source.clinreport_name, short_name='clin',
