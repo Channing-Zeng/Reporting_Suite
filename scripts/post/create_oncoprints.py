@@ -9,14 +9,14 @@ from os.path import join, basename, isdir
 
 import source
 from source import info
+from source.clinical_reporting.clinical_parser import GeneDict, KeyGene
 from source.clinical_reporting.utils import get_key_or_target_bed_genes, SVEvent
 from source.file_utils import verify_file, add_suffix, file_transaction, adjust_system_path
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.logger import critical, warn, err, step_greetings
 from source.prepare_args_and_cnf import check_genome_resources
 from source.targetcov.Region import get_chrom_order
-from source.utils import is_uk
-from source.utils import is_us
+from source.utils import is_uk, is_us, OrderedDefaultDict
 from source.webserver import exposing
 from source.webserver.exposing import symlink_to_ngs, local_symlink
 
@@ -155,13 +155,16 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
 def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
     bed_fpath = verify_file(cnf.bed, is_critical=False) if cnf.bed else None
-    key_gene_by_name_chrom, _ = get_key_or_target_bed_genes(bed_fpath, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
+    key_gene_names_chroms, _ = get_key_or_target_bed_genes(bed_fpath, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
+    key_gene_by_name_chrom = GeneDict()
+    for gene_name, chrom in key_gene_names_chroms:
+        key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)
 
     altered_genes = set()
 
     mut_by_samples, altered_genes = parse_mutations(mutations_fpath, altered_genes, key_gene_by_name_chrom)
     seq2c_events_by_sample, altered_genes = parse_seq2c(seq2c_tsv_fpath, altered_genes, key_gene_by_name_chrom)
-    sv_events_by_samples, altered_genes = parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom)
+    sv_anns_by_samples, altered_genes = parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom)
 
     with file_transaction(cnf.work_dir, data_fpath) as tx:
         with open(tx, 'w') as out_f:
@@ -178,14 +181,13 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
                     out_f.write('\t'.join([sample, '', 'copy-number-alteration', event.gene, 'NA', '-', '-',
                                            '-', '-', '-', str(event.copy_number), event.exons, str(event.ratio), event.cnv_type,
                                            '-', '-', '-', '-', '-', '-', '-', 'Deletion' if event.cnv_type == 'loss' else 'Amplification']) + '\n')
-            for sample, events in sv_events_by_samples.iteritems():
-                for event in events:
-                    for ann in event.key_annotations:
-                        count_reads = sum(int(r) for r in event.split_read_support) + sum(int(r) for r in event.paired_end_support)
-                        out_f.write('\t'.join([sample, '', 'rearrangement', event.known_gene, 'known' if ann.known else 'unknown',
-                                               '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
-                                               'fusion', event.chrom + ':' + str(event.start), str(event.end) if event.end else '',
-                                               '-', str(count_reads), 'Rearrangement']) + '\n')
+            for sample, annotations in sv_anns_by_samples.iteritems():
+                for ann in annotations:
+                    out_f.write('\t'.join([sample, '', 'rearrangement', ann.event.known_gene, 'known' if ann.known else 'unknown',
+                                           '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
+                                           'fusion', ann.event.chrom + ':' + str(ann.event.start),
+                                           ann.event.chrom2 + ':' + str(ann.event.end) if ann.event.end else '',
+                                           '-', str(ann.event.read_support), 'Rearrangement']) + '\n')
 
     return altered_genes
 
@@ -326,6 +328,7 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
         return sv_events_by_samples, altered_genes
 
     chr_order = get_chrom_order(cnf)
+    all_events = dict()
 
     for sv_fpath in sv_fpaths:
         info('Parsing prioritized SV from ' + sv_fpath)
@@ -336,7 +339,7 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
             for i, l in enumerate(f):
                 fs = l.strip().split('\t')
                 if i == 0:
-                    header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
+                    # header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
                     header_rows = fs  # caller  sample  chrom  start  end  svtype                   lof  annotation  split_read_support  paired_support_PE   paired_support_PR
                     sample_col = header_rows.index('sample')
                     # known_col = header_rows.index('known')
@@ -344,29 +347,42 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
                     event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, **dict(zip(header_rows, fs)))
                     sample = fs[sample_col]
                     if event:
+                        all_events[(sample, event.id)] = event
                         for annotation in event.annotations:
-                            if event.is_fusion():
+                            if event.is_fusion() or event.is_known_fusion(annotation):
                                 if event.is_known_fusion(annotation):
+                                    if event.end:
+                                        event.chrom2 = event.chrom
                                     annotation.known = True
                                 key_altered_genes = [g for g in annotation.genes if (g, event.chrom) in key_gene_by_name_chrom]
-                                if annotation.effect == 'FUSION' and key_altered_genes:
+                                if (annotation.effect == 'FUSION' or annotation.known) and key_altered_genes:
+                                    annotation.event = event
                                     event.key_annotations.add(annotation)
                                     # event.supplementary = '-with-' in fs[known_col]
                                     sv_events_by_samples[sample].add(event)
                                     for g in key_altered_genes:
                                         altered_genes.add(g)
 
+    sv_anns_by_samples = dict()
     for sample, events in sv_events_by_samples.iteritems():  # combine two annotations of fusion in one
         # suppl_events = {e.mate_id: e for e in events if e.supplementary}
-        main_events = [e for e in events if not e.supplementary]
+        # main_events = [e for e in events if not e.supplementary]
         # for event in main_events:
             # if event.id not in suppl_events:
             #     continue
             # suppl_event = suppl_events[event.id]
             # event.end = suppl_event.chrom + ':' + str(suppl_event.start)
-        sv_events_by_samples[sample] = main_events
+        sv_anns_by_key = OrderedDefaultDict(SVEvent.Annotation)
+        for event in events:
+            if not event.end and event.mate_id:
+                event_mate = all_events[(sample, event.mate_id)]
+                event.end = event_mate.start
+                event.chrom2 = event_mate.chrom
+            for an in event.key_annotations:
+                sv_anns_by_key[an.get_key()].update_annotation(an)
+        sv_anns_by_samples[sample] = sv_anns_by_key.values()
 
-    return sv_events_by_samples, altered_genes
+    return sv_anns_by_samples, altered_genes
 
 
 def print_info_txt(cnf, samples, info_fpath):

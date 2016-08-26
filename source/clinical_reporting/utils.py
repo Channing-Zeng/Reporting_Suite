@@ -32,8 +32,8 @@ class SVEvent(SortableByChrom):
         def update_annotation(self, annotation):
             if annotation.event.caller not in ['manta', 'lumpy']:
                 return
-            split_read_count = annotation.event.split_read_support
-            paired_end_count = annotation.event.paired_end_support
+            split_read_count = annotation.event.split_read_count
+            paired_end_count = annotation.event.split_read_count
             if not self.event:
                 self.__dict__.update(annotation.__dict__)
                 self.event = copy(annotation.event)
@@ -118,11 +118,11 @@ class SVEvent(SortableByChrom):
         paired_end_manta_header = 'paired_support_PR' if 'paired_support_PR' in kwargs else 'paired_end_support'
         paired_end_lumpy_header = 'paired_support_PE' if 'paired_support_PE' in kwargs else 'paired_end_support'
         if e.caller == 'manta':  # Manta has comma separated REF/ALT depths in third last and last column
-            e.split_read_support = int(kwargs.get('split_read_support').split(',')[1]) if kwargs.get('split_read_support') else None
-            e.paired_end_support = int(kwargs.get(paired_end_manta_header).split(',')[1]) if kwargs.get(paired_end_manta_header) else None
+            e.split_read_count = int(kwargs.get('split_read_support').split(',')[1]) if kwargs.get('split_read_support') else None
+            e.paired_end_count = int(kwargs.get(paired_end_manta_header).split(',')[1]) if kwargs.get(paired_end_manta_header) else None
         else:
-            e.split_read_support = int(kwargs.get('split_read_support').split(',')[0]) if kwargs.get('split_read_support') else None
-            e.paired_end_support = int(kwargs.get(paired_end_lumpy_header).split(',')[0]) if kwargs.get(paired_end_lumpy_header) else None
+            e.split_read_count = int(kwargs.get('split_read_support').split(',')[0]) if kwargs.get('split_read_support') else None
+            e.paired_end_count = int(kwargs.get(paired_end_lumpy_header).split(',')[0]) if kwargs.get(paired_end_lumpy_header) else None
         return e
 
         # lof_genes = []
@@ -148,9 +148,11 @@ class SVEvent(SortableByChrom):
         self.lof = None
         self.annotations = []
         self.key_annotations = set()
+        self.read_support = 0
+        self.split_read_count = 0
+        self.paired_end_count = 0
         self.split_read_support = None
         self.paired_end_support = None
-        self.read_support = 0
 
     def is_known_fusion(self, annotation):
         return annotation.prioritisation and 'KNOWN_FUSION' in annotation.prioritisation
