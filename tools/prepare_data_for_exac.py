@@ -207,10 +207,14 @@ def main():
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
+    exac_dirpath = None
+    exac_venv_pythonpath = None
 
     if is_us():
         if not cnf.genome:
             critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
+        exac_dirpath = '/ngs/usr/miheenko/git/exac_browser'
+        exac_venv_pythonpath = join(exac_dirpath, 'venv_exac', 'bin', 'python')
         cnf.output_dir = join('/ngs/usr/miheenko/git/exac_data', cnf.genome.name)  # temporary dir
     elif not cnf.output_dir:
         critical('Error! Please specify ExAC browser data directory')
@@ -237,7 +241,7 @@ def main():
         critical('Please specify path to ExAC data directory.')
     safe_mkdir(cnf.output_dir)
 
-    cnf.log_dir = join(cnf.output_dir, 'log')
+    cnf.log_dir = join(cnf.output_dir, cnf.project_name + '_log')
     info('log_dirpath: ' + cnf.log_dir)
     safe_mkdir(cnf.log_dir)
     set_up_log(cnf, 'prepare_for_exac', cnf.project_name, cnf.output_dir)
@@ -285,6 +289,13 @@ def main():
                     fs = [chrom.replace('chr', ''), pos, mean_coverage, median_coverage] + pcnt_samples_ge_threshold
                     f.write('\t'.join(str(f) for f in fs) + '\n')
         bgzip_and_tabix(cnf, coverage_data_fpath, tabix_parameters='-p bed')
+    info()
+    if exac_dirpath:
+        info('Adding project to ExAC database')
+        cmdline = exac_venv_pythonpath + ' ' + join(exac_dirpath, 'manage.py') + ' ' + 'add_project' + ' ' + cnf.project_name+ ' ' + cnf.genome.name
+        call(cnf, cmdline)
+
+    info('Done.')
 
 
 def log(msg=''):
