@@ -183,11 +183,20 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
                                            '-', '-', '-', '-', '-', '-', '-', 'Deletion' if event.cnv_type == 'loss' else 'Amplification']) + '\n')
             for sample, annotations in sv_anns_by_samples.iteritems():
                 for ann in annotations:
-                    out_f.write('\t'.join([sample, '', 'rearrangement', ann.event.known_gene, 'known' if ann.known else 'unknown',
-                                           '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
-                                           'fusion', ann.event.chrom + ':' + str(ann.event.start),
-                                           ann.event.chrom2 + ':' + str(ann.event.end) if ann.event.end else '',
-                                           '-', str(ann.event.read_support), 'Rearrangement']) + '\n')
+                    if not ann.event:
+                        continue
+                    if ann.effect == 'EXON_DEL':
+                        out_f.write('\t'.join([sample, '', 'exon-deletion', ann.event.known_gene, '-',
+                                               '-', '-', '-', '-', '-', '-', '-', '-', '-', event.gene, 'NA',
+                                               'deletion ' + ann.exon_info, ann.event.chrom + ':' + str(ann.event.start),
+                                               str(ann.event.end) if ann.event.end else '',
+                                               '-', str(ann.event.read_support), 'Exon-Deletion']) + '\n')
+                    else:
+                        out_f.write('\t'.join([sample, '', 'rearrangement', ann.event.known_gene, 'known' if ann.known else 'unknown',
+                                               '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.genes[0], ann.genes[1],
+                                               'fusion', ann.event.chrom + ':' + str(ann.event.start),
+                                               ann.event.chrom2 + ':' + str(ann.event.end) if ann.event.end else '',
+                                               '-', str(ann.event.read_support), 'Rearrangement']) + '\n')
 
     return altered_genes
 
@@ -349,13 +358,14 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
                     if event:
                         all_events[(sample, event.id)] = event
                         for annotation in event.annotations:
-                            if event.is_fusion() or event.is_known_fusion(annotation):
+                            if event.is_fusion() or event.is_known_fusion(annotation) or annotation.effect == 'EXON_DEL':
+                                if event.end:
+                                    event.chrom2 = event.chrom
                                 if event.is_known_fusion(annotation):
-                                    if event.end:
-                                        event.chrom2 = event.chrom
                                     annotation.known = True
                                 key_altered_genes = [g for g in annotation.genes if (g, event.chrom) in key_gene_by_name_chrom]
-                                if (annotation.effect == 'FUSION' or annotation.known) and key_altered_genes:
+                                if (annotation.effect == 'FUSION' or annotation.effect == 'EXON_DEL' or annotation.known) \
+                                        and key_altered_genes:
                                     annotation.event = event
                                     event.key_annotations.add(annotation)
                                     # event.supplementary = '-with-' in fs[known_col]
