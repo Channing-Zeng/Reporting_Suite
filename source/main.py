@@ -102,6 +102,9 @@ def read_opts_and_cnfs(extra_opts,
              help='Customised run details: list of annotations/QC metrics/databases/filtering criteria. '
                   'The default is %s' % defaults['run_cnf_exome_seq'])
          ),
+        (['--transcripts'], dict(
+            dest='transcripts_fpath')
+         ),
         (['--work-dir'], dict(dest='work_dir', metavar='DIR', help=SUPPRESS_HELP)),
         (['--log-dir'], dict(dest='log_dir', metavar='DIR', help=SUPPRESS_HELP)),
         (['--proc-name'], dict(dest='proc_name', help=SUPPRESS_HELP)),

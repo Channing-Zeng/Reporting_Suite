@@ -56,9 +56,6 @@ def main(args):
                 action='store_false',
                 help=SUPPRESS_HELP)
              ),
-            (['--transcripts'], dict(
-                dest='transcripts_fpath')
-             ),
         ],
         required_keys=['vcf'],
         file_keys=['bam', 'vcf'],
