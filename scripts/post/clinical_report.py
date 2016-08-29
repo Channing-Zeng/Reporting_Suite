@@ -54,9 +54,6 @@ def main():
             (['--jira'], dict(
                 dest='jira_url',
             )),
-            (['--transcripts'], dict(
-                dest='transcripts_fpath',
-            )),
         ],
         key_for_sample_name=None,
         required_keys=[],

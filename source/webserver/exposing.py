@@ -109,8 +109,8 @@ def sync_with_ngs_server(
                                    relpath(proj_dirpath_on_server, loc.reports_dirpath),
                                    relpath(summary_report_fpath, dataset_dirpath))
 
-        html_report_full_url = join(loc.website_url_base, 'samples.php?project_name=' + project_name + '&file=' + html_report_url)
-        info('HTML url: ' + html_report_full_url)
+        # html_report_full_url = join(loc.website_url_base, 'samples.php?project_name=' + project_name + '&file=' + html_report_url)
+        # info('HTML url: ' + html_report_full_url)
 
         if verify_file(loc.csv_fpath, 'Project list'):
             write_to_csv_file(
