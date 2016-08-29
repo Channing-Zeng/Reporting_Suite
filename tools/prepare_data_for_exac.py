@@ -204,6 +204,7 @@ def main():
 
     parser.add_option('--log-dir', dest='log_dir', default='-')
     parser.add_option('--bed', dest='bed', help='BED file.')
+    parser.add_option('-o', dest='output_dir', help='Output directory with ExAC data.')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
@@ -266,11 +267,16 @@ def main():
 
     depths_by_pos = get_regions_depth(cnf, samples)
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
+    chromosomes = ['chr%s' % x for x in range(1, 23)]
+    chromosomes.extend(['chrX', 'chrY', 'chrM'])
 
     info()
+    info('Saving coverage')
+    project_cov_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
+    safe_mkdir(project_cov_dirpath)
     for chrom in depths_by_pos.keys():
-        project_cov_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
-        safe_mkdir(project_cov_dirpath)
+        if chrom not in chromosomes:
+            continue
         coverage_data_fpath = join(project_cov_dirpath, chrom + '.txt')
         if cnf.reuse_intermediate and verify_file(coverage_data_fpath):
             continue
@@ -292,7 +298,8 @@ def main():
     info()
     if exac_dirpath:
         info('Adding project to ExAC database')
-        cmdline = exac_venv_pythonpath + ' ' + join(exac_dirpath, 'manage.py') + ' ' + 'add_project' + ' ' + cnf.project_name+ ' ' + cnf.genome.name
+        cmdline = 'PYTHONPATH= ' + exac_venv_pythonpath + ' ' + join(exac_dirpath, 'manage.py') + ' ' + 'add_project' + \
+                  ' ' + cnf.project_name + ' ' + cnf.genome.name
         call(cnf, cmdline)
 
     info('Done.')
