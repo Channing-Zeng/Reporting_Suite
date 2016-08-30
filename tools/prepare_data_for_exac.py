@@ -139,7 +139,7 @@ def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
     return done_samples
 
 
-def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath):
+def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath, exac_venv_pythonpath):
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False)
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=True)
 
@@ -174,7 +174,11 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpa
                 reused_chroms.append(chrom)
                 continue
             else:
-                cmdline = get_script_cmdline(cnf, 'python', join('tools', 'split_bams_by_variants.py'), is_critical=True)
+                if exac_venv_pythonpath:  # to avoid compatibility problems with pysam and tabix
+                    cmdline = 'PYTHONPATH= ' + exac_venv_pythonpath + ' ' + get_system_path(cnf,
+                                                                            join('tools', 'split_bams_by_variants.py'))
+                else:
+                    cmdline = get_script_cmdline(cnf, 'python', join('tools', 'split_bams_by_variants.py'), is_critical=True)
                 cmdline += ' --chr {chrom} --vcf {vcf_fpath} --samples {sample_names} --bams {sample_bams} ' \
                            '-o {output_dirpath} --work-dir {cnf.work_dir} -g {cnf.genome.name} '.format(**locals())
                 if cnf.reuse_intermediate:
@@ -270,7 +274,7 @@ def main():
     safe_mkdir(vcf_dirpath)
     combined_vcf_fpath = join(vcf_dirpath, cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
-    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath)
+    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath, exac_venv_pythonpath)
 
     depths_by_pos = get_regions_depth(cnf, samples)
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
