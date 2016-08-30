@@ -617,7 +617,7 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
             fs = l.replace('\n', '').split('\t')
             sample_name, chrom, start, ref, alt, gname, transcript = \
                 fs[sample_col], fs[chr_col], fs[pos_col], fs[ref_col], fs[alt_col], fs[gene_col], fs[transcript_col]
-            if (gname, chrom) not in key_gene_by_name_chrom:
+            if key_gene_by_name_chrom and (gname, chrom) not in key_gene_by_name_chrom:
                 continue
 
             codon_change, cdna_change, aa_change, aa_len, exon = \

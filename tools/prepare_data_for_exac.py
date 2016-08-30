@@ -285,8 +285,9 @@ def main():
         if chrom not in chromosomes:
             continue
         coverage_data_fpath = join(project_cov_dirpath, chrom + '.txt')
-        if cnf.reuse_intermediate and verify_file(coverage_data_fpath):
+        if cnf.reuse_intermediate and verify_file(coverage_data_fpath, silent=True):
             continue
+        chrom_num = chrom.replace('chr', '')
         with file_transaction(cnf, coverage_data_fpath) as tx:
             with open(tx, 'w') as f:
                 fs = ['#chrom', 'pos', 'mean', 'median'] + [str(t) for t in cov_thresholds]
@@ -299,8 +300,10 @@ def main():
                     mean_coverage = mean(depths)
                     median_coverage = median(depths)
                     pcnt_samples_ge_threshold = [mean([1 if d >= t else 0 for d in depths]) for t in cov_thresholds]
-                    fs = [chrom.replace('chr', ''), pos, mean_coverage, median_coverage] + pcnt_samples_ge_threshold
-                    f.write('\t'.join(str(f) for f in fs) + '\n')
+                    res_line = chrom_num + '\t' + str(pos) + '\t' + str(mean_coverage) + '\t' + str(median_coverage)
+                    for pcnt_samples in pcnt_samples_ge_threshold:
+                        res_line += '\t' + str(pcnt_samples)
+                    f.write(res_line + '\n')
         bgzip_and_tabix(cnf, coverage_data_fpath, tabix_parameters='-p bed')
     info()
     if exac_dirpath:
