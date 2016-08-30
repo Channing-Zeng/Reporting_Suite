@@ -22,6 +22,9 @@ from source.variants.vcf_processing import bgzip_and_tabix
 from tools.txt2vcf import convert_txt_to_vcf
 
 
+EXAC_FILES_DIRECTORY = '../exac_data/'
+
+
 def run_bedtools_use_grid(cnf, bam_by_key, bed_fpath):
     output_by_key = dict()
     not_submitted_bams = bam_by_key.values()
@@ -136,7 +139,7 @@ def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
     return done_samples
 
 
-def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath):
+def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath):
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False)
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=True)
 
@@ -176,6 +179,8 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath):
                            '-o {output_dirpath} --work-dir {cnf.work_dir} -g {cnf.genome.name} '.format(**locals())
                 if cnf.reuse_intermediate:
                     cmdline += ' --reuse'
+                if exac_features_fpath and verify_file(exac_features_fpath):
+                    cmdline += ' --features ' + exac_features_fpath
                 j = submit_job(cnf, cmdline,  chrom + '_split')
                 info()
                 submitted_chroms.append(chrom)
@@ -210,12 +215,14 @@ def main():
         = process_post_bcbio_args(parser)
     exac_dirpath = None
     exac_venv_pythonpath = None
+    exac_features_fpath = None
 
     if is_us():
         if not cnf.genome:
             critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
         exac_dirpath = '/ngs/usr/miheenko/git/exac_browser'
         exac_venv_pythonpath = join(exac_dirpath, 'venv_exac', 'bin', 'python')
+        exac_features_fpath = os.path.join(exac_dirpath, EXAC_FILES_DIRECTORY, cnf.genome.name, 'all_features.bed.gz')
         cnf.output_dir = join('/ngs/usr/miheenko/git/exac_data', cnf.genome.name)  # temporary dir
     elif not cnf.output_dir:
         critical('Error! Please specify ExAC browser data directory')
@@ -263,7 +270,7 @@ def main():
     safe_mkdir(vcf_dirpath)
     combined_vcf_fpath = join(vcf_dirpath, cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
-    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz')
+    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath)
 
     depths_by_pos = get_regions_depth(cnf, samples)
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
