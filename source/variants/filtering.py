@@ -24,6 +24,10 @@ from source.webserver.exposing import convert_gpfs_path_to_url
 
 def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters=''):
     gatk = get_java_tool_cmdline(cnf, 'gatk')
+    if not gatk:
+        info('GATK is not found, skipping merging VCFs')
+        return None
+
     cmdl = '{gatk} -T CombineVariants -R {cnf.genome.seq} {additional_parameters}'.format(**locals())
     for s_name, vcf_fpath in vcf_fpath_by_sname.items():
         cmdl += ' --variant:' + s_name + ' ' + vcf_fpath
