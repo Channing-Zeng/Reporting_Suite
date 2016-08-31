@@ -910,7 +910,7 @@ class BCBioRunner:
                 try:
                     add_project_files_to_jbrowse(self.cnf, self.bcbio_structure)
                 except:
-                    traceback.print_exc(file=source.logger.log_fpath)
+                    traceback.print_exc()
                     err('Error: cannot export to jBrowse')
                 info()
 

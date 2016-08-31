@@ -22,12 +22,17 @@ from tools.txt2vcf import convert_txt_to_vcf
 EXAC_FILES_DIRECTORY = '../exac_data/'
 chromosomes = ['chr%s' % x for x in range(1, 23)]
 chromosomes.extend(['chrX', 'chrY', 'chrM'])
+exac_us_url = 'http://172.18.72.170:5000/'
+
+def get_exac_us_url(genome, project_name):
+    return exac_us_url + genome.split('-')[0] + '/' + project_name + '/'
 
 
 def calculate_coverage_use_grid(cnf, samples, output_dirpath):
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
 
     not_submitted_chroms = [chrom for chrom in chromosomes]
+
     chr_len_fpath = get_chr_len_fpath(cnf)
     while not_submitted_chroms:
         jobs_to_wait = []
