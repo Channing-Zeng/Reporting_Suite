@@ -108,18 +108,18 @@ def get_minimal_representation(pos, ref, alt):
 def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples, chrom, variant, bams_created_before):
     padding = 500
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
-    transcript_names = None
     pos, ref, alt, variant_transcripts = variant['pos'], variant['ref'], variant['alt'], variant['transcripts']
+    bam_prefix = None
     for transcript in variant_transcripts:
+        transcript_name = sorted(variant_transcripts)[0]
         transcript_exons = transcripts[(transcript, chrom)]
         for idx, exon in enumerate(transcript_exons):
             if exon['start'] <= pos <= exon['stop']:
                 start, end = exon['start'], exon['stop']
-                transcript_names = ','.join(variant_transcripts)
-                bam_prefix = '{chrom}-{transcript_names}-{idx}-'.format(**locals())
-        if transcript_names:
+                bam_prefix = '{chrom}-{transcript_name}-{idx}-'.format(**locals())
+        if bam_prefix:
             break
-    if not transcript_names:
+    if not bam_prefix:
         start, end = max(1, pos - padding), min(chr_length, pos + padding)
         bam_prefix = '{chrom}-{pos}-{ref}-{alt}-'.format(**locals())
     bams_by_sample = dict()
@@ -241,7 +241,7 @@ def main():
     (opts, args) = parser.parse_args(sys.argv[1:])
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), {})
-    cnf.verbose = True
+    # cnf.verbose = True
 
     if not cnf.output_dir or not cnf.vcf_fpath or not cnf.chrom:
         critical(parser.usage)

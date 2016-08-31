@@ -114,7 +114,7 @@ def bam_to_bed_nocnf(bam_fpath, bedtools='bedtools', gzip='gzip'):
     return bam_bed_fpath
 
 
-def get_bedgraph_coverage(cnf, bam_fpath, chr_len_fpath=None, output_fpath=None, bed_fpath=None):
+def get_bedgraph_coverage(cnf, bam_fpath, chr_len_fpath=None, output_fpath=None, bed_fpath=None, exit_on_error=True):
     chr_len_fpath = chr_len_fpath or get_chr_len_fpath(cnf)
     dedup_bam = intermediate_fname(cnf, bam_fpath, source.dedup_bam)
     if not verify_bam(dedup_bam, silent=True):
@@ -133,7 +133,7 @@ def get_bedgraph_coverage(cnf, bam_fpath, chr_len_fpath=None, output_fpath=None,
     with file_transaction(cnf.work_dir, bedgraph_fpath) as tx_fpath:
         bedtools = get_system_path(cnf, 'bedtools')
         cmdl = '{bedtools} genomecov -bg -split -g {chr_len_fpath} -i {in_bed_fpath}'.format(**locals())
-        call(cnf, cmdl, exit_on_error=True, output_fpath=tx_fpath)
+        call(cnf, cmdl, exit_on_error=exit_on_error, output_fpath=tx_fpath)
     return bedgraph_fpath
 
 
