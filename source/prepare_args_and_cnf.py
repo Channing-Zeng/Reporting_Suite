@@ -59,7 +59,7 @@ def check_genome_resources(cnf):
                         cnf.genome[key] = gz_fpath
 
     if not cnf.genome.features or not cnf.genome.bed_annotation_features or not cnf.genome.cds:
-        critical('features and bed_annotation_features and cds in the system config (' + cnf.sys_cnf + ') must be specified.')
+        warn('Warning: features and bed_annotation_features and cds in the system config (' + cnf.sys_cnf + ') must be specified.')
 
     if not cnf.transcripts_fpath:
         g = 'hg19' if ('hg19' or 'GRCh37' in cnf.genome.name) else 'hg38'

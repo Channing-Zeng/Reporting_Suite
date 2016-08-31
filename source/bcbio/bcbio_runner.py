@@ -449,28 +449,30 @@ class BCBioRunner:
                 paramln=clinreport_paramline + ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name)
             )
 
-            seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {cnf.genome.name}'
-            seq2c_cmdline += ' -t ' + str(self.max_threads)
-            seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
-            if self.is_wgs:
-                seq2c_cmdline += ' --wgs '
-            normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
-            if normal_snames or cnf.seq2c_controls:
-                controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
-                seq2c_cmdline += ' -c ' + ':'.join(controls)
-            if cnf.seq2c_opts:
-                seq2c_cmdline += ' --seq2c-opts ' + cnf.seq2c_opts
-            if cnf.reannotate:
-                seq2c_cmdline += ' --reannotate '
-            self.seq2c = Step(cnf, run_id,
-                name=BCBioStructure.seq2c_name, short_name='seq2c',
-                interpreter='python',
-                script=join('scripts', 'post_bcbio', 'seq2c.py'),
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
-                dir_name=BCBioStructure.cnv_summary_dir,
-                paramln=seq2c_cmdline,
-                run_on_chara=True
-            )
+            self.seq2c = None
+            if seq2c_bed:
+                seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {cnf.genome.name}'
+                seq2c_cmdline += ' -t ' + str(self.max_threads)
+                seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
+                if self.is_wgs:
+                    seq2c_cmdline += ' --wgs '
+                normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
+                if normal_snames or cnf.seq2c_controls:
+                    controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
+                    seq2c_cmdline += ' -c ' + ':'.join(controls)
+                if cnf.seq2c_opts:
+                    seq2c_cmdline += ' --seq2c-opts ' + cnf.seq2c_opts
+                if cnf.reannotate:
+                    seq2c_cmdline += ' --reannotate '
+                self.seq2c = Step(cnf, run_id,
+                    name=BCBioStructure.seq2c_name, short_name='seq2c',
+                    interpreter='python',
+                    script=join('scripts', 'post_bcbio', 'seq2c.py'),
+                    log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
+                    dir_name=BCBioStructure.cnv_summary_dir,
+                    paramln=seq2c_cmdline,
+                    run_on_chara=True
+                )
 
             targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
             if target_bed:
@@ -768,7 +770,7 @@ class BCBioRunner:
                     self.targqc_summary,
                     wait_for_steps=wait_for_steps)
 
-            if is_uk() or is_us() and self.bw_converting in self.steps:
+            if is_uk() or is_us() and self.cnf.genome.name.startswith('hg') and self.bw_converting in self.steps:
                 for sample in self.bcbio_structure.samples:
                     if sample.bam and isfile(sample.bam):
                         self._submit_job(self.bw_converting, sample.name,

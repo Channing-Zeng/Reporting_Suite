@@ -125,7 +125,7 @@ def set_folders(genome):
     data_dirname = 'data_hg19'
     if 'hg38' in genome:
         data_dirname = 'data_hg38'
-    elif 'hg' not in genome:
+    elif not genome.startswith('hg'):
         return None, None, None
     jbrowse_data_path = join(jbrowse_basepath, data_dirname)
     return jbrowse_data_path, data_dirname, jbrowse_browser_path

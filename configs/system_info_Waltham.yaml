@@ -103,17 +103,21 @@ genomes:
 
     dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
 
-    all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
+    all_transcripts:          /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
 
-    circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
+    circos_cytoband:          /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
   mm10:
     seq: /ngs/reference_data/genomes/Mmusculus/mm10/seq/mm10.fa
     bwa: /ngs/reference_data/genomes/Mmusculus/mm10/bwa/mm10.fa
 
-    dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf
+    dbsnp: /ngs/reference_data/genomes/Mmusculus/mm10/variation/mm10-dbSNP-2013-09-12.vcf.gz
     snpeff:
       reference: GRCm38.82
+
+    features: /ngs/reference_data/genomes/Mmusculus/mm10/bed/Exons.with_genes.bed
+    bed_annotation_features: /ngs/reference_data/genomes/Mmusculus/mm10/bed/Exons.with_genes.bed
+    cds: /ngs/reference_data/genomes/Mmusculus/mm10/bed/Exons.bed
 
   hg19:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
