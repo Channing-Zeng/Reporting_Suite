@@ -6,7 +6,7 @@ from collections import OrderedDict, defaultdict
 import source
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
-    safe_mkdir, file_transaction
+    safe_mkdir, file_transaction, which
 from source.logger import info, critical, warn, err, debug
 from source.qsub_utils import submit_job
 from source.targetcov.Region import SortableByChrom
@@ -381,12 +381,18 @@ def annotate_target(cnf, target_bed):
 
     features_bed = verify_bed(cnf.genome.bed_annotation_features, is_critical=True, description='bed_annotation_features in system config')
 
-    annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
-    bedtools = get_system_path(cnf, 'bedtools')
+    # annotate_bed_py = get_system_path(cnf, 'python', join('tools', 'bed_processing', 'annotate_bed.py'))
+    # bedtools = get_system_path(cnf, 'bedtools')
 
-    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} --reference {features_bed} ' \
-              '--genome {cnf.genome.name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
+    annotate_bed_py = which('annotate_bed.py')
+    if not annotate_bed_py:
+        critical('Error: annotate_bed.py not found in PATH, please install TargQC.')
+
+    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} -g {cnf.genome.name} ' + \
               '-o {output_fpath}'.format(**locals())
+    # cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} --reference {features_bed} ' \
+    #           '--genome {cnf.genome.name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
+    #           '-o {output_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath, stdout_to_outputfile=False)
 
     return output_fpath
