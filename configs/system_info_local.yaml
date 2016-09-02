@@ -62,9 +62,9 @@ genomes:
     snpeff:
       reference: hg19
 
-    features:                 ~/googledrive/az/reference_data/GeneAnnotation/RefSeq/all_features.hg19.canon.bed  # canonical only
-    bed_annotation_features:  ~/googledrive/az/reference_data/GeneAnnotation/RefSeq/all_features.hg19.canon.bed  # all regions
-    cds:                      ~/googledrive/az/reference_data/GeneAnnotation/RefSeq/RefSeq_CDS.hg19.bed
+    features:                 ~/vagrant/reporting_suite/test/all_features_hg19.bed  # canonical only
+    bed_annotation_features:  ~/vagrant/reporting_suite/test/all_features_hg19.bed  # all regions
+    cds:                      ~/vagrant/TargQC/GeneAnnotation/RefSeq/hg19/Seq2C_CDS.bed
 
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/tricky_regions/
 
