@@ -57,10 +57,10 @@ sweden = Location('Sweden',
 local = Location('Local',
     report_url_base='http://localhost/reports/',
     website_url_base='http://localhost/ngs_website/',
-    csv_fpath='/Users/vlad/Sites/reports/NGS.Project.csv',
-    dirpath='/Users/vlad/Sites',
-    reports_dirpath='/Users/vlad/Sites/reports',
-    proper_path_should_contain=['/Dropbox/az/analysis/', '/Dropbox/az/datasets/']
+    csv_fpath='/Library/WebServer/Documents/reports/NGS.Project.csv',
+    dirpath='/Library/WebServer/Documents',
+    reports_dirpath='/Library/WebServer/Documents/reports',
+    proper_path_should_contain=['/az/analysis/', '/az/datasets/']
 )
 loc_by_id = dict(us=us, uk=uk, local=local)
 
