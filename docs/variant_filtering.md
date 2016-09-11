@@ -178,13 +178,15 @@ RBMXL1
 RBMXL3
 EPPK1	after 2215aa
 TYRO3
+OR#X#     # olfactory genes
+HLA-*   # unless specified to keep them explicitly
 ```
 
 An extended list of genes, exons, and regions is used to de-prioritize mutations in the reports, but does not affect mutation status.
 
 Genes: https://drive.google.com/drive/folders/0B2wwyQzq0BbwWnNjZ055Ri1nRGM
 - Gene filtering &mdash; exome level
-  -  Filter all variant from the following published genes from three papers &mdash; people agree these genes generate too many false positives and represent (“blacklist” tab, rows 1-158, genes ABCA13 through ZNF407). Rows 74 and 75 &mdash; perhaps keep KMT2C and KMT2D from being hard filtered for now, given their prominence on cancer gene panels. But I want them filtered from AZ50/AZ300/targeted panel reports.
+  - Filter all variant from the following published genes from three papers &mdash; people agree these genes generate too many false positives and represent (“blacklist” tab, rows 1-158, genes ABCA13 through ZNF407). Rows 74 and 75 &mdash; perhaps keep KMT2C and KMT2D from being hard filtered for now, given their prominence on cancer gene panels. But I want them filtered from AZ50/AZ300/targeted panel reports.
   - Filter all variants from large gene families and other genome oddities &mdash; various ways I’ve found, scanned in a genome viewer, and tagged (“blacklist” tab, rows 159-500). I’ve tried to differentiate when essentially every exon is in a low complexity region, versus some or most. Searching for long regions of low Duke 35 mappability would be a comprehensive way to do this
   - (Row 502) We need to flag genes in the MHC region, in particular those in the region but not clearly involved in MHC/HLA/IO, given their high polymorphism and alternate haplotype structure
   - Row 503-520 &mdash; filter our every olfactory receptor gene &mdash; I have had them cluttering up reports for over a decade, if we miss something important someday, blame it on me.

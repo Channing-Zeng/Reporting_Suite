@@ -51,7 +51,7 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_paramet
         return None
 
 
-def index_vcf(cnf, sample_name, pass_vcf_fpath, filt_vcf_fpath, caller_name=None):
+def index_vcf(cnf, sample_name, filt_vcf_fpath, caller_name=None):
     if cnf is None:
         global glob_cnf
         cnf = glob_cnf
@@ -211,9 +211,9 @@ def postprocess_vcf(cnf,
         var_sample.filt_tsv_fpath = splitext(ungz)[0] + '.tsv'
 
     if cnf.reuse_intermediate \
-            and verify_file(var_sample.filt_vcf_fpath) \
-            and verify_file(var_sample.pass_filt_vcf_fpath) \
-            and verify_file(var_sample.filt_tsv_fpath):
+            and verify_file(var_sample.filt_vcf_fpath, silent=True) \
+            and verify_file(var_sample.pass_filt_vcf_fpath, silent=True) \
+            and verify_file(var_sample.filt_tsv_fpath, silent=True):
         info(var_sample.filt_vcf_fpath + ' and ' + var_sample.pass_filt_vcf_fpath + ' exist; reusing.')
 
     else:

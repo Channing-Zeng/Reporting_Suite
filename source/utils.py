@@ -130,7 +130,7 @@ def get_db_path(cnf, dbconf, dbname):
     if not db_path:
         db_path = dbconf.get('path')
         if not db_path:
-            err('Please, provide a path to ' + dbname + ' in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
+            err('Please, provide a path to "' + dbname + '" in the "genomes" section in the system config. The config is: ' + str(cnf['genome']))
             return None
     return verify_file(db_path, is_critical=True)
 
