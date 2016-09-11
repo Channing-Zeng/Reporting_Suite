@@ -14,7 +14,11 @@ from source.variants.filtering import combine_results, check_filtering_results
 from source.variants.vcf_processing import verify_vcf
 
 
-def run_variants(cnf, samples, variants_fpath=None):
+def run_variants(cnf, samples, variants_fpath=None, mut_file_ext=None, mut_pass_suffix=None, mut_reject_suffix=None):
+    if mut_file_ext: source.mut_file_ext = mut_file_ext
+    if mut_pass_suffix: source.mut_pass_suffix = mut_pass_suffix
+    if mut_reject_suffix: source.mut_reject_suffix = mut_reject_suffix
+
     info('Annotating...')
     _annotate(cnf, samples)
     info()
@@ -195,12 +199,12 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                 info()
                 continue
 
-            varfilter_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'varfilter.py'))
+            varfilter_py = 'varfilter'
             work_dir = join(cnf.work_dir, 'filt_' + sample.name)
             cmdl = ('{varfilter_py}' +
-                    ' --sys-cnf ' + cnf.sys_cnf +
-                    ' --run-cnf ' + cnf.run_cnf +
-                    ' --log-dir -' +
+                  ((' --sys-cnf ' + cnf.sys_cnf) if not cnf.filt_cnf else '') +
+                  ((' --run-cnf ' + cnf.run_cnf) if not cnf.filt_cnf else '') +
+                  ((' --filt-cnf ' + cnf.filt_cnf) if cnf.filt_cnf else '') +
                     ' --vcf {sample.anno_vcf_fpath}' +
                     ' --sample {sample.name}' +
                     ' -o {output_dirpath}' +
@@ -208,11 +212,13 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                     ' --project-name ' + cnf.project_name +
                     ' --genome {cnf.genome.name}' +
                     ' --work-dir {work_dir}' +
+                    ' --debug ' +
                    (' --cohort-freqs {cohort_freqs_fpath}' if cohort_freqs_fpath else '') +
                    (' --reuse ' if cnf.reuse_intermediate else '') +
                   ((' --caller ' + cnf.caller) if cnf.caller else '') +
                    (' --qc' if cnf.qc else ' --no-qc') +
-                   (' --no-tsv' if not cnf.tsv else '')
+                   (' --no-tsv' if not cnf.tsv else '') +
+                  ((' --dbsnp-multi-mafs ' + cnf.dbsnp_multimafs) if cnf.dbsnp_multimafs else '')
                 ).format(**locals())
             with with_cnf(cnf, reuse_intermediate=False):
                 j = submit_job(cnf, cmdl,
