@@ -59,6 +59,10 @@ genomes:
   hg19:
     seq:                      ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
 
+    dbsnp:                    ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/dbsnp.chr21.vcf.gz
+    dbsnp_multi_mafs:         ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
+    cosmic:                   ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/cosmic.chr21.vcf.gz
+    clinvar:                  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/clinvar_latest.chr21.vcf.gz
     snpeff:
       reference: hg19
 
