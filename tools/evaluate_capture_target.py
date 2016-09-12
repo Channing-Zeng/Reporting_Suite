@@ -171,9 +171,10 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
 
 def check_regions_depth(cnf, bcbio_structures, min_samples):
     regions = defaultdict(list)
-    samples = [s for bs in bcbio_structures for s in bs.samples]
+    filtered_regions = []
+    samples_count = len([s for bs in bcbio_structures for s in bs.samples])
     for i, bs in enumerate(bcbio_structures):
-        for s in samples:
+        for s in bs.samples:
             tsv_fpath = s.targetcov_detailed_tsv
             if not verify_file(tsv_fpath, is_critical=False):
                 continue
@@ -202,7 +203,7 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                     if feature in ['Capture']:
                         region = (chrom, start, end, size, symbol)
                         if not cnf.min_depth and not cnf.min_depths[i]:  # no filtering
-                            regions[region] += 1
+                            regions[region].append(1)
                             continue
                         min_depth = cnf.min_depth or cnf.min_depths[i]
                         if min_depth not in cov_by_threshs:
@@ -210,19 +211,18 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                             continue
                         if cov_by_threshs[min_depth] < cnf.min_percent:
                             regions[region].append(1 - cov_by_threshs[min_depth])
-        filtered_regions = []
 
-        for r, depths in regions.iteritems():
-            num_samples = len(depths)
-            if num_samples >= min_samples:
-                percent_samples = int(num_samples * 100.0 / len(samples))
-                str_num_samples = '{num_samples} ({percent_samples}%)'.format(**locals())
-                r = list(r)
-                pct_depth = str(int(sum(depths) * 100.0 / num_samples)) + '%'
-                r.append(pct_depth)
-                r.append(str_num_samples)
-                filtered_regions.append(tuple(r))
-        return filtered_regions
+    for r, depths in regions.iteritems():
+        num_samples = len(depths)
+        if num_samples >= min_samples:
+            percent_samples = int(num_samples * 100.0 / samples_count)
+            str_num_samples = '{num_samples} ({percent_samples}%)'.format(**locals())
+            r = list(r)
+            pct_depth = str(int(sum(depths) * 100.0 / num_samples)) + '%'
+            r.append(pct_depth)
+            r.append(str_num_samples)
+            filtered_regions.append(tuple(r))
+    return filtered_regions
 
 
 if __name__ == '__main__':
