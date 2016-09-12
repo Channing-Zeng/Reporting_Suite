@@ -202,7 +202,7 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
 
                     if feature in ['Capture']:
                         region = (chrom, start, end, size, symbol)
-                        if not cnf.min_depth and not cnf.min_depths[i]:  # no filtering
+                        if not cnf.min_depth and not (not cnf.min_depths or not cnf.min_depths[i]):  # no filtering
                             regions[region].append(1)
                             continue
                         min_depth = cnf.min_depth or cnf.min_depths[i]
