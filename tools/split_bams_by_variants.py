@@ -130,9 +130,9 @@ def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples
             continue
         if not cnf.reuse_intermediate or not verify_file(output_bam_fpath, silent=True):
             cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end} > {output_bam_fpath}'.format(**locals())
-            call(cnf, cmdline)
+            call(cnf, cmdline, silent=cnf.verbose)
             cmdline = '{sambamba} index {output_bam_fpath}'.format(**locals())
-            call(cnf, cmdline)
+            call(cnf, cmdline, silent=cnf.verbose)
         bams_by_sample[sample.name] = output_bam_fpath
     return bams_by_sample
 

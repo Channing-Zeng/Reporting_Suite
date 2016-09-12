@@ -24,6 +24,7 @@ chromosomes = ['chr%s' % x for x in range(1, 23)]
 chromosomes.extend(['chrX', 'chrY', 'chrM'])
 exac_us_url = 'http://172.18.72.170:5000/'
 
+
 def get_exac_us_url(genome, project_name):
     return exac_us_url + genome.split('-')[0] + '/' + project_name + '/'
 
@@ -195,6 +196,20 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpa
                                           chrom not in reused_chroms]
 
 
+def get_exac_dir(cnf):
+    exac_dir = join('/ngs/usr/miheenko/git/exac_data', cnf.genome.name)  # temporary dir
+    return exac_dir
+
+
+def add_project_to_exac(cnf):
+    info('Adding project to ExAC database')
+    exac_dirpath = '/ngs/usr/miheenko/git/exac_browser'
+    exac_venv_pythonpath = join(exac_dirpath, 'venv_exac', 'bin', 'python')
+    cmdline = 'PYTHONPATH= ' + exac_venv_pythonpath + ' ' + join(exac_dirpath, 'manage.py') + ' ' + 'add_project' + \
+              ' ' + cnf.project_name + ' ' + cnf.genome.name
+    call(cnf, cmdline)
+
+
 def main():
     info(' '.join(sys.argv))
     info()
@@ -219,7 +234,7 @@ def main():
         exac_dirpath = '/ngs/usr/miheenko/git/exac_browser'
         exac_venv_pythonpath = join(exac_dirpath, 'venv_exac', 'bin', 'python')
         exac_features_fpath = os.path.join(exac_dirpath, EXAC_FILES_DIRECTORY, cnf.genome.name, 'all_features.bed.gz')
-        cnf.output_dir = join('/ngs/usr/miheenko/git/exac_data', cnf.genome.name)  # temporary dir
+        cnf.output_dir = get_exac_dir(cnf)
     elif not cnf.output_dir:
         critical('Error! Please specify ExAC browser data directory')
 
@@ -275,11 +290,7 @@ def main():
 
     info()
     if exac_dirpath:
-        info('Adding project to ExAC database')
-        cmdline = 'PYTHONPATH= ' + exac_venv_pythonpath + ' ' + join(exac_dirpath, 'manage.py') + ' ' + 'add_project' + \
-                  ' ' + cnf.project_name + ' ' + cnf.genome.name
-        call(cnf, cmdline)
-
+        add_project_to_exac(cnf)
     info('Done.')
 
 

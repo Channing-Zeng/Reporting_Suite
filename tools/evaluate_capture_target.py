@@ -21,6 +21,7 @@ from source.targetcov.bam_and_bed_utils import sort_bed
 from source.targetcov.flag_regions import _intersect_with_tricky_regions, tricky_regions_fnames_d
 from source.targetcov.summarize_targetcov import get_val, get_float_val
 from source.tools_from_cnf import get_system_path
+from tools.prepare_data_for_exac import calculate_coverage_use_grid, get_exac_dir, add_project_to_exac
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
     description = 'This script evaluate capture target.'
 
     parser = OptionParser(description=description)
-    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser, threads=1)
+    add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--log-dir', dest='log_dir', default='-')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to overlap.')
@@ -57,14 +58,12 @@ def main():
 
     info()
     info('*' * 70)
-    bcbio_structures = []
-    for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(
-            bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
-        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
-        bcbio_structures.append(bs)
+    add_to_exac = True
 
     if not cnf.project_name:
+        add_to_exac = False
         cnf.project_name = 'CaptureTargetEvaluation'
+        warn('Please specify --project-name if you want to export data to ExAC browser')
 
     if cnf.output_dir is None:
         cnf.output_dir = join(os.getcwd(), cnf.project_name)
@@ -75,12 +74,20 @@ def main():
     safe_mkdir(cnf.log_dir)
     set_up_log(cnf, 'evaluate_capture_target', cnf.project_name, cnf.output_dir)
 
+    bcbio_structures = []
+    for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(
+            bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
+        bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
+        bcbio_structures.append(bs)
+
     cnf.work_dir = adjust_path(join(cnf.output_dir, 'work'))
     safe_mkdir(cnf.work_dir)
 
     info('')
     info('*' * 70)
     evaluate_capture(cnf, bcbio_structures)
+    if add_to_exac:
+        add_project_to_exac(cnf)
 
 
 def evaluate_capture(cnf, bcbio_structures):
@@ -94,7 +101,7 @@ def evaluate_capture(cnf, bcbio_structures):
     regions_fpath = join(cnf.output_dir, 'filtered_regions.txt')
     with open(regions_fpath, 'w') as out:
         if not cnf.min_depth:
-            out.write('## Coverage threshold Nx is 10x for cell ine and 100x for plasma\n')
+            out.write('## Coverage threshold Nx is 10x for cell line and 100x for plasma\n')
         else:
             out.write('## Coverage threshold Nx is ' + str(cnf.min_depth) + 'x\n')
         out.write('\t'.join(['#Chr', 'Start', 'End', 'Size', 'Gene', 'Depth<Nx', 'SamplesSharingSameFeature', 'Annotation']) + '\n')
@@ -131,6 +138,9 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
             if not res:
                 return None
 
+    output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
+    samples = [s for bs in bcbio_structures for s in bs.samples]
+    calculate_coverage_use_grid(cnf, samples, output_dirpath)
     with open(intersection_fpath) as f:
         for l in f:
             l = l.strip()
