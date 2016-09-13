@@ -94,12 +94,18 @@ class BaseClinicalReporting:
                 if full_name in used_full_names:
                     continue
                 used_full_names.add(full_name)
-                col_width = 40 + 15 * len(next_short_name.split())
+                col_width = 20 + 15 * len(next_short_name.split())
+
+                _get_class = lambda _name: ' '.join(['td_' + n for n in _name.lower().split(' ')])
+                freq_name = full_name + ' Freq'
+                depth_name = full_name + ' Depth'
                 ms.extend([
-                    Metric(full_name + ' Freq', short_name='\n'.join(short_name.split()) + '\nfreq', max_width=45,  min_width=45,
-                           align='left', unit='%', with_heatmap=False),          # .19
-                    Metric(full_name + ' Depth', short_name='depth', min_width=col_width, align='left',
-                           med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False),              # 658
+                    Metric(freq_name, short_name='\n'.join(short_name.split()) + '\nfreq', max_width=45,  min_width=45,
+                           align='left', unit='%', with_heatmap=False,
+                           td_class=_get_class(freq_name)),          # .19
+                    Metric(depth_name, short_name='depth', min_width=col_width, align='left',
+                           med=mutations_by_experiment.keys()[0].ave_depth, with_heatmap=False,
+                           td_class=_get_class(depth_name)),              # 658
                 ])
             ms.extend([
                 Metric('Samples', with_heatmap=False),          # 128

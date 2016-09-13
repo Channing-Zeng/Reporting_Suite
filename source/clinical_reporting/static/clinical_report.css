@@ -45,6 +45,10 @@ tr.unselected_type {
     color: #b33; }
 .clinical_report table.report_table .gray, .clinical_report table.report_table .reason {
   color: gray; }
+.clinical_report table.report_table .td_plasma {
+  background-color: #EFF; }
+.clinical_report table.report_table .td_tissue {
+  background-color: #FFE; }
 .clinical_report table.report_table.table_full tr.likely {
   background-color: #f1ffce; }
 .clinical_report .multi-col-layout {

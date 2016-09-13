@@ -110,7 +110,7 @@ def evaluate_capture(cnf, bcbio_structures):
             out.write('## Coverage threshold Nx is ' + str(cnf.min_depth) + 'x\n')
         out.write('\t'.join(['#Chr', 'Start', 'End', 'Size', 'Gene', 'Depth<Nx', 'SamplesSharingSameFeature', 'Annotation']) + '\n')
         for region in sorted(regions, key=lambda x: (x[0], int(x[1]))):
-            out.write('\t'.join([val for val in region]) + '\n')
+            out.write('\t'.join([str(val) for val in region]) + '\n')
 
     info()
     info(str(len(regions)) + ' regions were saved into ' + regions_fpath)

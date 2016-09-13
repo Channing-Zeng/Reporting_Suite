@@ -51,12 +51,16 @@ qualimap_covhist_fsubpath       = join(qualimap_raw_data_dirname, 'coverage_hist
 picard_ishist_fname = 'picard_ishist.txt'
 fastqc_report_fname = 'fastqc_report.html'
 
-mut_file_ext = 'tsv'
+# mut_file_ext = 'tsv'
+# mut_pass_suffix = 'mut'
+# mut_reject_suffix = 'false'
+mut_file_ext = 'txt'
+mut_pass_suffix = 'PASS'
+mut_reject_suffix = 'REJECT'
+
 mut_fname_template = '{caller_name}.' + mut_file_ext
 mut_single_suffix = 'single'
 mut_paired_suffix = 'paired'
-mut_pass_suffix = 'mut'
-mut_reject_suffix = 'false'
 
 
 class BaseSample:
