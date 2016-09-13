@@ -61,7 +61,7 @@ def main():
     info('*' * 70)
 
     if not cnf.project_name:
-        add_to_exac = False
+        cnf.add_to_exac = False
         cnf.project_name = 'CaptureTargetEvaluation'
 
     if cnf.output_dir is None:
@@ -85,7 +85,7 @@ def main():
     info('')
     info('*' * 70)
     evaluate_capture(cnf, bcbio_structures)
-    if add_to_exac:
+    if cnf.add_to_exac:
         output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
         samples = [s for bs in bcbio_structures for s in bs.samples]
         calculate_coverage_use_grid(cnf, samples, output_dirpath)
