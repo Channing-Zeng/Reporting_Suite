@@ -7,7 +7,7 @@ from optparse import OptionParser
 
 from source import verify_file, BaseSample
 from source.config import Config
-from source.file_utils import file_transaction
+from source.file_utils import file_transaction, safe_mkdir
 from source.logger import info, critical, warn
 from source.prepare_args_and_cnf import determine_sys_cnf
 from source.targetcov.bam_and_bed_utils import get_bedgraph_coverage
@@ -87,6 +87,7 @@ def main():
     if not cnf.output_dir or not cnf.bams:
         critical(parser.usage)
 
+    safe_mkdir(cnf.output_dir)
     get_regions_coverage(cnf, samples)
     info('Done.')
 
