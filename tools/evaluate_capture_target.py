@@ -33,6 +33,7 @@ def main():
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--log-dir', dest='log_dir', default='-')
+    parser.add_option('--exac', dest='add_to_exac', action='store_true', default=False, help='Export data to ExAC browser.')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to overlap.')
     parser.add_option('--tricky-regions', dest='tricky_regions', action='store_true', default=False,
                       help='Use high GC, low GC, low complexity regions to overlap.')
@@ -58,12 +59,10 @@ def main():
 
     info()
     info('*' * 70)
-    add_to_exac = True
 
     if not cnf.project_name:
         add_to_exac = False
         cnf.project_name = 'CaptureTargetEvaluation'
-        warn('Please specify --project-name if you want to export data to ExAC browser')
 
     if cnf.output_dir is None:
         cnf.output_dir = join(os.getcwd(), cnf.project_name)
@@ -87,7 +86,12 @@ def main():
     info('*' * 70)
     evaluate_capture(cnf, bcbio_structures)
     if add_to_exac:
+        output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
+        samples = [s for bs in bcbio_structures for s in bs.samples]
+        calculate_coverage_use_grid(cnf, samples, output_dirpath)
         add_project_to_exac(cnf)
+    else:
+        info('Use --exac if you want to export data to ExAC browser')
 
 
 def evaluate_capture(cnf, bcbio_structures):
@@ -138,9 +142,6 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
             if not res:
                 return None
 
-    output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
-    samples = [s for bs in bcbio_structures for s in bs.samples]
-    calculate_coverage_use_grid(cnf, samples, output_dirpath)
     with open(intersection_fpath) as f:
         for l in f:
             l = l.strip()
