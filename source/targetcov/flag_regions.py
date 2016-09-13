@@ -397,16 +397,16 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
     info()
     info('Detecting problematic regions for ' + sample)
 
-    bed_filenames = [fn + '.bed.gz' for fn in tricky_regions_fnames_d.keys()]
+    bed_filenames = [fn + '.bed.merged.gz' for fn in tricky_regions_fnames_d.keys()]
 
-    bed_fpaths = [join(cnf.genome.tricky_regions, 'new', bed_filename) for bed_filename in bed_filenames]
+    merged_bed_fpaths = [join(cnf.genome.tricky_regions, 'new', bed_filename) for bed_filename in bed_filenames]
 
     info('Intersecting BED ' + selected_bed_fpath + ' using BED files with tricky regions')
 
     intersection_fpath = join(cnf.work_dir, splitext_plus(basename(selected_bed_fpath))[0] + '_tricky_vcf_bed.intersect')
     if not cnf.reuse_intermediate or not verify_file(intersection_fpath, silent=True, is_critical=False):
         bedtools = get_system_path(cnf, 'bedtools')
-        cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(bed_fpaths) + ' -wo -filenames'
+        cmdline = bedtools + ' intersect -header -a ' + selected_bed_fpath + ' -b ' + ' '.join(merged_bed_fpaths) + ' -wo -filenames'
         call(cnf, cmdline, output_fpath=intersection_fpath, exit_on_error=False)
 
     return intersection_fpath

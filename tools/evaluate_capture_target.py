@@ -152,7 +152,7 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
             overlap_bps = int(fs[-1])
             r = (chrom, start, end, size, symbol, pct_depth, num_samples)
             if cnf.tricky_regions:
-                filename = tricky_regions_fnames_d[splitext_plus(basename(fs[7]))[0]]
+                filename = tricky_regions_fnames_d[basename(fs[7]).split('.')[0]]
                 regions_overlaps[r][filename].append(overlap_bps)
             else:
                 regions_overlaps[r][basename(cnf.bed)].append(overlap_bps)
