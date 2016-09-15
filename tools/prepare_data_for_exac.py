@@ -8,6 +8,7 @@ from os.path import join, basename
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
+from source.clinical_reporting.combine_reports import get_uniq_sample_key
 from source.file_utils import safe_mkdir, adjust_path, verify_file
 from source.logger import critical, info
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
@@ -51,7 +52,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
                 sample_names = ','.join(sample.name for sample in samples)
                 chrom_bams = []
                 for sample in samples:
-                    output_bam_fpath = join(cnf.work_dir, basename(sample.bam) + '_' + str(chrom) + '.bam')
+                    output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
                     cmdline = '{sambamba} slice {sample.bam} {chrom} > {output_bam_fpath}'.format(**locals())
                     call(cnf, cmdline)
                     if verify_file(output_bam_fpath):
@@ -244,11 +245,14 @@ def main():
     info()
     info('*' * 70)
     bcbio_structures = []
+    project_name = cnf.project_name
+    cnf.project_name = None
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(
             bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths):
         bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
         bcbio_structures.append(bs)
 
+    cnf.project_name = project_name
     if not cnf.project_name:
         if len(bcbio_structures) == 1:
             cnf.project_name = bcbio_structures[0].project_name
@@ -265,15 +269,20 @@ def main():
     safe_mkdir(cnf.log_dir)
     set_up_log(cnf, 'prepare_for_exac', cnf.project_name, cnf.output_dir)
 
-    cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
+    cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work', cnf.project_name))
     safe_mkdir(cnf.work_dir)
 
-    samples = [s for bs in bcbio_structures for s in bs.samples]
+    sample_names = [s.name for bs in bcbio_structures for s in bs.samples]
+    samples = []
 
+    info()
+    info('Preparing variants data')
     vcf_fpath_by_sname = dict()
     for bs in bcbio_structures:
         for sample in bs.samples:
             vcf_fpath, pass_vcf_fpath = convert_txt_to_vcf(cnf, bs, sample, output_dir=cnf.work_dir)
+            sample.name = get_uniq_sample_key(bs.project_name, sample, sample_names)
+            samples.append(sample)
             vcf_fpath_by_sname[sample.name] = vcf_fpath
 
     info()
@@ -281,8 +290,12 @@ def main():
     safe_mkdir(vcf_dirpath)
     combined_vcf_fpath = join(vcf_dirpath, cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
+
+    info()
+    info('Creating BAM files for IGV')
     split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath, exac_venv_pythonpath)
 
+    info()
     info('Saving coverage')
     project_cov_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
     safe_mkdir(project_cov_dirpath)

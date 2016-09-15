@@ -46,6 +46,7 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
     info('Running clinical reporting comparison')
 
     infos_by_key = OrderedDict()
+    sample_names = [s.name for bs in bcbio_structures for s in bs.samples]
     for i, bs in enumerate(bcbio_structures):
         info()
         info('Preparing ' + bs.project_name + '...')
@@ -57,7 +58,7 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
                 sample.targetcov_detailed_tsv = None
                 clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
-                uniq_key = get_uniq_sample_key(bs.project_name, sample)
+                uniq_key = get_uniq_sample_key(bs.project_name, sample, sample_names)
                 infos_by_key[(group, uniq_key)] = clin_info
                 info('')
 
@@ -65,7 +66,7 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
         for sample in bs.samples:
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
-                uniq_key = get_uniq_sample_key(bs.project_name, sample)
+                uniq_key = get_uniq_sample_key(bs.project_name, sample, sample_names)
                 infos_by_key[(group, uniq_key)].rejected_mutations = rejected_mutations[sample.name]
 
     sample_infos = OrderedDict({k: get_sample_info(e.sample.name, e.sample.dirpath, samples_data) for k, e in infos_by_key.iteritems()})
@@ -81,9 +82,10 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
     info('Successfully finished.')
 
 
-def get_uniq_sample_key(project_name, sample):
-    uniq_key = sample.name + '_' + project_name
-    return uniq_key
+def get_uniq_sample_key(project_name, sample, sample_names):
+    if sample_names.count(sample.name) > 1:
+        return sample.name + '_' + project_name
+    return sample.name
 
 
 def get_rejected_mutations_fpaths(pass_mutations_fpath):

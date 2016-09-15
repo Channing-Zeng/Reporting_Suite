@@ -14,6 +14,7 @@ from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
+from source.clinical_reporting.combine_reports import get_uniq_sample_key
 from source.logger import info, critical, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.file_utils import safe_mkdir, adjust_path, verify_file, splitext_plus
@@ -87,7 +88,12 @@ def main():
     evaluate_capture(cnf, bcbio_structures)
     if cnf.add_to_exac:
         output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
-        samples = [s for bs in bcbio_structures for s in bs.samples]
+        samples = []
+        sample_names = [s.name for bs in bcbio_structures for s in bs.samples]
+        for bs in bcbio_structures:
+            for sample in bs.samples:
+                sample.name = get_uniq_sample_key(bs.project_name, sample, sample_names)
+                samples.append(sample)
         calculate_coverage_use_grid(cnf, samples, output_dirpath)
         add_project_to_exac(cnf)
     else:
@@ -98,6 +104,7 @@ def evaluate_capture(cnf, bcbio_structures):
     samples = [s for bs in bcbio_structures for s in bs.samples]
     min_samples = math.ceil(cnf.min_ratio * len(samples))
 
+    info('Filtering regions by depth')
     regions = check_regions_depth(cnf, bcbio_structures, min_samples)
     if cnf.bed or cnf.tricky_regions:
         regions = intersect_regions(cnf, bcbio_structures, regions, min_samples)

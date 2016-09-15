@@ -44,8 +44,9 @@ def get_regions_coverage(cnf, samples):
     depths_by_pos = defaultdict(list)
     cov_by_sample = dict()
     for s in samples:
-        coverage_fpath = get_bedgraph_coverage(cnf, s.bam, chr_len_fpath=cnf.chr_len_fpath, bed_fpath=cnf.bed,
-                                               output_fpath=cnf.output_fpath, exit_on_error=False)
+        coverage_fpath = join(cnf.work_dir, s.name + '.bedgraph')
+        get_bedgraph_coverage(cnf, s.bam, chr_len_fpath=cnf.chr_len_fpath, bed_fpath=cnf.bed,
+                              output_fpath=coverage_fpath, exit_on_error=False)
         if verify_file(coverage_fpath):
             cov_by_sample[s.name] = coverage_fpath
     info()
