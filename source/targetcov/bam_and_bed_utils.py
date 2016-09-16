@@ -388,8 +388,7 @@ def annotate_target(cnf, target_bed):
     if not annotate_bed_py:
         critical('Error: annotate_bed.py not found in PATH, please install TargQC.')
 
-    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} -g {cnf.genome.name} ' + \
-              '-o {output_fpath}'.format(**locals())
+    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} -g {cnf.genome.name} -o {output_fpath}'.format(**locals())
     # cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} --reference {features_bed} ' \
     #           '--genome {cnf.genome.name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
     #           '-o {output_fpath}'.format(**locals())
