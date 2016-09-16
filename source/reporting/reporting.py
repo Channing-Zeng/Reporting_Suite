@@ -14,7 +14,7 @@ from ext_modules.jsontemplate import jsontemplate
 
 from source.bcbio.bcbio_structure import BCBioSample
 from source.file_utils import file_transaction, verify_file, safe_mkdir
-from source.logger import critical, info, err, warn
+from source.logger import critical, info, err, warn, debug
 from source.utils import mean, is_az
 from source.webserver.exposing import convert_gpfs_path_to_url, get_base_url_for_source
 
@@ -1782,7 +1782,12 @@ def write_static_html_report(cnf, data_dict, html_fpath, tmpl_fpath=None,
 
 
 def __write_html(cnf, html, html_fpath, extra_js_fpaths, extra_css_fpaths, image_by_key):
+    debug('__write_html: work_dir=' + cnf.work_dir)
+    safe_mkdir(cnf.work_dir)
     with file_transaction(cnf.work_dir, html_fpath) as tx:
+        debug('html_fpath=' + html_fpath)
+        debug('tx=' + tx)
+        safe_mkdir(dirname(tx))
         with open(tx, 'w') as f:
             f.write(html)
 

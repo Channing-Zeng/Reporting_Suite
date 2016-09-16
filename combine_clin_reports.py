@@ -59,7 +59,7 @@ def main():
     if not cnf.project_name:
         cnf.project_name = 'Combined_project'
 
-    safe_mkdir(cnf.output_dir)
+    cnf.output_dir = safe_mkdir(adjust_path(cnf.output_dir))
 
     cnf.log_dir = join(cnf.output_dir, 'log')
     info('log_dirpath: ' + cnf.log_dir)

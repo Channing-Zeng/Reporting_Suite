@@ -94,7 +94,7 @@ class BaseClinicalReporting:
                 if full_name in used_full_names:
                     continue
                 used_full_names.add(full_name)
-                col_width = 20 + 15 * len(next_short_name.split())
+                col_width = 40 + 15 * len(next_short_name.split())
 
                 _get_class = lambda _name: ' '.join(['td_' + n for n in _name.lower().split(' ')])
                 freq_name = full_name + ' Freq'
