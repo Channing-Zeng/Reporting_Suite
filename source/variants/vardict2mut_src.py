@@ -501,10 +501,7 @@ class Filtration:
             if gene_codon_chg in self.tier_by_specific_mutations:
                 tier = self.tier_by_specific_mutations[gene_codon_chg]
                 # status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated_codon_' + codon + '_in_exon_' + region)
-                if tier == 1:
-                    self.update_status(Filtration.statuses[tier], 'tier2_codon_' + codon + '_in_exon_' + region)
-                else:
-                    self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
+                self.update_status(Filtration.statuses[tier], ('act' if tier == 1 else 'tier2') + '_codon_' + codon + '_in_exon_' + region)
                 return True
 
     def check_by_type_and_region(self, cdna_chg, region, gene):
@@ -513,7 +510,7 @@ class Filtration:
             for type_ in types_by_region.get(region, []):
                 if type_ in cdna_chg:
                     tier = types_by_region[region][type_]
-                    self.update_status(Filtration.statuses[tier], 'act_' + type_ + '_in_gene_' + gene)
+                    self.update_status(Filtration.statuses[tier], ('act' if tier == 1 else 'tier2') + '_' + type_ + '_in_gene_' + gene)
                     return True
         return False
 
