@@ -760,9 +760,8 @@ class BCBioStructure(BaseProjectStructure):
                        info('Not found VCF in the datestamp dir, looking at the sample-level dir')
                        info('-')
                        vcf_fpath = self._set_vcf_file_from_sample_dir(caller_name, sample, silent=sample.phenotype == 'normal')
-                   if vcf_fpath:
-                       sample.vcf_by_callername[caller_name] = vcf_fpath
-                       self.variant_callers[caller_name].samples.append(sample)
+                   sample.vcf_by_callername[caller_name] = vcf_fpath
+                   self.variant_callers[caller_name].samples.append(sample)
             info()
         info('-' * 70)
 

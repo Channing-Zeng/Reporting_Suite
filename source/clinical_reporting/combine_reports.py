@@ -158,8 +158,7 @@ def run_sambamba_use_grid(cnf, infos_by_key, mut_bed_fpath):
                 reused_experiments.append(e)
                 continue
             else:
-                j = sambamba_depth(cnf, mut_bed_fpath, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True,
-                                   use_grid=True)
+                j = sambamba_depth(cnf, mut_bed_fpath, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True, use_grid=True)
                 submitted_experiments.append(e)
 
                 if not j.is_done:

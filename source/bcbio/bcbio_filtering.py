@@ -14,17 +14,27 @@ def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
     email_msg = ['Variant filtering finished.']
 
     info('')
-
     info('Combining resulting mutations')
+    found_vardict_res = False
     for c in callers:
+        if not c.get_single_samples() and not c.get_paired_samples():
+            err('Error: no single or paired VCFs found for ' + c.name)
         if c.get_single_samples():
+            found_vardict_res = True
             samples = c.get_single_samples()
             vcf2txt_fpaths = [s.get_vcf2txt_by_callername(c.name) for s in samples]
+            info('  single samples: ' + str(samples))
+            info('  single samples vardict.txt files: ' + str(vcf2txt_fpaths))
             combine_results(cnf, samples, vcf2txt_fpaths, c.single_vcf2txt_res_fpath)
         if c.get_paired_samples():
+            found_vardict_res = True
             samples = c.get_paired_samples()
             vcf2txt_fpaths = [s.get_vcf2txt_by_callername(c.name) for s in samples]
+            info('  paired samples: ' + str(samples))
+            info('  paired samples vardict.txt files: ' + str(vcf2txt_fpaths))
             combine_results(cnf, samples, vcf2txt_fpaths, c.paired_vcf2txt_res_fpath)
+    if not found_vardict_res:
+        critical('Error: no vardict results found for all variant caller')
 
     info()
     info('Symlinking final VCFs:')
@@ -129,13 +139,24 @@ def finish_filtering_for_bcbio(cnf, bcbio_structure, callers):
 
 
 def _combine_vcfs(cnf, callers, datestamp_var_dirpath):
+    found_vcf = False
     for caller in callers:
         combined_vcf_fpath = join(datestamp_var_dirpath, caller.name + '.vcf')
         vcf_fpath_by_sname = {s.name: s.find_filt_vcf_by_callername(caller.name) for s in caller.samples}
-        vcf_fpath_by_sname = {s_name: vcf_fpath for s_name, vcf_fpath in vcf_fpath_by_sname.items() if vcf_fpath}
-        info(caller.name + ': writing to ' + combined_vcf_fpath)
-        combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath)
-
+        good_vcf_fpath_by_sample = dict()
+        for sname, vcf_fpath in vcf_fpath_by_sname.items():
+            if vcf_fpath is None:
+                err('Filtered VCF for ' + sname + ' is not found.')
+            else:
+                good_vcf_fpath_by_sample[sname] = vcf_fpath
+        if not good_vcf_fpath_by_sample:
+            err('Not found any filtered VCFs for ' + caller.name)
+        else:
+            found_vcf = True
+            info(caller.name + ': writing to ' + combined_vcf_fpath)
+            combine_vcfs(cnf, good_vcf_fpath_by_sample, combined_vcf_fpath)
+    if not found_vcf:
+        critical('Error: no filtered VCFs found for any caller.')
 
 # def filtering_cohorts(cnf, caller, bcbio_structure):
 #     all_vcf_by_sample = caller.find_anno_vcf_by_sample()

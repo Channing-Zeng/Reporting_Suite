@@ -710,8 +710,12 @@ class BCBioRunner:
 
                 info('Per-sample variant filtering')
                 for sample in self.bcbio_structure.samples:
-                    for caller in self.bcbio_structure.variant_callers.values():
-                        if sample.vcf_by_callername.get(caller.name):
+                    if sample.phenotype != 'normal':
+                        info('  sample ' + sample.name)
+                        for caller in self.bcbio_structure.variant_callers.values():
+                            # if not sample.vcf_by_callername.get(caller.name):
+                            #     info('    no VCF found for ' + sample.name + ' in ' + str(sample.vcf_by_callername))
+                            # else:
                             anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
                             vcf2txt_cmdl = ''
                             # if self.cohort_mode:

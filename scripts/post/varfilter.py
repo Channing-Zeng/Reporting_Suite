@@ -118,14 +118,16 @@ def main(args):
         ungz_anno_vcf_fpath = var_s.anno_vcf_fpath if not var_s.anno_vcf_fpath.endswith('.gz') else splitext(var_s.anno_vcf_fpath)[0]
         ungz_filt_vcf_fpath = join(cnf.output_dir, add_suffix(basename(ungz_anno_vcf_fpath), 'filt'))
         var_s.filt_vcf_fpath = ungz_filt_vcf_fpath + '.gz'
-        var_s.pass_filt_vcf_fpath = add_suffix(ungz_filt_vcf_fpath, 'pass')
 
         var_s.variants_fpath = vcf2txt_res_fpath
         var_s.variants_pass_fpath = add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix)
 
+        ungz_pass_filt_vcf_fpath = add_suffix(ungz_filt_vcf_fpath, 'pass')
+        var_s.pass_filt_vcf_fpath = add_suffix(var_s.filt_vcf_fpath, 'pass')
+
         filt_vcf = write_vcf(cnf, var_s, cnf.output_dir, cnf.caller, vcf2txt_res_fpath, mut_fpath)
         index_vcf(cnf, var_s.name, filt_vcf, cnf.caller)
-        index_vcf(cnf, var_s.name, var_s.pass_filt_vcf_fpath, cnf.caller)
+        index_vcf(cnf, var_s.name, ungz_pass_filt_vcf_fpath, cnf.caller)
 
         if cnf.qc:
             report = qc.make_report(cnf, var_s.pass_filt_vcf_fpath, var_s)
