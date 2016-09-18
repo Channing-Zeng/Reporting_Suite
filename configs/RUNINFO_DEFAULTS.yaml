@@ -36,6 +36,9 @@ variant_filtering:
   signal_noise:      1.5    # SN.     -o   Signal/noise value.
   bias:              no     #         -b   Filter novel or dbSNP variants with strand bias "2;1" or "2;0" (BIAS field) and AF < 0.3.
 
+  keep_hla:          no     # --keep-hla            By default, all mutations in HLA-* genes are hard-filtered. Set this option to treat HLA like other genes.
+  keep_utr_intronic: no     # --keep-utr-intronic   By default, all UTR and intronic are hard-filterd. Set this option to keep all intronic and UTR in the output with "unknown" status.
+
   blacklist:
     genes:
     - published

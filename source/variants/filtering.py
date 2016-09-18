@@ -93,14 +93,12 @@ def run_vcf2txt_vardict2mut_for_samples(
         err('vcf2txt run returned non-0')
         return None
 
-    vardict2mut_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
-    if not vardict2mut_py:
-        critical('vardict2mut_py not found')
+    # vardict2mut_py = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
+    # if not vardict2mut_py:
+    #     critical('vardict2mut_py not found')
 
     info('Running vardict2mut')
-    res = run_vardict2mut(cnf, vcf2txt_out_fpath,
-        add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix),
-        vardict2mut_executable=vardict2mut_py)
+    res = run_vardict2mut(cnf, vcf2txt_out_fpath, add_suffix(vcf2txt_out_fpath, source.mut_pass_suffix))
     if not res:
         critical('vardict2mut.py run returned non-0')
     mut_fpath = res
@@ -137,7 +135,8 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
     check_filtering_results(vardict2mut_res_fpath)
 
     if not vardict2mut_executable:
-        vardict2mut_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
+        # vardict2mut_executable = get_script_cmdline(cnf, 'python', join('scripts', 'post', 'vardict2mut.py'))
+        vardict2mut_executable = 'vardict2mut'
 
     c = cnf.variant_filtering
 
@@ -159,25 +158,33 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
         res = call(cnf, cmdline, vardict2mut_res_fpath, exit_on_error=False)
 
     else:
-        cmdline += ' --sys-cnf ' + cnf.sys_cnf
-        cmdline += ' --run-cnf ' + cnf.run_cnf
-        if cnf.project_name:
-            cmdline += ' --project-name ' + cnf.project_name
-        cmdline += (' --reuse ' if cnf.reuse_intermediate else '')
+        filt_yaml_fpath = join(cnf.work_dir, 'filt_cnf.yaml')
+        info('Writing filtering yaml into ' + filt_yaml_fpath)
+        with file_transaction(cnf.work_dir, filt_yaml_fpath) as tx, open(filt_yaml_fpath, 'w') as out:
+            with open(cnf.run_cnf) as run_cnf:
+                lines = []
+                met_variant_filtering = False
+                for l in run_cnf:
+                    if l.startswith('variant_filtering:'):
+                        met_variant_filtering = True
+                    if met_variant_filtering:
+                        if l.startswith(' '):
+                            out.write(l.lstrip())
+                        else:
+                            break
+
+        cmdline += ' --filt-cnf ' + filt_yaml_fpath
+        cmdline += ' --work-dir ' + cnf.work_dir
+        cmdline += (' --debug ' if cnf.debug else '')
         cmdline += ' --genome ' + cnf.genome.name
         cmdline += ' -o ' + vardict2mut_res_fpath
         cmdline += ' --o-reject ' + vardict2mut_reject_fpath
 
-        # all_transcripts_path = add_suffix(vardict2mut_res_fpath, 'all_transcripts')
-        # fm_path = splitext(vardict2mut_res_fpath)[0] + '.fm'
-        # cmdline += ' --o-all-transcripts ' + all_transcripts_path
-        # cmdline += ' --o-fm ' + fm_path
-
         if cnf.cohort_freqs_fpath:
             cmdline += ' --cohort-freqs ' + cnf.cohort_freqs_fpath
+
         cmdline = cmdline.format(**locals())
-        res = call(cnf, cmdline, output_fpath=vardict2mut_res_fpath,
-                   stdout_to_outputfile=False, exit_on_error=False)
+        res = call(cnf, cmdline, output_fpath=vardict2mut_res_fpath, stdout_to_outputfile=False)
 
     if not res:
         return None
