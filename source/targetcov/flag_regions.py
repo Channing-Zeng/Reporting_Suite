@@ -397,7 +397,7 @@ def _intersect_with_tricky_regions(cnf, selected_bed_fpath, sample):
     info()
     info('Detecting problematic regions for ' + sample)
 
-    bed_filenames = [fn + '.bed.merged.gz' for fn in tricky_regions_fnames_d.keys()]
+    bed_filenames = [fn + '.bed.gz' for fn in tricky_regions_fnames_d.keys()]
 
     merged_bed_fpaths = [join(cnf.genome.tricky_regions, 'new', bed_filename) for bed_filename in bed_filenames]
 

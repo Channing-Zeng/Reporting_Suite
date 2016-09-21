@@ -184,6 +184,8 @@ class BCBioRunner:
         if 'linux' in _platform and not self.cnf.no_bam2bigwig:
             self.steps.append(self.bw_converting)
         if is_us():
+            if cnf.bed:
+                self.steps.append(self.evaluate_capture)
             self.steps.append(self.prepare_for_exac)
 
         # self.vardict_steps.extend(
@@ -498,6 +500,15 @@ class BCBioRunner:
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
+        evaluate_capture_cmdline = summaries_cmdline_params + ' ' + self.final_dir
+        self.evaluate_capture = Step(cnf, run_id,
+            name='evaluate_capture_target', short_name='capture_eval',
+            interpreter='python',
+            script=join('tools', 'evaluate_capture_target.py'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, 'evaluate_capture.{min_depth}.log'),
+            paramln=evaluate_capture_cmdline + ' --exac-only-filtering --tricky-regions --min-depth {min_depth}'
+        )
+
         exac_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if target_bed:
             exac_cmdline += ' --bed ' + target_bed
@@ -506,11 +517,11 @@ class BCBioRunner:
             name='prepare_data_for_exac', short_name='exac',
             interpreter='python',
             script=join('tools', 'prepare_data_for_exac.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath,  'exac.log'),
+            log_fpath_template=join(self.bcbio_structure.log_dirpath, 'exac.log'),
             paramln=exac_cmdline + ' --genome {cnf.genome.name}'
         )
 
-    def step_log_marker_and_output_paths(self, step, sample_name, caller=None):
+    def step_log_marker_and_output_paths(self, step, sample_name, caller=None, **kwargs):
         if sample_name:
             base_output_dirpath = abspath(join(self.final_dir, sample_name))
         else:
@@ -518,7 +529,7 @@ class BCBioRunner:
 
         output_dirpath = join(base_output_dirpath, step.dir_name) if step.dir_name else ''
 
-        log_fpath = step.log_fpath_template.format(sample=sample_name, caller=caller)
+        log_fpath = step.log_fpath_template.format(**kwargs)
         safe_mkdir(dirname(log_fpath))
 
         done_markers_dirpath = join(self.bcbio_structure.work_dir, 'done_markers')
@@ -546,7 +557,7 @@ class BCBioRunner:
             self.wait_for_jobs(self.max_threads / 2)  # maximum nubmer of jobs were submitted; waiting for half them to finish
 
         output_dirpath, log_err_fpath, done_marker_fpath, error_marker_fpath = \
-            self.step_log_marker_and_output_paths(step, sample_name, caller_suf)
+            self.step_log_marker_and_output_paths(step, sample_name, caller_suf, **kwargs)
 
         if output_dirpath and not isdir(output_dirpath) and create_dir:
             safe_mkdir(join(output_dirpath, pardir))
@@ -901,6 +912,13 @@ class BCBioRunner:
                  ', jobs didn\'t run: ' + str(len([j for j in self.jobs_running if not j.is_done])) +
                  ', total was: ' + str(len([j for j in self.jobs_running])))
             info()
+
+            if self.evaluate_capture in self.steps:
+                for depth in self.cnf.coverage_reports.exac_depth_thresholds:
+                    self._submit_job(
+                        self.evaluate_capture,
+                        min_depth=str(depth))
+            self.wait_for_jobs()
 
             if self.prepare_for_exac in self.steps:
                 info('Exposing to ExAC browser...')

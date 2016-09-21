@@ -1,27 +1,27 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
-from itertools import izip
-
-import math
-
 import bcbio_postproc
 
-from collections import defaultdict
+import math
 import os
-import sys
 from os.path import join, basename, splitext
+import sys
+import shutil
+from collections import defaultdict
+from itertools import izip
 from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
 from source.clinical_reporting.combine_reports import get_uniq_sample_key
-from source.logger import info, critical, warn
+from source.logger import info, critical, warn, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
-from source.file_utils import safe_mkdir, adjust_path, verify_file, splitext_plus
+from source.file_utils import safe_mkdir, adjust_path, verify_file, splitext_plus, add_suffix
 from source.targetcov.bam_and_bed_utils import sort_bed
 from source.targetcov.flag_regions import _intersect_with_tricky_regions, tricky_regions_fnames_d
 from source.targetcov.summarize_targetcov import get_val, get_float_val
 from source.tools_from_cnf import get_system_path
+from source.utils import is_us
 from tools.prepare_data_for_exac import calculate_coverage_use_grid, get_exac_dir, add_project_to_exac
 
 
@@ -34,12 +34,13 @@ def main():
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
     parser.add_option('--log-dir', dest='log_dir', default='-')
-    parser.add_option('--exac', dest='add_to_exac', action='store_true', default=False, help='Export data to ExAC browser.')
+    parser.add_option('--exac-only-filtering', dest='prepare_for_exac', action='store_true', default=False, help='Export filtered regions to ExAC browser.')
+    parser.add_option('--exac', dest='add_to_exac', action='store_true', default=False, help='Export coverage data to ExAC browser.')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to overlap.')
     parser.add_option('--tricky-regions', dest='tricky_regions', action='store_true', default=False,
                       help='Use high GC, low GC, low complexity regions to overlap.')
-    parser.add_option('--min-percent', dest='min_percent', help='Minimal percent of region which has low coverage.')
-    parser.add_option('--min-ratio', dest='min_ratio', help='Minimal percent of samples which share the same feature.')
+    parser.add_option('--min-percent', dest='min_percent', default='0.5', help='Minimal percent of region which has low coverage.')
+    parser.add_option('--min-ratio', dest='min_ratio', default='0.5', help='Minimal percent of samples which share the same feature.')
     parser.add_option('--min-depth', dest='min_depth', help='Coverage threshold.')
     parser.add_option('--metadata', dest='metadata', help='Samples type for each project (plasma, cell_line, ffpe).')
     parser.add_option('-o', dest='output_dir', help='Output directory.')
@@ -65,14 +66,17 @@ def main():
         cnf.add_to_exac = False
         cnf.project_name = 'CaptureTargetEvaluation'
 
-    if cnf.output_dir is None:
+    if cnf.prepare_for_exac:
+        cnf.output_dir = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
+    elif cnf.output_dir is None:
         cnf.output_dir = join(os.getcwd(), cnf.project_name)
+
     safe_mkdir(cnf.output_dir)
 
-    cnf.log_dir = join(cnf.output_dir, 'log')
-    info('log_dirpath: ' + cnf.log_dir)
-    safe_mkdir(cnf.log_dir)
-    set_up_log(cnf, 'evaluate_capture_target', cnf.project_name, cnf.output_dir)
+    if cnf.log_dir:
+        info('log_dirpath: ' + cnf.log_dir)
+        safe_mkdir(cnf.log_dir)
+        set_up_log(cnf, 'evaluate_capture_target', cnf.project_name, cnf.output_dir)
 
     bcbio_structures = []
     for bcbio_project_dirpath, bcbio_cnf, final_dirpath in zip(
@@ -80,14 +84,20 @@ def main():
         bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath)
         bcbio_structures.append(bs)
 
-    cnf.work_dir = adjust_path(join(cnf.output_dir, 'work'))
+    cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work'))
     safe_mkdir(cnf.work_dir)
 
     info('')
     info('*' * 70)
-    evaluate_capture(cnf, bcbio_structures)
+    regions_fpath = evaluate_capture(cnf, bcbio_structures)
     if cnf.add_to_exac:
+        if not is_us():
+            err('Exposing to ExAC browser is available only on US server')
+            return
         output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
+        safe_mkdir(output_dirpath)
+        if regions_fpath:
+            shutil.copy(regions_fpath, join(output_dirpath, basename(regions_fpath)))
         samples = []
         sample_names = [s.name for bs in bcbio_structures for s in bs.samples]
         for bs in bcbio_structures:
@@ -98,6 +108,7 @@ def main():
         add_project_to_exac(cnf)
     else:
         info('Use --exac if you want to export data to ExAC browser')
+    info('Done.')
 
 
 def evaluate_capture(cnf, bcbio_structures):
@@ -106,11 +117,17 @@ def evaluate_capture(cnf, bcbio_structures):
 
     info('Filtering regions by depth')
     regions = check_regions_depth(cnf, bcbio_structures, min_samples)
+    if not regions:
+        err('No regions were filtered.')
+        return None
     if cnf.bed or cnf.tricky_regions:
         regions = intersect_regions(cnf, bcbio_structures, regions, min_samples)
 
-    regions_fpath = join(cnf.output_dir, 'filtered_regions.txt')
+    regions_fname = 'filtered_regions.txt'
+    regions_fpath = join(cnf.output_dir, add_suffix(regions_fname, str(cnf.min_depth)) if cnf.min_depth else regions_fname)
     with open(regions_fpath, 'w') as out:
+        out.write('## Minimal percent of region which has low coverage: ' + str((1 - cnf.min_percent) * 100) + '%')
+        out.write('## Minimal percent of samples which share the same feature: ' + str(cnf.min_ratio * 100) + '%')
         if not cnf.min_depth:
             out.write('## Coverage threshold Nx is 10x for cell line and 100x for plasma\n')
         else:
@@ -121,10 +138,12 @@ def evaluate_capture(cnf, bcbio_structures):
 
     info()
     info(str(len(regions)) + ' regions were saved into ' + regions_fpath)
+    return regions_fpath
 
 
 def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
-    all_regions_bed_fpath = join(cnf.output_dir, 'all_regions.bed')
+    all_regions_fname = 'all_regions.bed'
+    all_regions_bed_fpath = join(cnf.output_dir, add_suffix(all_regions_fname, str(cnf.min_depth)) if cnf.min_depth else all_regions_fname)
 
     with open(all_regions_bed_fpath, 'w') as out:
         if not cnf.min_depth:
@@ -180,8 +199,9 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
 def check_regions_depth(cnf, bcbio_structures, min_samples):
     regions = defaultdict(list)
     filtered_regions = []
-    samples_count = len([s for bs in bcbio_structures for s in bs.samples])
+    total_samples_count = len([s for bs in bcbio_structures for s in bs.samples])
     for i, bs in enumerate(bcbio_structures):
+        depth_threshold = cnf.min_depth or cnf.min_depths[i]
         for s in bs.samples:
             tsv_fpath = s.targetcov_detailed_tsv
             if not verify_file(tsv_fpath, is_critical=False):
@@ -194,8 +214,10 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                         fs = l.split('\t')
                         if len(fs) > 13:
                             depth_thresholds = [int(filter_digits(d)) for d in fs[13:]]
+                            if depth_threshold not in depth_thresholds:
+                                err('Depth ' + str(depth_threshold) + 'x is not used in ' + tsv_fpath)
+                                break
                         continue
-
                     fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
                     chrom, start, end, size, symbol, strand, feature, biotype, transcript_id, min_depth, ave_depth, std_dev, wn20pcnt = fs[:13]
                     pcnt_val_by_thresh = fs[13:]
@@ -210,20 +232,15 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
 
                     if feature in ['Capture']:
                         region = (chrom, start, end, size, symbol)
-                        if not cnf.min_depth and (not cnf.min_depths or not cnf.min_depths[i]):  # no filtering
+                        if not depth_threshold:  # no filtering
                             regions[region].append(1)
-                            continue
-                        min_depth = cnf.min_depth or cnf.min_depths[i]
-                        if min_depth not in cov_by_threshs:
-                            warn()
-                            continue
-                        if cov_by_threshs[min_depth] < cnf.min_percent:
-                            regions[region].append(1 - cov_by_threshs[min_depth])
+                        elif cov_by_threshs[depth_threshold] < cnf.min_percent:
+                            regions[region].append(1 - cov_by_threshs[depth_threshold])
 
     for r, depths in regions.iteritems():
         num_samples = len(depths)
         if num_samples >= min_samples:
-            percent_samples = int(num_samples * 100.0 / samples_count)
+            percent_samples = int(num_samples * 100.0 / total_samples_count)
             str_num_samples = '{num_samples} ({percent_samples}%)'.format(**locals())
             r = list(r)
             pct_depth = str(int(sum(depths) * 100.0 / num_samples)) + '%'
