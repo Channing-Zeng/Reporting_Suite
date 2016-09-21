@@ -127,8 +127,8 @@ def evaluate_capture(cnf, bcbio_structures):
     regions_fname = 'filtered_regions.txt'
     regions_fpath = join(cnf.output_dir, add_suffix(regions_fname, str(cnf.min_depth)) if cnf.min_depth else regions_fname)
     with open(regions_fpath, 'w') as out:
-        out.write('## Minimal percent of region which has low coverage: ' + str((1 - cnf.min_percent) * 100) + '%')
-        out.write('## Minimal percent of samples which share the same feature: ' + str(cnf.min_ratio * 100) + '%')
+        out.write('## Minimal percent of region which has low coverage: ' + str((1 - cnf.min_percent) * 100) + '%\n')
+        out.write('## Minimal percent of samples which share the same feature: ' + str(cnf.min_ratio * 100) + '%\n')
         if not cnf.min_depth:
             out.write('## Coverage threshold Nx is 10x for cell line and 100x for plasma\n')
         else:
