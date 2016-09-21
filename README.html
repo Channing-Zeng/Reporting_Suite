@@ -2,11 +2,11 @@
 <html>
 <head>
   <title>README.md</title>
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
 <h1 id="az-reporting-suite">AZ reporting suite</h1>
-<p>Contents:</p>
+<h5 id="contents-">Contents:</h5>
 <ul>
 <li>Post-processing and reporting for <a href="https://github.com/chapmanb/bcbio-nextgen">BCBio-nextgen</a></li>
 <li>Pre-alignment processing and reporting</li>
@@ -121,14 +121,25 @@ az-reporting.py [/path/to/bcbio/final/] [--jira https://jira.rd.astrazeneca.net/
 <p>By default, the project name for reports, email notifications, and the NGS webserver list is extracted from the project path, e.g. <code>/ngs/oncology/Analysis/dev/Dev_0123_WGS_MiSeq_13_BN/bcbio/final</code> becomes <code>Dev_0123_WGS_MiSeq_13_BN_bcbio</code>. You can forse a different name using the --project option:</p>
 <pre><code>bcbio_postproc.py --project Dev_0123_WGS_MiSeq_13_BN
 </code></pre><h4 id="output">Output</h4>
-<h6 id="mutations">Mutations</h6>
+<h5 id="mutations">Mutations</h5>
 <p>In <code>final/YYYY-MM-DD_projectname/</code>, you can find *.PASS.txt files with all prioritized mutations passed the filtering.<br>The annotated VCF variant files can be found in the individual sample folders <code>final/&lt;sample&gt;/</code> as <code>&lt;sample&gt;-vardict.anno.filt.vcf.gz</code></p>
 <p>You can find detailed information on mutation filtering/prioritization/classification in <a href="https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/source/variants/variant_filtering.md">this article</a>.</p>
-<h6 id="cnv">CNV</h6>
+<h5 id="cnv">CNV</h5>
 <p>CNV<br>Seq2C CNV calls are located in the <code>final/YYYY-MM-DD_projectname/cnv/</code> folder.</p>
-<h6 id="coverage">Coverage</h6>
+<h5 id="coverage">Coverage</h5>
 <p>The per-gene, per-exons and per-amplicon coverage reports can be found in the individual sample folders under <code>final/&lt;sample&gt;/targetSeq/&lt;sample&gt;.targetSeq.details.gene.tsv</code></p>
-<h6 id="qc">QC</h6>
+<h5 id="exac">Exac</h5>
+<p>Sample-level coverage statistsics are automatically added into Exac webserver available at <a href="http://172.18.72.170:5000">http://172.18.72.170:5000</a></p>
+<p>To remove project:</p>
+<pre><code>$ module load mongo
+$ mongo
+&gt; use exac
+&gt; db.projects.find({&quot;name&quot;: &quot;Dev238-239&quot;})
+&gt; db.projects.remove({&quot;name&quot;: &quot;Dev238-239&quot;})
+$ cd /ngs/usr/miheenko/git/exac_browser
+$ source venv_exac/bin/activate
+$ ./manage.py create_cache
+</code></pre><h5 id="qc">QC</h5>
 <p>The folder <code>final/YYYY-MM-DD_projectname/</code> contains the project-level summary HTML landing page <code>&lt;projectname&gt;.html</code> that contains links to the following reports:</p>
 <ul>
 <li>NGS oncology reports with mutations, CNV, SV, and coverage stats and visualizations</li>

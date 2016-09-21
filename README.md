@@ -1,6 +1,7 @@
 # AZ reporting suite
 
-Contents:
+
+##### Contents:
 - Post-processing and reporting for [BCBio-nextgen](https://github.com/chapmanb/bcbio-nextgen)
 - Pre-alignment processing and reporting
 
@@ -157,20 +158,35 @@ By default, the project name for reports, email notifications, and the NGS webse
 bcbio_postproc.py --project Dev_0123_WGS_MiSeq_13_BN
 ```
 #### Output
-###### Mutations
+##### Mutations
 In `final/YYYY-MM-DD_projectname/`, you can find *.PASS.txt files with all prioritized mutations passed the filtering.
 The annotated VCF variant files can be found in the individual sample folders `final/<sample>/` as `<sample>-vardict.anno.filt.vcf.gz`
 
 You can find detailed information on mutation filtering/prioritization/classification in [this article](https://github.com/AstraZeneca-NGS/Reporting_Suite/tree/master/source/variants/variant_filtering.md).
 
-###### CNV
+##### CNV
 CNV
 Seq2C CNV calls are located in the `final/YYYY-MM-DD_projectname/cnv/` folder.
 
-###### Coverage
+##### Coverage
 The per-gene, per-exons and per-amplicon coverage reports can be found in the individual sample folders under `final/<sample>/targetSeq/<sample>.targetSeq.details.gene.tsv`
 
-###### QC
+##### Exac
+Sample-level coverage statistsics are automatically added into Exac webserver available at [http://172.18.72.170:5000](http://172.18.72.170:5000)
+
+To remove project:
+```
+$ module load mongo
+$ mongo
+> use exac
+> db.projects.find({"name": "Dev238-239"})
+> db.projects.remove({"name": "Dev238-239"})
+$ cd /ngs/usr/miheenko/git/exac_browser
+$ source venv_exac/bin/activate
+$ ./manage.py create_cache
+```
+
+##### QC
 The folder `final/YYYY-MM-DD_projectname/` contains the project-level summary HTML landing page `<projectname>.html` that contains links to the following reports:
   - NGS oncology reports with mutations, CNV, SV, and coverage stats and visualizations
   - VarQC (variant calling stats)
@@ -191,5 +207,3 @@ Logs are stored in `final/<datestamp>/log/reporting/`. The main log is called `l
 [VarFilter]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Variant+Filtration
 [TargQC]:http://wiki.rd.astrazeneca.net/display/NG/SOP+-+Targeted+Reseq+Reports
 [Seq2C]:http://wiki.rd.astrazeneca.net/display/caninfra/Seq2C+for+copy+number+analysis
-
-
