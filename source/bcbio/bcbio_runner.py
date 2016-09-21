@@ -413,17 +413,17 @@ class BCBioRunner:
                 log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
                 paramln=targetcov_params
             )
-            abnormal_regions_cmdl = summaries_cmdline_params + ' --mutations {mutations_fpath} ' + self.final_dir
-            if target_bed:
-                abnormal_regions_cmdl += ' --bed ' + target_bed
-            self.abnormal_regions = Step(cnf, run_id,
-                name='AbnormalCovReport', short_name='acr',
-                interpreter='python',
-                script=join('scripts', 'post', 'abnormal_regions.py'),
-                dir_name=BCBioStructure.targqc_dir,
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
-                paramln=abnormal_regions_cmdl
-            )
+            # abnormal_regions_cmdl = summaries_cmdline_params + ' --mutations {mutations_fpath} ' + self.final_dir
+            # if target_bed:
+            #     abnormal_regions_cmdl += ' --bed ' + target_bed
+            # self.abnormal_regions = Step(cnf, run_id,
+            #     name='AbnormalCovReport', short_name='acr',
+            #     interpreter='python',
+            #     script=join('scripts', 'post', 'abnormal_regions.py'),
+            #     dir_name=BCBioStructure.targqc_dir,
+            #     log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', 'abnormalRegionsReport.log'),
+            #     paramln=abnormal_regions_cmdl
+            # )
 
             transcripts_fpath = self.cnf.transcripts_fpath
             clinreport_paramline = (params_for_one_sample +
@@ -756,21 +756,21 @@ class BCBioRunner:
                                 wait_for_steps=wait_for_steps)
 
             # TargetSeq reports
-            if self.abnormal_regions in self.steps:
-                variant_caller = \
-                    self.bcbio_structure.variant_callers.get('vardict') or \
-                    self.bcbio_structure.variant_callers.get('vardict-java')
-                if variant_caller:
-                    vardict_txt_fname = source.mut_fname_template.format(caller_name=variant_caller.name)
-                    vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
-                    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
-
-                    wait_for_steps = []
-                    wait_for_steps += [self.varannotate.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varannotate in self.steps else []
-                    wait_for_steps += [self.varfilter.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varfilter in self.steps else []
-                    wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
-
-                    self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
+            # if self.abnormal_regions in self.steps:
+            #     variant_caller = \
+            #         self.bcbio_structure.variant_callers.get('vardict') or \
+            #         self.bcbio_structure.variant_callers.get('vardict-java')
+            #     if variant_caller:
+            #         vardict_txt_fname = source.mut_fname_template.format(caller_name=variant_caller.name)
+            #         vardict_txt_fpath = join(self.bcbio_structure.date_dirpath, vardict_txt_fname)
+            #         mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+            #
+            #         wait_for_steps = []
+            #         wait_for_steps += [self.varannotate.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varannotate in self.steps else []
+            #         wait_for_steps += [self.varfilter.job_name(sample.name, caller=variant_caller.name) for sample in self.bcbio_structure.samples] if self.varfilter in self.steps else []
+            #         wait_for_steps += [self.targetcov.job_name(sample.name) for sample in self.bcbio_structure.samples] if self.targetcov in self.steps else []
+            #
+            #         self._submit_job(self.abnormal_regions, wait_for_steps=wait_for_steps, mutations_fpath=mutations_fpath)
 
             if self.seq2c and self.seq2c in self.steps:
                 self._submit_job(

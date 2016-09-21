@@ -305,18 +305,22 @@ class ClinicalExperimentInfo:
             self.key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)
         self.key_genes_number = len(self.key_gene_by_name_chrom)
 
-        if self.sample.targqc_dirpath and verify_dir(self.sample.targqc_dirpath) \
-                and self.sample.targetcov_json_fpath and verify_file(self.sample.targetcov_json_fpath):
-            info('Parsing target and patient info from ' + str(self.sample.targetcov_json_fpath))
-            self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
-            self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
-            info('Parsing TargQC ' + self.genes_collection_type + ' genes stats...')
-            self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
-            self.depth_cutoff = max(1, int(self.ave_depth / 2))
-            self.region_depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
-            self.sample.targetcov_detailed_tsv = verify_file(self.sample.targetcov_detailed_tsv)
-            if self.sample.targetcov_detailed_tsv:
-                self.parse_targetseq_detailed_report()
+        if self.sample.targqc_dirpath:
+            if not verify_dir(self.sample.targqc_dirpath, description='targQC dirpath for sample ' + self.sample.dirpath) or \
+               not verify_file(self.sample.targetcov_json_fpath, description='targQC json for sample ' + self.sample.dirpath) or \
+               not verify_file(self.sample.targetcov_detailed_tsv, description='targQC json for sample ' + self.sample.dirpath):
+                err('Error: TargQC files for ' + sample.dirpath + ' not found')
+            else:
+                info('Parsing target and patient info from ' + str(self.sample.targetcov_json_fpath))
+                self.patient.gender = get_gender(self.sample, self.sample.targetcov_json_fpath)
+                self.target.coverage_percent = get_target_fraction(self.sample, self.sample.targetcov_json_fpath)
+                info('Parsing TargQC ' + self.genes_collection_type + ' genes stats...')
+                self.ave_depth = get_ave_coverage(self.sample, self.sample.targetcov_json_fpath)
+                self.depth_cutoff = max(1, int(self.ave_depth / 2))
+                self.region_depth_cutoff = get_depth_cutoff(self.ave_depth, self.cnf.coverage_reports.depth_thresholds)
+                self.sample.targetcov_detailed_tsv = verify_file(self.sample.targetcov_detailed_tsv)
+                if self.sample.targetcov_detailed_tsv:
+                    self.parse_targetseq_detailed_report()
         else:
             warn('No targetcov_json_fpath provided, skipping key genes coverage stats.')
         info()

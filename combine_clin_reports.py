@@ -50,6 +50,8 @@ def main():
         bs = BCBioStructure(cnf, bcbio_project_dirpath, bcbio_cnf, final_dirpath,
                             is_wgs=is_wgs, is_rnaseq=is_rnaseq)
         bcbio_structures.append(bs)
+        for s in bs.samples:
+            assert s.targetcov_json_fpath, str(s.dirpath) + ' ' + str(s.targqc_dirpath)
 
     if cnf.output_dir is None and cnf.project_name is None:
         critical('Either -o (output dir) or --project (project name) has to be specified')

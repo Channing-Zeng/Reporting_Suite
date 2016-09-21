@@ -60,11 +60,11 @@ def parse_gene_blacklists(cnf):
 def load_region_blacklists(cnf):
     d = OrderedDict()
     for region_type in cnf.variant_filtering.blacklist.regions:
-        fpath = verify_file(join(cnf.genome.tricky_regions, region_type + '.bed.gz'),
-                            description=region_type + ' tricky regions file')
-        if not fpath:
-            fpath = verify_file(join(cnf.genome.tricky_regions, 'new', region_type + '.bed.gz'),
-                                description=region_type + ' tricky regions file', is_critical=True)
+        # fpath = verify_file(join(cnf.genome.tricky_regions, region_type + '.bed.gz'),
+        #                     description=region_type + ' tricky regions file')
+        # if not fpath:
+        fpath = verify_file(join(cnf.genome.tricky_regions, 'merged', region_type + '.bed.gz'),
+                            description=region_type + ' tricky regions file', is_critical=True)
         # reason = region_type.replace('_', ' ').replace('heng', 'Heng\'s').replace('lt51bp', '< 51bp')
         # if 'gc' in reason:
         #     reason = reason.replace('to', '-').replace('gc', 'GC ') + '%'

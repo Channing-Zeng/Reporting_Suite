@@ -167,6 +167,7 @@ def run_vardict2mut(cnf, vcf2txt_res_fpath, vardict2mut_res_fpath=None, vardict2
                 for l in run_cnf:
                     if l.startswith('variant_filtering:'):
                         met_variant_filtering = True
+                        continue
                     if met_variant_filtering:
                         if l.startswith(' '):
                             out.write(l.lstrip())

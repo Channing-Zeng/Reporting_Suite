@@ -326,6 +326,7 @@ class BCBioSample(BaseSample):
             flagged_regions_dirpath=join(targqc_dirpath, BCBioStructure.flag_regions_name),
             clinical_report_dirpath=join(dirpath, source.clinreport_dir),
             **kwargs)
+        assert self.targetcov_json_fpath, str(self.dirpath) + ' ' + str(self.targqc_dirpath)
 
         self.project_tag = None
 

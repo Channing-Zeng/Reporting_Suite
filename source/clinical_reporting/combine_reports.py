@@ -55,7 +55,7 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
             if not cnf.sample_names or (cnf.sample_names and sample.name in cnf.sample_names):
                 info('Preparing ' + sample.name + '...')
                 info('-' * 70)
-                sample.targetcov_detailed_tsv = None
+                # sample.targetcov_detailed_tsv = None
                 clin_info = clinical_sample_info_from_bcbio_structure(cnf, bs, sample)
                 group = samples_data[bs.bcbio_project_dirpath][sample.name].group
                 uniq_key = get_uniq_sample_key(bs.project_name, sample, sample_names)
@@ -146,10 +146,9 @@ def run_sambamba_use_grid(cnf, infos_by_key, mut_bed_fpath):
         submitted_experiments = []
         reused_experiments = []
 
-        for k, e in infos_by_key.iteritems():
+        for (group, uniq_key), e in infos_by_key.iteritems():
             if e not in not_submitted_experiments:
                 continue
-            group_num, uniq_key = k
             sambamba_output_fpath = join(cnf.work_dir, uniq_key + '__mutations.bed')
             sambamba_output_by_experiment[e] = sambamba_output_fpath
 
@@ -158,6 +157,9 @@ def run_sambamba_use_grid(cnf, infos_by_key, mut_bed_fpath):
                 reused_experiments.append(e)
                 continue
             else:
+                if not e.sample.bam:
+                    err('Sample ' + e.sample.name + ' in ' + str(group) + ', ' + str(uniq_key) + ' has no BAM')
+                    continue
                 j = sambamba_depth(cnf, mut_bed_fpath, e.sample.bam, output_fpath=sambamba_output_fpath, only_depth=True, silent=True, use_grid=True)
                 submitted_experiments.append(e)
 
