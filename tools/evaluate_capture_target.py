@@ -22,6 +22,7 @@ from source.targetcov.flag_regions import _intersect_with_tricky_regions, tricky
 from source.targetcov.summarize_targetcov import get_val, get_float_val
 from source.tools_from_cnf import get_system_path
 from source.utils import is_us
+from source.variants.vcf_processing import bgzip_and_tabix
 from tools.prepare_data_for_exac import calculate_coverage_use_grid, get_exac_dir, add_project_to_exac
 
 
@@ -138,6 +139,7 @@ def evaluate_capture(cnf, bcbio_structures):
 
     info()
     info(str(len(regions)) + ' regions were saved into ' + regions_fpath)
+    bgzip_and_tabix(cnf, regions_fpath, tabix_parameters='-p bed')
     return regions_fpath
 
 
@@ -191,6 +193,9 @@ def intersect_regions(cnf, bcbio_structures, all_regions, min_samples):
                 for fname in regions_overlaps[r])
             r = list(r)
             r.append(overlaps_txt)
+        else:
+            r = list(r)
+            r.append('')
         regions.append(r)
     os.remove(intersection_fpath)
     return regions
