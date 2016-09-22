@@ -158,7 +158,7 @@ class BCBioRunner:
             self.steps.extend([self.varfilter])
 
         if not self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'TargQC'):
-            self.steps.extend([self.targetcov, self.targqc_summary, self.abnormal_regions])
+            self.steps.extend([self.targetcov, self.targqc_summary])
         if not self.bcbio_structure.is_rnaseq and any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targetcov, self.targqc_summary])
         # if Steps.contains(cnf.steps, 'AbnormalCovReport'):

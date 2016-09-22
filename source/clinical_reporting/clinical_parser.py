@@ -776,12 +776,13 @@ def capitalize_keep_uppercase(text):
 def get_record_from_vcf(vcf_reader, mut):
     records = vcf_reader.fetch(mut.chrom, mut.pos - 1, mut.pos)
     if records:
-        for record in records:
-            if record.POS != mut.pos:
+        for rec in records:
+            rec_alts = [rec.ALT] if isinstance(rec.ALT, basestring) else rec.ALT
+            if rec.POS != mut.pos or mut.alt not in rec_alts:
                 continue
-            if not record.FILTER:
-                record.FILTER = ['PASS']
-            return record
+            if not rec.FILTER:
+                rec.FILTER = ['PASS']
+            return rec
     return None
 
 
