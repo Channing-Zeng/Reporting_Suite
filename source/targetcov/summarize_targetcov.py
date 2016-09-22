@@ -88,9 +88,9 @@ def _make_tarqc_html_report(cnf, output_dir, samples, bed_fpath=None, tag_by_sam
                                                padding=cnf.coverage_reports.padding)
 
     jsons_by_sample = {s.name: s.targetcov_json_fpath for s in samples if verify_file(s.targetcov_json_fpath)}
-    htmls_by_sample = {s.name: s.targetcov_html_fpath for s in samples if verify_file(s.targetcov_html_fpath)}
+    htmls_by_sample = dict()  #{s.name: s.targetcov_html_fpath for s in samples if verify_file(s.targetcov_html_fpath)}
 
-    if not jsons_by_sample or not htmls_by_sample:
+    if not jsons_by_sample:
         return None, None, None
 
     targqc_full_report = FullReport.construct_from_sample_report_jsons(samples, output_dir, jsons_by_sample, htmls_by_sample)
