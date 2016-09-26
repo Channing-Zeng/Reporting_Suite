@@ -367,6 +367,7 @@ class ComparisonClinicalReporting(BaseClinicalReporting):
         write_static_html_report(self.cnf, data, output_fpath,
            tmpl_fpath=join(dirname(abspath(__file__)), 'template_target2wgs.html' if is_target2wgs else 'template_combine.html'),
            extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'clinical_report.js'),
+                            join(dirname(abspath(__file__)), 'static', 'combined_clinical_report.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_genes_coverage_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'draw_mutations_plot.js'),
                             join(dirname(abspath(__file__)), 'static', 'd3.min.js'),
