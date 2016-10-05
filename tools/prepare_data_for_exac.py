@@ -44,37 +44,36 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
         for chrom in not_submitted_chroms:
             output_fpath = join(output_dirpath, chrom + '.txt.gz')
 
-            if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
-                info(output_fpath + ' exists, reusing')
-                reused_chroms.append(chrom)
-                continue
-            else:
-                sample_names = ','.join(sample.name for sample in samples)
-                chrom_bams = []
-                for sample in samples:
-                    output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
-                    cmdline = '{sambamba} slice {sample.bam} {chrom} > {output_bam_fpath}'.format(**locals())
-                    call(cnf, cmdline)
-                    if verify_file(output_bam_fpath):
-                        chrom_bams.append(output_bam_fpath)
-                if not chrom_bams:
-                    reused_chroms.append(chrom)
-                    info(chrom + ' is not covered')
+            for sample in samples:
+                sample_output_dirpath = join(output_dirpath, sample.name)
+                safe_mkdir(sample_output_dirpath)
+                output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
+                if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+                    info(output_fpath + ' exists, reusing')
                     continue
-                bam_fpaths = ','.join(chrom_bams)
+
+                output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
+                cmdline = '{sambamba} slice {sample.bam} {chrom} > {output_bam_fpath}'.format(**locals())
+                call(cnf, cmdline)
+                if not verify_file(output_bam_fpath):
+                    reused_chroms.append(chrom)
+                    info(chrom + ' is not covered in ' + sample.name)
+                    continue
+
                 cmdline = get_script_cmdline(cnf, 'python', join('tools', 'get_region_coverage.py'), is_critical=True)
-                cmdline += ' --chr {chrom} --bams {bam_fpaths} --samples {sample_names} -o {output_dirpath} -g {chr_len_fpath} ' \
+                cmdline += ' --chr {chrom} --bams {output_bam_fpath} --samples {sample.name} -o {sample_output_dirpath} -g {chr_len_fpath} ' \
                            ' --work-dir {cnf.work_dir}'.format(**locals())
                 if cnf.bed:
                      cmdline += ' --bed {cnf.bed}'.format(**locals())
                 j = submit_job(cnf, cmdline, chrom + '_coverage')
-                info()
-                submitted_chroms.append(chrom)
 
-                if not j.is_done:
-                    jobs_to_wait.append(j)
-                if len(jobs_to_wait) >= cnf.threads:
-                    break
+            info()
+            submitted_chroms.append(chrom)
+
+            if not j.is_done:
+                jobs_to_wait.append(j)
+            if len(jobs_to_wait) >= cnf.threads:
+                break
         if jobs_to_wait:
             info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
             jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
@@ -286,9 +285,9 @@ def main():
             vcf_fpath_by_sname[sample.name] = vcf_fpath
 
     info()
-    vcf_dirpath = join(cnf.output_dir, 'vardict')
-    safe_mkdir(vcf_dirpath)
-    combined_vcf_fpath = join(vcf_dirpath, cnf.project_name + '.vcf')
+    variants_dirpath = join(cnf.output_dir, 'vardict')
+    safe_mkdir(variants_dirpath)
+    combined_vcf_fpath = join(variants_dirpath, cnf.project_name + '.vcf')
     combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
 
     info()
