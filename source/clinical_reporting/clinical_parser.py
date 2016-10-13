@@ -382,6 +382,9 @@ class ClinicalExperimentInfo:
 
         chr_order = get_chrom_order(self.cnf)
 
+        with open(self.cnf.transcripts_fpath) as f:
+            transcripts = [tr.strip() for tr in f]
+
         with open(sv_fpath) as f:
             header_rows = []
             for i, l in enumerate(f):
@@ -389,7 +392,7 @@ class ClinicalExperimentInfo:
                 if i == 0:
                     header_rows = fs  # caller  sample  chrom  start  end  svtype  known  end_gene  lof  annotation  split_read_support  paired_end_support
                 else:
-                    event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, **dict(zip(header_rows, fs)))
+                    event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, transcripts, **dict(zip(header_rows, fs)))
                     if event and event.sample == self.sample.name:
                         all_events[(event.sample, event.id)] = event
                         for annotation in event.annotations:

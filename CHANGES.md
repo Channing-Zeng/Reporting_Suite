@@ -1,3 +1,7 @@
+#### v1.5.2, 13 Oct 2016
+- SV reporting: only canonical transcripts
+- Variant reporting: updated actionable variants list
+
 #### v1.5.1, 26 Aug 2016
 - Exposing coverage reports for reporting in Exac server
 - TargQC integrated into bcbio's MultiQC. VarQC removed.

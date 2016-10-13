@@ -2,6 +2,7 @@ import re
 from copy import copy
 
 from source import verify_file
+from source.logger import warn
 from source.targetcov.Region import SortableByChrom
 from source.targetcov.bam_and_bed_utils import get_gene_keys
 
@@ -33,7 +34,7 @@ class SVEvent(SortableByChrom):
             if annotation.event.caller not in ['manta', 'lumpy']:
                 return
             split_read_count = annotation.event.split_read_count
-            paired_end_count = annotation.event.split_read_count
+            paired_end_count = annotation.event.paired_end_count
             if not self.event:
                 self.__dict__.update(annotation.__dict__)
                 self.event = copy(annotation.event)
@@ -77,7 +78,7 @@ class SVEvent(SortableByChrom):
             return a
 
     @staticmethod
-    def parse_sv_event(chr_order, key_gene_by_name_chrom, **kwargs):  # caller  sample  chrom  start  end  svtype  lof  annotation  split_read_support  paired_support_PE  paired_support_PR
+    def parse_sv_event(chr_order, key_gene_by_name_chrom, transcripts, **kwargs):  # caller  sample  chrom  start  end  svtype  lof  annotation  split_read_support  paired_support_PE  paired_support_PR
         e = SVEvent(chrom=kwargs.get('chrom'), chrom_ref_order=chr_order.get(kwargs.get('chrom')))
         e.caller = kwargs.get('caller')
         e.start = int(kwargs.get('start'))
@@ -109,12 +110,16 @@ class SVEvent(SortableByChrom):
         if kwargs.get('annotation'):
             for s in kwargs.get('annotation').split(','):
                 a = SVEvent.Annotation.parse_annotation(s)
-                if a:
-                    assert a.type == e.type, 'Annotation type and event type does not match: ' + str(e.type) + ', ' + str(a.type)
-                    e.annotations.append(a)
-                    known_genes = [g for g in a.genes if (g, e.chrom) in key_gene_by_name_chrom]
-                    if known_genes:
-                        e.known_gene = known_genes[0]
+                if not a:
+                    continue
+                if a.transcript not in transcripts:
+                    warn('SV: transcript ' + a.transcript + ' for genes ' + str(a.genes) + ' is not canonical')
+                    continue
+                assert a.type == e.type, 'Annotation type and event type does not match: ' + str(e.type) + ', ' + str(a.type)
+                e.annotations.append(a)
+                known_genes = [g for g in a.genes if (g, e.chrom) in key_gene_by_name_chrom]
+                if known_genes:
+                    e.known_gene = known_genes[0]
         paired_end_manta_header = 'paired_support_PR' if 'paired_support_PR' in kwargs else 'paired_end_support'
         paired_end_lumpy_header = 'paired_support_PE' if 'paired_support_PE' in kwargs else 'paired_end_support'
         if e.caller == 'manta':  # Manta has comma separated REF/ALT depths in third last and last column
