@@ -1,4 +1,5 @@
 import os
+from genericpath import getsize
 from os.path import isfile, join, abspath, basename, dirname, getctime, getmtime, splitext
 from subprocess import check_output
 from collections import OrderedDict, defaultdict
@@ -96,7 +97,7 @@ def bam_to_bed(cnf, bam_fpath, to_gzip=True):
     gzip = get_system_path(cnf, 'gzip')
     cmdline = '{bedtools} bamtobed -i {bam_fpath}'.format(**locals())
     cmdline += ' | {gzip}'.format(**locals()) if to_gzip else ''
-    call(cnf, cmdline, output_fpath=bam_bed_fpath)
+    call(cnf, cmdline, output_fpath=bam_bed_fpath, verify_output_not_empty=False)
     return bam_bed_fpath
 
 
@@ -124,6 +125,10 @@ def get_bedgraph_coverage(cnf, bam_fpath, chr_len_fpath=None, output_fpath=None,
         info(dedup_bam + ' exists')
     index_bam(cnf, dedup_bam)
     bam_bed_fpath = bam_to_bed(cnf, dedup_bam, to_gzip=False)
+    if getsize(bam_bed_fpath) <= 0:
+        info('No coverage for ' + bam_fpath + ', skipping.')
+        return None
+
     sorted_bed_fpath = sort_bed_by_alphabet(cnf, bam_bed_fpath, chr_len_fpath=chr_len_fpath)
     if bed_fpath:
         in_bed_fpath = intersect_bed(cnf, sorted_bed_fpath, bed_fpath)
@@ -388,11 +393,13 @@ def annotate_target(cnf, target_bed):
     if not annotate_bed_py:
         critical('Error: annotate_bed.py not found in PATH, please install TargQC.')
 
-    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} -g {cnf.genome.name} -o {output_fpath}'.format(**locals())
+    cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} -g {cnf.genome.name} -o {output_fpath} '.format(**locals())
     # cmdline = '{annotate_bed_py} {target_bed} --work-dir {cnf.work_dir} --reference {features_bed} ' \
     #           '--genome {cnf.genome.name} --sys-cnf {cnf.sys_cnf} --run-cnf {cnf.run_cnf} ' \
     #           '-o {output_fpath}'.format(**locals())
     call(cnf, cmdline, output_fpath, stdout_to_outputfile=False)
+
+    output_fpath = remove_comments(cnf, output_fpath)
 
     return output_fpath
 
@@ -579,7 +586,7 @@ def fix_bed_for_qualimap(bed_fpath, qualimap_bed_fpath):
 
 
 def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_grid=False,
-                  command_name='', sample_name=None, silent=False):
+                  command_name='', sample_name=None, silent=False, stdout_to_outputfile=True):
     sambamba = sambamba or get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
     sample_name = sample_name or basename(bam_fpath).split('.')[0]
     if use_grid:
@@ -588,14 +595,16 @@ def call_sambamba(cnf, cmdl, bam_fpath, output_fpath=None, sambamba=None, use_gr
         cmdl = cmdl.replace('" ', '__QUOTE__\"\' ')
         grid_cmdl = grid_sambabma + ' ' + bam_fpath + ' ' + sambamba + ' ' + cmdl
         job_name = command_name + '_' + sample_name
-        j = submit_job(cnf, grid_cmdl, job_name=job_name, output_fpath=output_fpath)
+        j = submit_job(cnf, grid_cmdl, job_name=job_name, output_fpath=output_fpath,
+                       stdout_to_outputfile=stdout_to_outputfile)
         info()
         return j
     else:
         index_bam(cnf, bam_fpath, sambamba=sambamba)
         cmdl = sambamba + ' ' + cmdl
         stderr_dump = []
-        res = call(cnf, cmdl, output_fpath=output_fpath, exit_on_error=False, stderr_dump=stderr_dump, silent=silent, print_stderr=not silent)
+        res = call(cnf, cmdl, output_fpath=output_fpath, exit_on_error=False, stderr_dump=stderr_dump,
+                   stdout_to_outputfile=stdout_to_outputfile, silent=silent, print_stderr=not silent)
         if not res:
             for l in stderr_dump:
                 if 'sambamba-view: BAM index file (.bai) must be provided' in l:

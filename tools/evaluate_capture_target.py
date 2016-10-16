@@ -97,7 +97,7 @@ def main():
             return
         output_dirpath = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
         safe_mkdir(output_dirpath)
-        if regions_fpath:
+        if regions_fpath and regions_fpath != join(output_dirpath, basename(regions_fpath)):
             shutil.copy(regions_fpath, join(output_dirpath, basename(regions_fpath)))
         samples = []
         sample_names = [s.name for bs in bcbio_structures for s in bs.samples]

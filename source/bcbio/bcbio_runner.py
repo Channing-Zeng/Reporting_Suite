@@ -183,7 +183,7 @@ class BCBioRunner:
         from sys import platform as _platform
         if 'linux' in _platform and not self.cnf.no_bam2bigwig:
             self.steps.append(self.bw_converting)
-        if is_us():
+        if is_us() or is_local():
             if cnf.bed:
                 self.steps.append(self.evaluate_capture)
             self.steps.append(self.prepare_for_exac)
@@ -506,19 +506,19 @@ class BCBioRunner:
             interpreter='python',
             script=join('tools', 'evaluate_capture_target.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'evaluate_capture.{min_depth}.log'),
-            paramln=evaluate_capture_cmdline + ' --exac-only-filtering --tricky-regions --min-depth {min_depth}'
-        )
+            paramln=evaluate_capture_cmdline + ' --exac-only-filtering --tricky-regions --min-depth {min_depth}' +
+               ' --work-dir ' + join(self.bcbio_structure.work_dir, 'evaluate_capture.{min_depth}'))
 
         exac_cmdline = summaries_cmdline_params + ' ' + self.final_dir
         if target_bed:
             exac_cmdline += ' --bed ' + target_bed
-
         self.prepare_for_exac = Step(cnf, run_id,
             name='prepare_data_for_exac', short_name='exac',
             interpreter='python',
             script=join('tools', 'prepare_data_for_exac.py'),
             log_fpath_template=join(self.bcbio_structure.log_dirpath, 'exac.log'),
-            paramln=exac_cmdline + ' --genome {cnf.genome.name}'
+            paramln=exac_cmdline + ' --genome {cnf.genome.name}' +
+               ' --work-dir ' + join(self.bcbio_structure.work_dir, 'prepare_data_for_exac')
         )
 
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None, **kwargs):

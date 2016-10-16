@@ -99,7 +99,8 @@ def main():
     info('*' * 70)
     for bs in bcbio_structures:
         for sample in bs.samples:
-            convert_txt_to_vcf(cnf, bs, sample)
+            if sample.phenotype != 'normal':
+                convert_txt_to_vcf(cnf, bs, sample)
 
 
 def get_mutation_dicts(cnf, bs, sample):
@@ -164,6 +165,9 @@ def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
     info('')
     info('Preparing data for ' + sample.name)
     anno_filt_vcf_fpath = sample.find_filt_vcf_by_callername(cnf.caller_name)
+    if not anno_filt_vcf_fpath:
+        return None, None
+
     if not output_dir:
         output_dir = cnf.output_dir or os.path.dirname(anno_filt_vcf_fpath)
     output_vcf_fpath = join(output_dir, sample.name + '-' + cnf.caller_name + filt_vcf_ending)

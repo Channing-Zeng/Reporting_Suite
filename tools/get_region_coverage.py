@@ -18,9 +18,9 @@ from source.variants.vcf_processing import bgzip_and_tabix
 def write_coverage(cnf, chrom, depths_by_pos, samples, cov_thresholds):
     coverage_data_fpath = join(cnf.output_dir, chrom + '.txt')
     if not cnf.reuse_intermediate or (not verify_file(coverage_data_fpath, silent=True) and
-                                          not verify_file(coverage_data_fpath + '.gz', silent=True)):
+                                      not verify_file(coverage_data_fpath + '.gz', silent=True)):
         chrom_num = chrom.replace('chr', '')
-        with file_transaction(cnf, coverage_data_fpath) as tx:
+        with file_transaction(cnf.work_dir, coverage_data_fpath) as tx:
             with open(tx, 'w') as f:
                 fs = ['#chrom', 'pos', 'mean', 'median'] + [str(t) for t in cov_thresholds]
                 f.write('\t'.join(fs) + '\n')
@@ -43,16 +43,20 @@ def get_regions_coverage(cnf, samples):
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
     depths_by_pos = defaultdict(list)
     cov_by_sample = dict()
+
+    info()
+    info('Coverage to bedgrapth for ' + cnf.chrom)
     for s in samples:
         coverage_fpath = join(cnf.work_dir, s.name + '_' + cnf.chrom + '.bedgraph')
-        get_bedgraph_coverage(cnf, s.bam, chr_len_fpath=cnf.chr_len_fpath, bed_fpath=cnf.bed, output_fpath=coverage_fpath, exit_on_error=False)
-        if verify_file(coverage_fpath):
+        coverage_fpath = get_bedgraph_coverage(cnf, s.bam, chr_len_fpath=cnf.chr_len_fpath, bed_fpath=cnf.bed, output_fpath=coverage_fpath, exit_on_error=False)
+        if coverage_fpath and verify_file(coverage_fpath):
             cov_by_sample[s.name] = coverage_fpath
     info()
     if not cov_by_sample:
         warn(cnf.chrom + ' is not covered in all samples')
         return None
 
+    info()
     info('Parsing bedtools output...')
     for sample, coverage_fpath in cov_by_sample.iteritems():
         for line in open(coverage_fpath):
@@ -62,6 +66,9 @@ def get_regions_coverage(cnf, samples):
             start, end, depth = map(int, (start, end, depth))
             for pos in xrange(start, end):
                 depths_by_pos[pos].append(depth)
+
+    info()
+    info('Writing coverage for ' + cnf.chrom)
     write_coverage(cnf, cnf.chrom, depths_by_pos, samples, cov_thresholds)
     return depths_by_pos
 
@@ -88,6 +95,7 @@ def main():
         critical(parser.usage)
 
     safe_mkdir(cnf.output_dir)
+    safe_mkdir(cnf.work_dir)
     get_regions_coverage(cnf, samples)
     info('Done.')
 

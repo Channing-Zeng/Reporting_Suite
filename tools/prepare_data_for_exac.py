@@ -10,7 +10,7 @@ from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
 from source.clinical_reporting.combine_reports import get_uniq_sample_key
 from source.file_utils import safe_mkdir, adjust_path, verify_file
-from source.logger import critical, info
+from source.logger import critical, info, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.qsub_utils import wait_for_jobs, submit_job
 from source.targetcov.bam_and_bed_utils import call_sambamba
@@ -20,68 +20,99 @@ from source.variants.filtering import combine_vcfs
 from tools.txt2vcf import convert_txt_to_vcf
 
 
-EXAC_FILES_DIRECTORY = '../exac_data/'
 chromosomes = ['chr%s' % x for x in range(1, 23)]
 chromosomes.extend(['chrX', 'chrY', 'chrM'])
-exac_us_url = 'http://172.18.72.170:5000/'
+# exac_us_url = 'http://172.18.72.170:5000/'
+# exac_code_dir = '/ngs/usr/vlad/exac_browser'
+# exac_data_dir = '/ngs/usr/vlad/exac_data'
+exac_url = 'http://172.18.72.171:5000/'
+exac_code_dir = '/ngs/usr/miheenko/git/exac_browser'
+exac_data_dir = '/ngs/usr/miheenko/git/exac_data'
+if is_local():
+    exac_url = 'http://localhost:5000'
+    exac_code_dir = '/Users/vlad/vagrant/exac_browser'
+    exac_data_dir = '/Users/vlad/vagrant/exac_data'
 
 
 def get_exac_us_url(genome, project_name):
-    return exac_us_url + genome.split('-')[0] + '/' + project_name + '/'
+    return exac_url + genome.split('-')[0] + '/' + project_name + '/'
+
+
+def _submit_region_cov(cnf, work_dir, chrom, bam_fpaths, sample_names, output_dirpath, chr_len_fpath):
+    cmdline = get_script_cmdline(cnf, 'python', join('tools', 'get_region_coverage.py'), is_critical=True)
+    cmdline += (' --chr ' + chrom + ' --bams ' + bam_fpaths + ' --samples ' + sample_names +
+                ' -o ' + output_dirpath + ' -g ' + chr_len_fpath + ' ' +
+                ' --work-dir ' + work_dir)
+    if cnf.bed:
+         cmdline += ' --bed ' + cnf.bed
+    return submit_job(cnf, cmdline, chrom + '_coverage')
 
 
 def calculate_coverage_use_grid(cnf, samples, output_dirpath):
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
 
-    not_submitted_chroms = [chrom for chrom in chromosomes]
-
     chr_len_fpath = get_chr_len_fpath(cnf)
-    while not_submitted_chroms:
-        jobs_to_wait = []
-        submitted_chroms = []
-        reused_chroms = []
+    jobs_to_wait = []
 
-        for chrom in not_submitted_chroms:
-            output_fpath = join(output_dirpath, chrom + '.txt.gz')
+    for chrom in chromosomes:
+        info('Processing chromosome ' + chrom)
+        avg_cov_output_fpath = join(output_dirpath, chrom + '.txt.gz')
 
-            for sample in samples:
-                sample_output_dirpath = join(output_dirpath, sample.name)
-                safe_mkdir(sample_output_dirpath)
-                output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
-                if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
-                    info(output_fpath + ' exists, reusing')
-                    continue
+        sliced_bam_by_sample = dict()
 
-                output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
-                cmdline = '{sambamba} slice {sample.bam} {chrom} > {output_bam_fpath}'.format(**locals())
-                call(cnf, cmdline)
-                if not verify_file(output_bam_fpath):
-                    reused_chroms.append(chrom)
-                    info(chrom + ' is not covered in ' + sample.name)
-                    continue
+        sample_names = ','.join(sample.name for sample in samples)
+        chrom_bams = []
 
-                cmdline = get_script_cmdline(cnf, 'python', join('tools', 'get_region_coverage.py'), is_critical=True)
-                cmdline += ' --chr {chrom} --bams {output_bam_fpath} --samples {sample.name} -o {sample_output_dirpath} -g {chr_len_fpath} ' \
-                           ' --work-dir {cnf.work_dir}'.format(**locals())
-                if cnf.bed:
-                     cmdline += ' --bed {cnf.bed}'.format(**locals())
-                j = submit_job(cnf, cmdline, chrom + '_coverage')
+        for sample in samples:
+            output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
+            cmdline = '{sambamba} slice {sample.bam} {chrom}'.format(**locals())
+            call(cnf, cmdline, output_fpath=output_bam_fpath)
+            if verify_file(output_bam_fpath):
+                chrom_bams.append(output_bam_fpath)
+                sliced_bam_by_sample[sample.name] = output_bam_fpath
 
-            info()
-            submitted_chroms.append(chrom)
+        bam_fpaths = ','.join(chrom_bams)
 
+        if cnf.reuse_intermediate and verify_file(avg_cov_output_fpath, silent=True):
+            info(avg_cov_output_fpath + ' exists, reusing')
+        else:
+            j = _submit_region_cov(cnf, cnf.work_dir, chrom, bam_fpaths, sample_names, output_dirpath, chr_len_fpath)
             if not j.is_done:
                 jobs_to_wait.append(j)
-            if len(jobs_to_wait) >= cnf.threads:
-                break
-        if jobs_to_wait:
-            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
-            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
-        else:
-            info('No jobs to submit.')
-        not_submitted_chroms = [chrom for chrom in not_submitted_chroms if
-                                          chrom not in submitted_chroms and
-                                          chrom not in reused_chroms]
+            info()
+
+        for sample in samples:
+            info('Coverage calculation for ' + sample.name + ', ' + chrom)
+            sample_output_dirpath = join(output_dirpath, sample.name)
+            safe_mkdir(sample_output_dirpath)
+            output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
+            if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+                info(output_fpath + ' exists, reusing')
+                continue
+
+            sample_bam_fpath = sliced_bam_by_sample[sample.name]
+
+            work_dir = safe_mkdir(join(cnf.work_dir, 'get_region_coverage_' + sample.name + '_' + chrom))
+            j = _submit_region_cov(cnf, work_dir, chrom, sample_bam_fpath, sample.name, sample_output_dirpath, chr_len_fpath)
+            if not j.is_done:
+                jobs_to_wait.append(j)
+            info()
+
+    if jobs_to_wait:
+        info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+        jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+    else:
+        info('No jobs to submit.')
+
+    for chrom in chromosomes:
+        avg_cov_output_fpath = join(output_dirpath, chrom + '.txt.gz')
+        if not verify_file(avg_cov_output_fpath, silent=True):
+            warn('Project has no coverage at chromosome ' + chrom)
+        for sample in samples:
+            sample_output_dirpath = join(output_dirpath, sample.name)
+            output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
+            if not verify_file(output_fpath, silent=True):
+                warn(sample.name + ' has no coverage at chromosome ' + chrom)
 
 
 def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
@@ -109,7 +140,8 @@ def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
                 if do_sort:
                     cmdline = 'sort {sample.bam} -o {output_bam_fpath}'.format(**locals())
                     j = call_sambamba(cnf, cmdline, output_fpath=output_bam_fpath, bam_fpath=sample.bam,
-                                    use_grid=True, command_name='sort', sample_name=sample.name)
+                                      use_grid=True, command_name='sort', sample_name=sample.name,
+                                      stdout_to_outputfile=False)
                 else:
                     cmdline = 'view -f bam -F "not duplicate and not failed_quality_control" {sample.bam}'.format(**locals())
                     j = call_sambamba(cnf, cmdline, output_fpath=output_bam_fpath, bam_fpath=sample.bam,
@@ -134,7 +166,7 @@ def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
     return done_samples
 
 
-def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath, exac_venv_pythonpath):
+def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath):
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False)
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=True)
 
@@ -167,13 +199,14 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpa
                 reused_chroms.append(chrom)
                 continue
             else:
-                if exac_venv_pythonpath:  # to avoid compatibility problems with pysam and tabix
-                    cmdline = 'PYTHONPATH= ' + exac_venv_pythonpath + ' ' + get_system_path(cnf,
-                                                                            join('tools', 'split_bams_by_variants.py'))
-                else:
-                    cmdline = get_script_cmdline(cnf, 'python', join('tools', 'split_bams_by_variants.py'), is_critical=True)
-                cmdline += ' --chr {chrom} --vcf {vcf_fpath} --samples {sample_names} --bams {sample_bams} ' \
-                           '-o {output_dirpath} --work-dir {cnf.work_dir} -g {cnf.genome.name} '.format(**locals())
+                # if exac_venv_pythonpath:  # to avoid compatibility problems with pysam and tabix
+                #     cmdline = exac_venv_pythonpath + ' ' + get_system_path(cnf,
+                #                                                             join('tools', 'split_bams_by_variants.py'))
+                # else:
+                cmdline = get_script_cmdline(cnf, 'python', join('tools', 'split_bams_by_variants.py'), is_critical=True)
+                cmdline += (' --chr {chrom} --vcf {vcf_fpath} --samples {sample_names} ' +
+                            '--bams {sample_bams} -o {output_dirpath} --work-dir {cnf.work_dir} ' +
+                            '-g {cnf.genome.name} ').format(**locals())
                 if cnf.reuse_intermediate:
                     cmdline += ' --reuse'
                 if exac_features_fpath and verify_file(exac_features_fpath):
@@ -197,15 +230,16 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpa
 
 
 def get_exac_dir(cnf):
-    exac_dir = join('/ngs/usr/miheenko/git/exac_data', cnf.genome.name)  # temporary dir
+    exac_dir = join(exac_data_dir, cnf.genome.name)  # temporary dir
     return exac_dir
 
 
 def add_project_to_exac(cnf):
     info('Adding project to ExAC database')
-    exac_dirpath = '/ngs/usr/miheenko/git/exac_browser'
-    exac_venv_pythonpath = join(exac_dirpath, 'venv_exac', 'bin', 'python')
-    cmdline = 'PYTHONPATH= ' + exac_venv_pythonpath + ' ' + join(exac_dirpath, 'manage.py') + ' ' + 'add_project' + \
+    exac_venv_pythonpath = join(exac_code_dir, 'venv_exac', 'bin', 'python')
+    if is_local():
+        exac_venv_pythonpath = 'python'
+    cmdline = exac_venv_pythonpath + ' ' + join(exac_code_dir, 'manage.py') + ' ' + 'add_project' + \
               ' ' + cnf.project_name + ' ' + cnf.genome.name
     call(cnf, cmdline)
 
@@ -224,19 +258,15 @@ def main():
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
-    exac_dirpath = None
-    exac_venv_pythonpath = None
-    exac_features_fpath = None
 
+    if not cnf.genome:
+        critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
+    exac_venv_pythonpath = None
     if is_us():
-        if not cnf.genome:
-            critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
-        exac_dirpath = '/ngs/usr/miheenko/git/exac_browser'
-        exac_venv_pythonpath = join(exac_dirpath, 'venv_exac', 'bin', 'python')
-        exac_features_fpath = os.path.join(exac_dirpath, EXAC_FILES_DIRECTORY, cnf.genome.name, 'all_features.bed.gz')
-        cnf.output_dir = get_exac_dir(cnf)
-    elif not cnf.output_dir:
-        critical('Error! Please specify ExAC browser data directory')
+        exac_venv_pythonpath = join(exac_code_dir, 'venv_exac', 'bin', 'python')
+    cnf.output_dir = get_exac_dir(cnf)
+    # if not cnf.output_dir:
+    #     critical('Error! Please specify ExAC browser data directory')
 
     if len(bcbio_project_dirpaths) < 1:
         critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
@@ -292,7 +322,8 @@ def main():
 
     info()
     info('Creating BAM files for IGV')
-    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath, exac_venv_pythonpath)
+    exac_features_fpath = os.path.join(exac_data_dir, cnf.genome.name, 'all_features.bed.gz')
+    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath)
 
     info()
     info('Saving coverage')
@@ -301,8 +332,7 @@ def main():
     calculate_coverage_use_grid(cnf, samples, project_cov_dirpath)
 
     info()
-    if exac_dirpath:
-        add_project_to_exac(cnf)
+    add_project_to_exac(cnf)
     info('Done.')
 
 

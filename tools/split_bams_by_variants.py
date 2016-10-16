@@ -12,7 +12,7 @@ from collections import defaultdict
 from source import BaseSample
 from source.calling_process import call
 from source.config import Config
-from source.file_utils import which, open_gzipsafe, verify_file, safe_mkdir
+from source.file_utils import which, open_gzipsafe, verify_file, safe_mkdir, adjust_path
 from source.logger import info, critical, err
 from source.prepare_args_and_cnf import determine_sys_cnf, add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.tools_from_cnf import get_system_path
@@ -65,9 +65,10 @@ def split_bams(cnf, samples, vcf_fpath):
         chr_lengths = get_chr_lengths_from_seq(cnf.genome.seq)
         chr_lengths_dict = dict((c, l) for (c, l) in chr_lengths)
         chr_length = chr_lengths_dict[chrom]
-        transcripts = get_transcipts_with_exons_from_features(cnf.features, cur_chrom=chrom)
+        transcripts = get_transcipts_with_exons_from_features(verify_file(cnf.features, is_critical=True), cur_chrom=chrom)
         bams_created_before = []
         bams_by_sample = defaultdict(list)
+        info('Extracting variant coverage for all samples for chrom ' + chrom + ', ' + str(len(variants)) + ' variants')
         for variant in variants:
             variant_bams_by_sample = extract_variant_from_bams(cnf, temp_output_dirpath, transcripts, chr_length,
                                                                samples, chrom, variant, bams_created_before)
@@ -75,11 +76,14 @@ def split_bams(cnf, samples, vcf_fpath):
             for sample_name, bam_fpath in variant_bams_by_sample.iteritems():
                 bams_by_sample[sample_name].append(bam_fpath)
         chrom = chrom.replace('chr', '')
+        info()
         for sample_name, bam_fpaths in bams_by_sample.iteritems():
+            info('Making combined BAMs for ' + chrom + ' for sample ' + sample_name)
             bam_fname = '{chrom}-{sample_name}.bam'.format(**locals())
             temp_combined_bam_fpath = join(temp_output_dirpath, bam_fname)
             combined_bam_fpath = join(cnf.output_dir, bam_fname)
             generate_combined_bam(cnf, bam_fpaths, temp_combined_bam_fpath, combined_bam_fpath)
+            info()
 
 
 def get_minimal_representation(pos, ref, alt):
@@ -121,7 +125,9 @@ def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples
             break
     if not bam_prefix:
         start, end = max(1, pos - padding), min(chr_length, pos + padding)
-        bam_prefix = '{chrom}-{pos}-{ref}-{alt}-'.format(**locals())
+        ref_ = ref[:20]
+        alt_ = alt[:20]
+        bam_prefix = '{chrom}-{pos}-{ref_}-{alt_}-'.format(**locals())
     bams_by_sample = dict()
     for sample in samples:
         sample_name = sample.name.replace('-', '_')
@@ -129,10 +135,10 @@ def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples
         if output_bam_fpath in bams_created_before:
             continue
         if not cnf.reuse_intermediate or not verify_file(output_bam_fpath, silent=True):
-            cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end} > {output_bam_fpath}'.format(**locals())
-            call(cnf, cmdline, silent=cnf.verbose)
+            cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end}'.format(**locals())
+            call(cnf, cmdline, silent=not cnf.verbose, output_fpath=output_bam_fpath)
             cmdline = '{sambamba} index {output_bam_fpath}'.format(**locals())
-            call(cnf, cmdline, silent=cnf.verbose)
+            call(cnf, cmdline, silent=not cnf.verbose)
         bams_by_sample[sample.name] = output_bam_fpath
     return bams_by_sample
 
@@ -152,6 +158,8 @@ def bam_path_to_dict(bam_path):
 
 def generate_combined_bam(cnf, bam_fpaths, temp_combined_bam_fpath, combined_bam_fpath):
     info('Combining %s bams into %s' % (len(bam_fpaths), combined_bam_fpath))
+    if cnf.reuse_intermediate and verify_file(combined_bam_fpath, silent=True):
+        return combined_bam_fpath
 
     # sorted_bam_paths = sorted(bam_fpaths, key=lambda bam_path: int(bam_path_to_dict(bam_path)['pos']))
 
@@ -195,7 +203,7 @@ def generate_combined_bam(cnf, bam_fpaths, temp_combined_bam_fpath, combined_bam
 
 def get_transcipts_with_exons_from_features(features_file, cur_chrom=None):
     transcripts = defaultdict(list)
-    with open_gzipsafe(features_file) as in_f:
+    with open_gzipsafe(adjust_path(features_file)) as in_f:
         for line in in_f:
             if line.startswith('#'):
                 continue
@@ -241,7 +249,7 @@ def main():
     (opts, args) = parser.parse_args(sys.argv[1:])
 
     cnf = Config(opts.__dict__, determine_sys_cnf(opts), {})
-    # cnf.verbose = True
+    cnf.verbose = False
 
     if not cnf.output_dir or not cnf.vcf_fpath or not cnf.chrom:
         critical(parser.usage)
