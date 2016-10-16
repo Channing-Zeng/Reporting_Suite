@@ -874,7 +874,7 @@ class Filtration:
                                              rejected_output_f, self.status, fields)
                         continue
                     self.update_status('unknown', 'silent')
-                if var_type.startswith('INTRON') and self.status == 'unknown':
+                if var_type.startswith('INTRON') and self.status != 'known':
                     self.reject_mutation('not act and unknown and in INTRON', is_canonical, no_transcript,
                                          rejected_output_f, self.status, fields)
                     continue

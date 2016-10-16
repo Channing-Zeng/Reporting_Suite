@@ -17,6 +17,9 @@ from source.prepare_args_and_cnf import determine_sys_cnf
 from source.variants.vardict2mut_src import Filtration
 
 
+# DEVELOPMENT VERION:
+# /group/cancer_informatics/tools_resources/NGS/bin/vardict2mut.pl
+
 # Compare with perl version:
 # $ perl /Users/vlad/vagrant/reporting_suite/VarDict/vardict2mut.pl -f 0.075 -F 0.025 -D 3 -V 4
 # $ perl /group/ngs/src/az.reporting/VarDict/vardict2mut.pl -f 0.075 -F 0.025 -D 3 -V 4
