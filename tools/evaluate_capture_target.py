@@ -43,7 +43,8 @@ def main():
     parser.add_option('--min-percent', dest='min_percent', default='0.5', help='Minimal percent of region which has low coverage.')
     parser.add_option('--min-ratio', dest='min_ratio', default='0.5', help='Minimal percent of samples which share the same feature.')
     parser.add_option('--min-depth', dest='min_depth', help='Coverage threshold.')
-    parser.add_option('--metadata', dest='metadata', help='Samples type for each project (plasma, cell_line, ffpe).')
+    parser.add_option('--metadata', dest='metadata', help='Samples type for each project '
+                      '(plasma, cell_line, ffpe, deepseq, exome, wgs).')
     parser.add_option('-o', dest='output_dir', help='Output directory.')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
@@ -58,7 +59,7 @@ def main():
     if cnf.min_depth:
         cnf.min_depth = int(cnf.min_depth)
     if cnf.metadata:
-        cov_thresholds = {'plasma': 100, 'ffpe': 10, 'cell_line': 10}
+        cov_thresholds = {'deepseq': 250, 'plasma': 100, 'exome': 20, 'ffpe': 10, 'cell_line': 10, 'wgs': 10}
         cnf.min_depths = [cov_thresholds[type] for type in cnf.metadata.split(',')]
 
     if len(bcbio_project_dirpaths) < 1:

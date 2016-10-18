@@ -500,7 +500,8 @@ class BCBioRunner:
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
-        evaluate_capture_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' -o ' + join(self.final_dir, 'evaluate_capture.{min_depth}')
+        evaluate_capture_cmdline = (summaries_cmdline_params + ' ' + self.final_dir + ' -o ' +
+            join(self.bcbio_structure.date_dirpath, 'qc', 'bad_coverage.{min_depth}'))
         self.evaluate_capture = Step(cnf, run_id,
             name='evaluate_capture_target', short_name='capture_eval',
             interpreter='python',
