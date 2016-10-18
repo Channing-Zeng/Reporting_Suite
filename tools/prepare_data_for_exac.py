@@ -13,11 +13,11 @@ from source.file_utils import safe_mkdir, adjust_path, verify_file
 from source.logger import critical, info, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.qsub_utils import wait_for_jobs, submit_job
-from source.targetcov.bam_and_bed_utils import call_sambamba
+from source.targetcov.bam_and_bed_utils import call_sambamba, verify_bam
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import get_chr_len_fpath, is_us, get_ext_tools_dirname
 from source.variants.filtering import combine_vcfs
-from tools.txt2vcf import convert_txt_to_vcf
+from tools.txt2vcf import convert_vardict_txts_to_bcbio_vcfs
 
 
 chromosomes = ['chr%s' % x for x in range(1, 23)]
@@ -39,6 +39,9 @@ def get_exac_us_url(genome, project_name):
 
 
 def _submit_region_cov(cnf, work_dir, chrom, bam_fpaths, sample_names, output_dirpath, chr_len_fpath):
+    if not bam_fpaths or not sample_names:
+        return None
+
     cmdline = get_script_cmdline(cnf, 'python', join('tools', 'get_region_coverage.py'), is_critical=True)
     cmdline += (' --chr ' + chrom + ' --bams ' + bam_fpaths + ' --samples ' + sample_names +
                 ' -o ' + output_dirpath + ' -g ' + chr_len_fpath + ' ' +
@@ -49,6 +52,8 @@ def _submit_region_cov(cnf, work_dir, chrom, bam_fpaths, sample_names, output_di
 
 
 def calculate_coverage_use_grid(cnf, samples, output_dirpath):
+    assert len(samples) > 0
+
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
 
     chr_len_fpath = get_chr_len_fpath(cnf)
@@ -64,6 +69,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
         chrom_bams = []
 
         for sample in samples:
+            assert verify_bam(sample.bam), 'BAM for ' + sample.name
             output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
             cmdline = '{sambamba} slice {sample.bam} {chrom}'.format(**locals())
             call(cnf, cmdline, output_fpath=output_bam_fpath)
@@ -77,7 +83,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
             info(avg_cov_output_fpath + ' exists, reusing')
         else:
             j = _submit_region_cov(cnf, cnf.work_dir, chrom, bam_fpaths, sample_names, output_dirpath, chr_len_fpath)
-            if not j.is_done:
+            if j and not j.is_done:
                 jobs_to_wait.append(j)
             info()
 
@@ -94,7 +100,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
 
             work_dir = safe_mkdir(join(cnf.work_dir, 'get_region_coverage_' + sample.name + '_' + chrom))
             j = _submit_region_cov(cnf, work_dir, chrom, sample_bam_fpath, sample.name, sample_output_dirpath, chr_len_fpath)
-            if not j.is_done:
+            if j and not j.is_done:
                 jobs_to_wait.append(j)
             info()
 
@@ -309,21 +315,26 @@ def main():
     vcf_fpath_by_sname = dict()
     for bs in bcbio_structures:
         for sample in bs.samples:
-            vcf_fpath, pass_vcf_fpath = convert_txt_to_vcf(cnf, bs, sample, output_dir=cnf.work_dir)
             sample.name = get_uniq_sample_key(bs.project_name, sample, sample_names)
             samples.append(sample)
-            vcf_fpath_by_sname[sample.name] = vcf_fpath
+            _, pass_vcf_fpath = convert_vardict_txts_to_bcbio_vcfs(
+                    cnf, bs, sample, output_dir=cnf.work_dir, pass_only=True)
+            if pass_vcf_fpath:
+                vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
 
-    info()
-    variants_dirpath = join(cnf.output_dir, 'vardict')
-    safe_mkdir(variants_dirpath)
-    combined_vcf_fpath = join(variants_dirpath, cnf.project_name + '.vcf')
-    combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
+    if not vcf_fpath_by_sname:
+        info('No VCFs found, skipping preparing variants')
+    else:
+        info()
+        variants_dirpath = join(cnf.output_dir, 'vardict')
+        safe_mkdir(variants_dirpath)
+        combined_vcf_fpath = join(variants_dirpath, cnf.project_name + '.vcf')
+        combined_vcf_fpath = combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
 
-    info()
-    info('Creating BAM files for IGV')
-    exac_features_fpath = os.path.join(exac_data_dir, cnf.genome.name, 'all_features.bed.gz')
-    split_bam_files_use_grid(cnf, samples, combined_vcf_fpath + '.gz', exac_features_fpath)
+        info()
+        info('Creating BAM files for IGV')
+        exac_features_fpath = os.path.join(exac_data_dir, cnf.genome.name, 'all_features.bed.gz')
+        split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath)
 
     info()
     info('Saving coverage')

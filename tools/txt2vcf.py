@@ -8,16 +8,19 @@ from collections import OrderedDict
 from optparse import OptionParser
 from os.path import join, basename
 
+from ngs_reporting.utils import get_target_genes
+
 import bcbio_postproc
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
-from source.clinical_reporting.clinical_parser import get_record_from_vcf, parse_mutations, \
-    get_mutations_fpath_from_bs
-from source.clinical_reporting.combine_reports import get_rejected_mutations_fpaths
 from source.file_utils import safe_mkdir, adjust_path, add_suffix, file_transaction, verify_file, open_gzipsafe
 from source.logger import info, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug
 from source.variants import vcf_parser as vcf
 from source.variants.vcf_processing import bgzip_and_tabix, verify_vcf
+
+from ngs_reporting.clinical_parser import get_record_from_vcf, parse_mutations, get_mutations_fpath_from_bs
+from ngs_reporting.combine_reports import get_rejected_mutations_fpaths
+
 
 filter_descriptions_dict = {
     'not canonical transcript': 'Transcript',
@@ -100,31 +103,37 @@ def main():
     for bs in bcbio_structures:
         for sample in bs.samples:
             if sample.phenotype != 'normal':
-                convert_txt_to_vcf(cnf, bs, sample)
+                convert_vardict_txts_to_bcbio_vcfs(cnf, bs, sample)
 
 
-def get_mutation_dicts(cnf, bs, sample):
+def get_mutation_dicts(cnf, bs, sample, pass_only=False):
     pass_mut_dict = dict()
     reject_mut_dict = dict()
     filter_values = set()
 
+    target_gene_names_chroms = None
+    if bs.sv_bed:
+        target_gene_names_chroms = get_target_genes(bs.sv_bed)
     pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
-    pass_mutations = parse_mutations(cnf, sample, dict(), pass_mutations_fpath, '')
+    pass_mutations = parse_mutations(cnf.genome.name, sample, dict(), pass_mutations_fpath, '',
+                                     target_gene_names_chroms=target_gene_names_chroms)
     for mut in pass_mutations:
         pass_mut_dict[(mut.chrom, mut.pos, mut.transcript)] = mut
-    for reject_mutations_fpath in get_rejected_mutations_fpaths(pass_mutations_fpath):
-        if verify_file(reject_mutations_fpath, silent=True):
-            reject_mutations = parse_mutations(cnf, sample, dict(), reject_mutations_fpath, '')
-            for mut in reject_mutations:
-                reject_mut_dict[(mut.chrom, mut.pos, mut.transcript)] = mut
-                filt_values = mut.reason.split(' and ')
-                for val in filt_values:
-                    filter_values.add(val)
-    for filt_val in filter_values:
-        for pattern, description in filter_patterns_dict.iteritems():
-            val = pattern.findall(filt_val)
-            if val:
-                filter_descriptions_dict[filt_val] = description + val[0]
+
+    if not pass_only:
+        for reject_mutations_fpath in get_rejected_mutations_fpaths(pass_mutations_fpath):
+            if verify_file(reject_mutations_fpath, silent=True):
+                reject_mutations = parse_mutations(cnf, sample, dict(), reject_mutations_fpath, '')
+                for mut in reject_mutations:
+                    reject_mut_dict[(mut.chrom, mut.pos, mut.transcript)] = mut
+                    filt_values = mut.reason.split(' and ')
+                    for val in filt_values:
+                        filter_values.add(val)
+        for filt_val in filter_values:
+            for pattern, description in filter_patterns_dict.iteritems():
+                val = pattern.findall(filt_val)
+                if val:
+                    filter_descriptions_dict[filt_val] = description + val[0]
     return pass_mut_dict, reject_mut_dict, list(filter_values)
 
 
@@ -161,7 +170,11 @@ def add_keys_to_header(vcf_reader, filter_values):
     return vcf_reader
 
 
-def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
+def txt_to_vcf():
+    pass
+
+
+def convert_vardict_txts_to_bcbio_vcfs(cnf, bs, sample, output_dir=None, pass_only=False):
     info('')
     info('Preparing data for ' + sample.name)
     anno_filt_vcf_fpath = sample.find_filt_vcf_by_callername(cnf.caller_name)
@@ -177,7 +190,7 @@ def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
         return output_vcf_fpath + '.gz', pass_output_vcf_fpath + '.gz'
 
     info('Parsing PASS and REJECT mutations...')
-    pass_mut_dict, reject_mut_dict, filter_values = get_mutation_dicts(cnf, bs, sample)
+    pass_mut_dict, reject_mut_dict, filter_values = get_mutation_dicts(cnf, bs, sample, pass_only=pass_only)
     sorted_mut_dict = combine_mutations(pass_mut_dict, reject_mut_dict)
 
     info('')
@@ -186,7 +199,9 @@ def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
     vcf_reader = add_keys_to_header(vcf_reader, filter_values)
     with file_transaction(cnf.work_dir, output_vcf_fpath) as filt_tx, \
         file_transaction(cnf.work_dir, pass_output_vcf_fpath) as pass_tx:
-        vcf_writer = vcf.Writer(open(filt_tx, 'w'), template=vcf_reader)
+        vcf_writer = None
+        if not pass_only:
+            vcf_writer = vcf.Writer(open(filt_tx, 'w'), template=vcf_reader)
         vcf_pass_writer = vcf.Writer(open(pass_tx, 'w'), template=vcf_reader)
         for key, mut in sorted_mut_dict.items():
             record = get_record_from_vcf(vcf_reader, mut)
@@ -195,6 +210,8 @@ def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
                     record.FILTER = ['PASS']
                     if mut.reason:
                         record.INFO['Reason'] = mut.reason.replace(' ', '_')
+                elif pass_only:
+                    continue
                 elif key in reject_mut_dict:
                     if not mut.reason:
                         continue
@@ -205,17 +222,20 @@ def convert_txt_to_vcf(cnf, bs, sample, output_dir=None):
                     record.INFO['Signif'] = mut.signif
                 if mut.status:
                     record.INFO['Status'] = mut.status
-                vcf_writer.write_record(record)
+                if vcf_writer:
+                    vcf_writer.write_record(record)
                 if key in pass_mut_dict:
                     vcf_pass_writer.write_record(record)
             else:
                 warn('No record was found in ' + anno_filt_vcf_fpath + ' for mutation ' + str(mut))
 
-    vcf_writer.close()
+    output_gzipped_vcf_fpath = None
+    if vcf_writer:
+        vcf_writer.close()
+        output_gzipped_vcf_fpath = bgzip_and_tabix(cnf, output_vcf_fpath)
+        info('VCF file for vardict.txt is saved to ' + output_gzipped_vcf_fpath)
     vcf_pass_writer.close()
-    output_gzipped_vcf_fpath = bgzip_and_tabix(cnf, output_vcf_fpath)
     output_gzipped_pass_vcf_fpath = bgzip_and_tabix(cnf, pass_output_vcf_fpath)
-    info('VCF file for vardict.txt is saved to ' + output_gzipped_vcf_fpath)
     info('VCF file for vardict.PASS.txt is saved to ' + output_gzipped_pass_vcf_fpath)
     return output_gzipped_vcf_fpath, output_gzipped_pass_vcf_fpath
 
