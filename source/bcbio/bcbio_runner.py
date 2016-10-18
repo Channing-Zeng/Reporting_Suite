@@ -183,7 +183,7 @@ class BCBioRunner:
         from sys import platform as _platform
         if 'linux' in _platform and not self.cnf.no_bam2bigwig:
             self.steps.append(self.bw_converting)
-        if is_us() or is_local():
+        if is_us() or is_local() and Steps.contains(cnf.steps, 'Exac'):
             if cnf.bed:
                 self.steps.append(self.evaluate_capture)
             self.steps.append(self.prepare_for_exac)
