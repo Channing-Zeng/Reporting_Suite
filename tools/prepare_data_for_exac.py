@@ -48,7 +48,7 @@ def _submit_region_cov(cnf, work_dir, chrom, bam_fpaths, sample_names, output_di
                 ' --work-dir ' + work_dir)
     if cnf.bed:
          cmdline += ' --bed ' + cnf.bed
-    return submit_job(cnf, cmdline, chrom + '_coverage')
+    return submit_job(cnf, cmdline, chrom + '_coverage_' + ('project' if (',' in sample_names) else sample_names))
 
 
 def calculate_coverage_use_grid(cnf, samples, output_dirpath):

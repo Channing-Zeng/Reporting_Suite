@@ -8,6 +8,7 @@ from collections import OrderedDict
 from optparse import OptionParser
 from os.path import join, basename
 
+import variant_filtering
 from ngs_reporting.utils import get_target_genes
 
 import bcbio_postproc
@@ -19,7 +20,7 @@ from source.variants import vcf_parser as vcf
 from source.variants.vcf_processing import bgzip_and_tabix, verify_vcf
 
 from ngs_reporting.clinical_parser import get_record_from_vcf, parse_mutations, get_mutations_fpath_from_bs
-from ngs_reporting.combine_reports import get_rejected_mutations_fpaths
+from ngs_reporting.combine_clinical_reporting_utils import get_rejected_mutations_fpaths
 
 
 filter_descriptions_dict = {
@@ -114,6 +115,11 @@ def get_mutation_dicts(cnf, bs, sample, pass_only=False):
     target_gene_names_chroms = None
     if bs.sv_bed:
         target_gene_names_chroms = get_target_genes(bs.sv_bed)
+
+    variant_filtering.mut_file_ext = 'txt'
+    variant_filtering.mut_pass_suffix = 'PASS'
+    variant_filtering.mut_reject_suffix = 'REJECT'
+
     pass_mutations_fpath, _ = get_mutations_fpath_from_bs(bs)
     pass_mutations = parse_mutations(cnf.genome.name, sample, dict(), pass_mutations_fpath, '',
                                      target_gene_names_chroms=target_gene_names_chroms)
