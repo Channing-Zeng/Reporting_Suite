@@ -32,9 +32,13 @@ def combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_paramet
     for s_name, vcf_fpath in vcf_fpath_by_sname.items():
         if vcf_fpath:
             cmdl += ' --variant:' + s_name + ' ' + vcf_fpath
+    if ' --variant:' not in cmdl:
+        err('No VCFs to combine')
+        return None
+
     if cnf.reuse_intermediate and isfile(combined_vcf_fpath + '.gz') and verify_vcf(combined_vcf_fpath + '.gz'):
         info(combined_vcf_fpath + '.gz exists, reusing')
-        return combined_vcf_fpath
+        return combined_vcf_fpath + '.gz'
 
     cmdl += ' -o ' + combined_vcf_fpath
     res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)

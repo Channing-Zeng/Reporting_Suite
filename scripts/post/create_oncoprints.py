@@ -187,7 +187,7 @@ def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
                         continue
                     if ann.effect == 'EXON_DEL':
                         out_f.write('\t'.join([sample, '', 'exon-deletion', ann.event.known_gene, '-',
-                                               '-', '-', '-', '-', '-', '-', '-', '-', '-', event.gene, 'NA',
+                                               '-', '-', '-', '-', '-', '-', '-', '-', '-', ann.event.known_gene, 'NA',
                                                'deletion ' + ann.exon_info, ann.event.chrom + ':' + str(ann.event.start),
                                                str(ann.event.end) if ann.event.end else '',
                                                '-', str(ann.event.read_support), 'Exon-Deletion']) + '\n')
@@ -339,6 +339,9 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
     chr_order = get_chrom_order(cnf)
     all_events = dict()
 
+    with open(cnf.transcripts_fpath) as f:
+        transcripts = [tr.strip() for tr in f]
+
     for sv_fpath in sv_fpaths:
         info('Parsing prioritized SV from ' + sv_fpath)
         sample_col = None
@@ -353,7 +356,7 @@ def parse_sv_files(cnf, samples, altered_genes, key_gene_by_name_chrom):
                     sample_col = header_rows.index('sample')
                     # known_col = header_rows.index('known')
                 else:
-                    event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, **dict(zip(header_rows, fs)))
+                    event = SVEvent.parse_sv_event(chr_order, key_gene_by_name_chrom, transcripts,  **dict(zip(header_rows, fs)))
                     sample = fs[sample_col]
                     if event:
                         all_events[(sample, event.id)] = event

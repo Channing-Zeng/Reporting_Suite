@@ -34,7 +34,7 @@ def main():
     parser = OptionParser(description=description)
     add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug(parser)
 
-    parser.add_option('--log-dir', dest='log_dir', default='-')
+    parser.add_option('--log-dir', dest='log_dir')
     parser.add_option('--exac-only-filtering', dest='prepare_for_exac', action='store_true', default=False, help='Export filtered regions to ExAC browser.')
     parser.add_option('--exac', dest='add_to_exac', action='store_true', default=False, help='Export coverage data to ExAC browser.')
     parser.add_option('--bed', '--capture', '--amplicons', dest='bed', help='BED file to overlap.')
@@ -48,6 +48,10 @@ def main():
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
+
+    cnf.output_dir = safe_mkdir(adjust_path(cnf.output_dir))
+    cnf.work_dir = safe_mkdir(join(cnf.output_dir, 'work'))
+    cnf.log_dir = safe_mkdir(join(cnf.work_dir), 'log')
 
     cnf.min_percent = 1 - float(cnf.min_percent)
     cnf.min_ratio = float(cnf.min_ratio)

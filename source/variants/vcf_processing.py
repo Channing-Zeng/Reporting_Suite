@@ -590,21 +590,33 @@ def bgzip_and_tabix(cnf, vcf_fpath, tabix_parameters='', **kwargs):
     if not bgzip and not tabix:
         return vcf_fpath
 
-    if isfile(tbi_fpath): os.remove(tbi_fpath)
-    if isfile(vcf_fpath):
-        if isfile(gzipped_fpath):
-             os.remove(gzipped_fpath)
-        info('BGzipping VCF')
-        cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
-        call(cnf, cmdline, None, **kwargs)
-    else:
-        if not verify_file(gzipped_fpath):
-            err('Neither uncompressed ' + vcf_fpath + ' nor ' + gzipped_fpath + ' exist')
-            return None
+    retrying = False
+    while True:
+        if isfile(tbi_fpath): os.remove(tbi_fpath)
+        if isfile(vcf_fpath):
+            if isfile(gzipped_fpath):
+                 os.remove(gzipped_fpath)
+            info('BGzipping VCF')
+            cmdline = '{bgzip} {vcf_fpath}'.format(**locals())
+            call(cnf, cmdline, None, **kwargs)
+        else:
+            if not verify_file(gzipped_fpath):
+                err('Neither uncompressed ' + vcf_fpath + ' nor ' + gzipped_fpath + ' exist')
+                return None
 
-    info('Tabixing VCF')
-    cmdline = '{tabix} {tabix_parameters} {gzipped_fpath}'.format(**locals())
-    call(cnf, cmdline, **kwargs)
+        info('Tabixing VCF')
+        cmdline = '{tabix} {tabix_parameters} {gzipped_fpath}'.format(**locals())
+
+        exit_on_error = False
+        if retrying:
+            exit_on_error = True
+        kwargs['exit_on_error'] = exit_on_error
+        call(cnf, cmdline, **kwargs)
+        if retrying or isfile(gzipped_fpath + '.tbi'):
+            break
+        if not isfile(vcf_fpath):
+            call(cnf, 'gunzip ' + gzipped_fpath, None)
+        retrying = True
 
     return gzipped_fpath
 

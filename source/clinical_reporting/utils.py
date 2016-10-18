@@ -113,7 +113,7 @@ class SVEvent(SortableByChrom):
                 if not a:
                     continue
                 if a.transcript not in transcripts:
-                    warn('SV: transcript ' + a.transcript + ' for genes ' + str(a.genes) + ' is not canonical')
+                    # warn('SV: transcript ' + a.transcript + ' for genes ' + str(a.genes) + ' is not canonical')
                     continue
                 assert a.type == e.type, 'Annotation type and event type does not match: ' + str(e.type) + ', ' + str(a.type)
                 e.annotations.append(a)

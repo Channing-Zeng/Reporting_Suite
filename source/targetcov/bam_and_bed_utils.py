@@ -134,6 +134,11 @@ def get_bedgraph_coverage(cnf, bam_fpath, chr_len_fpath=None, output_fpath=None,
         in_bed_fpath = intersect_bed(cnf, sorted_bed_fpath, bed_fpath)
     else:
         in_bed_fpath = sorted_bed_fpath
+
+    if not verify_file(in_bed_fpath, silent=True):
+        info('No coverage in ' + in_bed_fpath)
+        return None
+
     bedgraph_fpath = output_fpath or '%s.bedgraph' % splitext(bam_fpath)[0]
     with file_transaction(cnf.work_dir, bedgraph_fpath) as tx_fpath:
         bedtools = get_system_path(cnf, 'bedtools')

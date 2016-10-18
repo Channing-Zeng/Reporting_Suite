@@ -19,6 +19,7 @@ from source.tools_from_cnf import get_system_path, get_script_cmdline
 from source.utils import get_ext_tools_dirname, get_version
 from tools.prepare_data_for_exac import get_exac_us_url
 
+
 BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr
 PRE_FASTQC_NAME       = 'Raw ' + FASTQC_NAME

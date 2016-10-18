@@ -70,8 +70,8 @@ def split_bams(cnf, samples, vcf_fpath):
         bams_by_sample = defaultdict(list)
         info('Extracting variant coverage for all samples for chrom ' + chrom + ', ' + str(len(variants)) + ' variants')
         for variant in variants:
-            variant_bams_by_sample = extract_variant_from_bams(cnf, temp_output_dirpath, transcripts, chr_length,
-                                                               samples, chrom, variant, bams_created_before)
+            variant_bams_by_sample = extract_variant_from_bams(cnf, temp_output_dirpath,
+                 transcripts, chr_length, samples, chrom, variant, bams_created_before)
             bams_created_before.extend(variant_bams_by_sample.values())
             for sample_name, bam_fpath in variant_bams_by_sample.iteritems():
                 bams_by_sample[sample_name].append(bam_fpath)
@@ -134,12 +134,15 @@ def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples
         output_bam_fpath = join(out_dirpath, bam_prefix + '{sample_name}.bam'.format(**locals()))
         if output_bam_fpath in bams_created_before:
             continue
-        if not cnf.reuse_intermediate or not verify_file(output_bam_fpath, silent=True):
-            cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end}'.format(**locals())
-            call(cnf, cmdline, silent=not cnf.verbose, output_fpath=output_bam_fpath)
-            cmdline = '{sambamba} index {output_bam_fpath}'.format(**locals())
-            call(cnf, cmdline, silent=not cnf.verbose)
-        bams_by_sample[sample.name] = output_bam_fpath
+        if cnf.reuse_intermediate and verify_file(output_bam_fpath, silent=True):
+            bams_by_sample[sample.name] = output_bam_fpath
+        else:
+            cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end} -o {output_bam_fpath}'.format(**locals())
+            call(cnf, cmdline, silent=not cnf.verbose, output_fpath=output_bam_fpath, stdout_to_outputfile=False)
+            if verify_file(output_bam_fpath, silent=True):
+                cmdline = '{sambamba} index {output_bam_fpath}'.format(**locals())
+                call(cnf, cmdline, silent=not cnf.verbose)
+                bams_by_sample[sample.name] = output_bam_fpath
     return bams_by_sample
 
 

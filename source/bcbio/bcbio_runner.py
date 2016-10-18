@@ -500,7 +500,7 @@ class BCBioRunner:
                ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
         )
 
-        evaluate_capture_cmdline = summaries_cmdline_params + ' ' + self.final_dir
+        evaluate_capture_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' -o ' + join(self.final_dir, 'evaluate_capture.{min_depth}')
         self.evaluate_capture = Step(cnf, run_id,
             name='evaluate_capture_target', short_name='capture_eval',
             interpreter='python',
@@ -529,6 +529,7 @@ class BCBioRunner:
 
         output_dirpath = join(base_output_dirpath, step.dir_name) if step.dir_name else ''
 
+        kwargs['caller'] = caller
         log_fpath = step.log_fpath_template.format(**kwargs)
         safe_mkdir(dirname(log_fpath))
 
@@ -542,9 +543,9 @@ class BCBioRunner:
         return output_dirpath, log_fpath, marker + '.done', marker + '.error'
 
 
-    def _submit_job(self, step, sample_name='', caller_suf=None, create_dir=True,
+    def _submit_job(self, step, sample_name='', caller=None, create_dir=True,
                     log_out_fpath=None, wait_for_steps=None, threads=1, mem_m=None, not_wait=False, **kwargs):
-        job_name = step.job_name(sample_name, caller_suf)
+        job_name = step.job_name(sample_name, caller)
 
         for job_id_to_wait in wait_for_steps or []:
             job_to_wait = next((j for j in self.jobs_running if j.job_id == job_id_to_wait), None)
@@ -557,7 +558,7 @@ class BCBioRunner:
             self.wait_for_jobs(self.max_threads / 2)  # maximum nubmer of jobs were submitted; waiting for half them to finish
 
         output_dirpath, log_err_fpath, done_marker_fpath, error_marker_fpath = \
-            self.step_log_marker_and_output_paths(step, sample_name, caller_suf, **kwargs)
+            self.step_log_marker_and_output_paths(step, sample_name, caller, **kwargs)
 
         if output_dirpath and not isdir(output_dirpath) and create_dir:
             safe_mkdir(join(output_dirpath, pardir))
@@ -582,6 +583,7 @@ class BCBioRunner:
         tool_cmdline = get_system_path(self.cnf, step.interpreter, step.script, is_critical=True)
         if not tool_cmdline: critical('Cannot find: ' + ', '.join(filter(None, [step.interpreter, step.script])))
         params = dict({'output_dir': output_dirpath}.items() + self.__dict__.items() + kwargs.items())
+        params['caller'] = caller
         cmdline = tool_cmdline + ' ' + step.param_line.format(**params)
 
         hold_jid_line = '-hold_jid ' + ','.join(wait_for_steps or ['_'])
@@ -613,14 +615,14 @@ class BCBioRunner:
         # print qsub_cmdline
 
         if self.cnf.verbose:
-            info(step.name + (' - ' + sample_name if sample_name else '') + (' - ' + caller_suf if caller_suf else ''))
+            info(step.name + (' - ' + sample_name if sample_name else '') + (' - ' + caller if caller else ''))
             info(qsub_cmdline)
         else:
             print step.name,
 
         if isfile(done_marker_fpath): os.remove(done_marker_fpath)
         if isfile(error_marker_fpath): os.remove(error_marker_fpath)
-        job = JobRunning(step, job_name, sample_name, caller_suf, log_err_fpath, qsub_cmdline,
+        job = JobRunning(step, job_name, sample_name, caller, log_err_fpath, qsub_cmdline,
                          done_marker_fpath, error_marker_fpath, threads=threads, not_wait=not_wait)
         self.jobs_running.append(job)
         call(self.cnf, qsub_cmdline, silent=True, env_vars=step.env_vars, exit_on_error=is_local())
@@ -1069,8 +1071,7 @@ class BCBioRunner:
                 info('.', print_date=False, ending='')
 
 
-    def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller, threads,
-                     steps=None, job_names_to_wait=None):
+    def _process_vcf(self, sample, bam_fpath, vcf_fpath, caller, threads, steps=None, job_names_to_wait=None):
         steps = steps or self.steps
 
         bam_cmdline = '--bam ' + bam_fpath if bam_fpath else ''
@@ -1081,8 +1082,8 @@ class BCBioRunner:
 
         if self.varannotate in steps:
             self._submit_job(
-                self.varannotate, sample.name, caller_suf=caller.name, vcf=vcf_fpath, threads=threads,
-                bam_cmdline=bam_cmdline, sample=sample.name, caller=caller.name,
+                self.varannotate, sample.name, caller=caller.name, vcf=vcf_fpath, threads=threads,
+                bam_cmdline=bam_cmdline, sample=sample.name,
                 genome=sample.genome, normal_match_cmdline=normal_match_cmdline,
                 wait_for_steps=job_names_to_wait)
 
@@ -1153,6 +1154,6 @@ def _final_email_notification(cnf, html_report_url, jira_url, bs):
 
 def change_permissions(cnf, path):
     try:
-        call(cnf, 'chmod -R g+w ' + path, silent=True)
+        call(cnf, 'chmod -R g+w ' + path, silent=True, exit_on_error=False)
     except:
         pass

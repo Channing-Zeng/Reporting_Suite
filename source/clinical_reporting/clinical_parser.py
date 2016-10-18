@@ -411,9 +411,10 @@ class ClinicalExperimentInfo:
                                     annotation.event = event
         for event in sv_events:
             if not event.end and event.mate_id:
-                event_mate = all_events[(event.sample, event.mate_id)]
-                event.end = event_mate.start
-                event.chrom2 = event_mate.chrom
+                event_mate = all_events.get((event.sample, event.mate_id))
+                if event_mate:
+                    event.end = event_mate.start
+                    event.chrom2 = event_mate.chrom
         return sv_events
 
     def parse_seq2c_report(self, seq2c_tsv_fpath, key_gene_by_name_chrom, genes_collection_type):
@@ -536,8 +537,8 @@ class ClinicalExperimentInfo:
             #     del self.key_gene_by_name_chrom[(gene.name, gene.chrom)]
         info('Keeping ' + str(len(self.key_gene_by_name_chrom)) + ' ' + self.genes_collection_type + ' genes based on targQC reports')
 
-def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type, for_flagged_report=False,
-                    mutations_dict=None):
+def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_collection_type,
+                    for_flagged_report=False, mutations_dict=None):
     mutations = []
     if for_flagged_report:
         info('Preparing mutations stats for flagged regions report')
