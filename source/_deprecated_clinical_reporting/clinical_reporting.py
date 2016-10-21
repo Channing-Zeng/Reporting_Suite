@@ -8,9 +8,9 @@ import re
 import source
 from source import info, verify_file
 from source.calling_process import call
-from source.clinical_reporting.clinical_parser import get_group_num
-from source.clinical_reporting.utils import SVEvent
-from source.clinical_reporting.combine_clinical_reporting_utils import get_vcf_readers, add_freq_depth_records,\
+from source._deprecated_clinical_reporting.clinical_parser import get_group_num
+from source._deprecated_clinical_reporting.utils import SVEvent
+from source._deprecated_clinical_reporting.combine_clinical_reporting_utils import get_vcf_readers, add_freq_depth_records,\
     group_for_venn_diagram, update_venn_diagram_data, save_venn_diagram_data, format_experiment_names, add_tooltip
 from source.logger import warn, err, debug
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, calc_cell_contents, make_cell_td, write_static_html_report, make_cell_th, build_report_html

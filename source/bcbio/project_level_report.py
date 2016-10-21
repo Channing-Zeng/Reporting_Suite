@@ -7,8 +7,10 @@ from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile
 from collections import OrderedDict
 from collections import defaultdict
 
+import variant_filtering
+
 import source
-from scripts.post.create_oncoprints import create_oncoprints_link
+from ngs_reporting.oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.logger import info, step_greetings, warn
@@ -158,14 +160,14 @@ def _mutations_records(general_section, bcbio_structure):
     paired_val = OrderedDict()
 
     for caller in bcbio_structure.variant_callers.values():
-        _base_mut_fname = source.mut_fname_template.format(caller_name=caller.name)
+        _base_mut_fname = variant_filtering.mut_fname_template.format(caller_name=caller.name)
         _base_mut_fpath = join(bcbio_structure.date_dirpath, _base_mut_fname)
-        mut_fpath = add_suffix(_base_mut_fpath, source.mut_pass_suffix)
+        mut_fpath = add_suffix(_base_mut_fpath, variant_filtering.mut_pass_suffix)
         if verify_file(mut_fpath, silent=True):
             val[caller.name] = mut_fpath
         else:
-            single_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, source.mut_single_suffix), source.mut_pass_suffix)
-            paired_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, source.mut_paired_suffix), source.mut_pass_suffix)
+            single_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_single_suffix), variant_filtering.mut_pass_suffix)
+            paired_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_paired_suffix), variant_filtering.mut_pass_suffix)
             if verify_file(single_mut_fpath, silent=True):
                 single_val[caller.name] = single_mut_fpath
                 # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')

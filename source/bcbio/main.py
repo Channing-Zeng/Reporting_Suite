@@ -7,6 +7,8 @@ import datetime
 from genericpath import exists
 from os.path import join
 from optparse import OptionParser, SUPPRESS_HELP
+
+import variant_filtering
 from yaml import dump as save_yaml
 
 
@@ -183,10 +185,10 @@ def combine_projects(cnf, bcbio_structures, tags=None):
             safe_symlink_to(join(bs.raw_var_dirpath, file), merged_bs_raw_var_dirpath)
 
     variants_fpaths = []
-    vardict_txt_fname = source.mut_fname_template.format(caller_name='vardict')
+    vardict_txt_fname = variant_filtering.mut_fname_template.format(caller_name='vardict')
     variants_fpath = join(merged_bs_var_dirpath, vardict_txt_fname)
-    pass_variants_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
-    reject_variants_fpath = add_suffix(variants_fpath, source.mut_reject_suffix)
+    pass_variants_fpath = add_suffix(variants_fpath, variant_filtering.mut_pass_suffix)
+    reject_variants_fpath = add_suffix(variants_fpath, variant_filtering.mut_reject_suffix)
 
     cnf.steps = ['Variants']
 
@@ -195,8 +197,8 @@ def combine_projects(cnf, bcbio_structures, tags=None):
         bcbio_runner = BCBioRunner(cnf, correct_bs, bs.bcbio_cnf)
         bcbio_runner.post_jobs()
         bs_raw_variants_fpath = add_suffix(variants_fpath, str(bs_i))
-        pass_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, source.mut_pass_suffix)
-        reject_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, source.mut_reject_suffix)
+        pass_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, variant_filtering.mut_pass_suffix)
+        reject_bs_variants_fpath = add_suffix(bs_raw_variants_fpath, variant_filtering.mut_reject_suffix)
         shutil.move(variants_fpath, bs_raw_variants_fpath)
         shutil.move(pass_variants_fpath, pass_bs_variants_fpath)
         shutil.move(reject_variants_fpath, reject_bs_variants_fpath)
@@ -209,9 +211,9 @@ def combine_projects(cnf, bcbio_structures, tags=None):
     combine_results(cnf, merged_samples, variants_fpaths, variants_fpath, pass_variants_fpath=pass_variants_fpath)
     for variants_fpath in variants_fpaths:
         safe_remove(variants_fpath)
-        pass_fpath = add_suffix(variants_fpath, source.mut_pass_suffix)
+        pass_fpath = add_suffix(variants_fpath, variant_filtering.mut_pass_suffix)
         safe_remove(pass_fpath)
-        reject_fpath = add_suffix(variants_fpath, source.mut_reject_suffix)
+        reject_fpath = add_suffix(variants_fpath, variant_filtering.mut_reject_suffix)
         safe_remove(reject_fpath)
 
     cnf.reuse_intermediate = True

@@ -2,12 +2,14 @@ from collections import OrderedDict, defaultdict
 import json
 from os.path import join, abspath, dirname, relpath, basename
 
+import variant_filtering
+
 import source
 from source import info, verify_file
-from source.clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Patient, \
+from source._deprecated_clinical_reporting.clinical_parser import clinical_sample_info_from_bcbio_structure, Patient, \
     get_sample_info, get_group_num, parse_mutations, get_mutations_fpath_from_bs
-from source.clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
-from source.clinical_reporting.combine_clinical_reporting_utils import format_experiment_names
+from source._deprecated_clinical_reporting.clinical_reporting import Chromosome, BaseClinicalReporting
+from source._deprecated_clinical_reporting.combine_clinical_reporting_utils import format_experiment_names
 from source.file_utils import file_transaction
 from source.logger import err
 from source.qsub_utils import wait_for_jobs
@@ -83,17 +85,17 @@ def run_combine_clinical_reports(cnf, bcbio_structures, parameters_info, samples
 
 
 def get_uniq_sample_key(project_name, sample, sample_names):
-    if sample_names.count(sample.name) > 1:
+    if sample_names and sample_names.count(sample.name) > 1:
         return sample.name + '_' + project_name
     return sample.name
 
 
 def get_rejected_mutations_fpaths(pass_mutations_fpath):
-    mut_basename = pass_mutations_fpath.split('.' + source.mut_pass_suffix)[0]
-    mut_reject_ending = source.mut_reject_suffix + '.' + source.mut_file_ext
+    mut_basename = pass_mutations_fpath.split('.' + variant_filtering.mut_pass_suffix)[0]
+    mut_reject_ending = variant_filtering.mut_reject_suffix + '.' + variant_filtering.mut_file_ext
     possible_reject_mutations_fpaths = [mut_basename + '.' + mut_reject_ending,
-                                        mut_basename + '.' + source.mut_paired_suffix + '.' + mut_reject_ending,
-                                        mut_basename + '.' + source.mut_single_suffix + '.' + mut_reject_ending]
+                                        mut_basename + '.' + variant_filtering.mut_paired_suffix + '.' + mut_reject_ending,
+                                        mut_basename + '.' + variant_filtering.mut_single_suffix + '.' + mut_reject_ending]
     return possible_reject_mutations_fpaths
 
 

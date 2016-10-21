@@ -5,9 +5,9 @@ from os.path import abspath, expanduser, join, dirname, pardir
 from traceback import format_exc
 
 import bcbio_postproc
+
 from source import logger
 from source.file_utils import verify_file, verify_module, adjust_path
-
 from source.logger import info, err, critical, debug
 
 from yaml import load as load_yaml
@@ -111,7 +111,7 @@ class Config(object):
         if key == 'items':
             return lambda: [(k, v) for k, v in self.__d.items() if k != 'level']
         if key == '__dict__':
-            return dict([(k, v) for k, v in self.__d.items() if k != 'level'])
+            return dict([(k, (v.__dict__ if isinstance(v, Config) else v)) for k, v in self.__d.items() if k != 'level'])
         else:
             return d.get(key)
 

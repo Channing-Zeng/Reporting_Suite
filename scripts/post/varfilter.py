@@ -105,7 +105,7 @@ def main(args):
     #     if not res:
     #         critical('vardict2mut.pl run returned non-0')
 
-    mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, source.mut_pass_suffix))
+    mut_fpath = run_vardict2mut(cnf, vcf2txt_res_fpath, add_suffix(vcf2txt_res_fpath, variant_filtering.mut_pass_suffix))
     if not mut_fpath:
         err('vardict2mut failed')
     else:

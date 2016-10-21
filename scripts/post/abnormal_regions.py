@@ -6,7 +6,7 @@ import sys
 import shutil
 from source import BaseSample, verify_file
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
-from source.clinical_reporting.clinical_parser import parse_mutations, get_key_or_target_bed_genes
+from source._deprecated_clinical_reporting.clinical_parser import parse_mutations, get_key_or_target_bed_genes
 from source.file_utils import adjust_system_path
 from source.prepare_args_and_cnf import check_system_resources
 from source.targetcov.summarize_targetcov import _generate_summary_flagged_regions_report

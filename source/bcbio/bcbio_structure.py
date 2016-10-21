@@ -11,6 +11,8 @@ from os.path import join, abspath, exists, pardir, splitext, basename, islink, d
 from optparse import OptionParser
 from distutils import file_util
 from traceback import format_exc
+
+import variant_filtering
 import yaml
 
 import source
@@ -419,7 +421,7 @@ class BCBioSample(BaseSample):
         return join(self.dirpath, BCBioStructure.varfilter_dir, callername + '.txt')
 
     def get_mut_by_callername(self, callername):
-        return add_suffix(self.get_vcf2txt_by_callername(callername), source.mut_pass_suffix)
+        return add_suffix(self.get_vcf2txt_by_callername(callername), variant_filtering.mut_pass_suffix)
 
     # filtered TSV
     def get_filt_tsv_fpath_by_callername(self, callername):
@@ -854,18 +856,18 @@ class BCBioStructure(BaseProjectStructure):
 
         for c in self.variant_callers.values():
             if c.single_anno_vcf_by_sample:
-                vcf2txt_fname = source.mut_fname_template.format(caller_name=c.name)
+                vcf2txt_fname = variant_filtering.mut_fname_template.format(caller_name=c.name)
                 if c.paired_anno_vcf_by_sample:
-                    vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_single_suffix)
+                    vcf2txt_fname = add_suffix(vcf2txt_fname, variant_filtering.mut_single_suffix)
                 c.single_vcf2txt_res_fpath = join(self.var_dirpath, vcf2txt_fname)
-                c.single_mut_res_fpath = add_suffix(c.single_vcf2txt_res_fpath, source.mut_pass_suffix)
+                c.single_mut_res_fpath = add_suffix(c.single_vcf2txt_res_fpath, variant_filtering.mut_pass_suffix)
 
             if c.paired_anno_vcf_by_sample:
-                vcf2txt_fname = source.mut_fname_template.format(caller_name=c.name)
+                vcf2txt_fname = variant_filtering.mut_fname_template.format(caller_name=c.name)
                 if c.single_anno_vcf_by_sample:
-                    vcf2txt_fname = add_suffix(vcf2txt_fname, source.mut_paired_suffix)
+                    vcf2txt_fname = add_suffix(vcf2txt_fname, variant_filtering.mut_paired_suffix)
                 c.paired_vcf2txt_res_fpath = join(self.var_dirpath, vcf2txt_fname)
-                c.paired_mut_res_fpath = add_suffix(c.paired_vcf2txt_res_fpath, source.mut_pass_suffix)
+                c.paired_mut_res_fpath = add_suffix(c.paired_vcf2txt_res_fpath, variant_filtering.mut_pass_suffix)
 
         for b in self.batches.values():
             for t_sample in b.tumor:

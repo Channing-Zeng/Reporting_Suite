@@ -3,6 +3,8 @@ from collections import defaultdict
 from genericpath import isfile, isdir
 from os.path import basename, join
 
+import variant_filtering
+
 import source
 from source.config import with_cnf
 from source.logger import info, err, debug, critical, warn
@@ -15,9 +17,9 @@ from source.variants.vcf_processing import verify_vcf
 
 
 def run_variants(cnf, samples, variants_fpath=None, mut_file_ext=None, mut_pass_suffix=None, mut_reject_suffix=None):
-    if mut_file_ext: source.mut_file_ext = mut_file_ext
-    if mut_pass_suffix: source.mut_pass_suffix = mut_pass_suffix
-    if mut_reject_suffix: source.mut_reject_suffix = mut_reject_suffix
+    if mut_file_ext: variant_filtering.mut_file_ext = mut_file_ext
+    if mut_pass_suffix: variant_filtering.mut_pass_suffix = mut_pass_suffix
+    if mut_reject_suffix: variant_filtering.mut_reject_suffix = mut_reject_suffix
 
     info('Annotating...')
     _annotate(cnf, samples)

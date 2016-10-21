@@ -10,11 +10,12 @@ from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.bcbio.bcbio_runner import BCBioRunner
-from source.clinical_reporting.combine_reports import run_clinical_target2wgs
 from source.config import defaults
 from source.logger import info, critical, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, check_system_resources, set_up_log
 from source.file_utils import safe_mkdir, adjust_path
+
+from ngs_reporting.combine_reports import run_clinical_target2wgs
 
 
 def main():
@@ -81,7 +82,7 @@ def main():
 
     info('')
     info('*' * 70)
-    run_clinical_target2wgs(cnf, wgs_bs, trg_bs, shared_sample_names, cnf.output_dir)
+    run_clinical_target2wgs(cnf.genome, wgs_bs, trg_bs, shared_sample_names, cnf.output_dir)
 
 
 if __name__ == '__main__':

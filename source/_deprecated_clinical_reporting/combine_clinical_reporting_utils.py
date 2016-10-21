@@ -4,7 +4,7 @@ import operator
 from collections import defaultdict, OrderedDict
 from os.path import dirname, basename, join
 
-from source.clinical_reporting.clinical_parser import capitalize_keep_uppercase, get_sample_num, parse_vcf_record, get_record_from_vcf, \
+from source._deprecated_clinical_reporting.clinical_parser import capitalize_keep_uppercase, get_sample_num, parse_vcf_record, get_record_from_vcf, \
     get_group_num, get_sample_info
 from source.file_utils import open_gzipsafe
 from source.reporting.reporting import Metric

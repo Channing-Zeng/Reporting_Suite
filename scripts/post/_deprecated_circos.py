@@ -7,7 +7,7 @@ import vcf
 from os.path import join
 
 from source.calling_process import call
-from source.clinical_reporting.clinical_parser import get_key_or_target_bed_genes
+from source._deprecated_clinical_reporting.clinical_parser import get_key_or_target_bed_genes
 from source.config import Config
 from source.file_utils import file_transaction, adjust_system_path, verify_file
 from source.logger import critical

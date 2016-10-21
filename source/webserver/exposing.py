@@ -4,6 +4,7 @@ import getpass
 import os
 from os.path import join, isfile, basename, dirname, abspath, isdir, relpath, realpath, pardir
 from traceback import print_exc, format_exc
+import sqlite3
 
 from datetime import datetime
 
@@ -215,6 +216,67 @@ def symlink_to_ngs(src_path, dst_fpath):
 
     return dst_fpath
 
+
+def write_to_sqlite(work_dir, jira_case, project_list_fpath, country_id, project_name,
+                    samples_num=None, analysis_dirpath=None, html_report_url=None):
+    info('Reading project list ' + project_list_fpath)
+    conn = sqlite3.connect(project_list_fpath)
+    c = conn.cursor()
+
+    pid = project_name
+
+    d = dict()
+    if analysis_dirpath:
+        d['Analyses_directory_' + (country_id if not is_local() else 'US')] = analysis_dirpath
+    if project_name and (analysis_dirpath or not __unquote(d['Name'])):  # update only if running after bcbio, or no value there at all
+        d['Name'] = project_name
+    if html_report_url and (analysis_dirpath or not __unquote(d['HTML_report_path'])):  # update only if running after bcbio, or no value there at all
+        d['HTML_report_path'] = html_report_url
+
+    if jira_case:
+        d['JIRA_URL'] = jira_case.url
+        # if 'Updated By' in d and __unquote(d['Updated By']):
+        d['Updated_By'] = getpass.getuser()
+        if jira_case.description:
+            d['Description'] = jira_case.summary
+        if jira_case.data_hub:
+            d['Data_Hub'] = jira_case.data_hub
+        if jira_case.type:
+            d['Type'] = jira_case.type
+        if jira_case.department:
+            d['Department'] = jira_case.department
+        if jira_case.division:
+            d['Division'] = jira_case.division
+        if jira_case.assignee:
+            d['Assignee'] = jira_case.assignee
+        if jira_case.reporter:
+            d['Reporter'] = jira_case.reporter
+
+    if samples_num:
+        d['Sample_Number'] = str(samples_num)
+
+    d['Datestamp'] = timestamp()
+
+    cmdl = '''
+IF EXISTS (SELECT * FROM project WHERE PID="{pid}" AND Name="{project_name}")
+    UPDATE project SET (...) WHERE PID="{pid}" AND Name="{project_name}"
+ELSE
+    INSERT INTO project VALUES (...)
+'''.format(pid=pid, project_name=project_name)
+    print cmdl
+    c.execute(cmdl)
+
+    # if pid not in values_by_keys_by_pid.keys():
+    #     # info(pid + ' not in ' + str(values_by_keys_by_pid.keys()))
+    #     info('Adding new record for ' + pid)
+    #     values_by_keys_by_pid[pid] = OrderedDict(zip(header_keys, [''] * len(header_keys)))
+    # else:
+    #     info('Updating existing record for ' + pid)
+    # d = values_by_keys_by_pid[pid]
+    # for k in header_keys:
+    #     if k not in d:
+    #         err('Error: ' + k + ' not in ' + project_list_fpath + ' for ' + pid)
+    #
 
 def write_to_csv_file(work_dir, jira_case, project_list_fpath, country_id, project_name,
                       samples_num=None, analysis_dirpath=None, html_report_url=None):

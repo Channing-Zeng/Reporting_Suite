@@ -2,7 +2,7 @@
 import bcbio_postproc
 
 from source import info
-from source.clinical_reporting.seq2c_plot import draw_seq2c_plot
+from source._deprecated_clinical_reporting.seq2c_plot import draw_seq2c_plot
 from source.main import read_opts_and_cnfs
 from source.prepare_args_and_cnf import check_system_resources
 from source.prepare_args_and_cnf import check_genome_resources

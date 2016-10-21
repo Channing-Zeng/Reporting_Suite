@@ -9,8 +9,8 @@ from os.path import join, abspath
 from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
-from source.clinical_reporting.clinical_parser import capitalize_keep_uppercase, CombinedSampleInfo, Parameter
-from source.clinical_reporting.combine_reports import run_combine_clinical_reports
+from source._deprecated_clinical_reporting.clinical_parser import capitalize_keep_uppercase, CombinedSampleInfo, Parameter
+from source._deprecated_clinical_reporting.combine_reports import run_combine_clinical_reports
 from source.config import defaults
 from source.logger import info, critical, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log

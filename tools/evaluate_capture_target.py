@@ -13,7 +13,6 @@ from optparse import OptionParser
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
-from source.clinical_reporting.combine_reports import get_uniq_sample_key
 from source.logger import info, critical, warn, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.file_utils import safe_mkdir, adjust_path, verify_file, splitext_plus, add_suffix
@@ -23,7 +22,10 @@ from source.targetcov.summarize_targetcov import get_val, get_float_val
 from source.tools_from_cnf import get_system_path
 from source.utils import is_us
 from source.variants.vcf_processing import bgzip_and_tabix
+
 from tools.prepare_data_for_exac import calculate_coverage_use_grid, get_exac_dir, add_project_to_exac
+
+from ngs_reporting.combine_reports import get_uniq_sample_key
 
 
 def main():
@@ -217,6 +219,7 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
             if not verify_file(tsv_fpath, is_critical=False):
                 continue
             with open(tsv_fpath) as f_inp:
+                depth_thresholds = None
                 for l in f_inp:
                     if l.startswith('#'):
                         def filter_digits(s):
@@ -238,6 +241,8 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                     if start == '.' or end == '.':
                         continue
 
+                    if not depth_thresholds:
+                        critical('No depth_thresholds header in ' + tsv_fpath)
                     cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(depth_thresholds, pcnt_val_by_thresh))
 
                     if feature in ['Capture']:

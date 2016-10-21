@@ -8,7 +8,6 @@ from os.path import join, basename
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
-from source.clinical_reporting.combine_reports import get_uniq_sample_key
 from source.file_utils import safe_mkdir, adjust_path, verify_file
 from source.logger import critical, info, is_local, warn
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
@@ -16,8 +15,10 @@ from source.qsub_utils import wait_for_jobs, submit_job
 from source.targetcov.bam_and_bed_utils import call_sambamba, verify_bam
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import get_chr_len_fpath, is_us, get_ext_tools_dirname
-from source.variants.filtering import combine_vcfs
-from tools.txt2vcf import convert_vardict_txts_to_bcbio_vcfs
+
+from ngs_reporting.combine_reports import get_uniq_sample_key
+from variant_filtering.filtering import combine_vcfs
+from variant_filtering.txt2vcf_conversion import convert_vardict_txts_to_bcbio_vcfs
 
 
 chromosomes = ['chr%s' % x for x in range(1, 23)]
@@ -315,10 +316,11 @@ def main():
     vcf_fpath_by_sname = dict()
     for bs in bcbio_structures:
         for sample in bs.samples:
-            sample.name = get_uniq_sample_key(bs.project_name, sample, sample_names)
+            sample.name = get_uniq_sample_key(bs.project_name, sample)
             samples.append(sample)
             _, pass_vcf_fpath = convert_vardict_txts_to_bcbio_vcfs(
-                    cnf, bs, sample, output_dir=cnf.work_dir, pass_only=True)
+                    cnf.work_dir, cnf.genome.name, bs, sample, cnf.caller_name,
+                    output_dirpath=cnf.work_dir, pass_only=True)
             if pass_vcf_fpath:
                 vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
 

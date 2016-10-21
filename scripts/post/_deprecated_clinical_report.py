@@ -3,9 +3,9 @@
 import bcbio_postproc
 
 import shutil
-from source.clinical_reporting.clinical_parser import ClinicalExperimentInfo, clinical_sample_info_from_cnf
 
-from source.clinical_reporting.clinical_reporting import make_clinical_report
+from source._deprecated_clinical_reporting.clinical_parser import ClinicalExperimentInfo, clinical_sample_info_from_cnf
+from source._deprecated_clinical_reporting.clinical_reporting import make_clinical_report
 from source.logger import info
 from source.prepare_args_and_cnf import check_system_resources, check_genome_resources
 from source.main import read_opts_and_cnfs

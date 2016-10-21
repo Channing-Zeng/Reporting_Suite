@@ -26,7 +26,7 @@ resources:
   bedtools:
     path: /usr/local/bin/bedtools
   python:
-    path: /Users/vlad/vagrant/venv/bin/python
+    path: /Users/vlad/vagrant/NGS_Reporting/venv_ngs_reporting/bin/python
 
 
 genomes:

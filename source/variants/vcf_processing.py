@@ -612,8 +612,10 @@ def bgzip_and_tabix(cnf, vcf_fpath, tabix_parameters='', **kwargs):
             exit_on_error = True
         kwargs['exit_on_error'] = exit_on_error
         call(cnf, cmdline, **kwargs)
-        if retrying or isfile(gzipped_fpath + '.tbi'):
+        if isfile(gzipped_fpath + '.tbi'):
             break
+        if retrying:
+            critical('Cannot tabix ' + vcf_fpath)
         if not isfile(vcf_fpath):
             call(cnf, 'gunzip ' + gzipped_fpath, None)
         retrying = True

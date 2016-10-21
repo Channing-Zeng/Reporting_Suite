@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+import variant_filtering
+
 import bcbio_postproc
 
 import sys
@@ -7,10 +9,7 @@ import re
 from collections import defaultdict
 from os.path import join, basename, isdir
 
-import source
 from source import info
-from source.clinical_reporting.clinical_parser import GeneDict, KeyGene
-from source.clinical_reporting.utils import get_key_or_target_bed_genes, SVEvent
 from source.file_utils import verify_file, add_suffix, file_transaction, adjust_system_path
 from source.bcbio.bcbio_structure import bcbio_summary_script_proc_params, BCBioStructure
 from source.logger import critical, warn, err, step_greetings
@@ -19,6 +18,9 @@ from source.targetcov.Region import get_chrom_order
 from source.utils import is_uk, is_us, OrderedDefaultDict
 from source.webserver import exposing
 from source.webserver.exposing import symlink_to_ngs, local_symlink
+
+from ngs_reporting.clinical_parser import GeneDict, KeyGene
+from ngs_reporting.utils import get_key_or_target_bed_genes, SVEvent
 
 
 class OncoprintMutation:
@@ -102,9 +104,9 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
         warn('Data Query directory ' + zhongwu_data_query_dirpath + ' does not exists.')
         return None
 
-    vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
+    vardict_txt_fname = variant_filtering.mut_fname_template.format(caller_name=clinical_report_caller.name)
     vardict_txt_fpath = join(bcbio_structure.var_dirpath, vardict_txt_fname)
-    cnf.mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+    cnf.mutations_fpath = add_suffix(vardict_txt_fpath, variant_filtering.mut_pass_suffix)
 
     cnf.seq2c_tsv_fpath = bcbio_structure.seq2c_fpath
 
@@ -155,7 +157,7 @@ def create_oncoprints_link(cnf, bcbio_structure, project_name=None):
 
 def print_data_txt(cnf, mutations_fpath, seq2c_tsv_fpath, samples, data_fpath):
     bed_fpath = verify_file(cnf.bed, is_critical=False) if cnf.bed else None
-    key_gene_names_chroms, _ = get_key_or_target_bed_genes(bed_fpath, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
+    key_gene_names_chroms, _ = get_key_or_target_bed_genes(bed_fpath)  #, verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
     key_gene_by_name_chrom = GeneDict()
     for gene_name, chrom in key_gene_names_chroms:
         key_gene_by_name_chrom[(gene_name, chrom)] = KeyGene(gene_name, chrom=chrom)

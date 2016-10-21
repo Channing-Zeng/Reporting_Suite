@@ -3,12 +3,14 @@ from itertools import izip
 from json import load
 from os.path import join, dirname
 
+import variant_filtering
+
 import source
 from source import verify_file, info
-from source.clinical_reporting.utils import SVEvent, get_key_or_target_bed_genes
+from source._deprecated_clinical_reporting.utils import SVEvent, get_key_or_target_bed_genes
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path, verify_dir, \
     adjust_system_path
-from source.clinical_reporting.solvebio_mutations import query_mutations
+from source._deprecated_clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import SortableByChrom
@@ -157,12 +159,12 @@ class Target:
 def clinical_sample_info_from_bcbio_structure(cnf, bs, sample, is_target2wgs_comparison=False):
     mutations_fpath, clinical_report_caller_name = get_mutations_fpath_from_bs(bs)
     if not verify_file(mutations_fpath):
-        mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
-        mut_basename = mutations_fpath.split('.' + source.mut_pass_suffix)[0]
+        mut_pass_ending = variant_filtering.mut_pass_suffix + '.' + variant_filtering.mut_file_ext
+        mut_basename = mutations_fpath.split('.' + variant_filtering.mut_pass_suffix)[0]
         if sample.normal_match:
-            mutations_fpath = mut_basename + '.' + source.mut_paired_suffix + '.' + mut_pass_ending
+            mutations_fpath = mut_basename + '.' + variant_filtering.mut_paired_suffix + '.' + mut_pass_ending
         else:
-            mutations_fpath = mut_basename + '.' + source.mut_single_suffix + '.' + mut_pass_ending
+            mutations_fpath = mut_basename + '.' + variant_filtering.mut_single_suffix + '.' + mut_pass_ending
     return ClinicalExperimentInfo(
         cnf, sample=sample, key_genes_fpath=verify_file(adjust_system_path(cnf.key_genes), 'key genes'),
         target_type=bs.target_type, bed_fpath=bs.bed, mutations_fpath=mutations_fpath,
@@ -199,9 +201,9 @@ def get_mutations_fpath_from_bs(bs):
         bs.variant_callers.get('vardict-java')
     if not clinical_report_caller:
         critical('No vardict or vardict-java variant caller in ' + str(bs.variant_callers.keys()))
-    vardict_txt_fname = source.mut_fname_template.format(caller_name=clinical_report_caller.name)
+    vardict_txt_fname = variant_filtering.mut_fname_template.format(caller_name=clinical_report_caller.name)
     vardict_txt_fpath = join(bs.var_dirpath, vardict_txt_fname)
-    mutations_fpath = add_suffix(vardict_txt_fpath, source.mut_pass_suffix)
+    mutations_fpath = add_suffix(vardict_txt_fpath, variant_filtering.mut_pass_suffix)
     return mutations_fpath, clinical_report_caller.name
 
 
@@ -546,12 +548,12 @@ def parse_mutations(cnf, sample, key_gene_by_name_chrom, mutations_fpath, key_co
         info('Preparing mutations stats for ' + key_collection_type + ' gene tables')
     info('Checking ' + mutations_fpath)
     if not verify_file(mutations_fpath):
-        mut_pass_ending = source.mut_pass_suffix + '.' + source.mut_file_ext
+        mut_pass_ending = variant_filtering.mut_pass_suffix + '.' + variant_filtering.mut_file_ext
         mut_basename = mutations_fpath.split('.' + mut_pass_ending)[0]
         if sample.normal_match:
-            mutations_fpath = mut_basename + '.' + source.mut_paired_suffix + '.' + mut_pass_ending
+            mutations_fpath = mut_basename + '.' + variant_filtering.mut_paired_suffix + '.' + mut_pass_ending
         else:
-            mutations_fpath = mut_basename + '.' + source.mut_single_suffix + '.' + mut_pass_ending
+            mutations_fpath = mut_basename + '.' + variant_filtering.mut_single_suffix + '.' + mut_pass_ending
         info('Checking ' + mutations_fpath)
         if not verify_file(mutations_fpath):
             err('Cannot find PASSed mutations fpath')
