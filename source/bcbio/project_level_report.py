@@ -1,19 +1,21 @@
 import json
 import os
 import time
+from genericpath import isdir, exists
 from inspect import getsourcefile
 from os import listdir
 from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile
 from collections import OrderedDict
 from collections import defaultdict
 
+import shutil
 import variant_filtering
 
 import source
 from ngs_reporting.oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.logger import info, step_greetings, warn
+from source.logger import info, step_greetings, warn, timestamp
 from source.file_utils import verify_file, add_suffix, verify_dir, file_transaction
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
@@ -276,8 +278,59 @@ def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
     return recs
 
 
+def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
+    multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'multiqc')
+    new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'qc', 'multiqc_bcbio')
+    if isdir(multiqc_bcbio_dirpath):
+        if isdir(new_multiqc_bcbio_dirpath):
+            try:
+                shutil.rmtree(new_multiqc_bcbio_dirpath)
+            except OSError:
+                os.rename(new_multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath + '.' + timestamp().replace(':', '_').replace(' ', '_'))
+        os.rename(multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath)
+    multiqc_bcbio_dirpath = new_multiqc_bcbio_dirpath
+
+    multiqc_postproc_dirpath = join(bcbio_structure.date_dirpath, 'multiqc_postproc')
+
+    cmdl = 'multiqc -f -v -o ' + multiqc_postproc_dirpath
+
+    if bcbio_structure.is_rnaseq:
+        to_run = False
+        for s in bcbio_structure.samples:
+            for path in [
+                join(s.dirpath, 'qc', 'samtools'),
+                join(s.dirpath, 'qc', 'qualimap_rnaseq'),
+                join(s.dirpath, 'qc', 'fastqc'),
+                join(multiqc_bcbio_dirpath, 'report', 'metrics', s.name + '_bcbio.txt'),
+            ]:
+                if exists(path):
+                    cmdl += ' ' + path
+                    to_run = True
+        pca_fpath = join(bcbio_structure.date_dirpath, 'qc', 'pca_data.txt')
+        if isfile(pca_fpath):
+            cmdl += ' ' + pca_fpath
+            to_run = True
+
+        if to_run:
+            call(cnf, cmdl, exit_on_error=False)
+            bcbio_structure.multiqc_fpath = join(multiqc_postproc_dirpath, 'multiqc_report.html')
+            verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
+            return bcbio_structure.multiqc_fpath
+
+    else:
+        # take list_files.txt from work and copy to final
+        # extend with targqc
+        pass
+
+
 def create_rnaseq_qc_report(cnf, bcbio_structure):
     info('Making RNASeq QC report')
+    report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.rmd')
+    report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
+    if cnf.reuse_intermediate and isfile(report_html_fpath) and verify_file(report_html_fpath):
+        info('RNAseq report ' + report_html_fpath + ' exists, reusing.')
+        return report_html_fpath
+
     csv_files_in_config_dir = [
         join(bcbio_structure.config_dir, fname)
         for fname in listdir(bcbio_structure.config_dir)
@@ -290,9 +343,6 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
                                           'qc_report_template.rmd'))
     with open(report_rmd_template_fpath) as f:
         report_template = f.read()
-
-    report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.rmd')
-    report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
 
     with file_transaction(None, report_rmd_fpath) as tx:
         with open(tx, 'w') as f:

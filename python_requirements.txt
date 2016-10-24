@@ -18,3 +18,7 @@ HTSeq
 biopython
 jsontemplate
 solvebio
+matplotlib   # for multiqc
+click        # for multiqc
+jinja2       # for multiqc
+simplejson   # for multiqc

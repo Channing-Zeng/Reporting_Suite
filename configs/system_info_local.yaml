@@ -72,7 +72,7 @@ genomes:
 
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/tricky_regions/
 
-#    all_transcripts:          ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
+    all_transcripts:          ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/gtf/ref-transcripts.gtf.gz
 
   hg38:
     seq:                      ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
@@ -87,7 +87,7 @@ genomes:
 
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/tricky_regions/
 
-#    all_transcripts:          ~/Dropbox/az/reference_data/ref-transcripts_hg19.gtf
+    all_transcripts:          ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/gtf/ref-transcripts.gtf.gz
 
 queue: ngs.q
 

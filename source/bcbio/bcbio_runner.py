@@ -26,7 +26,7 @@ from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path
 from source.bcbio.project_level_report import make_project_level_report, get_run_info, get_oncoprints_link, \
-    create_rnaseq_qc_report
+    create_rnaseq_qc_report, make_multiqc_report
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
@@ -338,27 +338,6 @@ class BCBioRunner:
         #             '--proc-name ' + BCBioStructure.varqc_after_name
         # )
 
-        varfilter_paramline = (' ' +
-            ' -o {output_dir} ' +
-            ' --output-file {output_file} ' +
-            ' --sample {sample} ' +
-            ' --caller {caller} ' +
-            ' --vcf {vcf} ' +
-            ' {vcf2txt_cmdl} ' +
-           (' --debug ' if self.cnf.debug else '') +
-            ' --project-name ' + self.bcbio_structure.project_name + ' ' +
-            ' --genome {cnf.genome.name}' +
-            ' --work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ' +
-            ' --dbsnp-multi-mafs ' + cnf.genome.dbsnp_multi_mafs)
-
-        self.varfilter = Step(cnf, run_id,
-            name=BCBioStructure.varfilter_name, short_name='vf',
-            interpreter='python',
-            script='varfilter',
-            dir_name=BCBioStructure.varfilter_dir,
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varfilter_name + '-{caller}.log'),
-            paramln=varfilter_paramline,
-        )
 
         # self.vcf2txt_single = Step(cnf, run_id,
         #     name='vcf2txt_single', short_name='vcf2txt_single',
@@ -398,16 +377,42 @@ class BCBioRunner:
             self.abnormal_regions = None
             self.seq2c = None
             self.targqc_summary = None
-            gene_expression_cmdl = summaries_cmdline_params + ' --genome {cnf.genome.name} ' + self.final_dir;
+            self.varfilter = None
+            self.evaluate_capture = None
+            self.bw_converting = None
+            self.prepare_for_exac = None
+            gene_expression_cmdl = summaries_cmdline_params + ' --genome {cnf.genome.name} ' + self.final_dir
             self.gene_expression = Step(cnf, run_id,
                 name=BCBioStructure.gene_counts_name, short_name='expr',
                 interpreter='python',
                 script=join('scripts', 'post_bcbio', 'gene_expression_summary.py'),
                 dir_name=BCBioStructure.gene_counts_summary_dir,
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', self.bcbio_structure.gene_counts_dir  + '.log'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, self.bcbio_structure.gene_counts_dir  + '.log'),
                 paramln=gene_expression_cmdl
             )
         else:
+            varfilter_paramline = (' ' +
+                ' -o {output_dir} ' +
+                ' --output-file {output_file} ' +
+                ' --sample {sample} ' +
+                ' --caller {caller} ' +
+                ' --vcf {vcf} ' +
+                ' {vcf2txt_cmdl} ' +
+               (' --debug ' if self.cnf.debug else '') +
+                ' --project-name ' + self.bcbio_structure.project_name + ' ' +
+                ' --genome {cnf.genome.name}' +
+                ' --work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ' +
+                ' --dbsnp-multi-mafs ' + cnf.genome.dbsnp_multi_mafs)
+
+            self.varfilter = Step(cnf, run_id,
+                name=BCBioStructure.varfilter_name, short_name='vf',
+                interpreter='python',
+                script='varfilter',
+                dir_name=BCBioStructure.varfilter_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varfilter_name + '-{caller}.log'),
+                paramln=varfilter_paramline,
+            )
+
             targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
                 '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
             if exons_bed:
@@ -504,36 +509,36 @@ class BCBioRunner:
                 paramln=targqc_summary_cmdline
             )
 
-        self.bw_converting = Step(cnf, run_id,
-            name='bam_to_bigwig', short_name='bamtobw',
-            interpreter='python',
-            script=join('scripts', 'post', 'bam_to_bigwig.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
-            paramln=params_for_one_sample + ' -s \'{sample}\' --bam \'{bam}\''
-               ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
-        )
+            self.bw_converting = Step(cnf, run_id,
+                name='bam_to_bigwig', short_name='bamtobw',
+                interpreter='python',
+                script=join('scripts', 'post', 'bam_to_bigwig.py'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.bigwig_name + '.log'),
+                paramln=params_for_one_sample + ' -s \'{sample}\' --bam \'{bam}\''
+                   ' --work-dir ' + join(self.bcbio_structure.work_dir, '{sample}_' + BCBioStructure.bigwig_name)
+            )
 
-        evaluate_capture_cmdline = (summaries_cmdline_params + ' ' + self.final_dir + ' -o ' +
-            join(self.bcbio_structure.date_dirpath, 'qc', 'bad_coverage.{min_depth}'))
-        self.evaluate_capture = Step(cnf, run_id,
-            name='evaluate_capture_target', short_name='capture_eval',
-            interpreter='python',
-            script=join('tools', 'evaluate_capture_target.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, 'evaluate_capture.{min_depth}.log'),
-            paramln=evaluate_capture_cmdline + ' --exac-only-filtering --tricky-regions --min-depth {min_depth}' +
-               ' --work-dir ' + join(self.bcbio_structure.work_dir, 'evaluate_capture.{min_depth}'))
+            evaluate_capture_cmdline = (summaries_cmdline_params + ' ' + self.final_dir + ' -o ' +
+                join(self.bcbio_structure.date_dirpath, 'qc', 'bad_coverage.{min_depth}'))
+            self.evaluate_capture = Step(cnf, run_id,
+                name='evaluate_capture_target', short_name='capture_eval',
+                interpreter='python',
+                script=join('tools', 'evaluate_capture_target.py'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, 'evaluate_capture.{min_depth}.log'),
+                paramln=evaluate_capture_cmdline + ' --exac-only-filtering --tricky-regions --min-depth {min_depth}' +
+                   ' --work-dir ' + join(self.bcbio_structure.work_dir, 'evaluate_capture.{min_depth}'))
 
-        exac_cmdline = summaries_cmdline_params + ' ' + self.final_dir
-        if target_bed:
-            exac_cmdline += ' --bed ' + target_bed
-        self.prepare_for_exac = Step(cnf, run_id,
-            name='prepare_data_for_exac', short_name='exac',
-            interpreter='python',
-            script=join('tools', 'prepare_data_for_exac.py'),
-            log_fpath_template=join(self.bcbio_structure.log_dirpath, 'exac.log'),
-            paramln=exac_cmdline + ' --genome {cnf.genome.name}' +
-               ' --work-dir ' + join(self.bcbio_structure.work_dir, 'prepare_data_for_exac')
-        )
+            exac_cmdline = summaries_cmdline_params + ' ' + self.final_dir
+            if target_bed:
+                exac_cmdline += ' --bed ' + target_bed
+            self.prepare_for_exac = Step(cnf, run_id,
+                name='prepare_data_for_exac', short_name='exac',
+                interpreter='python',
+                script=join('tools', 'prepare_data_for_exac.py'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, 'exac.log'),
+                paramln=exac_cmdline + ' --genome {cnf.genome.name}' +
+                   ' --work-dir ' + join(self.bcbio_structure.work_dir, 'prepare_data_for_exac')
+            )
 
     def step_log_marker_and_output_paths(self, step, sample_name, caller=None, **kwargs):
         if sample_name:
@@ -804,7 +809,7 @@ class BCBioRunner:
             if is_uk() or is_us() and self.cnf.genome.name.startswith('hg') and self.bw_converting in self.steps:
                 for sample in self.bcbio_structure.samples:
                     if sample.bam and isfile(sample.bam):
-                        self._submit_job(self.bw_converting, sample.name,
+                        self._submit_job(self.bw_converting, sample_name=sample.name,
                             sample=sample.name, genome=sample.genome, bam=sample.bam,
                             # wait_for_steps=[self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else [],
                             not_wait=True, mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
@@ -954,6 +959,8 @@ class BCBioRunner:
             if self.bcbio_structure.is_rnaseq:
                 create_rnaseq_qc_report(self.cnf, self.bcbio_structure)
                 info()
+
+            multiqc_report_fpath = make_multiqc_report(self.cnf, self.bcbio_structure, oncoprints_link=oncoprints_link)
 
             html_report_fpath = make_project_level_report(
                 self.cnf,

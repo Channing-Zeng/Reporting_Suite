@@ -9,24 +9,30 @@ from traceback import format_exc
 
 import source
 from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
-from source.logger import info, step_greetings, err
+from source.logger import info, step_greetings, err, critical
 from source.rnaseq.gene_expression import make_gene_expression_heatmaps
-from source.file_utils import verify_file
+from source.file_utils import verify_file, open_gzipsafe
 
 
 def _rm_quotes(l):
     return l[1:-1]
 
 
-def get_gene_transcripts_id(cnf):
+def _get_gene_transcripts_id(cnf):
     genes_dict = dict()
     transcripts_dict = dict()
-    if not cnf.genome.all_transcripts or not verify_file(cnf.genome.all_transcripts):
-        err('File with transcripts and genes ID was not found! Heatmaps cannot be created.')
+
+    if not cnf.genome.all_transcripts:
+        critical('File with transcripts and genes ID ' + cnf.genome.name + ' was not found! Heatmaps cannot be created.')
+    if not verify_file(cnf.genome.all_transcripts):
+        critical('File with transcripts and genes ID ' + cnf.genome.name + ' at ' + cnf.genome.all_transcripts + ' was not found! Heatmaps cannot be created.')
+
     info('Getting transcripts ID and genes ID from ' + cnf.genome.all_transcripts)
 
-    with open(cnf.genome.all_transcripts) as f:
+    with open_gzipsafe(cnf.genome.all_transcripts) as f:
         for i, l in enumerate(f):
+            if l.startswith('#'):
+                continue
             chrom, _, feature, start, end, _, strand, _, props_line = l.replace('\n', '').split('\t')
             if feature != 'transcript':
                 continue
@@ -57,7 +63,7 @@ def main():
     report_fpaths = [bcbio_structure.gene_counts_report_fpath, bcbio_structure.exon_counts_report_fpath,
                               bcbio_structure.gene_tpm_report_fpath, bcbio_structure.isoform_tpm_report_fpath]
     report_caption_names = ['Gene counts', 'Exon counts', 'Gene TPM', 'Isoform TPM']
-    genes_dict, transcripts_dict = get_gene_transcripts_id(cnf)
+    genes_dict, transcripts_dict = _get_gene_transcripts_id(cnf)
     for counts_fpath, report_fpath, report_caption_name in zip(counts_fpaths, report_fpaths, report_caption_names):
         is_isoforms = counts_fpath == bcbio_structure.isoform_tpm_fpath
         using_dict = transcripts_dict if is_isoforms else genes_dict

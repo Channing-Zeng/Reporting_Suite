@@ -25,6 +25,7 @@ $ virtualenv virtualenv -p $BCBIO/0.9.7/rhel6-x64/anaconda/bin
 $ git clone --recursive https://github.com/AstraZeneca-NGS/Reporting_Suite.git $AZ_REPORTING
 $ source activate $AZ_REPORTING/virtualenv/bin/activate
 $ pip install -r $AZ_REPORTING/python_requirements.txt
+$ pip install https://github.com/MultiQC/MultiQC_bcbio
 $ R
 > install.packages("DESeq2")
 > install.packages("RColorBrewer")
