@@ -106,6 +106,7 @@ def main():
         safe_mkdir(output_dirpath)
         if regions_fpath and regions_fpath != join(output_dirpath, basename(regions_fpath)):
             shutil.copy(regions_fpath, join(output_dirpath, basename(regions_fpath)))
+            shutil.copy(regions_fpath + '.tbi', join(output_dirpath, basename(regions_fpath + '.tbi')))
         samples = []
         sample_names = [s.name for bs in bcbio_structures for s in bs.samples]
         for bs in bcbio_structures:
