@@ -318,10 +318,10 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
                         cmdl += ' ' + path
                         to_run = True
 
-        # adding postprocessing reporting
-        pca_fpath = join(bcbio_structure.date_dirpath, 'qc', 'pca_data.txt')
-        if isfile(pca_fpath):
-            cmdl += ' ' + pca_fpath
+        pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
+        info()
+        if pca_plot_fpath and verify_file(pca_plot_fpath):
+            cmdl += ' ' + pca_plot_fpath
             to_run = True
 
     else:
@@ -337,13 +337,8 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
         return bcbio_structure.multiqc_fpath
 
 
-def create_rnaseq_qc_report(cnf, bcbio_structure):
-    info('Making RNASeq QC report')
-    report_rmd_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.rmd')
-    report_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
-    if cnf.reuse_intermediate and isfile(report_html_fpath) and verify_file(report_html_fpath):
-        info('RNAseq report ' + report_html_fpath + ' exists, reusing.')
-        return report_html_fpath
+def create_rnaseq_pca_plot(cnf, bcbio_structure):
+    info('Making RNASeq PCA plot')
 
     csv_files_in_config_dir = [
         join(bcbio_structure.config_dir, fname)
@@ -353,27 +348,13 @@ def create_rnaseq_qc_report(cnf, bcbio_structure):
         info('No CSV file found in config dir ' + bcbio_structure.config_dir)
         return None
 
-    report_rmd_template_fpath = get_system_path(cnf, join(get_ext_tools_dirname(is_common_file=True),
-                                          'qc_report_template.rmd'))
-    with open(report_rmd_template_fpath) as f:
-        report_template = f.read()
-
-    with file_transaction(None, report_rmd_fpath) as tx:
-        with open(tx, 'w') as f:
-            f.write(report_template.format(
-                bcbio_csv=csv_files_in_config_dir[0],
-                project_summary=bcbio_structure.project_summary_fpath,
-                combined_counts=bcbio_structure.gene_counts_fpath))
-
-    render_rmd_r = get_script_cmdline(cnf, 'rscript', join('tools', 'render_rmd.R'), is_critical=True)
-    render_rmd_cmdline = render_rmd_r + ' ' + report_rmd_fpath
-    call(cnf, render_rmd_cmdline, output_fpath=report_html_fpath, stdout_to_outputfile=False)
-    if verify_file(report_html_fpath):
-        info('Saved RNAseq QC report to ' + report_html_fpath)
-        return report_html_fpath
-    else:
-        info('Error making RNAseq QC report ' + report_html_fpath)
-        return None
+    pca_r_script = get_script_cmdline(cnf, 'rscript', join('tools', 'pca.R'), is_critical=True)
+    csv_fpath = join(bcbio_structure.config_dir, csv_files_in_config_dir[0])
+    gene_counts_fpath = verify_file(bcbio_structure.gene_counts_fpath, is_critical=True, description='Gene counts')
+    output_fpath = join(bcbio_structure.work_dir, 'pca_data.txt')
+    cmdl = pca_r_script + ' ' + csv_fpath + ' ' + output_fpath + ' ' + gene_counts_fpath
+    call(cnf, cmdl, output_fpath=output_fpath, stdout_to_outputfile=False)
+    return output_fpath
 
 
 def _add_per_sample_reports(cnf, bcbio_multiqc_available, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
