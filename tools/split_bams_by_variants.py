@@ -138,7 +138,7 @@ def extract_variant_from_bams(cnf, out_dirpath, transcripts, chr_length, samples
             bams_by_sample[sample.name] = output_bam_fpath
         else:
             cmdline = '{sambamba} slice {sample.bam} {chrom}:{start}-{end} -o {output_bam_fpath}'.format(**locals())
-            call(cnf, cmdline, silent=not cnf.verbose, output_fpath=output_bam_fpath, stdout_to_outputfile=False)
+            call(cnf, cmdline, silent=not cnf.verbose)
             if verify_file(output_bam_fpath, silent=True):
                 cmdline = '{sambamba} index {output_bam_fpath}'.format(**locals())
                 call(cnf, cmdline, silent=not cnf.verbose)
