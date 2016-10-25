@@ -292,35 +292,49 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
 
     multiqc_postproc_dirpath = join(bcbio_structure.date_dirpath, 'multiqc_postproc')
 
+    to_run = False
     cmdl = 'multiqc -f -v -o ' + multiqc_postproc_dirpath
 
+    input_list_fpath = join(bcbio_structure.date_dirpath, 'qc', 'list_files.txt')
+    if not verify_file(input_list_fpath, silent=True):
+        work_input_list_fpath = join(bcbio_structure.work_dir, basename(input_list_fpath))
+        if verify_file(work_input_list_fpath, silent=True):
+            shutil.copy(work_input_list_fpath, input_list_fpath)
+
+    if verify_file(input_list_fpath, silent=True):
+        to_run = True
+        cmdl += ' -l ' + input_list_fpath
+
     if bcbio_structure.is_rnaseq:
-        to_run = False
-        for s in bcbio_structure.samples:
-            for path in [
-                join(s.dirpath, 'qc', 'samtools'),
-                join(s.dirpath, 'qc', 'qualimap_rnaseq'),
-                join(s.dirpath, 'qc', 'fastqc'),
-                join(multiqc_bcbio_dirpath, 'report', 'metrics', s.name + '_bcbio.txt'),
-            ]:
-                if exists(path):
-                    cmdl += ' ' + path
-                    to_run = True
+        if not to_run:
+            for s in bcbio_structure.samples:
+                for path in [
+                    join(s.dirpath, 'qc', 'samtools'),
+                    join(s.dirpath, 'qc', 'qualimap_rnaseq'),
+                    join(s.dirpath, 'qc', 'fastqc'),
+                    join(multiqc_bcbio_dirpath, 'report', 'metrics', s.name + '_bcbio.txt'),
+                ]:
+                    if exists(path):
+                        cmdl += ' ' + path
+                        to_run = True
+
+        # adding postprocessing reporting
         pca_fpath = join(bcbio_structure.date_dirpath, 'qc', 'pca_data.txt')
         if isfile(pca_fpath):
             cmdl += ' ' + pca_fpath
             to_run = True
 
-        if to_run:
-            call(cnf, cmdl, exit_on_error=False)
-            bcbio_structure.multiqc_fpath = join(multiqc_postproc_dirpath, 'multiqc_report.html')
-            verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
-            return bcbio_structure.multiqc_fpath
-
     else:
-        # take list_files.txt from work and copy to final
-        # extend with targqc
-        pass
+        if isdir(join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)):
+            info('Adding TargQC to MultiQC run')
+            cmdl += ' ' + join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)
+            to_run = True
+
+    if to_run:
+        call(cnf, cmdl, exit_on_error=False)
+        bcbio_structure.multiqc_fpath = join(multiqc_postproc_dirpath, 'multiqc_report.html')
+        verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
+        return bcbio_structure.multiqc_fpath
 
 
 def create_rnaseq_qc_report(cnf, bcbio_structure):
