@@ -15,9 +15,9 @@ from source.qsub_utils import wait_for_jobs, submit_job
 from source.targetcov.bam_and_bed_utils import call_sambamba, verify_bam
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import get_chr_len_fpath, is_us, get_ext_tools_dirname
+from source.variants.filtering import combine_vcfs
 
 from ngs_reporting.combine_reports import get_uniq_sample_key
-from variant_filtering.filtering import combine_vcfs
 from variant_filtering.txt2vcf_conversion import convert_vardict_txts_to_bcbio_vcfs
 
 
