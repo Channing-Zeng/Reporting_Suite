@@ -202,6 +202,10 @@ reduction. Below is a PCA plot of the samples within the space of the first two 
 ```{{r PCA, echo=FALSE, cache=FALSE}}
 data <- plotPCA(rld, intgroup=c("condition"), returnData=TRUE, ntop=1000)
 percentVar <- round(100 * attr(data, "percentVar"))
+dataFile = "qc/pca_data.txt"
+write.table(data, file=dataFile, sep="\t")
+line = paste0("#Variance:", percentVar[1], ",", percentVar[2])
+write(line, file=dataFile, append=TRUE)
 ggplot(data, aes(PC1, PC2, color=condition, label=rownames(data))) +
   geom_point(size=3) +
   xlab(paste0("PC1: ",percentVar[1],"% variance")) +
