@@ -31,6 +31,7 @@ defaults = dict(
         china = join(configs_dirpath, 'system_info_China.yaml'),
         cloud = join(configs_dirpath, 'system_info_cloud.yaml'),
         ace = abspath(join(configs_dirpath, 'system_info_ace.yaml')),
+        chihua = abspath(join(configs_dirpath, 'system_info_Chihua.yaml')),
         local = abspath(join(configs_dirpath, 'system_info_local.yaml')),
     ),
     run_cnf_exome_seq = join(configs_dirpath, 'run_info_ExomeSeq.yaml'),

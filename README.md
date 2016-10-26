@@ -50,7 +50,6 @@ AZ_REPORTING=/ngs/RDI/SCRIPTS/az.reporting
 ```
 Sweden
 ```
-BCBIO=/ngs/apps/bcbio-nextgen
 AZ_REPORTING=/ngs/apps/az.reporting
 ```
 China

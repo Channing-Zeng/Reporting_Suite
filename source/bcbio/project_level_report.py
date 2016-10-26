@@ -4,7 +4,7 @@ import time
 from genericpath import isdir, exists
 from inspect import getsourcefile
 from os import listdir
-from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile
+from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile, pardir
 from collections import OrderedDict
 from collections import defaultdict
 
@@ -227,7 +227,6 @@ def _add_summary_reports(cnf, bcbio_multiqc_available, general_section, bcbio_st
     if bcbio_structure:
         if bcbio_multiqc_available:
             recs.append(_make_url_record(bcbio_structure.multiqc_fpath, general_section.find_metric(MULTIQC_NAME), base_dirpath))
-            recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME), base_dirpath))
         else:
             warn('MultiQC report ' + bcbio_structure.multiqc_fpath + ' not found')
             if not bcbio_structure.is_rnaseq:
@@ -237,6 +236,8 @@ def _add_summary_reports(cnf, bcbio_multiqc_available, general_section, bcbio_st
 
         if bcbio_structure.is_rnaseq:
             recs = add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
+        else:
+            recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME), base_dirpath))
         # if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
         #     url_val = OrderedDict(
         #             [(region_type, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region_type + '.html'))
@@ -253,9 +254,9 @@ def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
     recs.append(_make_url_record(bcbio_structure.gene_tpm_report_fpath, general_section.find_metric(GENE_TPM_NAME), base_dirpath))
     recs.append(_make_url_record(bcbio_structure.isoform_tpm_report_fpath, general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
 
-    rnaseq_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
-    rnaseq_html_fpath = verify_file(rnaseq_html_fpath, is_critical=True)
-    recs.append(_make_url_record(rnaseq_html_fpath, general_section.find_metric(QC_REPORT_NAME), base_dirpath))
+    # rnaseq_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
+    # rnaseq_html_fpath = verify_file(rnaseq_html_fpath, is_critical=True)
+    # recs.append(_make_url_record(rnaseq_html_fpath, general_section.find_metric(QC_REPORT_NAME), base_dirpath))
 
     return recs
 
@@ -293,11 +294,13 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
     multiqc_postproc_dirpath = join(bcbio_structure.date_dirpath, 'multiqc_postproc')
 
     to_run = False
-    cmdl = 'multiqc -f -v -o ' + multiqc_postproc_dirpath
+    cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath
+    if cnf.debug:
+        cmdl += ' -v'
 
     input_list_fpath = join(bcbio_structure.date_dirpath, 'qc', 'list_files.txt')
     if not verify_file(input_list_fpath, silent=True):
-        work_input_list_fpath = join(bcbio_structure.work_dir, basename(input_list_fpath))
+        work_input_list_fpath = join(bcbio_structure.work_dir, pardir, basename(input_list_fpath))
         if verify_file(work_input_list_fpath, silent=True):
             shutil.copy(work_input_list_fpath, input_list_fpath)
 
@@ -325,16 +328,24 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
             to_run = True
 
     else:
-        if isdir(join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)):
-            info('Adding TargQC to MultiQC run')
-            cmdl += ' ' + join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)
-            to_run = True
+        if not isfile(input_list_fpath):
+            return join(multiqc_bcbio_dirpath, 'multiqc_report.html')
+        else:
+            targqc_dirpath = join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)
+            if isdir(targqc_dirpath):
+                info('Adding TargQC to MultiQC run')
+                lines = open(input_list_fpath).readlines()
+                lines.append(targqc_dirpath)
+                with open(input_list_fpath, 'w') as f:
+                    f.writelines(lines)
+                cmdl += ' -e qualimap'
+                to_run = True
 
     if to_run:
         call(cnf, cmdl, exit_on_error=False)
-        bcbio_structure.multiqc_fpath = join(multiqc_postproc_dirpath, 'multiqc_report.html')
-        verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
-        return bcbio_structure.multiqc_fpath
+        multiqc_fpath = join(multiqc_postproc_dirpath, 'multiqc_report.html')
+        verify_file(multiqc_fpath, is_critical=True)
+        return multiqc_fpath
 
 
 def create_rnaseq_pca_plot(cnf, bcbio_structure):
@@ -367,20 +378,20 @@ def _add_per_sample_reports(cnf, bcbio_multiqc_available, individual_reports_sec
             sample_reports_records[s.name].append(_make_url_record(
                     OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
                     individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
-            sample_reports_records[s.name].append(_make_url_record(
-                    OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
-                    individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath))
+            # sample_reports_records[s.name].append(_make_url_record(
+            #         OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
+            #         individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath))
 
     if bcbio_structure:
         gender_record_by_sample = dict()
 
-        for s in bcbio_structure.samples:
-            if verify_file(s.targetcov_json_fpath):
-                targqc_json = json.loads(open(s.targetcov_json_fpath).read(), object_pairs_hook=OrderedDict)
-                sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
-                gender_rec = sample_report.find_record(sample_report.records, GENDER)
-                if gender_rec and gender_rec.value:
-                    gender_record_by_sample[s.name] = gender_rec
+        # for s in bcbio_structure.samples:
+        #     if verify_file(s.targetcov_json_fpath):
+        #         targqc_json = json.loads(open(s.targetcov_json_fpath).read(), object_pairs_hook=OrderedDict)
+        #         sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
+        #         gender_rec = sample_report.find_record(sample_report.records, GENDER)
+        #         if gender_rec and gender_rec.value:
+        #             gender_record_by_sample[s.name] = gender_rec
 
         # if not gender_record_by_sample:
         #     individual_reports_section.
