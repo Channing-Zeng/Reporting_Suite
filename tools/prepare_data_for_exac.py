@@ -27,8 +27,8 @@ chromosomes.extend(['chrX', 'chrY', 'chrM'])
 # exac_code_dir = '/ngs/usr/vlad/exac_browser'
 # exac_data_dir = '/ngs/usr/vlad/exac_data'
 exac_url = 'http://172.18.72.171:5000/'
-exac_code_dir = '/ngs/usr/miheenko/git/exac_browser'
-exac_data_dir = '/ngs/usr/miheenko/git/exac_data'
+exac_code_dir = '/ngs/oncology/exac/exac_browser'
+exac_data_dir = '/ngs/oncology/exac/exac_data'
 if is_local():
     exac_url = 'http://localhost:5000'
     exac_code_dir = '/Users/vlad/vagrant/exac_browser'
