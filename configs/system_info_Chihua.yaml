@@ -1,0 +1,40 @@
+resources:
+#  gatk:
+#    jvm_opts: ["-Xms750m", "-Xmx2500m"]
+#    path: /usr/local/share/java/gatk/GenomeAnalysisTK.jar
+    # path: /usr/local/share/java/gatk/GenomeAnalysisTKLite.jar
+  snpeff:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    path: ext_tools/snpEff/snpEff.jar
+  snpsift:
+    jvm_opts: ["-Xms750m", "-Xmx6g"]
+    path: ext_tools/snpEff/SnpSift.jar
+  vcf2txt:
+    path: VarDict/vcf2txt.pl
+  qsub:
+    path: tools/qsub.sh
+  qdel:
+    path: tools/qdel.sh
+#  vcf_merge:
+#    path: /usr/local/bin/vcf-merge
+  picard:
+    path: ext_tools/picard/picard.jar
+  qualimap:
+    path: ext_tools/qualimap/qualimap
+#  bedtools:
+#    path: /home/saveliev/bcbio_tools/bin/bedtools
+#  python:
+#    path: /usr/local/bin/python
+
+
+genomes:
+  hg19:
+    seq: ~/reference_data/hg19.fa
+    dbsnp: ~/bcbio/genomes/Hsapiens/hg19/variation/dbsnp-147.vcf.gz
+    dbsnp_multi_mafs: ~/bcbio/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_v147.txt
+    cosmic: ~/bcbio/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v77.vcf.gz
+    clinvar: ~/bcbio/genomes/Hsapiens/hg19/variation/clinvar.vcf.gz
+
+qsub_runner: scripts/runner_Chihua.sh
+
+smtp_host: 'localhost'
