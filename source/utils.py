@@ -205,6 +205,10 @@ def is_ace():
     hostname = socket.gethostname()
     return hostname == 'ace'
 
+def is_chihua():
+    hostname = socket.gethostname()
+    return hostname == 'chihua'
+
 
 def md5(fpath):
     hash = hashlib.md5()
