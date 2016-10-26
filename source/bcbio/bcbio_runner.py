@@ -897,15 +897,16 @@ class BCBioRunner:
 
             oncoprints_link = None
             if is_us() and not self.bcbio_structure.is_rnaseq:
-                oncoprints_link = get_oncoprints_link(self.cnf, self.bcbio_structure, self.bcbio_structure.project_name)
+                oncoprints_link = get_oncoprints_link(self.cnf,
+                    self.bcbio_structure, self.bcbio_structure.project_name)
 
-            multiqc_report_fpath = make_multiqc_report(
-                self.cnf, self.bcbio_structure, oncoprints_link=oncoprints_link)
+            info()
+            self.bcbio_structure.multiqc_fpath = make_multiqc_report(self.cnf,
+                self.bcbio_structure, oncoprints_link=oncoprints_link)
 
-            html_report_fpath = make_project_level_report(
-                self.cnf,
-                    bcbio_structure=self.bcbio_structure,
-                    oncoprints_link=oncoprints_link)
+            html_report_fpath = make_project_level_report(self.cnf,
+                bcbio_structure=self.bcbio_structure,
+                oncoprints_link=oncoprints_link)
 
             html_report_url = None
             if html_report_fpath:
@@ -950,10 +951,18 @@ class BCBioRunner:
             else:
                 info('Done post-processing.')
                 bcbio_work_dirpath = dirname(self.bcbio_structure.work_dir)
+
+                scratch_root_dirpath = None
+                analysis_root_dirpath = None
                 if is_us() and '/ngs/oncology/analysis/' in bcbio_work_dirpath:
+                    scratch_root_dirpath = '/ngs/scratch/'
+                    analysis_root_dirpath = '/ngs/oncology/analysis/'
+                elif is_local() and '/Users/vlad/googledrive/az/analysis/' in bcbio_work_dirpath:
+                    scratch_root_dirpath = '/Users/vlad/scratch/'
+                    analysis_root_dirpath = '/Users/vlad/googledrive/az/analysis/'
+                if scratch_root_dirpath:
                     info()
-                    scratch_root_dirpath = join('/ngs/scratch/')
-                    work_scratch_dirpath = bcbio_work_dirpath.replace('/ngs/oncology/analysis/', scratch_root_dirpath)
+                    work_scratch_dirpath = bcbio_work_dirpath.replace(analysis_root_dirpath, scratch_root_dirpath)
                     if not exists(work_scratch_dirpath):
                         assert work_scratch_dirpath != bcbio_work_dirpath, (work_scratch_dirpath, bcbio_work_dirpath)
                         safe_mkdir(dirname(work_scratch_dirpath))
