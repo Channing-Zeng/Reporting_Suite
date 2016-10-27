@@ -29,6 +29,7 @@ chromosomes.extend(['chrX', 'chrY', 'chrM'])
 exac_url = 'http://172.18.72.171:5000/'
 exac_code_dir = '/ngs/oncology/exac/exac_browser'
 exac_data_dir = '/ngs/oncology/exac/exac_data'
+exac_venv_dir = '/ngs/oncology/exac/exac_env'
 if is_local():
     exac_url = 'http://localhost:5000'
     exac_code_dir = '/Users/vlad/vagrant/exac_browser'
@@ -243,7 +244,7 @@ def get_exac_dir(cnf):
 
 def add_project_to_exac(cnf):
     info('Adding project to ExAC database')
-    exac_venv_pythonpath = join(exac_code_dir, 'venv_exac', 'bin', 'python')
+    exac_venv_pythonpath = join(exac_venv_dir, 'bin', 'python')
     if is_local():
         exac_venv_pythonpath = 'python'
     cmdline = exac_venv_pythonpath + ' ' + join(exac_code_dir, 'manage.py') + ' ' + 'add_project' + \
@@ -268,9 +269,6 @@ def main():
 
     if not cnf.genome:
         critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
-    exac_venv_pythonpath = None
-    if is_us():
-        exac_venv_pythonpath = join(exac_code_dir, 'venv_exac', 'bin', 'python')
     cnf.output_dir = get_exac_dir(cnf)
     # if not cnf.output_dir:
     #     critical('Error! Please specify ExAC browser data directory')
