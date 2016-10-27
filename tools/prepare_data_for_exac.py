@@ -58,7 +58,6 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
 
     chr_len_fpath = get_chr_len_fpath(cnf)
-    jobs_to_wait = []
 
     for chrom in chromosomes:
         info('Processing chromosome ' + chrom)
@@ -68,6 +67,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
 
         sample_names = ','.join(sample.name for sample in samples)
         chrom_bams = []
+        jobs_to_wait = []
 
         for sample in samples:
             assert verify_bam(sample.bam), 'BAM for ' + sample.name
@@ -105,11 +105,11 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
                 jobs_to_wait.append(j)
             info()
 
-    if jobs_to_wait:
-        info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
-        jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
-    else:
-        info('No jobs to submit.')
+        if len(jobs_to_wait) >= cnf.threads:
+            info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
+            jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+        else:
+            info('No jobs to submit.')
 
     for chrom in chromosomes:
         avg_cov_output_fpath = join(output_dirpath, chrom + '.txt.gz')
@@ -318,10 +318,12 @@ def main():
         for sample in bs.samples:
             sample.name = get_uniq_sample_key(bs.project_name, sample)
             samples.append(sample)
-            _, pass_vcf_fpath = convert_vardict_txts_to_bcbio_vcfs(
+            vcf_fpath, pass_vcf_fpath = convert_vardict_txts_to_bcbio_vcfs(
                     cnf.work_dir, cnf.genome.name, bs, sample, cnf.caller_name,
-                    output_dirpath=cnf.work_dir, pass_only=True)
-            if pass_vcf_fpath:
+                    output_dirpath=cnf.work_dir, pass_only=False)
+            if vcf_fpath:
+                vcf_fpath_by_sname[sample.name] = vcf_fpath
+            elif pass_vcf_fpath:
                 vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
 
     if not vcf_fpath_by_sname:
