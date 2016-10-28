@@ -19,7 +19,7 @@ from source.tools_from_cnf import get_system_path
 from source.utils import get_chr_lengths_from_seq, get_ext_tools_dirname
 
 
-def parse_variants(vcf_fpath):
+def parse_variants(vcf_fpath, only_pass=True):
     variants_by_chrom = defaultdict(list)
     with open_gzipsafe(vcf_fpath) as vcf:
         for line in vcf:
@@ -29,6 +29,8 @@ def parse_variants(vcf_fpath):
                 ann_field_names = [f.strip() for f in ann_field_names]
                 ann_field_names[0] = ann_field_names[0].split('\'')[1]
             if line.startswith('#'):
+                continue
+            if only_pass and 'PASS' not in line:
                 continue
 
             fields = line.split('\t')
