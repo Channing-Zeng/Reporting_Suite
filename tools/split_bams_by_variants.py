@@ -70,7 +70,7 @@ def split_bams(cnf, samples, vcf_fpath):
         transcripts = get_transcipts_with_exons_from_features(verify_file(cnf.features, is_critical=True), cur_chrom=chrom)
         bams_created_before = []
         bams_by_sample = defaultdict(list)
-        info('Extracting variant coverage for all samples for chrom ' + chrom + ', ' + str(len(variants)) + ' variants')
+        info('Extracting variant coverage for all samples for ' + chrom + ', ' + str(len(variants)) + ' variants')
         for variant in variants:
             variant_bams_by_sample = extract_variant_from_bams(cnf, temp_output_dirpath,
                  transcripts, chr_length, samples, chrom, variant, bams_created_before)
@@ -80,7 +80,7 @@ def split_bams(cnf, samples, vcf_fpath):
         chrom = chrom.replace('chr', '')
         info()
         for sample_name, bam_fpaths in bams_by_sample.iteritems():
-            info('Making combined BAMs for ' + chrom + ' for sample ' + sample_name)
+            info('Making combined BAMs for chr' + chrom + ' for sample ' + sample_name)
             bam_fname = '{chrom}-{sample_name}.bam'.format(**locals())
             temp_combined_bam_fpath = join(temp_output_dirpath, bam_fname)
             combined_bam_fpath = join(cnf.output_dir, bam_fname)

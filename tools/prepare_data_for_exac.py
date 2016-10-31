@@ -59,6 +59,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
     sambamba = get_system_path(cnf, join(get_ext_tools_dirname(), 'sambamba'), is_critical=True)
 
     chr_len_fpath = get_chr_len_fpath(cnf)
+    jobs_to_wait = []
 
     for chrom in chromosomes:
         info('Processing chromosome ' + chrom)
@@ -68,7 +69,6 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
 
         sample_names = ','.join(sample.name for sample in samples)
         chrom_bams = []
-        jobs_to_wait = []
 
         for sample in samples:
             assert verify_bam(sample.bam), 'BAM for ' + sample.name
@@ -109,6 +109,7 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
         if len(jobs_to_wait) >= cnf.threads:
             info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
             jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
+            jobs_to_wait = []
         else:
             info('No jobs to submit.')
 

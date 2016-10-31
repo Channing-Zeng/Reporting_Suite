@@ -52,6 +52,15 @@ def main():
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
 
+    if not cnf.project_name:
+        cnf.add_to_exac = False
+        cnf.project_name = 'CaptureTargetEvaluation'
+
+    if cnf.prepare_for_exac:
+        cnf.output_dir = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
+    elif cnf.output_dir is None:
+        cnf.output_dir = join(os.getcwd(), cnf.project_name)
+
     cnf.output_dir = safe_mkdir(adjust_path(cnf.output_dir))
     cnf.work_dir = safe_mkdir(join(cnf.output_dir, 'work'))
     cnf.log_dir = safe_mkdir(join(cnf.work_dir), 'log')
@@ -69,15 +78,6 @@ def main():
 
     info()
     info('*' * 70)
-
-    if not cnf.project_name:
-        cnf.add_to_exac = False
-        cnf.project_name = 'CaptureTargetEvaluation'
-
-    if cnf.prepare_for_exac:
-        cnf.output_dir = join(get_exac_dir(cnf), 'coverage', cnf.project_name)
-    elif cnf.output_dir is None:
-        cnf.output_dir = join(os.getcwd(), cnf.project_name)
 
     safe_mkdir(cnf.output_dir)
 
