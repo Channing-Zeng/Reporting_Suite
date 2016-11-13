@@ -3,6 +3,7 @@ steps:
 - TargQC
 - Seq2C
 - Exac
+- ClinicalReport
 
 
 variant_filtering:

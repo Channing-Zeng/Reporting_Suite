@@ -3,6 +3,7 @@ steps:
 - TargQC
 - Seq2C
 - Exac
+- ClinicalReport
 
 
 # reuse_intermediate: yes

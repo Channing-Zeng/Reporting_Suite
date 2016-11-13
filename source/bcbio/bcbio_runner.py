@@ -177,7 +177,7 @@ class BCBioRunner:
         # if Steps.contains(cnf.steps, 'ClinicalReport') or \
         #         Steps.contains(cnf.steps, 'ClinicalReports') or \
         #         Steps.contains(cnf.steps, source.clinreport_name):
-        if not bcbio_structure.is_rnaseq:
+        if Steps.contains(cnf.steps, 'ClinicalReport'):
             self.steps.extend([self.clin_report])
 
         if self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'Expression'):
@@ -435,13 +435,15 @@ class BCBioRunner:
             targqc_params = (
                 ' {bams}' +
                 ' --project-name ' + self.bcbio_structure.project_name +
-                ' -t ' + str(self.max_threads) + ' -s sge -q ' + cnf.queue +
+                ' -t ' + str(self.max_threads) +
               (' --reuse ' if self.cnf.reuse_intermediate else '') +
               (' --debug ' if self.cnf.debug else '') +
                ' --genome ' + cnf.genome.name +
                ' -o ' + join(self.bcbio_structure.date_dirpath, BCBioStructure.targqc_dir) +
                ' --work-dir ' + join(self.bcbio_structure.work_dir, BCBioStructure.targqc_name)
             )
+            if cnf.queue:
+                targqc_params += ' -s sge -q ' + cnf.queue
             if target_bed:
                 targqc_params += ' --bed ' + target_bed
             self.targqc = Step(cnf, run_id,
