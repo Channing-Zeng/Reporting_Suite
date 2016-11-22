@@ -9,13 +9,17 @@ from collections import OrderedDict
 from collections import defaultdict
 
 import shutil
-import variant_filtering
+from yaml import dump
+try:
+    from yaml import CDumper as Dumper, CLoader as Loader
+except ImportError:
+    from yaml import Dumper, Loader
 
-import source
+import variant_filtering
 from ngs_reporting.oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.logger import info, step_greetings, warn, timestamp
+from source.logger import info, step_greetings, warn, timestamp, critical
 from source.file_utils import verify_file, add_suffix, verify_dir, file_transaction
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
@@ -24,63 +28,57 @@ from source.utils import get_ext_tools_dirname, get_version
 from tools.prepare_data_for_exac import get_exac_us_url
 
 
-BASECALLS_NAME        = 'BaseCalls'
 FASTQC_NAME           = BCBioStructure.fastqc_repr
 PRE_FASTQC_NAME       = 'Raw ' + FASTQC_NAME
-SEQQC_NAME            = 'Targ QC'
 EXAC_NAME             = 'ExAC browser'
-PRE_SEQQC_NAME        = 'Pre ' + SEQQC_NAME
-VARQC_NAME            = 'Var QC'
-VARQC_AFTER_NAME      = 'Var QC after filtering'
-MUTATIONS_NAME        = 'Mutations'
-MUTATIONS_SINGLE_NAME = 'Mutations for single samples'
-MUTATIONS_PAIRED_NAME = 'Mutations for paired samples'
+CNV_NAME              = 'CNV'
+MUTATIONS_NAME        = 'VarDict'
+MUTATIONS_SINGLE_NAME = 'VarDict, single samples'
+MUTATIONS_PAIRED_NAME = 'VarDict, paired samples'
 GENDER                = 'Sex'
 CLINICAL_NAME         = 'Oncology NGS report'
 PHENOTYPE             = 'Phenotype'
 NORM_MATCH            = 'Normal Match'
 ABNORMAL_NAME         = 'Flagged regions'
-MULTIQC_NAME          = 'MultiQC'
 
 ## RNAseq reports
-QC_REPORT_NAME        = 'QC report'
 GENE_COUNTS_NAME      = 'Gene counts'
 EXON_COUNTS_NAME      = 'Exon counts'
 GENE_TPM_NAME         = 'Gene TPM'
 ISOFORM_TPM_NAME      = 'Isoform TPM'
-QUALIMAP_NAME         = 'Qualimap'
+
+mutation_names = [
+    MUTATIONS_NAME,
+    MUTATIONS_SINGLE_NAME,
+    MUTATIONS_PAIRED_NAME,
+    CNV_NAME
+]
+expression_names = [
+    GENE_COUNTS_NAME,
+    EXON_COUNTS_NAME,
+    GENE_TPM_NAME,
+    ISOFORM_TPM_NAME,
+]
 
 metric_storage = MetricStorage(
     general_section=ReportSection(metrics=[
-        Metric(BASECALLS_NAME),
         Metric(PRE_FASTQC_NAME),
         Metric(FASTQC_NAME),
-        Metric(PRE_SEQQC_NAME),
-        Metric(SEQQC_NAME),
         Metric(EXAC_NAME),
-        Metric(VARQC_NAME),
-        Metric(VARQC_AFTER_NAME),
         Metric(MUTATIONS_NAME),
         Metric(MUTATIONS_SINGLE_NAME),
         Metric(MUTATIONS_PAIRED_NAME),
         Metric(ABNORMAL_NAME),
-        Metric(QC_REPORT_NAME),
         Metric(GENE_COUNTS_NAME),
         Metric(EXON_COUNTS_NAME),
         Metric(GENE_TPM_NAME),
         Metric(ISOFORM_TPM_NAME),
-        Metric(MULTIQC_NAME),
     ]),
     sections=[ReportSection(metrics=[
         Metric(PRE_FASTQC_NAME),
         Metric(FASTQC_NAME),
         # Metric('BAM'),
-        Metric(PRE_SEQQC_NAME),
-        Metric(SEQQC_NAME),
-        Metric(QUALIMAP_NAME),
         # Metric(MUTATIONS_NAME),
-        Metric(VARQC_NAME),
-        Metric(VARQC_AFTER_NAME),
         Metric(GENDER, description='If not defined, means that the target does not contain key male Y genes that we could check'),
         Metric(CLINICAL_NAME),
         Metric(GENE_COUNTS_NAME),
@@ -89,9 +87,7 @@ metric_storage = MetricStorage(
     ])])
 
 
-def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None, dataset_project=None,
-                              oncoprints_link=None):
-
+def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
     step_greetings('Making the %s project-level report' % ('preproc' if bcbio_structure is None else 'postproc'))
 
     # if dataset_structure is None and bcbio_structure:
@@ -99,19 +95,15 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
     #     dataset_dirpath = realpath(join(analysis_dirpath, 'dataset'))
     #     dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
 
-    bcbio_multiqc_available = bcbio_structure and isfile(bcbio_structure.multiqc_fpath)
-    if bcbio_multiqc_available:
-        info('Found MultiQC report ' + bcbio_structure.multiqc_fpath)
-
-    general_records = _add_summary_reports(cnf, bcbio_multiqc_available, metric_storage.general_section, bcbio_structure, dataset_structure, dataset_project)
-    sample_reports_records = _add_per_sample_reports(cnf, bcbio_multiqc_available, metric_storage.sections[0], bcbio_structure, dataset_structure, dataset_project)
+    general_records = _add_summary_reports(cnf, metric_storage.general_section, bcbio_structure)
+    sample_reports_records = _add_per_sample_reports(cnf, metric_storage.sections[0], bcbio_structure)
 
     sample_reports = []
     samples = []
-    if dataset_project:
-        samples = dataset_project.sample_by_name.values()
-    if bcbio_structure:
-        samples = bcbio_structure.samples
+    # if dataset_project:
+    #     samples = dataset_project.sample_by_name.values()
+    # if bcbio_structure:
+    samples = bcbio_structure.samples
     for sample in samples:
         sample_reports.append(SampleReport(sample,
             records=sample_reports_records[sample.name],
@@ -121,61 +113,71 @@ def make_project_level_report(cnf, dataset_structure=None, bcbio_structure=None,
     full_report = FullReport(cnf.project_name, sample_reports,
                              metric_storage=metric_storage, general_records=general_records)
 
-    project_report_html_fpath = None
-    project_name = None
-    if dataset_structure and dataset_project:
-        project_report_html_fpath = dataset_project.project_report_html_fpath
-        project_name = dataset_project.name
-    if bcbio_structure:
-        project_report_html_fpath = bcbio_structure.project_report_html_fpath
-        project_name = bcbio_structure.project_name
+    project_report_html_fpath = bcbio_structure.multiqc_fpath
+    project_name = bcbio_structure.project_name
 
     sample_match_on_hover_js = None
-    if bcbio_structure:
-        normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
-        if normal_samples:
-            sample_match_on_hover_js = '<script type="text/javascript">\n'
-            for s in bcbio_structure.samples:
-                if s.phenotype != 'normal' and s.normal_match:
-                    sample_match_on_hover_js += ('' +
-                        '\tdocument.getElementById("' + s.name + '_match").onmouseover = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "#EEE"; };\n' +
-                        '\tdocument.getElementById("' + s.name + '_match").onmouseleave = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "white"; };\n'
-                     )
-            sample_match_on_hover_js += '</script>\n'
+    normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
+    if normal_samples:
+        sample_match_on_hover_js = '<script type="text/javascript">\n'
+        for s in bcbio_structure.samples:
+            if s.phenotype != 'normal' and s.normal_match:
+                sample_match_on_hover_js += ('' +
+                    '\tdocument.getElementById("' + s.name + '_match").onmouseover = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "#EEE"; };\n' +
+                    '\tdocument.getElementById("' + s.name + '_match").onmouseleave = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "white"; };\n'
+                 )
+        sample_match_on_hover_js += '</script>\n'
 
-    _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure,
-                      additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
-                      oncoprints_link=oncoprints_link, dataset_project=dataset_project)
+    # _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure,
+    #                   additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
+    #                   oncoprints_link=oncoprints_link, dataset_project=dataset_project)
+    metadata = _report_to_multiqc_metadata(cnf, full_report,
+        project_report_html_fpath, project_name, bcbio_structure,
+        additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
+        oncoprints_link=oncoprints_link)
 
-    info()
-    info('*' * 70)
-    info('Project-level report saved in: ')
-    info('  ' + project_report_html_fpath)
-    return project_report_html_fpath
+    metadata_fpath = join(bcbio_structure.work_dir, 'az_multiqc_metadata.yaml')
+    with open(metadata_fpath, 'w') as outfile:
+        dump(metadata, outfile, default_flow_style=False)
+
+    import json
+    with open(metadata_fpath.replace('.yaml', '.json'), 'w') as outfile:
+        json.dump(metadata, outfile)
+
+    return metadata_fpath.replace('.yaml', '.json')
 
 
-def _mutations_records(general_section, bcbio_structure):
+    # info()
+    # info('*' * 70)
+    # info('Project-level report saved in: ')
+    # info('  ' + project_report_html_fpath)
+    # return project_report_html_fpath
+
+
+def _mutations_records(general_section, bcbio_structure, base_dirpath):
     records = []
 
     val = OrderedDict()
     single_val = OrderedDict()
     paired_val = OrderedDict()
 
-    for caller in bcbio_structure.variant_callers.values():
-        _base_mut_fname = variant_filtering.mut_fname_template.format(caller_name=caller.name)
-        _base_mut_fpath = join(bcbio_structure.date_dirpath, _base_mut_fname)
-        mut_fpath = add_suffix(_base_mut_fpath, variant_filtering.mut_pass_suffix)
-        if verify_file(mut_fpath, silent=True):
-            val[caller.name] = mut_fpath
-        else:
-            single_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_single_suffix), variant_filtering.mut_pass_suffix)
-            paired_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_paired_suffix), variant_filtering.mut_pass_suffix)
-            if verify_file(single_mut_fpath, silent=True):
-                single_val[caller.name] = single_mut_fpath
-                # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')
-            if verify_file(paired_mut_fpath, silent=True):
-                paired_val[caller.name] = paired_mut_fpath
-                # _add_rec(paired_mut_fpath, caller.name + ' mutations for paired samples')
+    caller = bcbio_structure.variant_callers.get('vardict') or \
+             bcbio_structure.variant_callers.get('vardict-java')
+
+    _base_mut_fname = variant_filtering.mut_fname_template.format(caller_name=caller.name)
+    _base_mut_fpath = join(bcbio_structure.date_dirpath, _base_mut_fname)
+    mut_fpath = add_suffix(_base_mut_fpath, variant_filtering.mut_pass_suffix)
+    if verify_file(mut_fpath, silent=True):
+        val = mut_fpath
+    else:
+        single_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_single_suffix), variant_filtering.mut_pass_suffix)
+        paired_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_paired_suffix), variant_filtering.mut_pass_suffix)
+        if verify_file(single_mut_fpath, silent=True):
+            single_val = single_mut_fpath
+            # _add_rec(single_mut_fpath, caller.name + ' mutations for separate samples')
+        if verify_file(paired_mut_fpath, silent=True):
+            paired_val = paired_mut_fpath
+            # _add_rec(paired_mut_fpath, caller.name + ' mutations for paired samples')
 
     for val, metric_name in (
          (val, MUTATIONS_NAME),
@@ -186,7 +188,7 @@ def _mutations_records(general_section, bcbio_structure):
             rec = Record(
                 metric=metric,
                 value=metric.name,
-                url=_relpath_all(val, bcbio_structure.date_dirpath))
+                url=_relpath_all(val, base_dirpath))
             general_section.add_metric(metric)
             records.append(rec)
 
@@ -195,56 +197,33 @@ def _mutations_records(general_section, bcbio_structure):
 
 def _make_url_record(html_fpath_value, metric, base_dirpath):
     # info('Adding paths to the report: ' + str(html_fpath_value))
-    if isinstance(html_fpath_value, dict):
-        url = OrderedDict([(k, relpath(html_fpath, base_dirpath)) for k, html_fpath in html_fpath_value.items() if verify_file(html_fpath)])
-        return Record(metric=metric, value=metric.name, url=url)
-    else:
-        url = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
-        return Record(metric=metric, value=metric.name, url=url)
+    # if isinstance(html_fpath_value, dict):
+    #     url = OrderedDict([(k, relpath(html_fpath, base_dirpath)) for k, html_fpath in html_fpath_value.items() if verify_file(html_fpath)])
+    #     return Record(metric=metric, value=metric.name, url=url)
+    # else:
+    url = relpath(html_fpath_value, base_dirpath) if verify_file(html_fpath_value) else None
+    return Record(metric=metric, value=metric.name, url=url)
 
 
-def get_base_dirpath(bcbio_structure, dataset_project):
-    if bcbio_structure:
-        return bcbio_structure.date_dirpath
-    return dirname(dataset_project.project_report_html_fpath)
-
-def _add_summary_reports(cnf, bcbio_multiqc_available, general_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
+def _add_summary_reports(cnf, general_section, bcbio_structure):
     """ We want links to be relative, so we make paths relative to the project-level-report parent directory.
         - If the bcbio_structure is set, project-level report is located at bcbio_structure.date_dirpath
         - If dataset_dirpath is set, project-level report is located right at dataset_dirpath
     """
-    base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
+    base_dirpath = dirname(bcbio_structure.multiqc_fpath)
 
     recs = []
-
-    if dataset_structure and dataset_project:
-        if dataset_structure.basecall_stat_html_reports:
-            val = OrderedDict([(basename(fpath), fpath) for fpath in dataset_structure.basecall_stat_html_reports])
-            recs.append(_make_url_record(val, general_section.find_metric(BASECALLS_NAME), base_dirpath))
-        recs.append(_make_url_record(dataset_project.comb_fastqc_fpath,              general_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
-        recs.append(_make_url_record(dataset_project.downsample_targqc_report_fpath, general_section.find_metric(PRE_SEQQC_NAME),  base_dirpath))
-
-    if bcbio_structure:
-        if bcbio_multiqc_available:
-            recs.append(_make_url_record(bcbio_structure.multiqc_fpath, general_section.find_metric(MULTIQC_NAME), base_dirpath))
-        else:
-            warn('MultiQC report ' + bcbio_structure.multiqc_fpath + ' not found')
-            if not bcbio_structure.is_rnaseq:
-                recs = add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
-            # if isfile(bcbio_structure.fastqc_summary_fpath):
-            #     recs.append(_make_url_record(bcbio_structure.fastqc_summary_fpath, general_section.find_metric(FASTQC_NAME), base_dirpath))
-
-        if bcbio_structure.is_rnaseq:
-            recs = add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
-        else:
-            recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME), base_dirpath))
-        # if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
-        #     url_val = OrderedDict(
-        #             [(region_type, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region_type + '.html'))
-        #                 for region_type in ['target', 'exons']])
-        #     rec = _make_url_record(url_val, general_section.find_metric(ABNORMAL_NAME), base_dirpath)
-        #     recs.append(rec)
-
+    if bcbio_structure.is_rnaseq:
+        recs = add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
+    else:
+        recs = add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath)
+        # recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME), base_dirpath))
+    # if verify_dir(bcbio_structure.flagged_regions_dirpath, is_critical=False):
+    #     url_val = OrderedDict(
+    #             [(region_type, join(bcbio_structure.flagged_regions_dirpath, 'flagged_' + region_type + '.html'))
+    #                 for region_type in ['target', 'exons']])
+    #     rec = _make_url_record(url_val, general_section.find_metric(ABNORMAL_NAME), base_dirpath)
+    #     recs.append(rec)
     return recs
 
 
@@ -262,24 +241,15 @@ def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
 
 
 def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath):
-    recs.extend(_mutations_records(general_section, bcbio_structure))
+    recs.extend(_mutations_records(general_section, bcbio_structure, base_dirpath))
 
-    m = general_section.find_metric(EXAC_NAME)
-    recs.append(Record(metric=m, value=m.name, url=get_exac_us_url(cnf.genome.name, bcbio_structure.project_name)))
+    # m = general_section.find_metric(EXAC_NAME)
+    # recs.append(Record(metric=m, value=m.name, url=get_exac_us_url(cnf.genome.name, bcbio_structure.project_name)))
 
-    # varqc_d = bcbio_structure.varqc_report_fpath_by_caller
-    # varqc_d['all'] = bcbio_structure.varqc_report_fpath
-    #
-    # varqc_after_d = bcbio_structure.varqc_after_report_fpath_by_caller
-    # varqc_after_d['all'] = bcbio_structure.varqc_after_report_fpath
-
-    recs.append(_make_url_record(bcbio_structure.targqc_summary_fpath, general_section.find_metric(SEQQC_NAME),  base_dirpath))
-    # recs.append(_make_url_record(varqc_d,       general_section.find_metric(VARQC_NAME),       base_dirpath))
-    # recs.append(_make_url_record(varqc_after_d, general_section.find_metric(VARQC_AFTER_NAME), base_dirpath))
     return recs
 
 
-def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
+def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'multiqc')
     new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'qc', 'multiqc_bcbio')
     if isdir(multiqc_bcbio_dirpath):
@@ -289,12 +259,13 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
             except OSError:
                 os.rename(new_multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath + '.' + timestamp().replace(':', '_').replace(' ', '_'))
         os.rename(multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath)
-    multiqc_bcbio_dirpath = new_multiqc_bcbio_dirpath
 
-    multiqc_postproc_dirpath = join(bcbio_structure.date_dirpath, 'multiqc_postproc')
+    multiqc_postproc_dirpath = dirname(bcbio_structure.multiqc_fpath)
 
     to_run = False
-    cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath
+    cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath + ' -t az'
+    if metadata_fpath:
+        cmdl += ' --az-metadata ' + metadata_fpath
     if cnf.debug:
         cmdl += ' -v'
 
@@ -309,17 +280,17 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
         cmdl += ' -l ' + input_list_fpath
 
     if bcbio_structure.is_rnaseq:
-        if not to_run:
-            for s in bcbio_structure.samples:
-                for path in [
-                    join(s.dirpath, 'qc', 'samtools'),
-                    join(s.dirpath, 'qc', 'qualimap_rnaseq'),
-                    join(s.dirpath, 'qc', 'fastqc'),
-                    join(multiqc_bcbio_dirpath, 'report', 'metrics', s.name + '_bcbio.txt'),
-                ]:
-                    if exists(path):
-                        cmdl += ' ' + path
-                        to_run = True
+        # if not to_run:
+        #     for s in bcbio_structure.samples:
+        #         for path in [
+        #             join(s.dirpath, 'qc', 'samtools'),
+        #             join(s.dirpath, 'qc', 'qualimap_rnaseq'),
+        #             join(s.dirpath, 'qc', 'fastqc'),
+        #             join(multiqc_bcbio_dirpath, 'report', 'metrics', s.name + '_bcbio.txt'),
+        #         ]:
+        #             if exists(path):
+        #                 cmdl += ' ' + path
+        #                 to_run = True
 
         pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
         info()
@@ -329,23 +300,23 @@ def make_multiqc_report(cnf, bcbio_structure, oncoprints_link):
 
     else:
         if not isfile(input_list_fpath):
-            return join(multiqc_bcbio_dirpath, 'multiqc_report.html')
-        else:
-            targqc_dirpath = join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)
-            if isdir(targqc_dirpath):
-                info('Adding TargQC to MultiQC run')
-                lines = open(input_list_fpath).readlines()
-                lines.append(targqc_dirpath)
-                with open(input_list_fpath, 'w') as f:
-                    f.writelines(lines)
-                cmdl += ' -e qualimap'
-                to_run = True
+            critical('Critical: MultiQC files list was not found in ' + input_list_fpath)
+        # else:
+            # targqc_dirpath = join(bcbio_structure.date_dirpath, BCBioStructure.targqc_dir)
+            # if isdir(targqc_dirpath):
+            #     info('Adding TargQC to MultiQC run')
+            #     lines = open(input_list_fpath).readlines()
+            #     lines.append(targqc_dirpath)
+            #     with open(input_list_fpath, 'w') as f:
+            #         f.writelines(lines)
+            #     cmdl += ' -e qualimap'
+            #     to_run = True
 
-    if to_run:
-        call(cnf, cmdl, exit_on_error=False)
-        multiqc_fpath = join(multiqc_postproc_dirpath, 'multiqc_report.html')
-        verify_file(multiqc_fpath, is_critical=True)
-        return multiqc_fpath
+    if not to_run:
+        critical('Critical: no reprots to run MultiQC')
+    call(cnf, cmdl, exit_on_error=False)
+    verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
+    return bcbio_structure.multiqc_fpath
 
 
 def create_rnaseq_pca_plot(cnf, bcbio_structure):
@@ -368,107 +339,38 @@ def create_rnaseq_pca_plot(cnf, bcbio_structure):
     return output_fpath
 
 
-def _add_per_sample_reports(cnf, bcbio_multiqc_available, individual_reports_section, bcbio_structure=None, dataset_structure=None, dataset_project=None):
-    base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
+def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure):
+    base_dirpath = dirname(bcbio_structure.multiqc_fpath)
 
     sample_reports_records = defaultdict(list)
 
-    if dataset_project:
-        for s in dataset_project.sample_by_name.values():
-            sample_reports_records[s.name].append(_make_url_record(
-                    OrderedDict([('left', s.find_fastqc_html(s.l_fastqc_base_name)), ('right', s.find_fastqc_html(s.r_fastqc_base_name))]),
-                    individual_reports_section.find_metric(PRE_FASTQC_NAME), base_dirpath))
-            # sample_reports_records[s.name].append(_make_url_record(
-            #         OrderedDict([('targqc', s.targetcov_html_fpath), ('qualimap', s.qualimap_html_fpath)]),
-            #         individual_reports_section.find_metric(PRE_SEQQC_NAME), base_dirpath))
+    gender_record_by_sample = dict()
+    for s in bcbio_structure.samples:
+        gender_fpath = join(s.clinical_report_dirpath, 'gender.txt')
+        if isfile(gender_fpath):
+            gender = open(gender_fpath).read()
+            rec = Record(individual_reports_section.find_metric(GENDER), gender)
+            sample_reports_records[s.name].append(rec)
 
-    if bcbio_structure:
-        gender_record_by_sample = dict()
+    normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
+    for s in bcbio_structure.samples:
+        if gender_record_by_sample.get(s.name):
+            sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
 
-        # for s in bcbio_structure.samples:
-        #     if verify_file(s.targetcov_json_fpath):
-        #         targqc_json = json.loads(open(s.targetcov_json_fpath).read(), object_pairs_hook=OrderedDict)
-        #         sample_report = SampleReport.load(targqc_json, s, bcbio_structure)
-        #         gender_rec = sample_report.find_record(sample_report.records, GENDER)
-        #         if gender_rec and gender_rec.value:
-        #             gender_record_by_sample[s.name] = gender_rec
-
-        # if not gender_record_by_sample:
-        #     individual_reports_section.
-
-        normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
-        for s in bcbio_structure.samples:
-            if not bcbio_multiqc_available:
-                if s.fastqc_html_fpath and isfile(s.fastqc_html_fpath):
-                    sample_reports_records[s.name].append(_make_url_record(s.fastqc_html_fpath, individual_reports_section.find_metric(FASTQC_NAME), base_dirpath))
-
-            if gender_record_by_sample.get(s.name):
-                sample_reports_records[s.name].append(gender_record_by_sample.get(s.name))
-
-            if normal_samples:
-                rec = Record(individual_reports_section.find_metric(PHENOTYPE), s.phenotype)
+        if normal_samples:
+            rec = Record(individual_reports_section.find_metric(PHENOTYPE), s.phenotype)
+            sample_reports_records[s.name].append(rec)
+            if s.phenotype != 'normal' and s.normal_match:
+                # if len(bcbio_structure.samples) > 1:
+                rec = _make_relative_link_record(s.name, s.normal_match.name, individual_reports_section.find_metric(NORM_MATCH))
+                # else:
+                #     rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
                 sample_reports_records[s.name].append(rec)
-                if s.phenotype != 'normal' and s.normal_match:
-                    # if len(bcbio_structure.samples) > 1:
-                    rec = _make_relative_link_record(s.name, s.normal_match.name, individual_reports_section.find_metric(NORM_MATCH))
-                    # else:
-                    #     rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
-                    sample_reports_records[s.name].append(rec)
 
-            if bcbio_structure.is_rnaseq:
-                sample_reports_records[s.name].extend(add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
-            else:
-                sample_reports_records[s.name].extend(add_dna_sample_records(bcbio_multiqc_available, s, individual_reports_section, bcbio_structure, base_dirpath))
-
-    # for (repr_name, links_by_sample) in to_add:
-    #     cur_metric = Metric(repr_name)
-    #     # individual_reports_section.add_metric(cur_metric)
-    #
-    #     samples = []
-    #     if dataset_structure:
-    #         samples.extend(dataset_structure.samples)
-    #     if bcbio_structure:
-    #         samples.extend(bcbio_structure.samples)
-    #
-    #     for sample in samples:
-    #         if links_by_sample and links_by_sample.get(sample.name):
-    #             sample_reports_records[sample.name].append(
-    #                 Record(
-    #                     metric=cur_metric,
-    #                     value=cur_metric.name,
-    #                     html_fpath=_relpath_all(links_by_sample[sample.name], base_dirpath)))
-    #         else:
-    #             sample_reports_records[sample.name].append(
-    #                 Record(metric=cur_metric, value=None, html_fpath=None))
-
-    # fastqc_by_sample = dict()
-    # targqc_by_sample = dict()
-    # varqc_by_sample = dict()
-    # varqc_after_by_sample = dict()
-    #
-    # if dataset_structure:
-    #
-    #     fastqc_by_sample.append(dict(PRE_FASTQC_NAME=pre_fastqc_htmls_by_sample))
-    #     pre_fastqc_htmls_by_sample = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in dataset_structure.samples])
-    #     targqc_htmls_by_sample     = _add_targqc_reports(dataset_structure.samples)
-    #
-    #     to_add.extend([
-    #         (PRE_FASTQC_NAME,        pre_fastqc_htmls_by_sample),
-    #         (PRE_SEQQC_NAME,         targqc_htmls_by_sample),
-    #     ])
-    #
-    # if bcbio_structure:
-    #     varqc_htmls_by_sample       = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_name, BCBioStructure.varqc_dir)
-    #     varqc_after_htmls_by_sample = _add_varqc_reports(bcbio_structure, BCBioStructure.varqc_after_name, BCBioStructure.varqc_after_dir)
-    #     targqc_htmls_by_sample      = _add_targqc_reports(bcbio_structure.samples)
-    #     fastqc_htmls_by_sample      = dict([(s.name, verify_file(s.fastqc_html_fpath)) for s in bcbio_structure.samples])
-    #     to_add.extend([
-    #         (FASTQC_NAME,      fastqc_htmls_by_sample),
-    #         # ('BAM',                            bams_by_samples),
-    #         (SEQQC_NAME,       targqc_htmls_by_sample),
-    #         (VARQC_NAME,       varqc_htmls_by_sample),
-    #         (VARQC_AFTER_NAME, varqc_after_htmls_by_sample)
-    #     ])
+        if bcbio_structure.is_rnaseq:
+            sample_reports_records[s.name].extend(add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
+        else:
+            sample_reports_records[s.name].extend(add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
 
     return sample_reports_records
 
@@ -476,12 +378,12 @@ def _add_per_sample_reports(cnf, bcbio_multiqc_available, individual_reports_sec
 def add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
     recs = []
     recs.append(_make_url_record(s.gene_counts, individual_reports_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
-    if verify_file(s.qualimap_html_fpath):
-        recs.append(_make_url_record(s.qualimap_html_fpath, individual_reports_section.find_metric(QUALIMAP_NAME), base_dirpath))
+    # if verify_file(s.qualimap_html_fpath):
+    #     recs.append(_make_url_record(s.qualimap_html_fpath, individual_reports_section.find_metric(QUALIMAP_NAME), base_dirpath))
     return recs
 
 
-def add_dna_sample_records(bcbio_multiqc_available, s, individual_reports_section, bcbio_structure, base_dirpath):
+def add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
     recs = []
     # if not bcbio_multiqc_available and not s.phenotype or s.phenotype != 'normal':
     #     varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
@@ -491,11 +393,8 @@ def add_dna_sample_records(bcbio_multiqc_available, s, individual_reports_sectio
     #         _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
     #     ])
 
-    if not verify_file(s.clinical_html, is_critical=False):
-        clinical_html = join(dirname(dirname(s.clinical_html)), 'clinicalReport', basename(s.clinical_html))
-        if verify_file(clinical_html):
-            s.clinical_html = clinical_html
-    rec = _make_url_record(s.clinical_html, individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
+    rec = _make_url_record(verify_file(s.clinical_html, is_critical=True),
+                           individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
     if rec and rec.value:
         recs.append(rec)
     return recs
@@ -549,59 +448,44 @@ def _relpath_all(value, base_dirpath):
         return value
 
 
-def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure,
-                      additional_data=None, oncoprints_link=None, dataset_project=None):
-    # metric name in FullReport --> metric name in Static HTML
-    # metric_names = OrderedDict([
-    #     (DatasetStructure.pre_fastqc_repr, DatasetStructure.pre_fastqc_repr),
-    #     (BCBioStructure.fastqc_repr, 'FastQC'),
-    #     # ('BAM', 'BAM'),
-    #     (BCBioStructure.targqc_repr, 'SeqQC'),
-    #     # ('Downsampled ' + BCBioStructure.targqc_repr, 'Downsampled SeqQC'),
-    #     # ('Mutations', 'Mutations'),
-    #     # ('Mutations for separate samples', 'Mutations for separate samples'),
-    #     # ('Mutations for paired samples', 'Mutations for paired samples'),
-    #     (BCBioStructure.varqc_repr, 'VarQC'),
-    #     (BCBioStructure.varqc_after_repr, 'VarQC after filtering')])
-
+def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbio_structure,
+                                additional_data=None, oncoprints_link=None):
     def __process_record(rec, short=False):
-        d = rec.__dict__.copy()
-
+        d = dict()
+        d['metric_name'] = rec.metric.name
         if isinstance(rec.url, basestring):
             d['contents'] = '<a href="' + rec.url + '">' + rec.value + '</a>'
-
-        elif isinstance(rec.url, dict):
-            d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.url.items()) if rec.url else '-'
-            if not short:
-                d['contents'] = rec.metric.name + ': ' + d['contents']
-
         else:
             d['contents'] = rec.metric.format_value(rec.value)
-
-        d['metric'] = rec.metric.__dict__
         return d
 
     def _get_summary_report_name(rec):
         return rec.value.lower().replace(' ', '_')
 
     # common records (summary reports)
-    common_dict = dict()
-    common_dict["project_name"] = project_name
-    common_records = full_report.get_common_records()
-    for rec in common_records:
+    metadata_dict = dict(project_name=project_name)
+
+    metadata_dict['run_section'] = get_run_info(cnf, bcbio_structure)
+
+    mutations_links = []
+    expression_links = []
+    for rec in full_report.get_common_records():
         if rec.value:
-            common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
-    common_dict['run_section'] = get_run_info(cnf, bcbio_structure, dataset_project)
-
+            if rec.metric.name in mutation_names:
+                mutations_links.append(__process_record(rec)['contents'])
+            if rec.metric.name in expression_names:
+                expression_links.append(__process_record(rec)['contents'])
     if oncoprints_link:
-        common_dict['oncoprints'] = {'oncoprints_link': '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
-                                                       '(loading may take 5-10 seconds)'.format(**locals())}
+        mutations_links.append(('<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' +
+                             '(loading may take 5-10 seconds)').format(**locals()))
+    if mutations_links:
+        metadata_dict["mutations_links"] = mutations_links
+    if expression_links:
+        metadata_dict["expression_links"] = expression_links
 
-    main_dict = dict()
     if full_report.sample_reports:
         # individual records
-        main_dict = dict()
-        main_dict["sample_reports"] = []
+        metadata_dict["sample_reports"] = []
 
         metrics = metric_storage.get_metrics(skip_general_section=True)
         metrics_with_values_set = set()
@@ -612,7 +496,7 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
                     metrics_with_values_set.add(m)
 
         metrics = [m for m in metrics if m in metrics_with_values_set]
-        main_dict['metric_names'] = [m.name for m in metrics]
+        metadata_dict['metric_names'] = [m.name for m in metrics]
 
         for sample_report in full_report.sample_reports:
             ready_records = []
@@ -622,22 +506,97 @@ def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structur
                     ready_records.append(__process_record(r, short=True))
                 else:
                     ready_records.append(__process_record(Record(metric=m, value=None), short=True))
-            assert len(ready_records) == len(main_dict["metric_names"])
+            assert len(ready_records) == len(metadata_dict["metric_names"])
 
             sample_report_dict = dict()
             sample_report_dict["records"] = ready_records
             sample_report_dict["sample_name"] = sample_report.display_name
-            main_dict["sample_reports"].append(sample_report_dict)
+            metadata_dict["sample_reports"].append(sample_report_dict)
 
-    data = {"common": common_dict, "main": main_dict}
     if additional_data:
         for k, v in additional_data.items():
-            data[k] = v
+            metadata_dict[k] = v
 
-    return write_static_html_report(cnf, data, html_fpath)
+    # return write_static_html_report(cnf, data, html_fpath)
+    return metadata_dict
 
 
-def get_run_info(cnf, bcbio_structure, dataset_project):
+# def _save_static_html(cnf, full_report, html_fpath, project_name, bcbio_structure,
+#                       additional_data=None, oncoprints_link=None, dataset_project=None):
+#     def __process_record(rec, short=False):
+#         d = rec.__dict__.copy()
+#
+#         if isinstance(rec.url, basestring):
+#             d['contents'] = '<a href="' + rec.url + '">' + rec.value + '</a>'
+#
+#         elif isinstance(rec.url, dict):
+#             d['contents'] = ', '.join('<a href="{v}">{k}</a>'.format(k=k, v=v) for k, v in rec.url.items()) if rec.url else '-'
+#             if not short:
+#                 d['contents'] = rec.metric.name + ': ' + d['contents']
+#
+#         else:
+#             d['contents'] = rec.metric.format_value(rec.value)
+#
+#         d['metric'] = rec.metric.__dict__
+#         return d
+#
+#     def _get_summary_report_name(rec):
+#         return rec.value.lower().replace(' ', '_')
+#
+#     # common records (summary reports)
+#     common_dict = dict()
+#     common_dict["project_name"] = project_name
+#     common_records = full_report.get_common_records()
+#     for rec in common_records:
+#         if rec.value:
+#             common_dict[_get_summary_report_name(rec)] = __process_record(rec)  # rec_d
+#     common_dict['run_section'] = get_run_info(cnf, bcbio_structure, dataset_project)
+#
+#     if oncoprints_link:
+#         common_dict['oncoprints'] = {'oncoprints_link': '<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' \
+#                                                        '(loading may take 5-10 seconds)'.format(**locals())}
+#
+#     main_dict = dict()
+#     if full_report.sample_reports:
+#         # individual records
+#         main_dict = dict()
+#         main_dict["sample_reports"] = []
+#
+#         metrics = metric_storage.get_metrics(skip_general_section=True)
+#         metrics_with_values_set = set()
+#         for sample_report in full_report.sample_reports:
+#             for m in metric_storage.get_metrics(skip_general_section=True):
+#                 r = next((r for r in sample_report.records if r.metric.name == m.name), None)
+#                 if r:
+#                     metrics_with_values_set.add(m)
+#
+#         metrics = [m for m in metrics if m in metrics_with_values_set]
+#         main_dict['metric_names'] = [m.name for m in metrics]
+#
+#         for sample_report in full_report.sample_reports:
+#             ready_records = []
+#             for m in metrics:
+#                 r = next((r for r in sample_report.records if r.metric.name == m.name), None)
+#                 if r:
+#                     ready_records.append(__process_record(r, short=True))
+#                 else:
+#                     ready_records.append(__process_record(Record(metric=m, value=None), short=True))
+#             assert len(ready_records) == len(main_dict["metric_names"])
+#
+#             sample_report_dict = dict()
+#             sample_report_dict["records"] = ready_records
+#             sample_report_dict["sample_name"] = sample_report.display_name
+#             main_dict["sample_reports"].append(sample_report_dict)
+#
+#     data = {"common": common_dict, "main": main_dict}
+#     if additional_data:
+#         for k, v in additional_data.items():
+#             data[k] = v
+#
+#     return write_static_html_report(cnf, data, html_fpath)
+
+
+def get_run_info(cnf, bcbio_structure):
     info('Getting run and codebase information...')
     run_info_dict = dict()
     cur_fpath = abspath(getsourcefile(lambda: 0))
@@ -674,10 +633,20 @@ def get_run_info(cnf, bcbio_structure, dataset_project):
         run_info_dict['suite_version'] = version_text
 
     # if bcbio_structure.is_rnaseq:
-    base_dirpath = get_base_dirpath(bcbio_structure, dataset_project)
-    if bcbio_structure:
-        programs_url = relpath(bcbio_structure.program_versions_fpath, base_dirpath) if verify_file(bcbio_structure.program_versions_fpath) else None
-        run_info_dict['program_versions'] = '<a href="{programs_url}">Program versions</a>'.format(**locals())
+    base_dirpath = dirname(bcbio_structure.multiqc_fpath)
+    program_versions = dict(l.strip().split(',') for l in open(bcbio_structure.program_versions_fpath).readlines())
+    program_versions['reporting-suite'] = version
+    with open(bcbio_structure.program_versions_fpath, 'w') as f:
+        for p, v in sorted(program_versions.items(), key=lambda (k, _): k):
+            f.write(p + ',' + v + '\n')
+    programs_url = relpath(bcbio_structure.program_versions_fpath, base_dirpath) \
+        if verify_file(bcbio_structure.program_versions_fpath) else None
+    datas_url = relpath(bcbio_structure.data_versions_fpath, base_dirpath) \
+        if verify_file(bcbio_structure.data_versions_fpath) else None
+
+    run_info_dict['program_versions'] = '<a href="{programs_url}">program versions</a>'.format(**locals())
+    run_info_dict['data_versions'] = '<a href="{datas_url}">data versions</a>'.format(**locals())
+    run_info_dict['analysis_dir'] = bcbio_structure.final_dirpath
 
     # var_filtering_params = []
     # set_filtering_params(cnf, bcbio_structure=bcbio_structure)  # get variant filtering parameters from run_info yaml

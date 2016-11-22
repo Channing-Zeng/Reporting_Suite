@@ -25,8 +25,7 @@ from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path
-from source.bcbio.project_level_report import make_project_level_report, get_run_info, get_oncoprints_link, \
-    create_rnaseq_pca_plot, make_multiqc_report
+from source.bcbio.project_level_report import make_report_metadata, get_oncoprints_link, make_multiqc_report
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
@@ -168,8 +167,6 @@ class BCBioRunner:
             self.steps.extend([self.varfilter])
 
         if not self.bcbio_structure.is_rnaseq and Steps.contains(cnf.steps, 'TargQC'):
-            self.steps.extend([self.targqc])
-        if not self.bcbio_structure.is_rnaseq and any(Steps.contains(cnf.steps, name) for name in ['TargetCov', 'TargetSeq']):
             self.steps.extend([self.targqc])
         # if Steps.contains(cnf.steps, 'AbnormalCovReport'):
         #    self.steps.append(self.abnormal_regions)
@@ -366,7 +363,6 @@ class BCBioRunner:
             self.clin_report = None
             self.targqc = None
             self.abnormal_regions = None
-            self.seq2c = None
             self.varfilter = None
             self.evaluate_capture = None
             self.bw_converting = None
@@ -403,33 +399,6 @@ class BCBioRunner:
                 paramln=varfilter_paramline,
             )
 
-            # targetcov_params = params_for_one_sample + ' --bam \'{bam}\' -o \'{output_dir}\' ' \
-            #     '-s \'{sample}\' --work-dir \'' + join(cnf.work_dir, BCBioStructure.targqc_name) + '_{sample}\' '
-            # if exons_bed:
-            #     targetcov_params += '--exons ' + exons_bed + ' '
-            # if exons_no_genes_bed:
-            #     targetcov_params += '--exons-no-genes ' + exons_no_genes_bed + ' '
-            # if target_bed:
-            #     targetcov_params += '--bed ' + target_bed + ' '
-            # if original_bed:
-            #     targetcov_params += '--original-bed ' + original_bed + ' '
-            # if genes_fpath:
-            #     targetcov_params += '--genes ' + genes_fpath + ' '
-            # if cnf.no_dedup:
-            #     targetcov_params += '--no-dedup '
-            # targetcov_params += '--no-prep-bed '
-            #
-            # if cnf.steps and 'AbnormalCovReport' in cnf.steps:
-            #     targetcov_params += '--extended '
-            # self.targetcov = Step(cnf, run_id,
-            #     name=BCBioStructure.targqc_name, short_name='tc',
-            #     interpreter='python',
-            #     script=join('scripts', 'post', 'targetcov.py'),
-            #     dir_name=BCBioStructure.targqc_dir,
-            #     log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.targqc_name + '.log'),
-            #     paramln=targetcov_params
-            # )
-
             # targqc *.bam --bed target.bed -g hg19 -o targqc_results -t 3 -s sge -q batch.q -r pename=smp
 
             targqc_params = (
@@ -454,10 +423,12 @@ class BCBioRunner:
                 paramln=targqc_params
             )
 
+            bcbio_summary = verify_file(join(self.bcbio_structure.date_dirpath, 'project-summary.txt'), is_critical=True)
             clinreport_paramline = ('' +
                 ' --sample {sample}' +
                 ' -o {output_dir}' +
-                ' {targqc_cmdl}' +
+                ' {bam_cmdl}' +
+                ' --bcbio-summary ' + bcbio_summary +
                 ' {mutations_cmdl}' +
                 ' {var_cmdl}' +
                 ' {match_cmdl}' +
@@ -470,7 +441,8 @@ class BCBioRunner:
                 ' -g ' + cnf.genome.name +
                 ' --target-type ' + self.bcbio_structure.target_type +
                 ' --filt-cnf ' + filt_cnf_fpath +
-                ' --project-name ' + self.bcbio_structure.project_name
+                ' --project-name ' + self.bcbio_structure.project_name +
+                ' --threads ' + str(self.threads_per_sample)
             )
 
             self.clin_report = Step(cnf, run_id,
@@ -482,46 +454,6 @@ class BCBioRunner:
                 paramln=clinreport_paramline + ' --work-dir ' +
                         join(self.bcbio_structure.work_dir, '{sample}_' + source.clinreport_name)
             )
-
-            # self.seq2c = None
-            # if seq2c_bed:
-            #     seq2c_cmdline = summaries_cmdline_params + ' ' + self.final_dir + ' --genome {cnf.genome.name}'
-            #     seq2c_cmdline += ' -t ' + str(self.max_threads)
-            #     seq2c_cmdline += ' --bed ' + seq2c_bed + ' --no-prep-bed '
-            #     if self.is_wgs:
-            #         seq2c_cmdline += ' --wgs '
-            #     normal_snames = [b.normal.name for b in self.bcbio_structure.batches.values() if b.normal]
-            #     if normal_snames or cnf.seq2c_controls:
-            #         controls = (normal_snames or []) + (cnf.seq2c_controls.split(':') if cnf.seq2c_controls else [])
-            #         seq2c_cmdline += ' -c ' + ':'.join(controls)
-            #     if cnf.seq2c_opts:
-            #         seq2c_cmdline += ' --seq2c-opts ' + cnf.seq2c_opts
-            #     if cnf.reannotate:
-            #         seq2c_cmdline += ' --reannotate '
-            #     self.seq2c = Step(cnf, run_id,
-            #         name=BCBioStructure.seq2c_name, short_name='seq2c',
-            #         interpreter='python',
-            #         script=join('scripts', 'post_bcbio', 'seq2c.py'),
-            #         log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.seq2c_name + '.log'),
-            #         dir_name=BCBioStructure.cnv_summary_dir,
-            #         paramln=seq2c_cmdline,
-            #         run_on_chara=True
-            #     )
-
-            # targqc_summary_cmdline = summaries_cmdline_params + ' ' + self.final_dir
-            # if target_bed:
-            #     targqc_summary_cmdline += ' --bed ' + target_bed
-            # if exons_bed:
-            #     targqc_summary_cmdline += ' --exons ' + exons_bed
-            #
-            # self.targqc_summary = Step(cnf, run_id,
-            #     name=BCBioStructure.targqc_name + '_summary', short_name='targqc',
-            #     interpreter='python',
-            #     script=join('scripts', 'post_bcbio', 'targqc_summary.py'),
-            #     log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.targqc_name + '_summary.log'),
-            #     dir_name=BCBioStructure.targqc_summary_dir,
-            #     paramln=targqc_summary_cmdline
-            # )
 
             self.bw_converting = Step(cnf, run_id,
                 name='bam_to_bigwig', short_name='bamtobw',
@@ -560,7 +492,7 @@ class BCBioRunner:
         else:
             base_output_dirpath = abspath(self.bcbio_structure.date_dirpath)
 
-        output_dirpath = join(base_output_dirpath, step.dir_name) if step.dir_name else ''
+        output_dirpath = join(base_output_dirpath, step.dir_name or '')
 
         kwargs['caller'] = caller
         log_fpath = step.log_fpath_template.format(**kwargs)
@@ -738,13 +670,13 @@ class BCBioRunner:
                                 wait_for_steps=wait_for_steps)
 
             # BAMS
-            if self.targqc in self.steps:
-                info('TargQC')
-                bams_cmdl = ' '.join(s.bam for s in self.bcbio_structure.samples if s.bam and verify_bam(s.bam))
-                self._submit_job(
-                    self.targqc,
-                    bams=bams_cmdl,
-                    wait_for_steps=targqc_wait_for_steps)
+            # if self.targqc in self.steps:
+            #     info('TargQC')
+            #     bams_cmdl = ' '.join(s.bam for s in self.bcbio_structure.samples if s.bam and verify_bam(s.bam))
+            #     self._submit_job(
+            #         self.targqc,
+            #         bams=bams_cmdl,
+            #         wait_for_steps=targqc_wait_for_steps)
 
             # if self.seq2c and self.seq2c in self.steps:
             #     self._submit_job(
@@ -795,15 +727,8 @@ class BCBioRunner:
                 safe_mkdir(dirname(final_summary_report_fpath))
                 write_fastqc_combo_report(self.cnf, final_summary_report_fpath, self.bcbio_structure.samples)
 
-            if self.varannotate in self.steps:
-                info('Making varQC summary reports')
-                self._varqc_summary(BCBioStructure.varqc_dir, BCBioStructure.varqc_summary_dir, BCBioStructure.varqc_name)
-                info()
-
             if self.varfilter in self.steps:
                 finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
-                info('Making varQC-post-filtering summary reports')
-                self._varqc_summary(BCBioStructure.varqc_after_dir, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_after_name)
                 info()
 
             if self.clin_report in self.steps:
@@ -813,15 +738,11 @@ class BCBioRunner:
                 if not clinical_report_caller:
                     warn('No vardict or vardict-java in the variants callers: ' + ', '.join(self.bcbio_structure.variant_callers.keys()))
 
-                seq2c_cmdl = ''
-                if verify_file(self.bcbio_structure.seq2c_fpath, silent=True):
-                    seq2c_cmdl = ' --seq2c ' + self.bcbio_structure.seq2c_fpath
-
                 for sample in self.bcbio_structure.samples:
                     var_cmdl = ''
                     mutation_cmdl = ''
                     match_cmdl = ''
-                    targqc_cmdl = ''
+                    bam_cmdl = ''
                     sv_cmdl = ''
 
                     wait_for_steps = []
@@ -830,7 +751,6 @@ class BCBioRunner:
                     if not sample.phenotype or sample.phenotype != 'normal':
                         match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
                         if clinical_report_caller:
-                            var_cmdl = ' --varqc-json ' + sample.get_varqc_fpath_by_callername(clinical_report_caller.name, ext='.json')
                             wait_for_steps += [self.varannotate.job_name(sample.name, caller=clinical_report_caller.name)] if self.varannotate in self.steps else []
                             wait_for_steps += [self.varfilter.job_name(sample.name, caller=clinical_report_caller.name)] if self.varfilter in self.steps else []
 
@@ -842,9 +762,11 @@ class BCBioRunner:
                             if self.varfilter in self.steps or verify_file(mut_fpath):
                                 mutation_cmdl = ' --mutations ' + mut_fpath + ' --circos-mutations ' + variants_fpath
 
-                    targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
-                    if self.targqc in self.steps or verify_dir(targqc_dirpath):
-                        targqc_cmdl = ' --targqc ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
+                    if sample.bam:
+                        bam_cmdl = ' --bam ' + sample.bam
+                    # targqc_dirpath = join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
+                    # if self.targqc in self.steps or verify_dir(targqc_dirpath):
+                    #     targqc_cmdl = ' --targqc ' + join(self.final_dir, sample.name, BCBioStructure.targqc_dir)
 
                     sv_fpath = sample.find_sv_fpath()
                     if sv_fpath:
@@ -856,14 +778,19 @@ class BCBioRunner:
                             if '-manta' in fname and fname.endswith('.vcf.gz'):
                                 sv_cmdl += ' --sv-vcf ' + join(sample_cnv_dirpath, fname)
 
+                    seq2c_cmdl = ''
+                    seq2c_fpath = join(sample.dirpath, 'cnv', sample.name + '-seq2c.tsv')
+                    if verify_file(seq2c_fpath, silent=True):
+                        seq2c_cmdl = ' --seq2c ' + seq2c_fpath
+
                     self._submit_job(
                         self.clin_report,
                         sample.name,
                         sample=sample.name, genome=sample.genome,
                         match_cmdl=match_cmdl, mutations_cmdl=mutation_cmdl,
-                        var_cmdl=var_cmdl, targqc_cmdl=targqc_cmdl,
+                        var_cmdl=var_cmdl, bam_cmdl=bam_cmdl,
                         seq2c_cmdl=seq2c_cmdl, sv_cmdl=sv_cmdl,
-                        project_report_path=self.bcbio_structure.project_report_html_fpath,
+                        project_report_path=self.bcbio_structure.multiqc_fpath,
                         wait_for_steps=wait_for_steps,
                         threads=self.threads_per_sample)
 
@@ -903,12 +830,13 @@ class BCBioRunner:
                     self.bcbio_structure, self.bcbio_structure.project_name)
 
             info()
-            self.bcbio_structure.multiqc_fpath = make_multiqc_report(self.cnf,
-                self.bcbio_structure, oncoprints_link=oncoprints_link)
-
-            html_report_fpath = make_project_level_report(self.cnf,
+            info('Preparing AZ specific metadata for MultiQC')
+            metadata_fpath = make_report_metadata(self.cnf,
                 bcbio_structure=self.bcbio_structure,
                 oncoprints_link=oncoprints_link)
+            self.bcbio_structure.multiqc_fpath = make_multiqc_report(self.cnf, self.bcbio_structure, metadata_fpath)
+
+            html_report_fpath = self.bcbio_structure.multiqc_fpath
 
             html_report_url = None
             if html_report_fpath:
@@ -972,29 +900,6 @@ class BCBioRunner:
                         shutil.move(bcbio_work_dirpath, work_scratch_dirpath)
                         os.symlink(work_scratch_dirpath, bcbio_work_dirpath)
                         info('Symlinked work directory ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
-
-    def _varqc_summary(self, sample_qc_path, summary_qc_path, varqc_level_name):
-        jsons_by_sample_by_caller = defaultdict(dict)
-        htmls_by_sample_by_caller = defaultdict(dict)
-        for vc in self.bcbio_structure.variant_callers.values():
-            fpath = vc.find_fpaths_by_sample(sample_qc_path, varqc_level_name, 'json', self.bcbio_structure.final_dirpath)
-            if fpath:
-                jsons_by_sample_by_caller[vc.name] = fpath
-            info('Found JSONs: ' + str(', '.join(k + ': ' + str(v) for k, v in jsons_by_sample_by_caller[vc.name].items())))
-            fpath = vc.find_fpaths_by_sample(sample_qc_path, varqc_level_name, 'html', self.bcbio_structure.final_dirpath)
-            if fpath:
-                htmls_by_sample_by_caller[vc.name] = fpath
-            info('Found HTMLs: ' + str(', '.join(k + ': ' + str(v) for k, v in htmls_by_sample_by_caller[vc.name].items())))
-
-        info()
-        if jsons_by_sample_by_caller and htmls_by_sample_by_caller:
-            info('Writing summary reports...')
-            summarize_qc.make_summary_reports(self.cnf, 1, join(self.bcbio_structure.date_dirpath, summary_qc_path),
-                 self.bcbio_structure.variant_callers.values(), self.bcbio_structure.samples,
-                 jsons_by_sample_by_caller, htmls_by_sample_by_caller,
-                 varqc_name=BCBioStructure.varqc_name, caption='Variant QC')
-        else:
-            err('VarQC: no JSON and HTML found, won\'t generate summary reports.')
 
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
@@ -1080,7 +985,7 @@ class BCBioRunner:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
             sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
-            for cnv_caller in ['-cn_mops', '-cnvkit', '-lumpy', '-manta', '-wham', '-sv-prioritize', '-metasv']:
+            for cnv_caller in ['-cn_mops', '-seq2c', '-cnvkit', '-lumpy', '-manta', '-wham', '-sv-prioritize', '-metasv']:
                 for fname in os.listdir(sample_dirpath):
                     if cnv_caller in fname:
                         # Copy to <sample>/cnv

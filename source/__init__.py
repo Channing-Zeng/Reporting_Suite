@@ -35,7 +35,7 @@ qualimap_repr            = 'Qualimap'
 targqc_repr              = 'Target QC'
 fastqc_repr              = 'FastQC'
 
-clinreport_name = clinreport_dir = 'oncologyNGSReport'
+clinreport_name = clinreport_dir = 'ngs_report'
 
 seq2c_name               = 'Seq2C'
 seq2c_seq2cov_ending     = 'seq2c_seq2cov.txt'
@@ -136,10 +136,10 @@ class BaseSample:
 
         if clinical_report_dirpath:
             self.clinical_report_dirpath        = clinical_report_dirpath
-            self.clinical_targqc_tsv            = join(self.clinical_report_dirpath, name + '.coverage.tsv')
-            self.clinical_mutation_tsv          = join(self.clinical_report_dirpath, name + '.mutations.tsv')
-            self.clinical_target_tsv            = join(self.clinical_report_dirpath, name + '.target.tsv')
-            self.clinical_html                  = join(self.clinical_report_dirpath, name + '.html')
+            # self.clinical_targqc_tsv            = join(self.clinical_report_dirpath, name + '.coverage.tsv')
+            # self.clinical_mutation_tsv          = join(self.clinical_report_dirpath, name + '.mutations.tsv')
+            # self.clinical_target_tsv            = join(self.clinical_report_dirpath, name + '.target.tsv')
+            self.clinical_html                  = join(self.clinical_report_dirpath, 'ngs_report.html')
 
         if qualimap_dirpath:
             self.qualimap_dirpath               = qualimap_dirpath

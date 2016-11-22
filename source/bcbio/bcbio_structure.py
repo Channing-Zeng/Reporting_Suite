@@ -322,7 +322,6 @@ class BCBioSample(BaseSample):
         BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
             fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
             targqc_dirpath=targqc_dirpath,
-            ngscat_dirpath=join(targqc_dirpath, BCBioStructure.ngscat_name),
             qualimap_dirpath=qualimap_dirpath,
             picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
             flagged_regions_dirpath=join(targqc_dirpath, BCBioStructure.flag_regions_name),
@@ -557,7 +556,6 @@ class BaseProjectStructure:
     flag_regions_name = 'flaggedRegions'
 
     ## RNAseq
-    program_versions_fname = 'programs.txt'
     gene_counts_unannotated_fname = 'combined.counts'
     exon_counts_unannotated_fname = 'combined.dexseq'
     gene_tpm_unannotated_fname    = 'combined.gene.sf.tpm'
@@ -708,7 +706,7 @@ class BCBioStructure(BaseProjectStructure):
 
         # cleaning date dir
         for fname in listdir(self.date_dirpath):
-            if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt']:
+            if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt', 'data_versions.csv']:
                 os.rename(join(self.date_dirpath, fname),
                           join(dirname(self.log_dirpath), fname))
         if self.log_dirpath:
@@ -718,7 +716,8 @@ class BCBioStructure(BaseProjectStructure):
                 info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
                 _extract_project_summary(project_summary_fpath, dst_fpath)
                 self.project_summary_fpath = dst_fpath
-            self.program_versions_fpath = join(dirname(self.log_dirpath), BCBioStructure.program_versions_fname)
+            self.program_versions_fpath = join(dirname(self.log_dirpath), 'programs.txt')
+            self.data_versions_fpath = join(dirname(self.log_dirpath), 'data_versions.csv')
 
         info()
         info('-' * 70)
@@ -769,7 +768,7 @@ class BCBioStructure(BaseProjectStructure):
         info('-' * 70)
 
         self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
-        self.multiqc_fpath =              None
+        self.multiqc_fpath =              join(self.date_dirpath, 'multiqc_postproc', 'multiqc_report.html')
         self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
         self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
         self.flagged_regions_dirpath =    join(self.date_dirpath, BCBioStructure.flagged_dir)

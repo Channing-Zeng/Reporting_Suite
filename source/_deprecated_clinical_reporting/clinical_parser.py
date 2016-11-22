@@ -4,20 +4,18 @@ from json import load
 from os.path import join, dirname
 
 import variant_filtering
+from ngs_reporting.utils import get_key_or_target_bed_genes, SVEvent
 
 import source
 from source import verify_file, info
-from source._deprecated_clinical_reporting.utils import SVEvent, get_key_or_target_bed_genes
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, adjust_path, verify_dir, \
     adjust_system_path
-from source._deprecated_clinical_reporting.solvebio_mutations import query_mutations
 from source.logger import warn, err, critical
 from source.reporting.reporting import SampleReport
 from source.targetcov.Region import SortableByChrom
 from source.targetcov.flag_regions import get_depth_cutoff
 from source.targetcov.summarize_targetcov import get_float_val, get_val
 from source.targetcov.Region import get_chrom_order
-from source.tools_from_cnf import get_system_path
 
 ACTIONABLE_GENES_FPATH = join(__file__, '..', 'db', 'broad_db.tsv')
 
@@ -288,10 +286,10 @@ class ClinicalExperimentInfo:
         info()
 
         if not is_target2wgs_comparison:  # use all genes from bed instead of key genes if bed exists and number of genes < 2000
-            key_gene_names_chroms, use_custom_panel = get_key_or_target_bed_genes(bed_fpath, key_genes_fpath)
+            key_gene_names_chroms, use_custom_panel = get_key_or_target_bed_genes(bed_fpath)
         else:
             use_custom_panel = False
-            key_gene_names_chroms, _ = get_key_or_target_bed_genes(None, key_genes_fpath)
+            key_gene_names_chroms, _ = get_key_or_target_bed_genes()
 
         if use_custom_panel:
             self.genes_collection_type = 'target'

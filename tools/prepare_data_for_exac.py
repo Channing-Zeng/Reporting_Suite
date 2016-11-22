@@ -31,13 +31,13 @@ exac_code_dir = '/ngs/oncology/exac/exac_browser'
 exac_data_dir = '/ngs/oncology/exac/exac_data'
 exac_venv_dir = '/ngs/oncology/exac/exac_env'
 if is_local():
-    exac_url = 'http://localhost:5000'
+    exac_url = 'http://localhost:5000/'
     exac_code_dir = '/Users/vlad/vagrant/exac_browser'
     exac_data_dir = '/Users/vlad/vagrant/exac_data'
 
 
 def get_exac_us_url(genome, project_name):
-    return exac_url + genome.split('-')[0] + '/' + project_name + '/'
+    return join(exac_url, genome.split('-')[0], project_name) + '/'
 
 
 def _submit_region_cov(cnf, work_dir, chrom, bam_fpaths, sample_names, output_dirpath, chr_len_fpath):

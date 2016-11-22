@@ -1,8 +1,6 @@
 steps:
 - Variants
-- TargQC
-- Seq2C
-- Exac
+#- Exac
 - ClinicalReport
 
 

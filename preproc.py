@@ -19,7 +19,7 @@ from source.fastqc.fastq_utils import downsample
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.jira_utils import retrieve_jira_info
 from source.preproc.dataset_structure import DatasetStructure
-from source.bcbio.project_level_report import make_project_level_report
+from source.bcbio.project_level_report import make_report_metadata
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import index_bam, markdup_sam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -264,7 +264,7 @@ def main():
         __prepare_analysis_directory(cnf.work_dir, project.az_project_name, project_dirpath, samples)
 
         # Making project-level report
-        make_project_level_report(cnf, dataset_structure=ds, dataset_project=project)
+        make_report_metadata(cnf, dataset_structure=ds, dataset_project=project)
 
         # Exposing
         info()

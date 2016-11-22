@@ -18,7 +18,7 @@ from source.calling_process import call
 from source.fastqc.fastq_utils import downsample
 from source.jira_utils import retrieve_jira_info
 from source.preproc.dataset_structure import DatasetStructure
-from source.bcbio.project_level_report import make_project_level_report
+from source.bcbio.project_level_report import make_report_metadata
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.targetcov.bam_and_bed_utils import index_bam, markdup_bam
 from source.tools_from_cnf import get_system_path, get_script_cmdline
