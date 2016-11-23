@@ -81,6 +81,7 @@ metric_storage = MetricStorage(
         # Metric(MUTATIONS_NAME),
         Metric(GENDER, description='If not defined, means that the target does not contain key male Y genes that we could check'),
         Metric(CLINICAL_NAME),
+        Metric(CNV_NAME),
         Metric(GENE_COUNTS_NAME),
         Metric(PHENOTYPE),
         Metric(NORM_MATCH),
@@ -187,7 +188,7 @@ def _mutations_records(general_section, bcbio_structure, base_dirpath):
             metric = Metric(metric_name, common=True)
             rec = Record(
                 metric=metric,
-                value=metric.name,
+                value=basename(val),
                 url=_relpath_all(val, base_dirpath))
             general_section.add_metric(metric)
             records.append(rec)
@@ -385,6 +386,15 @@ def add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_
                            individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
     if rec and rec.value:
         recs.append(rec)
+
+    seq2c_fpath = join(s.dirpath, 'cnv', 'syn3-tumor-seq2c.tsv')
+    if verify_file(seq2c_fpath, silent=True):
+        metric = individual_reports_section.find_metric(CNV_NAME)
+        url = relpath(verify_file(seq2c_fpath), base_dirpath)
+        rec = Record(metric=metric, value=basename(seq2c_fpath), url=url)
+    if rec and rec.value:
+        recs.append(rec)
+
     return recs
 
 
@@ -445,6 +455,8 @@ def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbi
             d['contents'] = '<a href="' + rec.url + '">' + rec.value + '</a>'
         else:
             d['contents'] = rec.metric.format_value(rec.value)
+        if rec.metric.description:
+            d['description'] = rec.metric.description
         return d
 
     def _get_summary_report_name(rec):
