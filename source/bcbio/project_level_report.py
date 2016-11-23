@@ -262,7 +262,6 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
 
     multiqc_postproc_dirpath = dirname(bcbio_structure.multiqc_fpath)
 
-    to_run = False
     cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath + ' -t az'
     if metadata_fpath:
         cmdl += ' --az-metadata ' + metadata_fpath
@@ -272,31 +271,20 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     input_list_fpath = join(bcbio_structure.date_dirpath, 'qc', 'list_files.txt')
     if not verify_file(input_list_fpath, silent=True):
         work_input_list_fpath = join(bcbio_structure.work_dir, pardir, basename(input_list_fpath))
-        if verify_file(work_input_list_fpath, silent=True):
-            shutil.copy(work_input_list_fpath, input_list_fpath)
+        if not verify_file(work_input_list_fpath, silent=True):
+            critical('File list for MultiQC ' + work_input_list_fpath + ' not found. Please make sure you are using bcbio 1.0.0')
+        with open(work_input_list_fpath) as inp, open(input_list_fpath, 'w') as out:
+            for l in inp:
+                out.write(l)
+            if bcbio_structure.is_rnaseq:
+                pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
+                info()
+                if pca_plot_fpath and verify_file(pca_plot_fpath):
+                    out.write(pca_plot_fpath + '\n')
 
     if verify_file(input_list_fpath, silent=True):
         to_run = True
         cmdl += ' -l ' + input_list_fpath
-
-    if bcbio_structure.is_rnaseq:
-        # if not to_run:
-        #     for s in bcbio_structure.samples:
-        #         for path in [
-        #             join(s.dirpath, 'qc', 'samtools'),
-        #             join(s.dirpath, 'qc', 'qualimap_rnaseq'),
-        #             join(s.dirpath, 'qc', 'fastqc'),
-        #             join(multiqc_bcbio_dirpath, 'report', 'metrics', s.name + '_bcbio.txt'),
-        #         ]:
-        #             if exists(path):
-        #                 cmdl += ' ' + path
-        #                 to_run = True
-
-        pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
-        info()
-        if pca_plot_fpath and verify_file(pca_plot_fpath):
-            cmdl += ' ' + pca_plot_fpath
-            to_run = True
 
     else:
         if not isfile(input_list_fpath):
