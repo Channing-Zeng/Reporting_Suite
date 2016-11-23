@@ -1,8 +1,8 @@
 # /ngs/apps/az.reporting/bcbio_postproc.py
 
 resources:
-  python:
-    path: /ngs/apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python
+#  python:
+#    path: /ngs/apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python
 #  snpeff:
 #    jvm_opts: ["-Xms750m", "-Xmx3g"]
 #    path: /ngs/RDI/PROGRAMS/snpEff4.2/snpEff.jar
