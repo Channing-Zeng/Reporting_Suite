@@ -284,7 +284,6 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                     out.write(pca_plot_fpath + '\n')
 
     if verify_file(input_list_fpath, silent=True):
-        to_run = True
         cmdl += ' -l ' + input_list_fpath
 
     else:
@@ -301,8 +300,6 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
             #     cmdl += ' -e qualimap'
             #     to_run = True
 
-    if not to_run:
-        critical('Critical: no reprots to run MultiQC')
     call(cnf, cmdl, exit_on_error=False)
     verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
     return bcbio_structure.multiqc_fpath
@@ -366,7 +363,7 @@ def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure):
 
 def add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
     recs = []
-    recs.append(_make_url_record(s.gene_counts, individual_reports_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
+    # recs.append(_make_url_record(s.gene_counts, individual_reports_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
     # if verify_file(s.qualimap_html_fpath):
     #     recs.append(_make_url_record(s.qualimap_html_fpath, individual_reports_section.find_metric(QUALIMAP_NAME), base_dirpath))
     return recs
