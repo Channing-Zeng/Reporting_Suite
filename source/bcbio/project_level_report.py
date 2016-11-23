@@ -116,7 +116,7 @@ def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
     project_report_html_fpath = bcbio_structure.multiqc_fpath
     project_name = bcbio_structure.project_name
 
-    sample_match_on_hover_js = None
+    additional_data = dict()
     normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
     if normal_samples:
         sample_match_on_hover_js = '<script type="text/javascript">\n'
@@ -127,14 +127,14 @@ def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
                     '\tdocument.getElementById("' + s.name + '_match").onmouseleave = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "white"; };\n'
                  )
         sample_match_on_hover_js += '</script>\n'
+        additional_data['sample_match_on_hover_js'] = sample_match_on_hover_js
 
     # _save_static_html(cnf, full_report, project_report_html_fpath, project_name, bcbio_structure,
     #                   additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
     #                   oncoprints_link=oncoprints_link, dataset_project=dataset_project)
     metadata = _report_to_multiqc_metadata(cnf, full_report,
         project_report_html_fpath, project_name, bcbio_structure,
-        additional_data=dict(sample_match_on_hover_js=sample_match_on_hover_js),
-        oncoprints_link=oncoprints_link)
+        additional_data=additional_data, oncoprints_link=oncoprints_link)
 
     metadata_fpath = join(bcbio_structure.work_dir, 'az_multiqc_metadata.yaml')
     with open(metadata_fpath, 'w') as outfile:
