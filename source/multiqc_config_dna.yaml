@@ -30,21 +30,6 @@
 
 # Overwrite module filename search patterns. See multiqc/utils/search_patterns.yaml
 # for the defaults. Remove a default by setting it to null.
-sp:
-    rnaseq_az:
-        pca_data:
-            fn: 'pca_data.txt'
-    bcl2fastq:
-        Demultiplex_Stats.htm
-        index.html
-        tree.html
-        All.htm
-        IVC.htm
-    targqc:
-        summary:
-            fn: "summary.json"
-        summary_oldstyle:
-            fn: '*.targetSeq.json'
 
 
 # Overwrite the defaults of which table columns are visible by default
@@ -58,10 +43,11 @@ table_columns_visible:
 
 module_order:
     - 'bcl2fastq'
-    - 'qualimap'
+    - 'qualimap_az'
     - 'targqc'
     - 'bcbio'
     - 'rnaseq_az'
+    - 'qualimap'
     - 'samtools'
     - 'snpeff'
     - 'bcftools'

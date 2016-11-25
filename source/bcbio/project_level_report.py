@@ -279,7 +279,6 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
 
     if verify_file(input_list_fpath, silent=True):
         cmdl += ' -l ' + input_list_fpath
-
     else:
         if not isfile(input_list_fpath):
             critical('Critical: MultiQC files list was not found in ' + input_list_fpath)
@@ -297,6 +296,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
         config_fname = 'multiqc_config_rna.yaml'
     else:
         config_fname = 'multiqc_config_dna.yaml'
+        cmdl += ' -e qualimap'
     config_fpath = join(dirname(dirname(__file__)), config_fname)
     cmdl += ' -c ' + config_fpath
 
