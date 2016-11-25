@@ -7,13 +7,7 @@ from os import listdir
 from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile, pardir
 from collections import OrderedDict
 from collections import defaultdict
-
 import shutil
-from yaml import dump
-try:
-    from yaml import CDumper as Dumper, CLoader as Loader
-except ImportError:
-    from yaml import Dumper, Loader
 
 import variant_filtering
 from ngs_reporting.oncoprints import create_oncoprints_link
@@ -138,9 +132,9 @@ def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
         additional_data=additional_data, oncoprints_link=oncoprints_link)
 
     metadata_fpath = join(bcbio_structure.work_dir, 'az_multiqc_metadata.yaml')
+    import yaml
     with open(metadata_fpath, 'w') as outfile:
-        dump(metadata, outfile, default_flow_style=False)
-
+        yaml.dump(metadata, outfile, default_flow_style=False)
     import json
     with open(metadata_fpath.replace('.yaml', '.json'), 'w') as outfile:
         json.dump(metadata, outfile)

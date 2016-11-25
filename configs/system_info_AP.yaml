@@ -1,8 +1,6 @@
 # /ngs/RDI/SCRIPTS/az.reporting
 
 resources:
-  python:
-    path: /apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/python
   perl:
     path: /usr/bin/perl
   java:
@@ -25,9 +23,9 @@ resources:
   bedtools:
     path: /apps/bedtools/2.16.2/x64/bin/bedtools
   tabix:
-    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/tabix
+    path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/bin/tabix
   bgzip:
-    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bgzip
+    path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/bin/bgzip
   picard:
     path: ext_tools/picard/picard.jar
   qsub:
@@ -35,11 +33,11 @@ resources:
   qdel:
     path: /apps/sge61/bin/lx24-amd64/qdel
   bwa:
-    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/bin/bwa
+    path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/bin/bwa
   bcftools:
-    path: /apps/bcbio-nextgen/0.9.6/rhel6-x64/anaconda/bin/bcftools
+    path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/anaconda/bin/bcftools
   rscript:
-    path: /apps/bcbio-nextgen/0.9.7/rhel6-x64/anaconda/bin/Rscript
+    path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/anaconda/bin/Rscript
 
 genomes:
   hg38:
