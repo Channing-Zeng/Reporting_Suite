@@ -1,0 +1,68 @@
+# Cleaning options for sample names. Typically, sample names are detected
+# from an input filename. If any of these strings are found, they and any
+# text to their right will be discarded.
+# For example - file1.fq.gz_trimmed.bam_deduplicated_fastqc.zip
+# would be cleaned to 'file1'
+# Two options here - fn_clean_exts will replace the defaults,
+# extra_fn_clean_exts will append to the defaults
+#extra_fn_clean_exts:
+#    - .gz
+#    - .fastq
+#    - .fq
+#    - .bam
+#    - .sam
+#    - .sra
+#    - _tophat
+#    - _star_aligned
+#    - _fastqc
+#    - type: replace
+#      pattern: '.sorted'
+#    - type: regex
+#      pattern: '^Sample_\d+'
+
+# Ignore these files / directories / paths when searching for logs
+#fn_ignore_files:
+#    - .DS_Store
+#fn_ignore_dirs:
+#    - annoying_dirname
+#fn_ignore_paths:
+#    - '*/path/to/*_files/'
+
+# Overwrite module filename search patterns. See multiqc/utils/search_patterns.yaml
+# for the defaults. Remove a default by setting it to null.
+sp:
+    rnaseq_az:
+        pca_data:
+            fn: 'pca_data.txt'
+    bcl2fastq:
+        Demultiplex_Stats.htm
+        index.html
+        tree.html
+        All.htm
+        IVC.htm
+    targqc:
+        summary:
+            fn: "summary.json"
+        summary_oldstyle:
+            fn: '*.targetSeq.json'
+
+
+# Overwrite the defaults of which table columns are visible by default
+table_columns_visible:
+    FastQC:
+        percent_gc: False
+    Samtools Stats:
+        error_rate: False
+    bcbio:
+        Ontarget_padded_pct: True
+
+module_order:
+    - 'bcl2fastq'
+    - 'qualimap'
+    - 'targqc'
+    - 'bcbio'
+    - 'rnaseq_az'
+    - 'samtools'
+    - 'snpeff'
+    - 'bcftools'
+    - 'fastqc'

@@ -293,6 +293,12 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
             #         f.writelines(lines)
             #     cmdl += ' -e qualimap'
             #     to_run = True
+    if bcbio_structure.is_rnaseq:
+        config_fname = 'multiqc_config_rna.yaml'
+    else:
+        config_fname = 'multiqc_config_dna.yaml'
+    config_fpath = join(dirname(dirname(__file__)), config_fname)
+    cmdl += ' -c ' + config_fpath
 
     call(cnf, cmdl, exit_on_error=False)
     verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
