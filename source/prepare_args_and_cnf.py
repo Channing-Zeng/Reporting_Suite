@@ -10,6 +10,8 @@ from os import getcwd
 import datetime
 import tempfile
 
+from az.reference_data import get_canonical_transcripts
+
 import bcbio_postproc
 from source import logger
 from source.file_utils import verify_dir, safe_mkdir, adjust_path, verify_file, adjust_system_path, verify_obj_by_path, \
@@ -62,9 +64,10 @@ def check_genome_resources(cnf):
         warn('Warning: features and bed_annotation_features and cds in the system config (' + cnf.sys_cnf + ') must be specified.')
 
     if not cnf.transcripts_fpath:
-        g = 'hg19' if ('hg19' or 'GRCh37' in cnf.genome.name) else 'hg38'
-        cnf.transcripts_fpath = verify_file(join(bcbio_postproc.project_dir,
-            'reference_data', 'canonical_transcripts', 'canonical_transcripts_' + g + '.txt'), description='Canonical transcripts')
+        cnf.transcripts_fpath = cnf.transcripts_fpath or get_canonical_transcripts(cnf.genome.name)
+        # g = 'hg19' if (('hg19' or 'GRCh37') in cnf.genome.name) else 'hg38'
+        # cnf.transcripts_fpath = verify_file(join(bcbio_postproc.project_dir,
+        #     'reference_data', 'canonical_transcripts', 'canonical_transcripts_' + g + '.txt'), description='Canonical transcripts')
 
 
 def check_keys_presence(cnf, required_keys):

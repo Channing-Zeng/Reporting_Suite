@@ -6,6 +6,8 @@ import socket
 import sys
 import re
 
+from az.reference_data import get_canonical_transcripts
+
 import source
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction, \

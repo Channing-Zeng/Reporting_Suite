@@ -264,8 +264,6 @@ class BCBioRunner:
 
     def _init_steps(self, cnf, run_id, target_bed, exons_bed, exons_no_genes_bed,
                     genes_fpath, seq2c_bed, original_bed, filt_cnf_fpath):
-        print cnf.transcripts_fpath
-
         basic_params = \
             ' --sys-cnf ' + self.cnf.sys_cnf + \
             ' --run-cnf ' + self.cnf.run_cnf + \
@@ -293,18 +291,13 @@ class BCBioRunner:
             ' --vcf \'{vcf}\' {bam_cmdline} {normal_match_cmdline} ' +
             '-o \'{output_dir}\' -s \'{sample}\' -c {caller} --qc ' +
             '--work-dir \'' + join(cnf.work_dir, BCBioStructure.varannotate_name) + '_{sample}_{caller}\' ')
-        # log_fpath = join(self.bcbio_structure.log_dirpath,
-        #      (step.name + ('_' + sample_name if sample_name else '') +
-        #                   ('_' + caller if caller else '')) + '.log')
-
-        ann_cmdl = anno_paramline + ((' --transcripts ' + cnf.transcripts_fpath) if cnf.transcripts_fpath else '')
         self.varannotate = Step(cnf, run_id,
             name=BCBioStructure.varannotate_name, short_name='va',
             interpreter='python',
             script=join('scripts', 'post', 'varannotate.py'),
             dir_name=BCBioStructure.varannotate_dir,
             log_fpath_template=join(self.bcbio_structure.log_dirpath, '{sample}', BCBioStructure.varannotate_name + '-{caller}.log'),
-            paramln=ann_cmdl,
+            paramln=anno_paramline,
         )
         # self.varqc = Step(cnf, run_id,
         #     name=BCBioStructure.varqc_name, short_name='vq',
