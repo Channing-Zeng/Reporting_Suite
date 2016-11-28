@@ -36,15 +36,3 @@
 #table_columns_visible:
 #    bcbio:
 #        Ontarget_padded_pct: True
-
-module_order:
-    - 'bcl2fastq'
-    - 'qualimap_az'
-    - 'targqc'
-    - 'bcbio'
-    - 'rnaseq_az'
-    - 'qualimap'
-    - 'samtools'
-    - 'snpeff'
-    - 'bcftools'
-    - 'fastqc'

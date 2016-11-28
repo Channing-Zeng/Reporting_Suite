@@ -1,3 +1,4 @@
+import glob
 import json
 import os
 import time
@@ -14,7 +15,7 @@ from ngs_reporting.oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.logger import info, step_greetings, warn, timestamp, critical
-from source.file_utils import verify_file, add_suffix, verify_dir, file_transaction
+from source.file_utils import verify_file, add_suffix, verify_dir, file_transaction, safe_mkdir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
 from source.tools_from_cnf import get_system_path, get_script_cmdline
@@ -255,7 +256,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                 os.rename(new_multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath + '.' + timestamp().replace(':', '_').replace(' ', '_'))
         os.rename(multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath)
 
-    multiqc_postproc_dirpath = dirname(bcbio_structure.multiqc_fpath)
+    multiqc_postproc_dirpath = safe_mkdir(dirname(bcbio_structure.multiqc_fpath))
 
     cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath + ' -t az'
     if metadata_fpath:
@@ -276,6 +277,13 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                 info()
                 if pca_plot_fpath and verify_file(pca_plot_fpath):
                     out.write(pca_plot_fpath + '\n')
+            else:
+                for s in bcbio_structure.samples:
+                    snpeff_log_fpath = join(s.dirpath, BCBioStructure.varannotate_dir, s.name + '-vardict.snpEff_summary.csv')
+                    if verify_file(snpeff_log_fpath, silent=True):
+                        snpeff_log_multiqc_fpath = join(safe_mkdir(join(multiqc_postproc_dirpath, 'snpEff')), s.name)
+                        shutil.copy(snpeff_log_fpath, snpeff_log_multiqc_fpath)
+                        out.write(snpeff_log_multiqc_fpath + '\n')
 
     if verify_file(input_list_fpath, silent=True):
         cmdl += ' -l ' + input_list_fpath
@@ -299,8 +307,9 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
         cmdl += ' -e qualimap'
     config_fpath = join(dirname(dirname(__file__)), config_fname)
     cmdl += ' -c ' + config_fpath
-
-    call(cnf, cmdl, exit_on_error=False)
+    res = call(cnf, cmdl + ' -e bcbio', exit_on_error=False, silent=True)
+    if not res:
+        call(cnf, cmdl)
     verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
     return bcbio_structure.multiqc_fpath
 

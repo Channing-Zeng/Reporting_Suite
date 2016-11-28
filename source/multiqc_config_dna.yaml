@@ -40,15 +40,9 @@ table_columns_visible:
         error_rate: False
     bcbio:
         Ontarget_padded_pct: True
-
-module_order:
-    - 'bcl2fastq'
-    - 'qualimap_az'
-    - 'targqc'
-    - 'bcbio'
-    - 'rnaseq_az'
-    - 'qualimap'
-    - 'samtools'
-    - 'snpeff'
-    - 'bcftools'
-    - 'fastqc'
+    QualiMap:
+        median_coverage: False
+    SnpEff:
+        Change_rate: False
+        Ts_Tv_ratio: False
+        Number_of_variants_before_filter: False
