@@ -14,7 +14,7 @@ import variant_filtering
 from ngs_reporting.oncoprints import create_oncoprints_link
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.logger import info, step_greetings, warn, timestamp, critical
+from source.logger import info, step_greetings, warn, timestamp, critical, err
 from source.file_utils import verify_file, add_suffix, verify_dir, file_transaction, safe_mkdir
 from source.reporting.reporting import Metric, Record, MetricStorage, ReportSection, SampleReport, FullReport, \
     write_static_html_report
@@ -266,12 +266,44 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
 
     input_list_fpath = join(bcbio_structure.date_dirpath, 'qc', 'list_files.txt')
     if not verify_file(input_list_fpath, silent=True):
-        work_input_list_fpath = join(bcbio_structure.work_dir, pardir, basename(input_list_fpath))
+        work_input_list_fpath = abspath(join(bcbio_structure.work_dir, pardir, basename(input_list_fpath)))
         if not verify_file(work_input_list_fpath, silent=True):
             critical('File list for MultiQC ' + work_input_list_fpath + ' not found. Please make sure you are using bcbio 1.0.0')
         with open(work_input_list_fpath) as inp, open(input_list_fpath, 'w') as out:
+            qc_files_not_found = []
             for l in inp:
-                out.write(l)
+                fpath = l.strip()
+                if '/work/' in fpath:
+                    if fpath.endswith('target_info.yaml'):
+                        correct_fpath = join(bcbio_structure.date_dirpath, 'qc', basename(fpath))
+                        if not verify_file(correct_fpath, silent=True):
+                            if not verify_file(fpath):
+                                qc_files_not_found.append(fpath)
+                                continue
+                            shutil.copy(fpath, correct_fpath)
+                            out.write(correct_fpath + '\n')
+                    else:
+                        work_dirpath = fpath.split('/work/')[0] + '/work'
+                        correct_fpath = fpath.replace(work_dirpath, bcbio_structure.final_dirpath)
+                        for s in bcbio_structure.samples:
+                            correct_fpath = correct_fpath.replace('/qc/' + s.name + '/qualimap/' + s.name + '/',
+                                                                  '/' + s.name + '/qc/qualimap/')
+                            correct_fpath = correct_fpath.replace('/qc/' + s.name + '/',
+                                                                  '/' + s.name + '/qc/')
+                            correct_fpath = correct_fpath.replace('/multiqc/report/metrics/' + s.name + '_bcbio.txt',
+                                                                  '/' + s.name + '/qc/bcbio/' + s.name + '_bcbio.txt')
+                        if not verify_file(correct_fpath):
+                            qc_files_not_found.append(correct_fpath)
+                            continue
+                        out.write(correct_fpath + '\n')
+                else:
+                    if not verify_file(fpath):
+                        qc_files_not_found.append(fpath)
+                        continue
+                    out.write(fpath + '\n')
+            if qc_files_not_found:
+                err('-')
+                critical('Some QC files from list ' + work_input_list_fpath + ' were not found. Please check if work directory exists.')
             if bcbio_structure.is_rnaseq:
                 pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
                 info()

@@ -12,8 +12,8 @@ resources:
   snpsift:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
     path: /ngs/RDI/PROGRAMS/snpEff4.2/SnpSift.jar
-#  gatk:
-#    path: /ngs/RDI/PROGRAMS/GenomeAnalysisTK/GenomeAnalysisTK.jar
+  gatk:
+    path: /ngs/RDI/PROGRAMS/GenomeAnalysisTK/GenomeAnalysisTK.jar
   vcf2txt:
     path: VarDict/vcf2txt.pl
   qualimap:
