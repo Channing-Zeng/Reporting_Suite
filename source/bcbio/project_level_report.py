@@ -5,13 +5,15 @@ import time
 from genericpath import isdir, exists
 from inspect import getsourcefile
 from os import listdir
-from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile, pardir
+from os.path import join, relpath, dirname, basename, abspath, getmtime, isfile, pardir, islink
 from collections import OrderedDict
 from collections import defaultdict
 import shutil
 
 import variant_filtering
 from ngs_reporting.oncoprints import create_oncoprints_link
+from ngs_utils.file_utils import safe_symlink_to
+
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.logger import info, step_greetings, warn, timestamp, critical, err
@@ -281,17 +283,21 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                                 qc_files_not_found.append(fpath)
                                 continue
                             shutil.copy(fpath, correct_fpath)
-                            out.write(correct_fpath + '\n')
+                        out.write(correct_fpath + '\n')
                     else:
                         work_dirpath = fpath.split('/work/')[0] + '/work'
                         correct_fpath = fpath.replace(work_dirpath, bcbio_structure.final_dirpath)
                         for s in bcbio_structure.samples:
-                            correct_fpath = correct_fpath.replace('/qc/' + s.name + '/qualimap/' + s.name + '/',
-                                                                  '/' + s.name + '/qc/qualimap/')
-                            correct_fpath = correct_fpath.replace('/qc/' + s.name + '/',
-                                                                  '/' + s.name + '/qc/')
-                            correct_fpath = correct_fpath.replace('/multiqc/report/metrics/' + s.name + '_bcbio.txt',
-                                                                  '/' + s.name + '/qc/bcbio/' + s.name + '_bcbio.txt')
+                            if '/qc/' + s.name + '/' in fpath:
+                                correct_fpath = correct_fpath.replace('/qc/' + s.name + '/',
+                                                                      '/' + s.name + '/qc/')
+                                if '/qualimap/' in fpath:
+                                    # QualiMap needs to be located in a directory named after the sample name:
+                                    if not islink(join(s.dirpath, 'qc', 'qualimap', s.name)):
+                                        os.symlink(join(s.dirpath, 'qc', 'qualimap'), join(s.dirpath, 'qc', 'qualimap', s.name))
+                            else:
+                                correct_fpath = correct_fpath.replace('/multiqc/report/metrics/' + s.name + '_bcbio.txt',
+                                                                      '/' + s.name + '/qc/bcbio/' + s.name + '_bcbio.txt')
                         if not verify_file(correct_fpath):
                             qc_files_not_found.append(correct_fpath)
                             continue
@@ -336,12 +342,12 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
         config_fname = 'multiqc_config_rna.yaml'
     else:
         config_fname = 'multiqc_config_dna.yaml'
-        cmdl += ' -e qualimap'
+        cmdl += ' -e qualimap -e bcbio'
     config_fpath = join(dirname(dirname(__file__)), config_fname)
     cmdl += ' -c ' + config_fpath
-    res = call(cnf, cmdl + ' -e bcbio', exit_on_error=False, silent=True)
-    if not res:
-        call(cnf, cmdl)
+    res = call(cnf, cmdl, exit_on_error=True, silent=False)
+    # if not res:
+    #     call(cnf, cmdl)
     verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
     return bcbio_structure.multiqc_fpath
 
