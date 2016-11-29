@@ -5,8 +5,7 @@ import base64
 import shutil
 import traceback
 from collections import defaultdict
-from genericpath import exists
-from os.path import join, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize, basename
+from os.path import join, exists, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize, basename
 import datetime
 from time import sleep
 from traceback import format_exc
@@ -24,7 +23,8 @@ from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.fastqc.summarize_fastqc import write_fastqc_combo_report
-from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path
+from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path, \
+    file_transaction
 from source.bcbio.project_level_report import make_report_metadata, get_oncoprints_link, make_multiqc_report
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
@@ -978,7 +978,8 @@ class BCBioRunner:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
             sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
 
-            for cnv_caller in ['-cn_mops', '-seq2c', '-cnvkit', '-lumpy', '-manta', '-wham', '-sv-prioritize', '-metasv']:
+            for cnv_caller in ['-seq2c', '-seq2c-coverage.tsv', '-cnvkit', '-cn_mops',
+                               '-lumpy', '-manta', '-wham', '-sv-prioritize', '-metasv']:
                 for fname in os.listdir(sample_dirpath):
                     if cnv_caller in fname:
                         # Copy to <sample>/cnv
@@ -989,13 +990,14 @@ class BCBioRunner:
                             err(format_exc())
                             info()
 
+                for fname in os.listdir(sample_cnv_dirpath):
+                    if cnv_caller in fname:
                         # Symlink to <datestamp>/cnv/<cnvcaller>
-                        dst_dirpath = join(cnv_summary_dirpath, cnv_caller[1:])
+                        dst_dirpath = join(cnv_summary_dirpath)
                         dst_fname = fname
                         if sample.name not in fname:
                             dst_fname = sample.name + '.' + dst_fname
                         dst_fpath = join(dst_dirpath, dst_fname)
-
                         try:
                             safe_mkdir(dst_dirpath)
                             if islink(dst_fpath):
@@ -1003,6 +1005,24 @@ class BCBioRunner:
                             symlink_plus(join(sample_cnv_dirpath, fname), dst_fpath)
                         except OSError:
                             pass
+
+        for sample in self.bcbio_structure.samples:
+            seq2c_fpath = join(sample.dirpath, BCBioStructure.cnv_dir, sample.name + '-seq2c.tsv')
+            if isfile(seq2c_fpath):
+                sample.seq2c_fpath = seq2c_fpath
+
+        # Merging all Seq2C into one
+        merged_seq2c_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
+        if not (isfile(merged_seq2c_fpath) and self.cnf.reuse_intermediate):
+            with file_transaction(None, merged_seq2c_fpath) as tx:
+                with open(tx, 'w') as out:
+                    for file_index, sample in enumerate(self.bcbio_structure.samples):
+                        if sample.seq2c_fpath and isfile(sample.seq2c_fpath):
+                            with open(sample.seq2c_fpath) as inp:
+                                for line_index, l in enumerate(inp):
+                                    if file_index == 0 or line_index > 0:
+                                        out.write(l)
+        self.bcbio_structure.seq2c_fpath = merged_seq2c_fpath
 
 
 def _final_email_notification(cnf, html_report_url, jira_url, bs):

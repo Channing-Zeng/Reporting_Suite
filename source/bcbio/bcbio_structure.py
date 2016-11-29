@@ -330,6 +330,7 @@ class BCBioSample(BaseSample):
         assert self.targetcov_json_fpath, str(self.dirpath) + ' ' + str(self.targqc_dirpath)
 
         self.project_tag = None
+        self.seq2c_fpath = None
 
     # ----------
     def annotated_vcfs_dirpath(self):
@@ -588,7 +589,7 @@ class BaseProjectStructure:
     flagged_dir = join(targqc_dir, flag_regions_name)
 
     cnv_dir = cnv_summary_dir = 'cnv'
-    seq2c_name = 'Seq2C'
+    seq2c_name = 'seq2c'
     seq2c_seq2cov_ending = 'seq2c_seq2cov.txt'
 
     var_dir = 'var'
@@ -610,6 +611,7 @@ class BCBioStructure(BaseProjectStructure):
         self.batches = OrderedDefaultDict(Batch)
         self.samples = []
         self.variant_callers = OrderedDict()
+        self.seq2c_fpath = None
 
         self.original_bed = None
         self.bed = None
@@ -651,8 +653,6 @@ class BCBioStructure(BaseProjectStructure):
             self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + bcbio_cnf['fc_name'])
         else:
             self.date_dirpath = join(self.final_dirpath, bcbio_cnf['fc_date'] + '_' + self.project_name)
-
-        self.seq2c_fpath = join(self.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
 
         if not verify_dir(self.date_dirpath):
             err('Warning: no project directory of format {fc_date}_{fc_name}, creating ' + self.date_dirpath)
@@ -939,6 +939,12 @@ class BCBioStructure(BaseProjectStructure):
         self._set_bam_file(sample)
         if self.is_rnaseq:
             self._set_gene_counts_file(sample)
+
+        seq2c_fname = sample.name + '-seq2c.tsv'
+        if isfile(join(sample.dirpath, seq2c_fname)):
+            sample.seq2c_fpath = join(sample.dirpath, seq2c_fname)
+        elif isfile(join(sample.dirpath, BCBioStructure.cnv_dir, seq2c_fname)):
+            sample.seq2c_fpath = join(sample.dirpath, BCBioStructure.cnv_dir, seq2c_fname)
 
         # if 'min_allele_fraction' in sample_info['algorithm']:
         #     sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100

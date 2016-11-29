@@ -196,9 +196,8 @@ def symlink_to_ngs(src_path, dst_fpath):
         err(traceback.format_exc())
         return None
 
-    if ssh is None:
+    if not ssh:
         return None
-
     src_path = src_path.replace('/gpfs/', '/')
     for cmd in ['mkdir ' + dirname(dirname(dst_fpath)),
                 'mkdir ' + dirname(dst_fpath),
