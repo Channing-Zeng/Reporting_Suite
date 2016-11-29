@@ -188,8 +188,8 @@ def is_local():
 
 def is_us():
     hostname = socket.gethostname()
-    return any(name in hostname for name in ['rask', 'chara', 'blue', 'green', 'espo', 'orr', 'usbod', 'bn0'])
-
+    return any(name in hostname for name in ['rask', 'chara', 'blue', 'green', 'espo',
+                                             'orr', 'usbod', 'bn0', 'pedro', 'papi'])
 def is_az():
     return is_us() or is_uk() or is_china() or is_sweden()
 
