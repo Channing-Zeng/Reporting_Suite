@@ -17,7 +17,6 @@ from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import get_chr_len_fpath, is_us, get_ext_tools_dirname
 from source.variants.filtering import combine_vcfs
 
-from ngs_reporting.combine_reports import get_uniq_sample_key
 from variant_filtering.txt2vcf_conversion import convert_vardict_txts_to_bcbio_vcfs
 
 
@@ -34,6 +33,12 @@ if is_local():
     exac_url = 'http://localhost:5000/'
     exac_code_dir = '/Users/vlad/vagrant/exac_browser'
     exac_data_dir = '/Users/vlad/vagrant/exac_data'
+
+
+def get_uniq_sample_key(project_name, sample, sample_names=None):
+    if sample_names and sample_names.count(sample.name) > 1:
+        return sample.name + '_' + project_name
+    return sample.name
 
 
 def get_exac_us_url(genome, project_name):
@@ -239,6 +244,12 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpa
 
 
 def get_exac_dir(cnf):
+    if cnf.genome.name.startswith('hg19'):
+        cnf.genome.name = 'hg19'
+    elif cnf.genome.name.startswith('hg38'):
+        cnf.genome.name = 'hg38'
+    else:
+        critical('Genome ' + str(cnf.genome.name) + ' is not supported. Supported genomes: hg19, hg19-noalt, hg38, hg38-noalt.')
     exac_dir = join(exac_data_dir, cnf.genome.name)  # temporary dir
     return exac_dir
 
