@@ -570,9 +570,22 @@ def get_run_info(cnf, bcbio_structure):
 
 
 def get_oncoprints_link(cnf, bcbio_structure, project_name):
+    caller = bcbio_structure.variant_callers.get('vardict') or \
+             bcbio_structure.variant_callers.get('vardict-java')
+
+    _base_mut_fname = variant_filtering.mut_fname_template.format(caller_name=caller.name)
+    _base_mut_fpath = join(bcbio_structure.date_dirpath, _base_mut_fname)
+    mut_fpath = add_suffix(_base_mut_fpath, variant_filtering.mut_pass_suffix)
+    single_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_single_suffix), variant_filtering.mut_pass_suffix)
+    paired_mut_fpath = add_suffix(add_suffix(_base_mut_fpath, variant_filtering.mut_paired_suffix), variant_filtering.mut_pass_suffix)
+    mut_fpath = verify_file(mut_fpath, silent=True)
+    single_mut_fpath = verify_file(single_mut_fpath, silent=True)
+    paired_mut_fpath = verify_file(paired_mut_fpath, silent=True)
+    mutations_fpaths = [f for f in [mut_fpath, single_mut_fpath, paired_mut_fpath] if f]
+
     return create_oncoprints_link(
         cnf.work_dir, cnf.genome.name, bcbio_structure.final_dirpath, project_name,
-        bcbio_structure.mutations_fpath, bcbio_structure.seq2c_fpath, bcbio_structure.bed)
+        mutations_fpaths, bcbio_structure.seq2c_fpath, bcbio_structure.bed)
 
 
 def _make_relative_link_record(name, match_name, metric):
