@@ -94,21 +94,20 @@ def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
     #     dataset_structure = DatasetStructure.create(dataset_dirpath, bcbio_structure.project_name)
 
     general_records = _add_summary_reports(cnf, metric_storage.general_section, bcbio_structure)
-    sample_reports_records = _add_per_sample_reports(cnf, metric_storage.sections[0], bcbio_structure)
+    # sample_reports_records = _add_per_sample_reports(cnf, metric_storage.sections[0], bcbio_structure)
 
-    sample_reports = []
+    # sample_reports = []
     # if dataset_project:
     #     samples = dataset_project.sample_by_name.values()
     # if bcbio_structure:
     samples = bcbio_structure.samples
-    for sample in samples:
-        sample_reports.append(SampleReport(sample,
-            records=sample_reports_records[sample.name],
-            html_fpath=None,
-            metric_storage=metric_storage))
+    # for sample in samples:
+    #     sample_reports.append(SampleReport(sample,
+    #         records=sample_reports_records[sample.name],
+    #         html_fpath=None,
+    #         metric_storage=metric_storage))
 
-    full_report = FullReport(cnf.project_name, sample_reports,
-                             metric_storage=metric_storage, general_records=general_records)
+    full_report = FullReport(cnf.project_name, [], metric_storage=metric_storage, general_records=general_records)
 
     project_report_html_fpath = bcbio_structure.multiqc_fpath
     project_name = bcbio_structure.project_name
@@ -390,44 +389,16 @@ def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure):
                 sample_reports_records[s.name].append(rec)
 
         if bcbio_structure.is_rnaseq:
-            sample_reports_records[s.name].extend(add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
+            pass
         else:
-            sample_reports_records[s.name].extend(add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath))
+            recs = []
+            rec = _make_url_record(verify_file(s.clinical_html, is_critical=True),
+                                   individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
+            if rec and rec.value:
+                recs.append(rec)
+            sample_reports_records[s.name].extend(recs)
 
     return sample_reports_records
-
-
-def add_rna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
-    recs = []
-    # recs.append(_make_url_record(s.gene_counts, individual_reports_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
-    # if verify_file(s.qualimap_html_fpath):
-    #     recs.append(_make_url_record(s.qualimap_html_fpath, individual_reports_section.find_metric(QUALIMAP_NAME), base_dirpath))
-    return recs
-
-
-def add_dna_sample_records(s, individual_reports_section, bcbio_structure, base_dirpath):
-    recs = []
-    # if not bcbio_multiqc_available and not s.phenotype or s.phenotype != 'normal':
-    #     varqc_d = OrderedDict([(k, s.get_varqc_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-    #     varqc_after_d = OrderedDict([(k, s.get_varqc_after_fpath_by_callername(k)) for k in bcbio_structure.variant_callers.keys()])
-    #     recs.extend([
-    #         _make_url_record(varqc_d,             individual_reports_section.find_metric(VARQC_NAME),       base_dirpath),
-    #         _make_url_record(varqc_after_d,       individual_reports_section.find_metric(VARQC_AFTER_NAME), base_dirpath),
-    #     ])
-
-    rec = _make_url_record(verify_file(s.clinical_html, is_critical=True),
-                           individual_reports_section.find_metric(CLINICAL_NAME), base_dirpath)
-    if rec and rec.value:
-        recs.append(rec)
-
-    # if verify_file(s.seq2c_fpath, silent=True):
-    #     metric = individual_reports_section.find_metric(CNV_NAME)
-    #     url = relpath(verify_file(seq2c_fpath), base_dirpath)
-    #     rec = Record(metric=metric, value=basename(seq2c_fpath), url=url)
-    #     if rec and rec.value:
-    #         recs.append(rec)
-
-    return recs
 
 
 def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbio_structure,
@@ -460,12 +431,38 @@ def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbi
             if rec.metric.name in expression_names:
                 expression_links.append(__process_record(rec)['contents'])
     if oncoprints_link:
-        mutations_links.append(('<a href="{oncoprints_link}" target="_blank">Oncoprints</a> ' +
+        mutations_links.append(('<a href="{oncoprints_link}" target="_blank">oncoprints</a> ' +
                              '(loading may take 5-10 seconds)').format(**locals()))
     if mutations_links:
         metadata_dict["mutations_links"] = mutations_links
     if expression_links:
         metadata_dict["expression_links"] = expression_links
+
+    # SAMPLE_LEVEL DETAILS
+    gender_by_sample = dict()
+    for s in bcbio_structure.samples:
+        gender_fpath = join(s.clinical_report_dirpath, 'gender.txt')
+        if isfile(gender_fpath):
+            gender = open(gender_fpath).read()
+            gender_by_sample[s.name] = gender
+    metadata_dict['gender_by_sample'] = gender_by_sample
+
+    base_dirpath = dirname(bcbio_structure.multiqc_fpath)
+    metadata_dict['ngs_report_by_sample'] = {s.name:
+        relpath(s.clinical_html, base_dirpath) if verify_file(s.clinical_html) else None
+        for s in bcbio_structure.samples}
+
+    # normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']
+    # for s in bcbio_structure.samples:
+    #     if normal_samples:
+    #         rec = Record(individual_reports_section.find_metric(PHENOTYPE), s.phenotype)
+    #         sample_reports_records[s.name].append(rec)
+    #         if s.phenotype != 'normal' and s.normal_match:
+    #             # if len(bcbio_structure.samples) > 1:
+    #             rec = _make_relative_link_record(s.name, s.normal_match.name, individual_reports_section.find_metric(NORM_MATCH))
+    #             # else:
+    #             #     rec = Record(individual_reports_section.find_metric(NORM_MATCH), s.normal_match.name)
+    #             sample_reports_records[s.name].append(rec)
 
     if full_report.sample_reports:
         # individual records
