@@ -797,28 +797,27 @@ class BCBioStructure(BaseProjectStructure):
             self.sv_bed = self.bed = cnf.bed = verify_bed(cnf.bed, is_critical=True)
             info('Using ' + (self.bed or 'no bed file') + ' for TargQC')
         else:
-            sv_bed_files_used = [s.sv_bed for s in self.samples]
-            if len(set(sv_bed_files_used)) > 2:
-                critical('Error: more than 1 sv_regions file found: ' + str(set(sv_bed_files_used)))
-            if sv_bed_files_used:
-                self.sv_bed = sv_bed_files_used[0]
-                info('Using ' + (self.sv_bed or 'CDS') + ' for Seq2C')
+            bed_files_used = [s.bed for s in self.samples]
+            if len(set(bed_files_used)) > 2:
+                critical('Error: more than 1 bed files found: ' + str(set(bed_files_used)))
+            if bed_files_used:
+                self.sv_bed = self.bed = bed_files_used[0]
 
-        if not self.is_wgs:
-            if not self.bed and self.sv_bed:
-                info('Not WGS, no --bed, setting --bed as sv_regions: ' + self.sv_bed)
-                self.bed = self.sv_bed
-            if not self.bed and not self.is_rnaseq and cnf.genome.cds:
-                info('Not WGS, no --bed, setting --bed as CDS reference BED file: ' + cnf.genome.cds)
-                self.bed = cnf.genome.cds
-        if not self.sv_bed and not self.is_rnaseq and cnf.genome.cds:
-            info('No sv_regions, setting sv_regions as CDS reference BED file ' + cnf.genome.cds)
-            self.sv_bed = cnf.genome.cds
+        # if not self.is_wgs:
+        #     if not self.bed:
+        #         info('Not WGS, no --bed, setting --bed as sv_regions: ' + self.bed)
+        #         self.bed = self.sv_bed
+        #     if not self.bed and not self.is_rnaseq and cnf.genome.cds:
+        #         info('Not WGS, no --bed, setting --bed as CDS reference BED file: ' + cnf.genome.cds)
+        #         self.bed = cnf.genome.cds
+        # if not self.sv_bed and not self.is_rnaseq and cnf.genome.cds:
+        #     info('No sv_regions, setting sv_regions as CDS reference BED file ' + cnf.genome.cds)
+        #     self.sv_bed = cnf.genome.cds
 
         for s in self.samples:
             s.bed = self.bed  # for TargQC
-            s.sv_bed = self.sv_bed  # for Seq2C
-
+            s.sv_bed = self.bed  # for Seq2C
+        
         if self.is_rnaseq:
             self.target_type = 'transcriptome'
         elif self.is_wgs:
@@ -1016,16 +1015,22 @@ class BCBioStructure(BaseProjectStructure):
         info('Final dirpath: ' + self.final_dirpath)
 
     def _set_bed_file(self, sample, sample_info):
-        if sample_info['algorithm'].get('sv_regions'):  # SV regions?
-            sv_bed = adjust_path(join(self.bcbio_project_dirpath, 'config', sample_info['algorithm']['sv_regions']))
-            if sv_bed and sv_bed.endswith('.bed'):
-                verify_bed(sv_bed, is_critical=True)
-                sample.sv_bed = sv_bed
-                info('sv_regions file for ' + sample.name + ': ' + str(sample.sv_bed))
-            else:
-                warn('sv_regions file for ' + sample.name + ' is not BED: ' + str(sv_bed))
-        if not sample.sv_bed:
-            info('No sv_regions file for ' + sample.name)
+        bed = None
+        if sample_info['algorithm'].get('coverage'):
+            bed = adjust_path(join(self.bcbio_project_dirpath, 'config',
+                                   sample_info['algorithm']['coverage']))
+        elif sample_info['algorithm'].get('variant_regions'):
+            bed = adjust_path(join(self.bcbio_project_dirpath, 'config',
+                                   sample_info['algorithm']['variant_regions']))
+
+        if bed and bed.endswith('.bed'):
+            verify_bed(bed, is_critical=True)
+            sample.sv_bed = sample.bed = bed
+            info('regions file for ' + sample.name + ': ' + str(sample.bed))
+        else:
+            warn('regions file for ' + sample.name + ' is not BED: ' + str(bed))
+        if not sample.bed:
+            info('No regions file for ' + sample.name)
 
         # variant_regions = False
         # if sample_info['algorithm'].get('variant_regions'):  # SV regions?
