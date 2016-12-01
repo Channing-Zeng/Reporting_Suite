@@ -50,7 +50,7 @@ CD79B   NM_000626.2
 CHEK2   NM_007194.3
 CHEK1   NM_001274.5
 ```
-The full list is located under `/ngs/reference_data/genomes/Hsapiens/hg19/canonical_transcripts.txt` (hg19) and `/ngs/reference_data/genomes/Hsapiens/hg38/canonical_transcripts.txt` (hg38).
+The full list is located under [canonical_transcripts_hg19.txt](https://github.com/AstraZeneca-NGS/NGS_Reporting/blob/master/az/reference_data/canonical_transcripts/canonical_transcripts_hg19.txt) (hg19) and [canonical_transcripts_hg38.txt](https://github.com/AstraZeneca-NGS/NGS_Reporting/blob/master/az/reference_data/canonical_transcripts/canonical_transcripts_hg38.txt) (hg38).
 
 SnpEff assigns:
 - gene and transcript IDs
@@ -178,13 +178,13 @@ RBMXL1
 RBMXL3
 EPPK1	after 2215aa
 TYRO3
-OR#X#     # olfactory genes
+OR#X#   # olfactory genes
 HLA-*   # unless specified to keep them explicitly
 ```
 
 An extended list of genes, exons, and regions is used to de-prioritize mutations in the reports, but does not affect mutation status.
 
-Genes: https://drive.google.com/drive/folders/0B2wwyQzq0BbwWnNjZ055Ri1nRGM
+Genes: https://drive.google.com/file/d/0B2wwyQzq0BbwNmg0bzdSeFVFc2s/view?usp=sharing
 - Gene filtering &mdash; exome level
   - Filter all variant from the following published genes from three papers &mdash; people agree these genes generate too many false positives and represent (“blacklist” tab, rows 1-158, genes ABCA13 through ZNF407). Rows 74 and 75 &mdash; perhaps keep KMT2C and KMT2D from being hard filtered for now, given their prominence on cancer gene panels. But I want them filtered from AZ50/AZ300/targeted panel reports.
   - Filter all variants from large gene families and other genome oddities &mdash; various ways I’ve found, scanned in a genome viewer, and tagged (“blacklist” tab, rows 159-500). I’ve tried to differentiate when essentially every exon is in a low complexity region, versus some or most. Searching for long regions of low Duke 35 mappability would be a comprehensive way to do this
