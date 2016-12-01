@@ -121,7 +121,7 @@ def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
                 sample_match_on_hover_js += ('' +
                     '\tdocument.getElementById("' + s.name + '_match").onmouseover = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "#EEE"; };\n' +
                     '\tdocument.getElementById("' + s.name + '_match").onmouseleave = function() { document.getElementById("' + s.normal_match.name + '").style.backgroundColor = "white"; };\n'
-                 )
+                )
         sample_match_on_hover_js += '</script>\n'
         additional_data['sample_match_on_hover_js'] = sample_match_on_hover_js
 
@@ -266,12 +266,12 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                 if '/work/' in fpath:
                     if fpath.endswith('target_info.yaml'):
                         correct_fpath = join(bcbio_structure.date_dirpath, 'qc', basename(fpath))
-                        if not verify_file(correct_fpath, silent=True):
-                            if not verify_file(fpath):
-                                qc_files_not_found.append(fpath)
-                                continue
+                        if verify_file(fpath):
                             shutil.copy(fpath, correct_fpath)
-                        out.write(correct_fpath + '\n')
+                            out.write(correct_fpath + '\n')
+                        else:
+                            qc_files_not_found.append(fpath)
+                            continue
                     else:
                         work_dirpath = fpath.split('/work/')[0] + '/work'
                         correct_fpath = fpath.replace(work_dirpath, bcbio_structure.final_dirpath)
