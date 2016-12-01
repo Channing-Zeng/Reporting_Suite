@@ -817,7 +817,7 @@ class BCBioStructure(BaseProjectStructure):
         for s in self.samples:
             s.bed = self.bed  # for TargQC
             s.sv_bed = self.bed  # for Seq2C
-        
+
         if self.is_rnaseq:
             self.target_type = 'transcriptome'
         elif self.is_wgs:
