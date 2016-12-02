@@ -35,6 +35,15 @@ genomes:
     cosmic: ~/bcbio/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v77.vcf.gz
     clinvar: ~/bcbio/genomes/Hsapiens/hg19/variation/clinvar.vcf.gz
 
+  hg38:
+    seq: ~/bcbio/genomes/Hsapiens/hg38/seq/hg38.fa
+    dbsnp: ~/bcbio/genomes/Hsapiens/hg38/variation/dbsnp-147.vcf.gz
+#    dbsnp_multi_mafs: ~/bcbio/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_v147.txt
+#    cosmic: ~/bcbio/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v77.vcf.gz
+    clinvar: ~/bcbio/genomes/Hsapiens/hg38/variation/clinvar.vcf.gz
+
+    all_transcripts: ~/bcbio/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
+
 qsub_runner: scripts/runner_Chihua.sh
 
 smtp_host: 'localhost'

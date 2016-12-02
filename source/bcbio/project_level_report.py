@@ -449,7 +449,7 @@ def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbi
 
     base_dirpath = dirname(bcbio_structure.multiqc_fpath)
     metadata_dict['ngs_report_by_sample'] = {s.name:
-        relpath(s.clinical_html, base_dirpath) if verify_file(s.clinical_html) else None
+        relpath(s.clinical_html, base_dirpath) if verify_file(s.clinical_html, silent=True) else None
         for s in bcbio_structure.samples}
 
     # normal_samples = [s for s in bcbio_structure.samples if s.phenotype == 'normal']

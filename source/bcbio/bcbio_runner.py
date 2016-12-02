@@ -766,7 +766,7 @@ class BCBioRunner:
                         sv_cmdl = ' --sv ' + sv_fpath
                     sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
                     sample_cnv_dirpath = join(sample_dirpath, BCBioStructure.cnv_dir)
-                    if exists(sample_cnv_dirpath):
+                    if isdir(sample_cnv_dirpath):
                         for fname in os.listdir(sample_cnv_dirpath):
                             if '-manta' in fname and fname.endswith('.vcf.gz'):
                                 sv_cmdl += ' --sv-vcf ' + join(sample_cnv_dirpath, fname)
@@ -990,21 +990,22 @@ class BCBioRunner:
                             err(format_exc())
                             info()
 
-                for fname in os.listdir(sample_cnv_dirpath):
-                    if cnv_caller in fname:
-                        # Symlink to <datestamp>/cnv/<cnvcaller>
-                        dst_dirpath = join(cnv_summary_dirpath)
-                        dst_fname = fname
-                        if sample.name not in fname:
-                            dst_fname = sample.name + '.' + dst_fname
-                        dst_fpath = join(dst_dirpath, dst_fname)
-                        try:
-                            safe_mkdir(dst_dirpath)
-                            if islink(dst_fpath):
-                                os.unlink(dst_fpath)
-                            symlink_plus(join(sample_cnv_dirpath, fname), dst_fpath)
-                        except OSError:
-                            pass
+                if isdir(sample_cnv_dirpath):
+                    for fname in os.listdir(sample_cnv_dirpath):
+                        if cnv_caller in fname:
+                            # Symlink to <datestamp>/cnv/<cnvcaller>
+                            dst_dirpath = join(cnv_summary_dirpath)
+                            dst_fname = fname
+                            if sample.name not in fname:
+                                dst_fname = sample.name + '.' + dst_fname
+                            dst_fpath = join(dst_dirpath, dst_fname)
+                            try:
+                                safe_mkdir(dst_dirpath)
+                                if islink(dst_fpath):
+                                    os.unlink(dst_fpath)
+                                symlink_plus(join(sample_cnv_dirpath, fname), dst_fpath)
+                            except OSError:
+                                pass
 
         for sample in self.bcbio_structure.samples:
             seq2c_fpath = join(sample.dirpath, BCBioStructure.cnv_dir, sample.name + '-seq2c.tsv')
