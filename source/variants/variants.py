@@ -11,7 +11,7 @@ from source.logger import info, err, debug, critical, warn
 from source.qsub_utils import submit_job, wait_for_jobs
 from source.reporting.reporting import FullReport
 from source.tools_from_cnf import get_system_path, get_script_cmdline
-from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transaction
+from source.file_utils import verify_file, safe_mkdir, add_suffix, file_transaction, adjust_path
 from source.variants.filtering import combine_results, check_filtering_results
 from source.variants.vcf_processing import verify_vcf
 
@@ -203,6 +203,8 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
 
             varfilter_py = 'varfilter'
             work_dir = join(cnf.work_dir, 'filt_' + sample.name)
+            if not cnf.genome.dbsnp_multi_mafs:
+                critical('Error: dbsnp_multi_mafs is not specified in the config ' + cnf.sys_cnf)
             cmdl = ('{varfilter_py}' +
                   ((' --sys-cnf ' + cnf.sys_cnf) if not cnf.filt_cnf else '') +
                   ((' --run-cnf ' + cnf.run_cnf) if not cnf.filt_cnf else '') +
@@ -220,7 +222,7 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
                   ((' --caller ' + cnf.caller) if cnf.caller else '') +
                    (' --qc' if cnf.qc else ' --no-qc') +
                    (' --no-tsv' if not cnf.tsv else '') +
-                  ((' --dbsnp-multi-mafs ' + cnf.dbsnp_multimafs) if cnf.dbsnp_multimafs else '')
+                    ' --dbsnp-multi-mafs ' + adjust_path(cnf.genome.dbsnp_multi_mafs)
                 ).format(**locals())
             with with_cnf(cnf, reuse_intermediate=False):
                 j = submit_job(cnf, cmdl,

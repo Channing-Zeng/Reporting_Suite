@@ -45,7 +45,6 @@ genomes:
     features:                 ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/exons/all_features.bed  # canonical only
     bed_annotation_features:  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/exons/all_features.bed  # all regions
     cds:                      ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/exons/Seq2C_CDS.bed
-
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapien/hg19/tricky_regions/
 
   hg19-chr20:
@@ -72,9 +71,7 @@ genomes:
     features:                 ~/vagrant/reporting_suite/test/all_features_hg19.bed  # canonical only
     bed_annotation_features:  ~/vagrant/reporting_suite/test/all_features_hg19.bed  # all regions
     cds:                      ~/vagrant/TargQC/GeneAnnotation/RefSeq/hg19/Seq2C_CDS.bed
-
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/tricky_regions/
-
     all_transcripts:          ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/gtf/ref-transcripts.gtf.gz
 
   hg38:
@@ -83,8 +80,8 @@ genomes:
       data: ext_tools/snpEff/data/
 
     seq:                      ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
-
     dbsnp:                    ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/dbsnp.chr21.vcf.gz
+    dbsnp_multi_mafs:         /Users/vlad/vagrant/NGS_Reporting/tests/data/varfilter/dbSNP_multi_mafs_hg38.txt
     cosmic:                   ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts.vcf.gz
     clinvar:                  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/variation/clinvar.vcf.gz
     oncomine:                 ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/variation/oncomine.vcf
@@ -92,9 +89,7 @@ genomes:
     features:                 ~/googledrive/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed  # canonical only
     bed_annotation_features:  ~/googledrive/az/reference_data/Exons/RefSeq/RefSeq.all_features.hg38.bed  # all regions
     cds:                      ~/googledrive/az/reference_data/Exons/RefSeq/RefSeq_CDS.hg38.bed
-
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/tricky_regions/
-
     all_transcripts:          ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/gtf/ref-transcripts.gtf.gz
 
 queue: ngs.q
