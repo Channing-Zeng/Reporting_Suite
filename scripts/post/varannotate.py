@@ -63,7 +63,7 @@ def main(args):
         proc_name=source.varannotate_name)
 
     check_system_resources(cnf,
-        required=['java', 'perl', 'snpeff', 'snpsift'],
+        required=['java', 'perl', 'snpeff'],
         optional=['transcripts_fpath'])
 
     check_genome_resources(cnf)

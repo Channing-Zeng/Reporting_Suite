@@ -12,7 +12,7 @@ resources:
     path: /usr/bin/java
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff4.3
+    path: /group/ngs/src/snpEff4.3/snpEff.jar
   gatk:
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
   vcf2txt:
