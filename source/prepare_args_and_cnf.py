@@ -64,7 +64,7 @@ def check_genome_resources(cnf):
         warn('Warning: features and bed_annotation_features and cds in the system config (' + cnf.sys_cnf + ') must be specified.')
 
     if not cnf.transcripts_fpath:
-        cnf.transcripts_fpath = cnf.transcripts_fpath or get_canonical_transcripts(cnf.genome.name)
+        cnf.transcripts_fpath = cnf.transcripts_fpath or get_canonical_transcripts(cnf.genome.name, ensembl=True)
         # g = 'hg19' if (('hg19' or 'GRCh37') in cnf.genome.name) else 'hg38'
         # cnf.transcripts_fpath = verify_file(join(bcbio_postproc.project_dir,
         #     'reference_data', 'canonical_transcripts', 'canonical_transcripts_' + g + '.txt'), description='Canonical transcripts')

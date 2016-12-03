@@ -12,11 +12,7 @@ resources:
     path: /usr/bin/java
   snpeff:
     jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff4.2/snpEff.jar
-    config: /group/ngs/src/snpEff4.2/snpEff.config
-  snpsift:
-    jvm_opts: ["-Xms750m", "-Xmx3g"]
-    path: /group/ngs/src/snpEff4.2/SnpSift.jar
+    path: /group/ngs/src/snpEff4.3
   gatk:
     path: /group/ngs/src/GenomeAnalysisTK/GenomeAnalysisTK.jar
   vcf2txt:
@@ -63,48 +59,38 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38/bwa/hg38.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_latest.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_latest.vcf.gz
-    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_v149.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_20161128.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_v79.vcf.gz
     snpeff:
-      reference: hg38
+      reference: GRCh38.86
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq.all_features.hg38.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
-
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
-
     tricky_regions: /ngs/reference_data/genomes/Hsapiens/hg38/bed/tricky_regions/
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_latest.txt
-
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_multi_mafs_v149.txt
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
-
     circos_cytoband: /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
   hg38-noalt:
     seq: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/seq/hg38-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bwa/hg38-noalt.fa
 
-    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_latest.vcf.gz
-    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_latest.vcf.gz
-    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_latest.vcf.gz
+    dbsnp:   /ngs/reference_data/genomes/Hsapiens/hg38/variation/dbSNP_v149.vcf.gz
+    clinvar: /ngs/reference_data/genomes/Hsapiens/hg38/variation/ClinVar_20161128.vcf.gz
+    cosmic:  /ngs/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts_v79.vcf.gz
     snpeff:
-      reference: hg38
+      reference: GRCh38.86
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38-noalt.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq.all_features.hg38-noalt.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg38-noalt.bed
-
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exome-AZ.bed
-
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg38-noalt/bed/tricky_regions/
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_latest.txt
-
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg38-noalt/variation/dbSNP_multi_mafs_v149.txt
     all_transcripts:          /ngs/reference_data/genomes/Hsapiens/hg38/rnaseq/ref-transcripts.gtf
-
     circos_cytoband:          /ngs/reference_data/genomes/Hsapiens/hg38/circos/cytoband.txt.gz
 
   mm10:
@@ -123,24 +109,20 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v149.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_20161128.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v79.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
-      reference: hg19
+      reference: GRCh37.75
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq.all_features.hg19.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19.bed
-
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
-
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
-
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_v149.txt
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
     tracks:
@@ -156,23 +138,20 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/seq/hg19-noalt.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bwa/hg19-noalt.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_latest.vcf.gz
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/ClinVar_latest.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/CosmicCodingMuts_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_v149.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/ClinVar_20161128.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/CosmicCodingMuts_v79.vcf.gz
     1000genomes: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/1000G_latest.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/dbNSF/dbNSFP_latest.txt.gz
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19-noalt/snpeff/  # data dir path
     snpeff:
-      reference: hg19
+      reference: GRCh37.75
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-noalt.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq.all_features.hg19-noalt.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exons/RefSeq/RefSeq_CDS.hg19-noalt.bed
-
     az_exome: /ngs/reference_data/genomes/Hsapiens/hg19-noalt/bed/Exome-AZ.bed
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_multi_mafs_latest.txt
-
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19-noalt/variation/dbSNP_multi_mafs_v149.txt
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
     tracks:
@@ -186,25 +165,20 @@ genomes:
     seq: /ngs/reference_data/genomes/Hsapiens/hg19/seq/hg19.fa
     bwa: /ngs/reference_data/genomes/Hsapiens/hg19/bwa/hg19.fa
 
-    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_latest.vcf.gz
-    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_latest.vcf.gz
-    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_latest.vcf.gz
-    oncomine:    /ngs/reference_data/genomes/Hsapiens/hg19/variation/oncomine/oncomine_latest.vcf.gz
+    dbsnp:       /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_v149.vcf.gz
+    clinvar:     /ngs/reference_data/genomes/Hsapiens/hg19/variation/ClinVar_20161128.vcf.gz
+    cosmic:      /ngs/reference_data/genomes/Hsapiens/hg19/variation/CosmicCodingMuts_v79.vcf.gz
     dbnsfp:      /ngs/reference_data/genomes/Hsapiens/hg19/dbNSF/dbNSFP_latest.txt.gz
     # snpeff: /users/klpf990/snpeff/data  # /ngs/reference_data/genomes/Hsapiens/hg19/snpeff/  # data dir path
     snpeff:
-      reference: hg19
+      reference: GRCh37.75
 
     features:                 /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg19-chr20.canon.bed
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq.all_features.hg19-chr20.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exons/RefSeq/RefSeq_CDS.hg19-chr20.bed
-
     az_exome:  /ngs/reference_data/genomes/Hsapiens/hg19/bed/Exome-AZ.bed
-
     tricky_regions:               /ngs/reference_data/genomes/Hsapiens/hg19/bed/tricky_regions/
-
-    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_latest.txt
-
+    dbsnp_multi_mafs:             /ngs/reference_data/genomes/Hsapiens/hg19/variation/dbSNP_multi_mafs_v149.txt
     all_transcripts:              /ngs/reference_data/genomes/Hsapiens/hg19/rnaseq/ref-transcripts.gtf
 
     tracks:

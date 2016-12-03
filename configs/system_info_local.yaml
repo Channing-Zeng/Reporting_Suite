@@ -39,7 +39,8 @@ genomes:
     cosmic:                   ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/cosmic.vcf.gz
     clinvar:                  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/clinvar_latest.vcf
     snpeff:
-      reference: hg19
+      reference: GRCh37.75
+      data: ext_tools/snpEff/data/
 
     features:                 ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/exons/all_features.bed  # canonical only
     bed_annotation_features:  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/exons/all_features.bed  # all regions
@@ -52,7 +53,8 @@ genomes:
     bwa:                      ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr20/bwa/hg19-chr20.fa
 
     snpeff:
-      reference: hg19
+      reference: GRCh37.75
+      data: ext_tools/snpEff/data/
 
     tricky_regions:           ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/tricky_regions/
 
@@ -64,7 +66,8 @@ genomes:
     cosmic:                   ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/cosmic.chr21.vcf.gz
     clinvar:                  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/clinvar_latest.chr21.vcf.gz
     snpeff:
-      reference: hg19
+      reference: GRCh37.75
+      data: ext_tools/snpEff/data/
 
     features:                 ~/vagrant/reporting_suite/test/all_features_hg19.bed  # canonical only
     bed_annotation_features:  ~/vagrant/reporting_suite/test/all_features_hg19.bed  # all regions
@@ -75,10 +78,15 @@ genomes:
     all_transcripts:          ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/gtf/ref-transcripts.gtf.gz
 
   hg38:
+    snpeff:
+      reference: GRCh38.86
+      data: ext_tools/snpEff/data/
+
     seq:                      ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/seq/hg38.fa
 
-    dbsnp:                    ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/variation/dbsnp.vcf.gz
-    cosmic:                   ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/variation/cosmic.vcf.gz
+    dbsnp:                    ~/googledrive/az/reference_data/genomes/Hsapiens/hg19-chr21/variation/dbsnp.chr21.vcf.gz
+    cosmic:                   ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/variation/CosmicCodingMuts.vcf.gz
+    clinvar:                  ~/googledrive/az/reference_data/genomes/Hsapiens/hg19/variation/clinvar.vcf.gz
     oncomine:                 ~/googledrive/az/reference_data/genomes/Hsapiens/hg38/variation/oncomine.vcf
 
     features:                 ~/googledrive/az/reference_data/Exons/RefSeq/RefSeq_CDS_miRNA.all_features.hg38.canon.bed  # canonical only

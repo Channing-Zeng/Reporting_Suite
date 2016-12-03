@@ -11,7 +11,7 @@ from az.reference_data import get_canonical_transcripts
 import source
 from source.calling_process import call_subprocess, call
 from source.file_utils import iterate_file, intermediate_fname, verify_file, splitext_plus, add_suffix, file_transaction, \
-    safe_mkdir, open_gzipsafe, is_gz
+    safe_mkdir, open_gzipsafe, is_gz, adjust_system_path
 from source.logger import step_greetings, critical, info, err, warn, debug
 from source.tools_from_cnf import get_system_path, get_java_tool_cmdline, get_snpeff_type
 from source.file_utils import file_exists, code_base_path
@@ -474,21 +474,20 @@ def _snpeff(cnf, input_fpath):
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
     ref_name = cnf.genome.snpeff.reference or cnf.genome.name
-    # if ref_name == 'GRCh37': ref_name += '.75'
-    # if ref_name.startswith('hg38'): ref_name = 'GRCh38.78'
+    if ref_name.startswith('hg19') or ref_name.startswith('GRCh37'): ref_name += 'GRCh37.75'
+    if ref_name.startswith('hg38'): ref_name = 'GRCh38.82'
 
     opts = ''
     if cnf.annotation.snpeff.cancer: opts += ' -cancer'
 
-    # db_path = cnf.genome.snpeff.reference
-    # if db_path and isinstance(db_path, basestring): opts += ' -dataDir ' + db_path
+    assert cnf.transcripts_fpath, 'Transcript for annotation must be specified!'
+    verify_file(cnf.transcripts_fpath, 'Transcripts for snpEff -onlyTr', is_critical=True)
+    opts += ' -onlyTr ' + cnf.transcripts_fpath + ' '
 
-    if cnf.transcripts_fpath and verify_file(cnf.transcripts_fpath, 'Transcripts for snpEff -onlyTr'):
-        opts += ' -onlyTr ' + cnf.transcripts_fpath + ' '
-    else:
-        opts += ' -canon '
-
-    if cnf.resources.snpeff.config:
+    db_path = adjust_system_path(cnf.genome.snpeff.data)
+    if db_path:
+        opts += ' -dataDir ' + db_path
+    elif cnf.resources.snpeff.config:
         conf = get_system_path(cnf, cnf.resources.snpeff.config)
         if conf:
             opts += ' -c ' + conf + ' '

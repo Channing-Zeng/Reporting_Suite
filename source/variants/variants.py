@@ -192,7 +192,7 @@ def _filter(cnf, samples, variants_fpath, variants_fname):
         for sample in not_submitted_samples:
             output_dirpath = sample.varfilter_dirpath = join(sample.dirpath, source.varfilter_name)
             output_fpath = sample.variants_fpath = join(sample.varfilter_dirpath, variants_fname)
-            pass_output_fpath = add_suffix(sample.variants_fpath, source.mut_pass_suffix)
+            pass_output_fpath = add_suffix(sample.variants_fpath, variant_filtering.mut_pass_suffix)
 
             if cnf.reuse_intermediate and check_filtering_results(output_fpath) \
                     and check_filtering_results(pass_output_fpath):
