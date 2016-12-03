@@ -283,6 +283,10 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                                     # QualiMap needs to be located in a directory named after the sample name:
                                     if not islink(join(s.dirpath, 'qc', 'qualimap', s.name)):
                                         os.symlink(join(s.dirpath, 'qc', 'qualimap'), join(s.dirpath, 'qc', 'qualimap', s.name))
+                                elif '/qualimap_rnaseq/' in fpath:
+                                    # QualiMap needs to be located in a directory named after the sample name:
+                                    if not islink(join(s.dirpath, 'qc', 'qualimap_rnaseq', s.name)):
+                                        os.symlink(join(s.dirpath, 'qc', 'qualimap_rnaseq'), join(s.dirpath, 'qc', 'qualimap_rnaseq', s.name))
                             else:
                                 correct_fpath = correct_fpath.replace('/multiqc/report/metrics/' + s.name + '_bcbio.txt',
                                                                       '/' + s.name + '/qc/bcbio/' + s.name + '_bcbio.txt')
@@ -328,6 +332,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
             #     to_run = True
     if bcbio_structure.is_rnaseq:
         config_fname = 'multiqc_config_rna.yaml'
+        cmdl += ' -e bcbio'
     else:
         config_fname = 'multiqc_config_dna.yaml'
         cmdl += ' -e qualimap -e bcbio'
