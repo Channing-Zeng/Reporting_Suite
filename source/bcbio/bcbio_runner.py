@@ -366,7 +366,7 @@ class BCBioRunner:
                 interpreter='python',
                 script=join('scripts', 'post_bcbio', 'gene_expression_summary.py'),
                 dir_name=BCBioStructure.expression_dir,
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, self.bcbio_structure.expression_dirpath  + '.log'),
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, BCBioStructure.expression_dir  + '.log'),
                 paramln=gene_expression_cmdl
             )
         else:
@@ -840,7 +840,8 @@ class BCBioRunner:
                             if '/' + key + '/' in html_report_fpath:
                                 rel_url = html_report_fpath.split('/' + key + '/')[1]
                                 html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/' + key + '/' + rel_url)
-            _final_email_notification(self.cnf, html_report_url, self.cnf.jira, self.bcbio_structure)
+            _final_email_notification(self.cnf, html_report_url or html_report_fpath,
+                                      self.cnf.jira, self.bcbio_structure)
             if html_report_url:
                 info()
                 info('HTML report url: ' + html_report_url)
@@ -964,10 +965,6 @@ class BCBioRunner:
 
     def _symlink_cnv(self):
         cnv_summary_dirpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_summary_dir)
-        try:
-            safe_mkdir(cnv_summary_dirpath)
-        except OSError:
-            pass
 
         for sample in self.bcbio_structure.samples:
             sample_dirpath = join(self.bcbio_structure.final_dirpath, sample.name)
@@ -978,8 +975,8 @@ class BCBioRunner:
                 for fname in os.listdir(sample_dirpath):
                     if cnv_caller in fname:
                         # Copy to <sample>/cnv
-                        safe_mkdir(sample_cnv_dirpath)
                         try:
+                            safe_mkdir(cnv_summary_dirpath)
                             os.rename(join(sample_dirpath, fname), join(sample_cnv_dirpath, fname))
                         except OSError:
                             err(format_exc())
@@ -989,7 +986,7 @@ class BCBioRunner:
                     for fname in os.listdir(sample_cnv_dirpath):
                         if cnv_caller in fname:
                             # Symlink to <datestamp>/cnv/<cnvcaller>
-                            dst_dirpath = join(cnv_summary_dirpath)
+                            dst_dirpath = cnv_summary_dirpath
                             dst_fname = fname
                             if sample.name not in fname:
                                 dst_fname = sample.name + '.' + dst_fname
@@ -1003,13 +1000,13 @@ class BCBioRunner:
                                 pass
 
         for sample in self.bcbio_structure.samples:
-            seq2c_fpath = join(sample.dirpath, BCBioStructure.cnv_dir, sample.name + '-seq2c.tsv')
+            seq2c_fpath = join(cnv_summary_dirpath, sample.name + '-seq2c.tsv')
             if isfile(seq2c_fpath):
                 sample.seq2c_fpath = seq2c_fpath
 
         # Merging all Seq2C into one
         if any(s.seq2c_fpath for s in self.bcbio_structure.samples):
-            merged_seq2c_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
+            merged_seq2c_fpath = join(safe_mkdir(cnv_summary_dirpath), BCBioStructure.seq2c_name + '.tsv')
             if not (isfile(merged_seq2c_fpath) and self.cnf.reuse_intermediate):
                 with file_transaction(None, merged_seq2c_fpath) as tx:
                     with open(tx, 'w') as out:
@@ -1028,7 +1025,7 @@ def _final_email_notification(cnf, html_report_url, jira_url, bs):
     txt += '\n'
     txt += 'Path: ' + bs.final_dirpath + '\n'
     txt += 'URL: ' + convert_gpfs_path_to_url(bs.final_dirpath) + '\n'
-    txt += 'Report: ' + (html_report_url or bs.project_report_html_fpath) + '\n'
+    txt += 'Report: ' + html_report_url + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url
     send_email(cnf, txt, subj)
