@@ -1,6 +1,5 @@
 from collections import defaultdict
-from os.path import join, dirname, abspath, basename
-
+from os.path import join, dirname, abspath, basename, relpath
 
 import source
 from source import info, verify_file
@@ -9,6 +8,9 @@ from source.logger import err, critical
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, BaseReport
 
 from ngs_reporting.utils import get_key_genes
+
+
+HEATMAPS_MIN_COUNT = 5
 
 
 class Counts:
@@ -33,15 +35,16 @@ class Counts:
 
 def make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, genes_dict, report_fpath,
                                   report_name, keep_gene_names=False):
-    key_gene_names = get_key_genes(verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
-    gene_counts, samples = parse_gene_counts(counts_fpath, key_gene_names,
+    # key_gene_names = get_key_genes(verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
+    gene_counts, samples = parse_gene_counts(counts_fpath, None,
                                              report_name[0].lower() + report_name[1:], keep_gene_names)
     report = make_expression_heatmap(bcbio_structure, gene_counts)
     counts_fname = basename(counts_fpath)
-    counts_link = '<a href="{counts_fpath}" target="_blank">{counts_fname}</a>'.format(**locals())
-    data_dict = {
-        'file_link': counts_link
-    }
+    counts_url = relpath(counts_fpath, report_fpath)
+    counts_link = (
+        'Showing genes with count >=' + str(HEATMAPS_MIN_COUNT) + ' at least in one sample. ' +
+        'The full results can be downloaded from here: <a href="{counts_url}" target="_blank">{counts_fname}</a>').format(**locals())
+    data_dict = {'file_link': counts_link}
     BaseReport.save_html(report, cnf, report_fpath, caption=report_name,
                          extra_js_fpaths=[join(dirname(abspath(__file__)), 'static', 'rnaseq_heatmaps.js')],
                          extra_css_fpaths=[join(dirname(abspath(__file__)), 'static', 'rnaseq.css')],
@@ -60,7 +63,7 @@ def annotate_gene_counts(cnf, counts_fpath, ann_counts_fpath, genes_dict):
                 for i, l in enumerate(f):
                     if i == 0:
                         header = l.replace('\n', '').split('\t')
-                        l = '\t'.join(header + ['symbol'])
+                        l = '\t'.join(header + ['HUGO'])
                         annotated_f.write(l + '\n')
                         continue
                     fs = l.replace('\n', '').split('\t')
@@ -92,13 +95,17 @@ def parse_gene_counts(counts_fpath, key_gene_names, report_name, keep_gene_names
         for i, l in enumerate(f):
             if i == 0:
                 header = l.strip().split('\t')
-                gene_col = header.index('symbol')
+                gene_col = header.index('HUGO')
                 samples = header[1:gene_col]
                 samples_cols = {sample: col + 1 for col, sample in enumerate(samples)}
                 continue
             fs = l.replace('\n', '').split('\t')
             gene_name = fs[gene_col]
-            if gene_name not in key_gene_names:
+            if key_gene_names and gene_name not in key_gene_names:
+                continue
+            gene_expression_dict = {sample: int(float(fs[col])) if float(fs[col]).is_integer() else float(fs[col])
+                                    for sample, col in samples_cols.iteritems()}
+            if all(v < HEATMAPS_MIN_COUNT for v in gene_expression_dict.values()):
                 continue
             is_hidden_row = False
             name = gene_name
@@ -106,8 +113,6 @@ def parse_gene_counts(counts_fpath, key_gene_names, report_name, keep_gene_names
                 is_hidden_row = True
                 exon_number = fs[0].split(':')[1]
                 name += ':' + exon_number
-            gene_expression_dict = {sample: int(float(fs[col])) if float(fs[col]).is_integer() else float(fs[col])
-                                    for sample, col in samples_cols.iteritems()}
             if keep_gene_names:
                 is_hidden_row = True
                 name = fs[0]  # use id

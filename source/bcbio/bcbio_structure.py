@@ -557,7 +557,7 @@ class BaseProjectStructure:
     flag_regions_name = 'flaggedRegions'
 
     ## RNAseq
-    counts_names = ['counts', 'dexseq', 'gene.sf.tpm', 'isoform.sf.tpm']
+    counts_names = ['counts.tsv', 'dexseq.tsv', 'gene.sf.tpm.tsv', 'isoform.sf.tpm.tsv']
     expression_dir = 'expression'
     rnaseq_qc_report_name = 'qc_report'
     qualimap_rna_dir  = join('qc', qualimap_dir)

@@ -64,14 +64,15 @@ def main():
     for counts_fname, report_caption_name in zip(bcbio_structure.counts_names, report_caption_names):
         counts_fpath = join(bcbio_structure.expression_dirpath, counts_fname)
         if not verify_file(counts_fpath, silent=True):
-            raw_counts_fpath = join(bcbio_structure.expression_dirpath, 'raw', 'combined.' + counts_fname)
+            raw_counts_fpath = join(bcbio_structure.expression_dirpath, 'raw', 'combined.' + counts_fname.replace('.tsv', ''))
             info('Annotating ' + report_caption_name + ' from ' + raw_counts_fpath)
             annotate_gene_counts(cnf, raw_counts_fpath, counts_fpath, genes_dict)
         verify_file(counts_fpath, is_critical=True, description=counts_fname)
 
         isoforms_found = counts_fname == 'isoform.sf.tpm' and counts_fpath
         used_dict = transcripts_dict if isoforms_found else genes_dict
-        report_fpath = join(safe_mkdir(join(bcbio_structure.expression_dirpath, 'html')), counts_fname + '.html')
+        report_fpath = join(safe_mkdir(join(bcbio_structure.expression_dirpath, 'html')),
+                            counts_fname.replace('.tsv', '') + '.html')
 
         make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, used_dict, report_fpath,
                                       report_caption_name, keep_gene_names=isoforms_found)

@@ -214,10 +214,18 @@ def _add_summary_reports(cnf, general_section, bcbio_structure):
 
 
 def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath):
-    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'counts'),         general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
-    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'dexseq'),         general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
-    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'gene.sf.tpm'),    general_section.find_metric(GENE_TPM_NAME),    base_dirpath))
-    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'isoform.sf.tpm'), general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
+    recs.append(_make_url_record(
+            join(bcbio_structure.expression_dirpath, 'html', 'counts.html'),
+            general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(
+            join(bcbio_structure.expression_dirpath, 'html', 'dexseq.html'),
+            general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(
+            join(bcbio_structure.expression_dirpath, 'html', 'gene.sf.tpm.html'),
+            general_section.find_metric(GENE_TPM_NAME),    base_dirpath))
+    recs.append(_make_url_record(
+            join(bcbio_structure.expression_dirpath, 'html', 'isoform.sf.tpm.html'),
+            general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
 
     # rnaseq_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
     # rnaseq_html_fpath = verify_file(rnaseq_html_fpath, is_critical=True)
