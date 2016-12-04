@@ -87,7 +87,7 @@ def proc_opts():
     safe_mkdir(cnf.log_dir)
     set_up_log(cnf)
     try:
-        subprocess.call(['chmod', '-R', '777', cnf.work_dir])
+        subprocess.call(['chmod', '-R', 'g+w', cnf.work_dir])
     except OSError:
         err(traceback.format_exc())
         pass

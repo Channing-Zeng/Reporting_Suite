@@ -557,16 +557,8 @@ class BaseProjectStructure:
     flag_regions_name = 'flaggedRegions'
 
     ## RNAseq
-    gene_counts_unannotated_fname = 'combined.counts'
-    exon_counts_unannotated_fname = 'combined.dexseq'
-    gene_tpm_unannotated_fname    = 'combined.gene.sf.tpm'
-    isoform_tpm_unannotated_fname = 'combined.isoform.sf.tpm'
-    gene_counts_fname = 'annotated_' + gene_counts_unannotated_fname
-    exon_counts_fname = 'annotated_' + exon_counts_unannotated_fname
-    gene_tpm_fname    = 'annotated_' + gene_tpm_unannotated_fname
-    isoform_tpm_fname = 'annotated_' + isoform_tpm_unannotated_fname
-    gene_counts_name  = 'expression'
-    gene_counts_dir   = gene_counts_summary_dir = gene_counts_name
+    counts_names = ['counts', 'dexseq', 'gene.sf.tpm', 'isoform.sf.tpm']
+    expression_dir = 'expression'
     rnaseq_qc_report_name = 'qc_report'
     qualimap_rna_dir  = join('qc', qualimap_dir)
 
@@ -583,10 +575,6 @@ class BaseProjectStructure:
     varqc_dir                                  = join(varannotate_dir, 'qc',)
     varqc_after_dir                            = join(varfilter_dir, 'qc')
     targqc_dir       = targqc_summary_dir      = join('qc', targqc_name)
-
-
-
-    flagged_dir = join(targqc_dir, flag_regions_name)
 
     cnv_dir = cnv_summary_dir = 'cnv'
     seq2c_name = 'seq2c'
@@ -690,32 +678,30 @@ class BCBioStructure(BaseProjectStructure):
         set_up_work_dir(cnf)
         self.config_dir = abspath(join(self.final_dirpath, pardir, 'config'))
 
+        def _move(src_fpath, dst_fpath):
+            safe_mkdir(dirname(dst_fpath))
+            info('Moving ' + src_fpath + ' to ' + dirname(dst_fpath))
+            try:
+                os.rename(src_fpath, dst_fpath)
+            except OSError:
+                pass
         self.var_dirpath = join(self.date_dirpath, BCBioStructure.var_dir)
         self.raw_var_dirpath = join(self.var_dirpath, 'raw')
         # Moving raw variants in the date dir to var/raw
-        safe_mkdir(self.raw_var_dirpath)
         for fname in os.listdir(self.date_dirpath):
             if '.vcf' in fname and '.anno.filt' not in fname:
-                src_fpath = join(self.date_dirpath, fname)
-                dst_fpath = join(self.raw_var_dirpath, fname)
-                info('Moving ' + src_fpath + ' to ' + self.raw_var_dirpath)
-                try:
-                    os.rename(src_fpath, dst_fpath)
-                except OSError:
-                    pass
+                _move(join(self.date_dirpath, fname), join(self.raw_var_dirpath, fname))
+        self.expression_dirpath = join(self.date_dirpath, BCBioStructure.expression_dir)
+        self.raw_expression_dirpath = join(self.expression_dirpath, 'raw')
+        for fname in os.listdir(self.date_dirpath):
+            if fname.startswith('combined.'):
+                _move(join(self.date_dirpath, fname), join(self.raw_expression_dirpath, fname))
 
         # cleaning date dir
-        for fname in listdir(self.date_dirpath):
-            if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt', 'data_versions.csv']:
-                os.rename(join(self.date_dirpath, fname),
-                          join(dirname(self.log_dirpath), fname))
         if self.log_dirpath:
-            project_summary_fpath = join(dirname(self.log_dirpath), 'project-summary.yaml')
-            if isfile(project_summary_fpath):
-                dst_fpath = join(self.date_dirpath, 'project-summary.txt')
-                info('Extracting project summary ' + project_summary_fpath + ', writing to ' + dst_fpath)
-                _extract_project_summary(project_summary_fpath, dst_fpath)
-                self.project_summary_fpath = dst_fpath
+            for fname in listdir(self.date_dirpath):
+                if fname.endswith('.log') or fname in ['project-summary.yaml', 'programs.txt', 'data_versions.csv']:
+                    os.rename(join(self.date_dirpath, fname), join(dirname(self.log_dirpath), fname))
             self.program_versions_fpath = join(dirname(self.log_dirpath), 'programs.txt')
             self.data_versions_fpath = join(dirname(self.log_dirpath), 'data_versions.csv')
 
@@ -767,30 +753,7 @@ class BCBioStructure(BaseProjectStructure):
             info()
         info('-' * 70)
 
-        self.project_report_html_fpath =  join(self.date_dirpath, self.project_name + '.html')
-        self.multiqc_fpath =              join(self.date_dirpath, 'multiqc_postproc', 'multiqc_report.html')
-        self.fastqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.fastqc_summary_dir,      BCBioStructure.fastqc_name + '.html')
-        self.targqc_summary_fpath =       join(self.date_dirpath, BCBioStructure.targqc_summary_dir,      BCBioStructure.targqc_name + '.html')
-        self.flagged_regions_dirpath =    join(self.date_dirpath, BCBioStructure.flagged_dir)
-
-        self.varqc_report_fpath =         join(self.date_dirpath, BCBioStructure.varqc_summary_dir,       BCBioStructure.varqc_name + '.html')
-        self.varqc_after_report_fpath =   join(self.date_dirpath, BCBioStructure.varqc_after_summary_dir, BCBioStructure.varqc_name + '.html')
-        self.varqc_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_report_fpath),
-            ((k + '.') if len(self.variant_callers.values()) > 1 else '') + basename(self.varqc_report_fpath)))
-            for k in self.variant_callers.keys()])
-        self.varqc_after_report_fpath_by_caller = OrderedDict([(k, join(dirname(self.varqc_after_report_fpath),
-            ((k + '.') if len(self.variant_callers.values()) > 1 else '') + basename(self.varqc_after_report_fpath)))
-            for k in self.variant_callers.keys()])
-
-        if self.is_rnaseq:
-            self.gene_counts_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_fname)
-            self.exon_counts_fpath = join(self.date_dirpath, BCBioStructure.exon_counts_fname)
-            self.gene_tpm_fpath    = join(self.date_dirpath, BCBioStructure.gene_tpm_fname)
-            self.isoform_tpm_fpath = join(self.date_dirpath, BCBioStructure.isoform_tpm_fname)
-            self.gene_counts_report_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.gene_counts_fname)
-            self.exon_counts_report_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.exon_counts_fname)
-            self.gene_tpm_report_fpath    = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.gene_tpm_fname)
-            self.isoform_tpm_report_fpath = join(self.date_dirpath, BCBioStructure.gene_counts_dir, BCBioStructure.isoform_tpm_fname)
+        self.multiqc_fpath = join(self.date_dirpath, 'report.html')
 
         # setting bed files for samples
         if cnf.bed:
@@ -945,9 +908,6 @@ class BCBioStructure(BaseProjectStructure):
         elif isfile(join(sample.dirpath, BCBioStructure.cnv_dir, seq2c_fname)):
             sample.seq2c_fpath = join(sample.dirpath, BCBioStructure.cnv_dir, seq2c_fname)
 
-        # if 'min_allele_fraction' in sample_info['algorithm']:
-        #     sample.min_af = float(sample_info['algorithm']['min_allele_fraction']) / 100
-
         sample.phenotype = None
 
         self._set_bed_file(sample, sample_info)
@@ -1027,7 +987,7 @@ class BCBioStructure(BaseProjectStructure):
             verify_bed(bed, is_critical=True)
             sample.sv_bed = sample.bed = bed
             info('regions file for ' + sample.name + ': ' + str(sample.bed))
-        else:
+        elif bed:
             warn('regions file for ' + sample.name + ' is not BED: ' + str(bed))
         if not sample.bed:
             info('No regions file for ' + sample.name)
@@ -1277,39 +1237,39 @@ def ungzip_if_needed(cnf, fpath):
     return fpath
 
 
-def _extract_project_summary(project_summary_fpath, dst_fpath):
-    """Script to generate a tab delimited summary file from a
-    project-summary.yaml file that exists in the bcbio
-    final/YYYY_MM_DD_project/ folder.
-    """
-    try:
-        with open(project_summary_fpath) as f:
-            sett = yaml.safe_load(f)
-
-        myMetrics = []  # names of different metrics for all samples
-        mySamples = []  # names of samples
-        myDict = dict()  # metric-value pairs for all samples
-        for sample in sett['samples']:
-            mySamples.append(sample['description'])  # get sample name
-            myDict[sample['description']] = {}
-            # loop through metrics for this sample
-            for myKey in sample['summary']['metrics']:
-                myDict[sample['description']][myKey.strip()] = sample['summary']['metrics'][myKey]
-                if myKey.strip() not in myMetrics:
-                    myMetrics.append(myKey.strip())
-
-            summaryString = 'Sample\t' + "\t".join(myMetrics) + "\n"
-            for mySample in sorted(myDict.keys()):  # loop through samples
-                summaryString += mySample + "\t"
-                for myKey in myMetrics:  # loop through metrics
-                    summaryString += str(myDict[mySample].get(myKey, '')) + "\t"
-                summaryString += "\n"
-            with open(dst_fpath, 'w') as out:
-                out.write(summaryString)
-    except:
-        err(format_exc())
-        err('Cannot extract project summary')
-        err()
-    else:
-        if not verify_file(dst_fpath):
-            err('Could not extract project summary')
+# def _extract_project_summary(project_summary_fpath, dst_fpath):
+#     """Script to generate a tab delimited summary file from a
+#     project-summary.yaml file that exists in the bcbio
+#     final/YYYY_MM_DD_project/ folder.
+#     """
+#     try:
+#         with open(project_summary_fpath) as f:
+#             sett = yaml.safe_load(f)
+#
+#         myMetrics = []  # names of different metrics for all samples
+#         mySamples = []  # names of samples
+#         myDict = dict()  # metric-value pairs for all samples
+#         for sample in sett['samples']:
+#             mySamples.append(sample['description'])  # get sample name
+#             myDict[sample['description']] = {}
+#             # loop through metrics for this sample
+#             for myKey in sample['summary']['metrics']:
+#                 myDict[sample['description']][myKey.strip()] = sample['summary']['metrics'][myKey]
+#                 if myKey.strip() not in myMetrics:
+#                     myMetrics.append(myKey.strip())
+#
+#             summaryString = 'Sample\t' + "\t".join(myMetrics) + "\n"
+#             for mySample in sorted(myDict.keys()):  # loop through samples
+#                 summaryString += mySample + "\t"
+#                 for myKey in myMetrics:  # loop through metrics
+#                     summaryString += str(myDict[mySample].get(myKey, '')) + "\t"
+#                 summaryString += "\n"
+#             with open(dst_fpath, 'w') as out:
+#                 out.write(summaryString)
+#     except:
+#         err(format_exc())
+#         err('Cannot extract project summary')
+#         err()
+#     else:
+#         if not verify_file(dst_fpath):
+#             err('Could not extract project summary')

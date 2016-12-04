@@ -22,7 +22,6 @@ from scripts.post.qualimap import get_qualimap_max_mem
 from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path, \
     file_transaction
 from source.bcbio.project_level_report import make_report_metadata, get_oncoprints_link, make_multiqc_report
@@ -361,12 +360,13 @@ class BCBioRunner:
             self.bw_converting = None
             self.prepare_for_exac = None
             gene_expression_cmdl = summaries_cmdline_params + ' --genome {cnf.genome.name} ' + self.final_dir
-            self.gene_expression = Step(cnf, run_id,
-                name=BCBioStructure.gene_counts_name, short_name='expr',
+            self.gene_expression = Step(
+                cnf, run_id,
+                name=BCBioStructure.expression_dir, short_name='expr',
                 interpreter='python',
                 script=join('scripts', 'post_bcbio', 'gene_expression_summary.py'),
-                dir_name=BCBioStructure.gene_counts_summary_dir,
-                log_fpath_template=join(self.bcbio_structure.log_dirpath, self.bcbio_structure.gene_counts_dir  + '.log'),
+                dir_name=BCBioStructure.expression_dir,
+                log_fpath_template=join(self.bcbio_structure.log_dirpath, self.bcbio_structure.expression_dirpath  + '.log'),
                 paramln=gene_expression_cmdl
             )
         else:
@@ -715,11 +715,6 @@ class BCBioRunner:
                  ', total was: ' + str(len([j for j in self.jobs_running])))
             info()
 
-            if any(s.fastqc_html_fpath and isfile(s.fastqc_html_fpath) for s in self.bcbio_structure.samples):
-                final_summary_report_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.fastqc_summary_dir, source.fastqc_name + '.html')
-                safe_mkdir(dirname(final_summary_report_fpath))
-                write_fastqc_combo_report(self.cnf, final_summary_report_fpath, self.bcbio_structure.samples)
-
             if self.varfilter in self.steps:
                 finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
                 info()
@@ -1013,17 +1008,18 @@ class BCBioRunner:
                 sample.seq2c_fpath = seq2c_fpath
 
         # Merging all Seq2C into one
-        merged_seq2c_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
-        if not (isfile(merged_seq2c_fpath) and self.cnf.reuse_intermediate):
-            with file_transaction(None, merged_seq2c_fpath) as tx:
-                with open(tx, 'w') as out:
-                    for file_index, sample in enumerate(self.bcbio_structure.samples):
-                        if sample.seq2c_fpath and isfile(sample.seq2c_fpath):
-                            with open(sample.seq2c_fpath) as inp:
-                                for line_index, l in enumerate(inp):
-                                    if file_index == 0 or line_index > 0:
-                                        out.write(l)
-        self.bcbio_structure.seq2c_fpath = merged_seq2c_fpath
+        if any(s.seq2c_fpath for s in self.bcbio_structure.samples):
+            merged_seq2c_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
+            if not (isfile(merged_seq2c_fpath) and self.cnf.reuse_intermediate):
+                with file_transaction(None, merged_seq2c_fpath) as tx:
+                    with open(tx, 'w') as out:
+                        for file_index, sample in enumerate(self.bcbio_structure.samples):
+                            if sample.seq2c_fpath and isfile(sample.seq2c_fpath):
+                                with open(sample.seq2c_fpath) as inp:
+                                    for line_index, l in enumerate(inp):
+                                        if file_index == 0 or line_index > 0:
+                                            out.write(l)
+            self.bcbio_structure.seq2c_fpath = merged_seq2c_fpath
 
 
 def _final_email_notification(cnf, html_report_url, jira_url, bs):

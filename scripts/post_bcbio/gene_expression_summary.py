@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
-from os.path import isfile
+from os.path import isfile, join
 
 import bcbio_postproc
 
@@ -10,8 +10,8 @@ from traceback import format_exc
 import source
 from source.bcbio.bcbio_structure import BCBioStructure, bcbio_summary_script_proc_params
 from source.logger import info, step_greetings, err, critical
-from source.rnaseq.gene_expression import make_gene_expression_heatmaps
-from source.file_utils import verify_file, open_gzipsafe
+from source.rnaseq.gene_expression import make_gene_expression_heatmaps, annotate_gene_counts
+from source.file_utils import verify_file, open_gzipsafe, safe_mkdir
 
 
 def _rm_quotes(l):
@@ -55,21 +55,26 @@ def _get_gene_transcripts_id(cnf):
 def main():
     info(' '.join(sys.argv))
     info()
-    cnf, bcbio_structure = bcbio_summary_script_proc_params(BCBioStructure.gene_counts_name, BCBioStructure.gene_counts_dir)
+    cnf, bcbio_structure = bcbio_summary_script_proc_params(
+            'expression', BCBioStructure.expression_dir)
 
     step_greetings('Gene expression heatmaps summary for all samples')
-    counts_fpaths = [bcbio_structure.gene_counts_fpath, bcbio_structure.exon_counts_fpath,
-                              bcbio_structure.gene_tpm_fpath, bcbio_structure.isoform_tpm_fpath]
-    report_fpaths = [bcbio_structure.gene_counts_report_fpath, bcbio_structure.exon_counts_report_fpath,
-                              bcbio_structure.gene_tpm_report_fpath, bcbio_structure.isoform_tpm_report_fpath]
     report_caption_names = ['Gene counts', 'Exon counts', 'Gene TPM', 'Isoform TPM']
     genes_dict, transcripts_dict = _get_gene_transcripts_id(cnf)
-    for counts_fpath, report_fpath, report_caption_name in zip(counts_fpaths, report_fpaths, report_caption_names):
-        is_isoforms = counts_fpath == bcbio_structure.isoform_tpm_fpath
-        using_dict = transcripts_dict if is_isoforms else genes_dict
-        make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, using_dict, report_fpath, report_caption_name,
-                                      not_rename_genes=is_isoforms)
+    for counts_fname, report_caption_name in zip(bcbio_structure.counts_names, report_caption_names):
+        counts_fpath = join(bcbio_structure.expression_dirpath, counts_fname)
+        if not verify_file(counts_fpath, silent=True):
+            raw_counts_fpath = join(bcbio_structure.expression_dirpath, 'raw', 'combined.' + counts_fname)
+            info('Annotating ' + report_caption_name + ' from ' + raw_counts_fpath)
+            annotate_gene_counts(cnf, raw_counts_fpath, counts_fpath, genes_dict)
+        verify_file(counts_fpath, is_critical=True, description=counts_fname)
 
+        isoforms_found = counts_fname == 'isoform.sf.tpm' and counts_fpath
+        used_dict = transcripts_dict if isoforms_found else genes_dict
+        report_fpath = join(safe_mkdir(join(bcbio_structure.expression_dirpath, 'html')), counts_fname + '.html')
+
+        make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, used_dict, report_fpath,
+                                      report_caption_name, keep_gene_names=isoforms_found)
     info('Done')
 
 

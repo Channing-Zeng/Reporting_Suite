@@ -214,10 +214,10 @@ def _add_summary_reports(cnf, general_section, bcbio_structure):
 
 
 def add_rna_summary_records(cnf, recs, general_section, bcbio_structure, base_dirpath):
-    recs.append(_make_url_record(bcbio_structure.gene_counts_report_fpath, general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
-    recs.append(_make_url_record(bcbio_structure.exon_counts_report_fpath, general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
-    recs.append(_make_url_record(bcbio_structure.gene_tpm_report_fpath, general_section.find_metric(GENE_TPM_NAME), base_dirpath))
-    recs.append(_make_url_record(bcbio_structure.isoform_tpm_report_fpath, general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
+    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'counts'),         general_section.find_metric(GENE_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'dexseq'),         general_section.find_metric(EXON_COUNTS_NAME), base_dirpath))
+    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'gene.sf.tpm'),    general_section.find_metric(GENE_TPM_NAME),    base_dirpath))
+    recs.append(_make_url_record(join(bcbio_structure.expression_dirpath, 'isoform.sf.tpm'), general_section.find_metric(ISOFORM_TPM_NAME), base_dirpath))
 
     # rnaseq_html_fpath = join(bcbio_structure.date_dirpath, BCBioStructure.rnaseq_qc_report_name + '.html')
     # rnaseq_html_fpath = verify_file(rnaseq_html_fpath, is_critical=True)
@@ -237,7 +237,7 @@ def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
 
 def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'multiqc')
-    new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'qc', 'multiqc_bcbio')
+    new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'log', 'multiqc_bcbio')
     if isdir(multiqc_bcbio_dirpath):
         if isdir(new_multiqc_bcbio_dirpath):
             try:
@@ -247,16 +247,16 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
         os.rename(multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath)
 
     multiqc_postproc_dirpath = safe_mkdir(dirname(bcbio_structure.multiqc_fpath))
-
-    cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath + ' -t az'
-    if metadata_fpath:
-        cmdl += ' --az-metadata ' + metadata_fpath
+    cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath + ' -t az ' + \
+           '--filename ' + basename(bcbio_structure.multiqc_fpath) + ' --no-data-dir'
     if cnf.debug:
         cmdl += ' -v'
+    if metadata_fpath:
+        cmdl += ' --az-metadata ' + metadata_fpath
 
-    input_list_fpath = join(bcbio_structure.date_dirpath, 'qc', 'list_files.txt')
-    if not verify_file(input_list_fpath, silent=True):
-        work_input_list_fpath = abspath(join(bcbio_structure.work_dir, pardir, basename(input_list_fpath)))
+    input_list_fpath = join(bcbio_structure.date_dirpath, 'log', 'multiqc_list_files.txt')
+    if not cnf.reuse_intermediate or not verify_file(input_list_fpath, silent=True):
+        work_input_list_fpath = abspath(join(bcbio_structure.work_dir, pardir, 'list_files.txt'))
         if not verify_file(work_input_list_fpath, silent=True):
             critical('File list for MultiQC ' + work_input_list_fpath + ' not found. Please make sure you are using bcbio 1.0.0')
         with open(work_input_list_fpath) as inp, open(input_list_fpath, 'w') as out:
@@ -265,7 +265,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                 fpath = l.strip()
                 if '/work/' in fpath:
                     if fpath.endswith('target_info.yaml'):
-                        correct_fpath = join(bcbio_structure.date_dirpath, 'qc', basename(fpath))
+                        correct_fpath = join(new_multiqc_bcbio_dirpath, basename(fpath))
                         if verify_file(fpath):
                             shutil.copy(fpath, correct_fpath)
                             out.write(correct_fpath + '\n')
@@ -358,7 +358,8 @@ def create_rnaseq_pca_plot(cnf, bcbio_structure):
 
     pca_r_script = get_script_cmdline(cnf, 'rscript', join('tools', 'pca.R'), is_critical=True)
     csv_fpath = join(bcbio_structure.config_dir, csv_files_in_config_dir[0])
-    gene_counts_fpath = verify_file(bcbio_structure.gene_counts_fpath, is_critical=True, description='Gene counts')
+    gene_counts_fpath = join(bcbio_structure.expression_dirpath, 'counts')
+    gene_counts_fpath = verify_file(gene_counts_fpath, is_critical=True)
     output_fpath = join(bcbio_structure.work_dir, 'pca_data.txt')
     cmdl = pca_r_script + ' ' + csv_fpath + ' ' + output_fpath + ' ' + gene_counts_fpath
     call(cnf, cmdl, output_fpath=output_fpath, stdout_to_outputfile=False)

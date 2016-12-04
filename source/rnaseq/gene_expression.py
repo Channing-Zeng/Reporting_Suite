@@ -5,7 +5,7 @@ from os.path import join, dirname, abspath, basename
 import source
 from source import info, verify_file
 from source.file_utils import file_transaction, adjust_system_path
-from source.logger import err
+from source.logger import err, critical
 from source.reporting.reporting import MetricStorage, Metric, PerRegionSampleReport, ReportSection, BaseReport
 
 from ngs_reporting.utils import get_key_genes
@@ -31,13 +31,11 @@ class Counts:
         return hash(self.name)
 
 
-def make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, genes_dict, report_fpath, report_name=None,
-                                  not_rename_genes=False):
+def make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, genes_dict, report_fpath,
+                                  report_name, keep_gene_names=False):
     key_gene_names = get_key_genes(verify_file(adjust_system_path(cnf.key_genes), 'key genes'))
-    if not verify_file(counts_fpath):
-        annotate_gene_counts(cnf, counts_fpath, genes_dict, report_name)
-
-    gene_counts, samples = parse_gene_counts(counts_fpath, key_gene_names, report_name[0].lower() + report_name[1:], not_rename_genes)
+    gene_counts, samples = parse_gene_counts(counts_fpath, key_gene_names,
+                                             report_name[0].lower() + report_name[1:], keep_gene_names)
     report = make_expression_heatmap(bcbio_structure, gene_counts)
     counts_fname = basename(counts_fpath)
     counts_link = '<a href="{counts_fpath}" target="_blank">{counts_fname}</a>'.format(**locals())
@@ -52,10 +50,11 @@ def make_gene_expression_heatmaps(cnf, bcbio_structure, counts_fpath, genes_dict
     return
 
 
-def annotate_gene_counts(cnf, counts_fpath, genes_dict, report_name):
-    info('Annotating ' + report_name + ' from ' + counts_fpath)
-    unannotated_fpath = counts_fpath.replace('annotated_', '')
-    with file_transaction(cnf.work_dir, counts_fpath) as tx:
+def annotate_gene_counts(cnf, counts_fpath, ann_counts_fpath, genes_dict):
+    unannotated_fpath = counts_fpath
+    if not verify_file(unannotated_fpath):
+        critical('Not found counts ' + unannotated_fpath)
+    with file_transaction(cnf.work_dir, ann_counts_fpath) as tx:
         with open(tx, 'w') as annotated_f:
             with open(unannotated_fpath) as f:
                 for i, l in enumerate(f):
@@ -72,9 +71,11 @@ def annotate_gene_counts(cnf, counts_fpath, genes_dict, report_name):
                     gene_symbol = genes_dict[gene_id]
                     l = '\t'.join(fs + [gene_symbol])
                     annotated_f.write(l + '\n')
+    if not verify_file(ann_counts_fpath):
+        critical('Could not annotate counts ' + unannotated_fpath)
 
 
-def parse_gene_counts(counts_fpath, key_gene_names, report_name, not_rename_genes):
+def parse_gene_counts(counts_fpath, key_gene_names, report_name, keep_gene_names):
     gene_counts = defaultdict(list)
     info('Preparing ' + report_name + ' stats for expression heatmaps')
     info('Checking ' + counts_fpath)
@@ -107,7 +108,7 @@ def parse_gene_counts(counts_fpath, key_gene_names, report_name, not_rename_gene
                 name += ':' + exon_number
             gene_expression_dict = {sample: int(float(fs[col])) if float(fs[col]).is_integer() else float(fs[col])
                                     for sample, col in samples_cols.iteritems()}
-            if not_rename_genes:
+            if keep_gene_names:
                 is_hidden_row = True
                 name = fs[0]  # use id
             gene = Counts(name, gene_name=gene_name, counts=gene_expression_dict, is_hidden_row=is_hidden_row)
