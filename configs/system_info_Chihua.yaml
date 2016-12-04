@@ -25,6 +25,8 @@ resources:
 #    path: /home/saveliev/bcbio_tools/bin/bedtools
 #  python:
 #    path: /usr/local/bin/python
+  rscript:
+     path: /home/vsaveliev/bcbio/anaconda/bin/Rscript
 
 
 genomes:
