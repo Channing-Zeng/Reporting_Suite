@@ -4,6 +4,8 @@ from os.path import isfile, join, abspath, basename, dirname, getctime, getmtime
 from subprocess import check_output
 from collections import OrderedDict, defaultdict
 
+from ngs_utils.file_utils import can_reuse
+
 import source
 from source.calling_process import call
 from source.file_utils import intermediate_fname, iterate_file, splitext_plus, verify_file, adjust_path, add_suffix, \
@@ -387,6 +389,9 @@ def get_gene_keys(bed_fpath, chrom_index=0, gene_index=3):
 def annotate_target(cnf, target_bed):
     output_fpath = intermediate_fname(cnf, target_bed, 'ann')
     if not cnf.genome.bed_annotation_features:
+        return output_fpath
+    if can_reuse(output_fpath, target_bed):
+        info(output_fpath + ' exists, reusing')
         return output_fpath
 
     features_bed = verify_bed(cnf.genome.bed_annotation_features, is_critical=True, description='bed_annotation_features in system config')

@@ -412,13 +412,16 @@ class BCBioSample(BaseSample):
                     ('.gz' if gz else ''))
 
     def find_vcf2txt_by_callername(self, callername):
-        return verify_file(self.get_vcf2txt_by_callername(callername))
+        if isfile(self.get_vcf2txt_by_callername(callername)):
+            return verify_file(self.get_vcf2txt_by_callername(callername))
+        else:
+            return verify_file(self.get_vcf2txt_by_callername(callername, ext='.txt'))
 
     def find_mut_by_callername(self, callername):
         return verify_file(self.get_mut_by_callername(callername))
 
-    def get_vcf2txt_by_callername(self, callername):
-        return join(self.dirpath, BCBioStructure.varfilter_dir, callername + '.txt')
+    def get_vcf2txt_by_callername(self, callername, ext='.tsv'):
+        return join(self.dirpath, BCBioStructure.varfilter_dir, callername + ext)
 
     def get_mut_by_callername(self, callername):
         return add_suffix(self.get_vcf2txt_by_callername(callername), variant_filtering.mut_pass_suffix)
