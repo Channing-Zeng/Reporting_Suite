@@ -346,9 +346,9 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
         cmdl += ' -e qualimap -e bcbio'
     config_fpath = join(dirname(dirname(__file__)), config_fname)
     cmdl += ' -c ' + config_fpath
-    res = call(cnf, cmdl, exit_on_error=True, silent=False)
-    # if not res:
-    #     call(cnf, cmdl)
+    res = call(cnf, cmdl, exit_on_error=False, silent=False)
+    if not res:
+        call(cnf, cmdl.replace('-e bcbio', ''), exit_on_error=True, silent=False)
     verify_file(bcbio_structure.multiqc_fpath, is_critical=True)
     return bcbio_structure.multiqc_fpath
 
@@ -366,7 +366,7 @@ def create_rnaseq_pca_plot(cnf, bcbio_structure):
 
     pca_r_script = get_script_cmdline(cnf, 'rscript', join('tools', 'pca.R'), is_critical=True)
     csv_fpath = join(bcbio_structure.config_dir, csv_files_in_config_dir[0])
-    gene_counts_fpath = join(bcbio_structure.expression_dirpath, 'counts')
+    gene_counts_fpath = join(bcbio_structure.expression_dirpath, 'counts.tsv')
     gene_counts_fpath = verify_file(gene_counts_fpath, is_critical=True)
     output_fpath = join(bcbio_structure.work_dir, 'pca_data.txt')
     cmdl = pca_r_script + ' ' + csv_fpath + ' ' + output_fpath + ' ' + gene_counts_fpath

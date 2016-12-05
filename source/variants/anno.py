@@ -474,7 +474,7 @@ def _snpeff(cnf, input_fpath):
     snpeff = get_java_tool_cmdline(cnf, 'snpeff')
 
     ref_name = cnf.genome.snpeff.reference or cnf.genome.name
-    if ref_name.startswith('hg19') or ref_name.startswith('GRCh37'): ref_name += 'GRCh37.75'
+    if ref_name.startswith('hg19') or ref_name.startswith('GRCh37'): ref_name = 'GRCh37.75'
     if ref_name.startswith('hg38'): ref_name = 'GRCh38.82'
 
     opts = ''
