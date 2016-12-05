@@ -377,11 +377,15 @@ class BCBioRunner:
                 ' --caller {caller} ' +
                 ' --vcf {vcf} ' +
                 ' {vcf2txt_cmdl} ' +
-               (' --debug ' if self.cnf.debug else '') +
+                ' --debug ' +
                 ' --project-name ' + self.bcbio_structure.project_name + ' ' +
                 ' --genome {cnf.genome.name}' +
                 ' --work-dir ' + join(cnf.work_dir, BCBioStructure.varfilter_name) + '_{sample}_{caller} ' +
-                ' --dbsnp-multi-mafs ' + cnf.genome.dbsnp_multi_mafs)
+                ' --dbsnp-multi-mafs ' + cnf.genome.dbsnp_multi_mafs +
+                ' --run-info ' + cnf.run_cnf
+            )
+            if cnf.min_freq is not None:
+                varfilter_paramline += ' --min-freq ' + str(cnf.min_freq)
 
             self.varfilter = Step(cnf, run_id,
                 name=BCBioStructure.varfilter_name, short_name='vf',
