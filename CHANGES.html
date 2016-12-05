@@ -5,6 +5,30 @@
   <link rel="stylesheet" href="assets/css/style.css">
 </head>
 <body>
+<h4 id="v1-7-0-in-progress">v1.7.0, in progress</h4>
+<ul>
+<li>RNA-seq post-proc: redesign heatmaps</li>
+</ul>
+<h4 id="v1-6-0-1-dec-2016">v1.6.0, 1 Dec 2016</h4>
+<ul>
+<li>Support bcbio v1.0: rely on Seq2C and coverage to run in bcbio; require &quot;coverage: bed-file&quot; in bcbio.yaml</li>
+<li>NGS reports variants: not restricting to key genes, but to reliable regions</li>
+<li>Variants: <ul>
+<li>Rename vardict.PASS.txt -&gt; vardict.mut.txt; add vardict.false.txt that reports false positives and reject reason</li>
+<li>Updated actionable list and the list of artifacts</li>
+<li>Keep upstream/downstream actionable mutations</li>
+<li>Ignore low AF in 3nt MSI region</li>
+<li>Update filtering common artifacts and actionable lists</li>
+</ul>
+</li>
+<li>Make MultiQC-based landing page based which integrate all reports and analysis results:<ul>
+<li>4 sections: post-alignment, UMI, variants, pre-alignment</li>
+<li>NGS reports are linked to sample names</li>
+<li>Project-level and run data section on the top</li>
+<li>RNA-seq: add PCA plot</li>
+</ul>
+</li>
+</ul>
 <h4 id="v1-5-2-13-oct-2016">v1.5.2, 13 Oct 2016</h4>
 <ul>
 <li>SV reporting: only canonical transcripts</li>
