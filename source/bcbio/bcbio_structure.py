@@ -415,12 +415,12 @@ class BCBioSample(BaseSample):
         if isfile(self.get_vcf2txt_by_callername(callername)):
             return verify_file(self.get_vcf2txt_by_callername(callername))
         else:
-            return verify_file(self.get_vcf2txt_by_callername(callername, ext='.txt'))
+            return verify_file(self.get_vcf2txt_by_callername(callername, ext='.tsv'))
 
     def find_mut_by_callername(self, callername):
         return verify_file(self.get_mut_by_callername(callername))
 
-    def get_vcf2txt_by_callername(self, callername, ext='.tsv'):
+    def get_vcf2txt_by_callername(self, callername, ext='.txt'):
         return join(self.dirpath, BCBioStructure.varfilter_dir, callername + ext)
 
     def get_mut_by_callername(self, callername):
