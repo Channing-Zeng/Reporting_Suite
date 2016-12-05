@@ -71,7 +71,7 @@ def safe_mkdir(dirpath, descriptive_name=''):
         # we could get an error here if multiple processes are creating
         # the directory at the same time. Grr, concurrency.
         try:
-            os.makedirs(dirpath)
+            os.makedirs(dirpath, mode=0775)
         except OSError, e:
             if num_tries > max_tries:
                 raise
