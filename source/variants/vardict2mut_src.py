@@ -60,7 +60,10 @@ def parse_gene_blacklists(cnf):
 def load_region_blacklists(cnf):
     d = OrderedDict()
     for region_type in cnf.variant_filtering.blacklist.regions:
-        fpath = verify_file(join(cnf.genome.tricky_regions, 'new', region_type + '.bed.gz'),
+        # fpath = verify_file(join(cnf.genome.tricky_regions, region_type + '.bed.gz'),
+        #                     description=region_type + ' tricky regions file')
+        # if not fpath:
+        fpath = verify_file(join(cnf.genome.tricky_regions, 'merged', region_type + '.bed.gz'),
                             description=region_type + ' tricky regions file', is_critical=True)
         # reason = region_type.replace('_', ' ').replace('heng', 'Heng\'s').replace('lt51bp', '< 51bp')
         # if 'gc' in reason:
@@ -498,10 +501,7 @@ class Filtration:
             if gene_codon_chg in self.tier_by_specific_mutations:
                 tier = self.tier_by_specific_mutations[gene_codon_chg]
                 # status, reasons = self.update_status(status, reasons, statuses[tier], 'manually_curated_codon_' + codon + '_in_exon_' + region)
-                if tier == 1:
-                    self.update_status(Filtration.statuses[tier], 'tier2_codon_' + codon + '_in_exon_' + region)
-                else:
-                    self.update_status(Filtration.statuses[tier], 'actionable_codon_' + codon + '_in_exon_' + region)
+                self.update_status(Filtration.statuses[tier], ('act' if tier == 1 else 'tier2') + '_codon_' + codon + '_in_exon_' + region)
                 return True
 
     def check_by_type_and_region(self, cdna_chg, region, gene):
@@ -510,7 +510,7 @@ class Filtration:
             for type_ in types_by_region.get(region, []):
                 if type_ in cdna_chg:
                     tier = types_by_region[region][type_]
-                    self.update_status(Filtration.statuses[tier], 'act_' + type_ + '_in_gene_' + gene)
+                    self.update_status(Filtration.statuses[tier], ('act' if tier == 1 else 'tier2') + '_' + type_ + '_in_gene_' + gene)
                     return True
         return False
 
@@ -1162,3 +1162,4 @@ def check_clnsig(clnsig):
     if flag255 > 0:
         return 'ClnSNP_unknown'  # Keep unknown significant variants
     return 'dbSNP'
+

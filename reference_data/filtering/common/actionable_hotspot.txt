@@ -8,11 +8,17 @@ JAK1	S703I	somatic
 JAK1	S729C	somatic
 JAK2	V617F	somatic
 JAK2	D319N	somatic
-FLT3	D835	somatic
+FLT3	D835	somatic	mycancergenome
+^FLT3	D835D	filter	
+FLT3	I836	somatic	mycancergenome
+^FLT3	I836I	filter	
 BRAF	V600E	somatic
 KRAS	G12	somatic
 KRAS	G13	somatic
+^KRAS	G12G	somatic
+^KRAS	G13G	somatic
 KRAS	Q61	somatic
+^KRAS	Q61Q	somatic
 KRAS	Q63K	somatic
 KRAS	K117N	somatic
 KRAS	A146P	somatic
@@ -20,34 +26,58 @@ KRAS	A146T	somatic
 KRAS	A146V	somatic
 NRAS	G12	somatic
 NRAS	G13	somatic
+^NRAS	G12G	somatic
+^NRAS	G13G	somatic
 NRAS	Q61	somatic
+^NRAS	Q61Q	somatic
 NRAS	Q63K	somatic
 HRAS	G12	somatic
 HRAS	G13	somatic
+^HRAS	G12G	somatic
+^HRAS	G13G	somatic
 HRAS	Q61	somatic
+^HRAS	Q61Q	somatic
 HRAS	Q63K	somatic
 EGFR	A289	somatic
+^EGFR	A289A	somatic
 EGFR	G598V	somatic
 EGFR	S492R	somatic
 EGFR	G719	somatic
+^EGFR	G719G	somatic
 EGFR	L858R	somatic
 EGFR	L861Q	somatic
 EGFR	T790M	somatic
 EGFR	C797S	somatic
-PIK3CA	E542K	somatic
+PIK3CA	N345K	somatic
+PIK3CA	C420R	somatic
 PIK3CA	E453K	somatic
+PIK3CA	E542K	somatic
 PIK3CA	E545	somatic
 PIK3CA	Q546	somatic
+PIK3CA	D549N	somatic	mycancergenome (Kang, Bader, and Vogt 2005)
+PIK3CA	M1043V	somatic
 PIK3CA	H1047R	somatic
 PIK3CA	H1047L	somatic
+PIK3CA	H1047Y	somatic
+PIK3CA	G1049R	somatic
 ^PIK3CA	K733R	1	common germline SNP
 ERBB2	S310F	somatic
 ERBB2	L755	somatic
 ERBB2	R678Q	somatic
 ERBB2	V842I	somatic
+PTEN	R159S	somatic	mycancergenome
 PTEN	R130Q	somatic
 PTEN	R130G	somatic
 PTEN	R130L	somatic
+PTEN	R130P	somatic
+PTEN	C124R	somatic
+PTEN	C124S	somatic
+PTEN	G129E	somatic
+PTEN	G129V	somatic
+PTEN	G129R	somatic
+PTEN	R173C	somatic
+PTEN	C124R	somatic
+PTEN	C124S	somatic
 ATM	M1T	somatic ClinVar
 ATM	R337C	somatic
 ATM	R337H	somatic
@@ -119,14 +149,18 @@ IDH2	R140	somatic
 IDH2	R172	somatic
 FGFR2	C382R	somatic
 FGFR3	S249C	somatic	http://www.nature.com/onc/journal/v19/n48/full/1203934a.html
+ESR1	S463P	somatic	mycancergenome (Toy et al. 2013)
+ESR1	V534E	somatic	mycancergenome (Toy et al. 2013)
+ESR1	P535H	somatic	mycancergenome (Toy et al. 2013)
+ESR1	L536Q	somatic	mycancergenome (Robinson et al. 2013)
+ESR1	L536R	somatic	mycancergenome (Toy et al. 2013)
 ESR1	Y537	somatic
 ESR1	D538G	somatic
-ESR1	L536	somatic
-ESR1	P535H	somatic
-ESR1	V534E	somatic
 GNAQ	Q209P	somatic
 GNAQ	Q209L	somatic
 GNA11	Q209L	somatic
+SF3B1	R625	somatic	
+^SF3B1	R625R	filter	
 BRCA2	E2663K	5
 BRCA1	M18T	4
 BRCA1	L22S	5
@@ -165,6 +199,7 @@ BRCA2	D2723G	5
 BRCA2	G2748D	5
 BRCA2	R3052W	5
 BRCA2	D3095E	4
+BRCA1	L1786P	4	http://www.nature.com/ncomms/2015/151209/ncomms10086/fig_tab/ncomms10086_F6.html
 BRCA1	T1685I	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
 BRCA1	T1685A	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
 BRCA1	M1689R	5	http://cancerres.aacrjournals.org/content/70/12/4880/T2.expansion
@@ -240,6 +275,11 @@ KIT	W557	somatic	Hotspot
 KIT	V559	somatic	Hotspot
 KIT	V560	somatic	Hotspot
 KIT	L576P	somatic	Hotspot
+KIT	D816H	somatic	mycancergenome (AML)
+KIT	D816Y	somatic	mycancergenome (AML)
+KIT	D816I	somatic	mycancergenome (AML)
+KIT	D816V	somatic	mycancergenome (AML)
+ALK	G2032R	somatic	Resistant
 ^DPYD	R29C	1	Common germline SNP
 ^IL7R	V138I	1	Common germline SNP
 ^IL7R	I66T	1	Common germline SNP
@@ -263,8 +303,7 @@ KIT	L576P	somatic	Hotspot
 ^NCOR1	K178N	1	Artifact from pseudogene resolved in hg38
 ^NCOR1	G5V	1	Artifact from pseudogene resolved in hg38
 ^NCOR1	Y20S	1	Artifact from pseudogene resolved in hg38
-^MET	K846fs	1	Homopolymer error: due to adjacent A4, GAAAA>GAAA
-^PTEN	L230fs	1	Homopolymer error: GTTTTT>GTTTT
-^ERBB3	S982fs	1	Homopolymer error (dinucleotide): T(AG)5>T(AG)4
-^ARID1A	Q766fs	1	Homopolymer error: T(C)6>T(C)7
-^TSC2	P1315fs	1	Homopolymer error: G(C)5>G(C)4
+^CHEK2	I200T	3	Germline VUS
+^CHEK2	I157T	3	Germline VUS
+^NOTCH2	C19W	3	Imcomplete reference in hg19.  Fixed in hg38
+DNMT3A	R882	somatic	mycancergenome

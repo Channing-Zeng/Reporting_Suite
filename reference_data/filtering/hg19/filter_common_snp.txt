@@ -33,3 +33,7 @@ ARID1A	chr1	27100181	C	CGCA	Q1334dup	rs570962335	COSM1341408	Common germline var
 NOTCH2	chr1	120612002	CGG	C	P6fs	rs372504208	COSM132830	Mis-alignment from pseudogene specific to hg19, resolved in hg38
 APOBR	chr16	28507397	TGGGACAGCCTCAGGAGGGGAGGAGGCC	T	E361_G369del	rs148114931	COSM1377134	Likely a mis-alignment
 FANCL	chr2	58386928	G	GTAAT	T367fs	rs759217526		A common SNP at the end of FANCL
+BCR	chr22	23311788	T	TCCGG	V1094fs	rs372013175		An alignment from othter region (incomplete reference)
+TSC2	chr16	2137924	TCCCTGCAGTGCAGGAAAGGTAGGGCCGGGTGGGG	T	S1684_D1690delinsY	rs137854209		A 34bp benign tandem repeat (1,2,3 copies)
+TSC2	chr16	2137924	T	TCCCTGCAGTGCAGGAAAGGTAGGGCCGGGTGGGG			A 34bp benign tandem repeat (1,2,3 copies)
+TSC2	chr16	2137924	T	TCCCTGCAGTGCAGGAAAGGTAGGGCCGCAGGAAAGGTAGGGCCGGGTGGGG			A 34bp benign tandem repeat (1,2,3 copies) (Bug in VarDict, Should be fixed.  Added for compatibility.)

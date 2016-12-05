@@ -236,8 +236,8 @@ def _parse_qualimap_results(qualimap_html_fpath, qualimap_cov_hist_fpath, depth_
         ave_len                  = find_rec('Read mean length'),
     )
     if reads_stats.get('dup_rate') is None:
-        reads_stats['dup']       = find_rec('Duplicated reads (flagged) (on target)'),
-        reads_stats['dup_rate']  = find_rec('Duplicated reads (flagged) (on target) %'),
+        reads_stats['dup']       = find_rec('Duplicated reads (flagged) (on target)')
+        reads_stats['dup_rate']  = find_rec('Duplicated reads (flagged) (on target) %')
 
     mm_indels_stats = dict(
         mean_mq     = find_rec('Mean Mapping Quality'),

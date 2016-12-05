@@ -201,6 +201,7 @@ reduction. Below is a PCA plot of the samples within the space of the first two 
 [See the high resolution image](pca.png)
 ```{{r PCA, echo=FALSE, cache=FALSE}}
 data <- plotPCA(rld, intgroup=c("condition"), returnData=TRUE, ntop=1000)
+write.table(data, "pca.tsv", sep="\t")
 percentVar <- round(100 * attr(data, "percentVar"))
 ggplot(data, aes(PC1, PC2, color=condition, label=rownames(data))) +
   geom_point(size=3) +
