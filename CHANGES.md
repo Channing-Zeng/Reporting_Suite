@@ -1,3 +1,21 @@
+#### v1.7.0, in progress
+- RNA-seq post-proc: redesign heatmaps
+
+#### v1.6.0, 1 Dec 2016
+- Support bcbio v1.0: rely on Seq2C and coverage to run in bcbio; require "coverage: bed-file" in bcbio.yaml
+- NGS reports variants: not restricting to key genes, but to reliable regions
+- Variants: 
+ - Rename vardict.PASS.txt -> vardict.mut.txt; add vardict.false.txt that reports false positives and reject reason
+ - Updated actionable list and the list of artifacts
+ - Keep upstream/downstream actionable mutations
+ - Ignore low AF in 3nt MSI region
+ - Update filtering common artifacts and actionable lists
+- Make MultiQC-based landing page based which integrate all reports and analysis results:
+ - 4 sections: post-alignment, UMI, variants, pre-alignment
+ - NGS reports are linked to sample names
+ - Project-level and run data section on the top
+ - RNA-seq: add PCA plot
+
 #### v1.5.2, 13 Oct 2016
 - SV reporting: only canonical transcripts
 - Variant reporting: updated actionable variants list
