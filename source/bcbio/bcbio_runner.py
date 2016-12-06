@@ -681,12 +681,11 @@ class BCBioRunner:
             #         wait_for_steps=[self.targetcov.job_name(s.name) for s in self.bcbio_structure.samples if self.targetcov in self.steps],
             #         genome=self.bcbio_structure.samples[0].genome)
 
-            if is_uk() or is_us() and self.cnf.genome.name.startswith('hg') and self.bw_converting in self.steps:
+            if (is_uk() or is_us()) and self.cnf.genome.name.startswith('hg') and self.bw_converting in self.steps and not self.bcbio_structure.is_rnaseq:
                 for sample in self.bcbio_structure.samples:
                     if sample.bam and isfile(sample.bam):
                         self._submit_job(self.bw_converting, sample_name=sample.name,
                             sample=sample.name, genome=sample.genome, bam=sample.bam,
-                            # wait_for_steps=[self.targetcov.job_name(sample.name)] if self.targetcov in self.steps else [],
                             not_wait=True, mem_m=getsize(sample.bam) * 1.1 / 1024 / 1024 + 500)
 
             if self.bcbio_structure.is_rnaseq and self.gene_expression in self.steps:
