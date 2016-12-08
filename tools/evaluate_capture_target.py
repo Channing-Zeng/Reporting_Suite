@@ -243,6 +243,7 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                         chrom_col = fs.index('#Chr')
                         start_col = fs.index('Start')
                         end_col = fs.index('End')
+                        size_col = fs.index('Size')
                         gene_col = fs.index('Gene')
                         strand_col = fs.index('Strand')
                         feature_col = fs.index('Feature')
