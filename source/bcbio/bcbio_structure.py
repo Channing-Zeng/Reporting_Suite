@@ -316,18 +316,9 @@ def _detect_move_run_config(config_dirpath, opts, is_wgs=False, is_rnaseq=False)
 class BCBioSample(BaseSample):
     def __init__(self, sample_name, final_dir, is_rnaseq=False, **kwargs):
         dirpath = join(final_dir, sample_name)
-        targqc_dirpath = join(dirpath, BCBioStructure.targqc_dir)
-        qualimap_dirpath = join(dirpath, BCBioStructure.qualimap_rna_dir) if is_rnaseq else join(targqc_dirpath, BCBioStructure.qualimap_name)
-
         BaseSample.__init__(self, name=sample_name, dirpath=dirpath,
-            fastqc_dirpath=join(dirpath, BCBioStructure.fastqc_dir),
-            targqc_dirpath=targqc_dirpath,
-            qualimap_dirpath=qualimap_dirpath,
-            picard_dirpath=join(targqc_dirpath, BCBioStructure.picard_name),
-            flagged_regions_dirpath=join(targqc_dirpath, BCBioStructure.flag_regions_name),
             clinical_report_dirpath=join(dirpath, source.clinreport_dir),
             **kwargs)
-        assert self.targetcov_json_fpath, str(self.dirpath) + ' ' + str(self.targqc_dirpath)
 
         self.project_tag = None
         self.seq2c_fpath = None
