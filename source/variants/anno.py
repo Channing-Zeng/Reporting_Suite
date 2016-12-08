@@ -513,8 +513,20 @@ def _snpeff(cnf, input_fpath):
 
     cmdline = '{snpeff} eff {opts} -noLog -i vcf -o vcf {ref_name} {input_fpath}'.format(**locals())
 
-    res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
-                          exit_on_error=False, stdout_to_outputfile=True, overwrite=True)
+    for i in range(1, 20):
+        try:
+            res = call_subprocess(cnf, cmdline, input_fpath, output_fpath,
+                                  exit_on_error=False, stdout_to_outputfile=True, overwrite=True)
+        except OSError:
+            import traceback, time
+            err(traceback.format_exc())
+            warn()
+            info('Waiting 1 minute')
+            time.sleep(60)
+            info('Rerunning ' + str(i))
+        else:
+            break
+
     output_fpath = verify_vcf(output_fpath, is_critical=True)
 
     snpeff_summary_html_fpath = 'snpEff_summary.html'
