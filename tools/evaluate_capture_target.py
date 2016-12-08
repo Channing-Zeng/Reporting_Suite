@@ -241,6 +241,8 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
 
                     if start == '.' or end == '.':
                         continue
+                    if not symbol or symbol == '.':
+                        continue
 
                     if not depth_thresholds:
                         critical('No depth_thresholds header in ' + tsv_fpath)

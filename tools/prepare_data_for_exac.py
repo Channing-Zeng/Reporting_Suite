@@ -9,7 +9,7 @@ from os.path import join, basename
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
 from source.calling_process import call
 from source.file_utils import safe_mkdir, adjust_path, verify_file
-from source.logger import critical, info, is_local, warn
+from source.logger import critical, info, is_local, warn, err
 from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workdir_genome_debug, set_up_log
 from source.qsub_utils import wait_for_jobs, submit_job
 from source.targetcov.bam_and_bed_utils import call_sambamba, verify_bam
@@ -66,47 +66,35 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
     chr_len_fpath = get_chr_len_fpath(cnf)
     jobs_to_wait = []
 
+    for sample in samples:
+        sample_output_dirpath = join(output_dirpath, sample.name)
+        safe_mkdir(sample_output_dirpath)
+
     for chrom in chromosomes:
         info('Processing chromosome ' + chrom)
         avg_cov_output_fpath = join(output_dirpath, chrom + '.txt.gz')
-
-        sliced_bam_by_sample = dict()
+        sample_output_fpaths = [join(output_dirpath, sample.name, chrom + '.txt.gz') for sample in samples]
 
         sample_names = ','.join(sample.name for sample in samples)
         chrom_bams = []
 
         for sample in samples:
-            assert verify_bam(sample.bam), 'BAM for ' + sample.name
+            if not verify_file(sample.bam):
+                err('BAM for ' + sample.name + ' is not exist!')
+                continue
             output_bam_fpath = join(cnf.work_dir, basename(sample.name) + '_' + str(chrom) + '.bam')
             cmdline = '{sambamba} slice {sample.bam} {chrom}'.format(**locals())
             call(cnf, cmdline, output_fpath=output_bam_fpath)
             if verify_file(output_bam_fpath):
                 chrom_bams.append(output_bam_fpath)
-                sliced_bam_by_sample[sample.name] = output_bam_fpath
 
         bam_fpaths = ','.join(chrom_bams)
 
-        if cnf.reuse_intermediate and verify_file(avg_cov_output_fpath, silent=True):
+        if cnf.reuse_intermediate and verify_file(avg_cov_output_fpath, silent=True) and \
+                all(verify_file(output_fpath, silent=True) for output_fpath in sample_output_fpaths):
             info(avg_cov_output_fpath + ' exists, reusing')
         else:
             j = _submit_region_cov(cnf, cnf.work_dir, chrom, bam_fpaths, sample_names, output_dirpath, chr_len_fpath)
-            if j and not j.is_done:
-                jobs_to_wait.append(j)
-            info()
-
-        for sample in samples:
-            info('Coverage calculation for ' + sample.name + ', ' + chrom)
-            sample_output_dirpath = join(output_dirpath, sample.name)
-            safe_mkdir(sample_output_dirpath)
-            output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
-            if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
-                info(output_fpath + ' exists, reusing')
-                continue
-
-            sample_bam_fpath = sliced_bam_by_sample[sample.name]
-
-            work_dir = safe_mkdir(join(cnf.work_dir, 'get_region_coverage_' + sample.name + '_' + chrom))
-            j = _submit_region_cov(cnf, work_dir, chrom, sample_bam_fpath, sample.name, sample_output_dirpath, chr_len_fpath)
             if j and not j.is_done:
                 jobs_to_wait.append(j)
             info()
@@ -115,18 +103,8 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
             info('Submitted ' + str(len(jobs_to_wait)) + ' jobs, waiting...')
             jobs_to_wait = wait_for_jobs(cnf, jobs_to_wait)
             jobs_to_wait = []
-        else:
+        elif not jobs_to_wait:
             info('No jobs to submit.')
-
-    for chrom in chromosomes:
-        avg_cov_output_fpath = join(output_dirpath, chrom + '.txt.gz')
-        if not verify_file(avg_cov_output_fpath, silent=True):
-            warn('Project has no coverage at chromosome ' + chrom)
-        for sample in samples:
-            sample_output_dirpath = join(output_dirpath, sample.name)
-            output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
-            if not verify_file(output_fpath, silent=True):
-                warn(sample.name + ' has no coverage at chromosome ' + chrom)
 
 
 def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):

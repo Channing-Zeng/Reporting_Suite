@@ -15,8 +15,8 @@ from source.utils import mean, median
 from source.variants.vcf_processing import bgzip_and_tabix
 
 
-def write_coverage(cnf, chrom, depths_by_pos, samples, cov_thresholds):
-    coverage_data_fpath = join(cnf.output_dir, chrom + '.txt')
+def write_coverage(cnf, output_dir, chrom, depths_by_pos, cov_thresholds, sample_index=None):
+    coverage_data_fpath = join(output_dir, chrom + '.txt')
     if not cnf.reuse_intermediate or (not verify_file(coverage_data_fpath, silent=True) and
                                       not verify_file(coverage_data_fpath + '.gz', silent=True)):
         chrom_num = chrom.replace('chr', '')
@@ -26,9 +26,7 @@ def write_coverage(cnf, chrom, depths_by_pos, samples, cov_thresholds):
                 f.write('\t'.join(fs) + '\n')
                 sorted_positions = sorted(depths_by_pos.keys())
                 for pos in sorted_positions:
-                    depths = depths_by_pos[pos]
-                    if len(depths) < len(samples):
-                        depths += [0] * (len(samples) - len(depths))
+                    depths = depths_by_pos[pos] if sample_index is None else [depths_by_pos[pos][sample_index]]
                     mean_coverage = mean(depths)
                     median_coverage = median(depths)
                     pcnt_samples_ge_threshold = [mean([1 if d >= t else 0 for d in depths]) for t in cov_thresholds]
@@ -41,9 +39,8 @@ def write_coverage(cnf, chrom, depths_by_pos, samples, cov_thresholds):
 
 def get_regions_coverage(cnf, samples):
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
-    depths_by_pos = defaultdict(list)
+    depths_by_pos = defaultdict(lambda : [0] * len(samples))
     cov_by_sample = dict()
-
     info()
     info('Coverage to bedgrapth for ' + cnf.chrom)
     for s in samples:
@@ -58,18 +55,28 @@ def get_regions_coverage(cnf, samples):
 
     info()
     info('Parsing bedtools output...')
-    for sample, coverage_fpath in cov_by_sample.iteritems():
+    for i, (sample, coverage_fpath) in enumerate(cov_by_sample.iteritems()):
         for line in open(coverage_fpath):
             if line.startswith('#'):
                 continue
             chrom, start, end, depth = line.split('\t')
             start, end, depth = map(int, (start, end, depth))
             for pos in xrange(start, end):
-                depths_by_pos[pos].append(depth)
+                depths_by_pos[pos][i] = depth
 
     info()
     info('Writing coverage for ' + cnf.chrom)
-    write_coverage(cnf, cnf.chrom, depths_by_pos, samples, cov_thresholds)
+    write_coverage(cnf, cnf.output_dir, cnf.chrom, depths_by_pos, cov_thresholds)
+    for index, sample in enumerate(samples):
+        info('Writing coverage for ' + sample.name + ', ' + chrom)
+        sample_output_dirpath = join(cnf.output_dir, sample.name)
+        output_fpath = join(sample_output_dirpath, chrom + '.txt.gz')
+        if cnf.reuse_intermediate and verify_file(output_fpath, silent=True):
+            info(output_fpath + ' exists, reusing')
+            continue
+        write_coverage(cnf, sample_output_dirpath, cnf.chrom, depths_by_pos, cov_thresholds, sample_index=index)
+        if not verify_file(output_fpath, silent=True):
+            warn(sample.name + ' has no coverage at chromosome ' + chrom)
     return depths_by_pos
 
 
