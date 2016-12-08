@@ -37,7 +37,7 @@ resources:
   bcftools:
     path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/anaconda/bin/bcftools
   rscript:
-    path: /apps/bcbio-nextgen/1.0.0/rhel6-x64/anaconda/bin/Rscript
+    path: /apps/bcbio-nextgen/latest-devel/rhel6-x64/anaconda/bin/Rscript
 
 genomes:
   hg38:

@@ -718,11 +718,6 @@ class BCBioRunner:
                  ', total was: ' + str(len([j for j in self.jobs_running])))
             info()
 
-            if any(s.fastqc_html_fpath and isfile(s.fastqc_html_fpath) for s in self.bcbio_structure.samples):
-                final_summary_report_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.fastqc_summary_dir, source.fastqc_name + '.html')
-                safe_mkdir(dirname(final_summary_report_fpath))
-                write_fastqc_combo_report(self.cnf, final_summary_report_fpath, self.bcbio_structure.samples)
-
             if self.varfilter in self.steps:
                 finish_filtering_for_bcbio(self.cnf, self.bcbio_structure, self.bcbio_structure.variant_callers.values())
                 info()

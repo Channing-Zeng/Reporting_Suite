@@ -219,29 +219,62 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
             tsv_fpath = s.targetcov_detailed_tsv
             if not verify_file(tsv_fpath, is_critical=False):
                 continue
+
+            chrom_col = None
+            start_col = None
+            end_col = None
+            size_col = None
+            gene_col = None
+            strand_col = None
+            feature_col = None
+            biotype_col = None
+            tx_col = None
+            ave_depth_col = None
+            med_depth_col = None
+            stddev_depth_col = None
+            wn20pcnt_col = None
+            depth_thresholds = None
             with open(tsv_fpath) as f_inp:
-                depth_thresholds = None
                 for l in f_inp:
                     if l.startswith('#'):
                         def filter_digits(s):
                             return ''.join(c for c in s if c.isdigit())
-                        fs = l.split('\t')
-                        if len(fs) > 13:
-                            depth_thresholds = [int(filter_digits(d)) for d in fs[13:]]
-                            if depth_threshold not in depth_thresholds:
-                                err('Depth ' + str(depth_threshold) + 'x is not used in ' + tsv_fpath)
-                                break
+                        fs = l.strip('\n').split('\t')
+                        chrom_col = fs.index('#Chr')
+                        start_col = fs.index('Start')
+                        end_col = fs.index('End')
+                        gene_col = fs.index('Gene')
+                        strand_col = fs.index('Strand')
+                        feature_col = fs.index('Feature')
+                        biotype_col = fs.index('Biotype')
+                        tx_col = fs.index('Transcript')
+                        ave_depth_col = fs.index('Avg depth')
+                        med_depth_col = fs.index('Median depth')
+                        stddev_depth_col = fs.index('Std dev')
+                        wn20pcnt_col = fs.index('W/n 20% of median')
+                        depth_thresholds = [int(filter_digits(d)) for d in fs if d.endswith('x') and filter_digits(d)]
+                        if depth_threshold not in depth_thresholds:
+                            err('Depth ' + str(depth_threshold) + 'x is not used in ' + tsv_fpath)
+                            break
                         continue
-                    fs = l.split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
-                    chrom, start, end, size, symbol, strand, feature, biotype, transcript_id, min_depth, ave_depth, std_dev, wn20pcnt = fs[:13]
-                    pcnt_val_by_thresh = fs[13:]
+                    fs = l.strip('\n').split('\t')  # Chr	Start	End	Size	Gene	Strand	Feature	Biotype	TranscriptID    Min depth	Ave depth	Std dev	W/n 20% of ave depth	1x	5x	10x	25x	50x	100x	500x	1000x	5000x	10000x	50000x
+                    chrom = fs[chrom_col]
+                    start = fs[start_col]
+                    end = fs[end_col]
+                    size = fs[size_col]
+                    symbol = fs[gene_col]
+                    strand = fs[strand_col]
+                    feature = fs[feature_col]
+                    biotype = fs[biotype_col]
+                    transcript_id = fs[tx_col]
+                    med_depth = fs[med_depth_col]
+                    stddev_depth = fs[stddev_depth_col]
+                    wn20pcnt = fs[wn20pcnt_col]
+                    pcnt_val_by_thresh = fs[wn20pcnt_col + 1:]
 
                     symbol = get_val(symbol)
                     chrom = get_val(chrom)
-
-                    if start == '.' or end == '.':
-                        continue
-
+                    if start == '.' or end == '.': continue
                     if not depth_thresholds:
                         critical('No depth_thresholds header in ' + tsv_fpath)
                     cov_by_threshs = dict((t, get_float_val(f)) for t, f in izip(depth_thresholds, pcnt_val_by_thresh))
