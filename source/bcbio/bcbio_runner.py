@@ -876,10 +876,10 @@ class BCBioRunner:
 
                 scratch_root_dirpath = None
                 analysis_root_dirpath = None
-                if is_us() and '/ngs/oncology/analysis/' in bcbio_work_dirpath:
+                if is_us() and '/ngs/oncology/analysis/' in bcbio_work_dirpath.lower():
                     scratch_root_dirpath = '/ngs/scratch/'
                     analysis_root_dirpath = '/ngs/oncology/analysis/'
-                elif is_local() and '/Users/vlad/googledrive/az/analysis/' in bcbio_work_dirpath:
+                elif is_local() and '/Users/vlad/googledrive/az/analysis/' in bcbio_work_dirpath.lower():
                     scratch_root_dirpath = '/Users/vlad/scratch/'
                     analysis_root_dirpath = '/Users/vlad/googledrive/az/analysis/'
                 if scratch_root_dirpath:
@@ -892,7 +892,8 @@ class BCBioRunner:
                         shutil.move(bcbio_work_dirpath, work_scratch_dirpath)
                         os.symlink(work_scratch_dirpath, bcbio_work_dirpath)
                         info('Symlinked work directory ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
-
+                    else:
+                        warn('Not moving work to scratch.')
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
         info()
