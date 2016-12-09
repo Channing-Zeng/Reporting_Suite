@@ -85,7 +85,7 @@ metric_storage = MetricStorage(
     ])])
 
 
-def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
+def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None, circos_link=None):
     step_greetings('Making the %s project-level report' % ('preproc' if bcbio_structure is None else 'postproc'))
 
     # if dataset_structure is None and bcbio_structure:
@@ -127,7 +127,7 @@ def make_report_metadata(cnf, bcbio_structure, oncoprints_link=None):
 
     metadata = _report_to_multiqc_metadata(cnf, full_report,
         project_report_html_fpath, project_name, bcbio_structure,
-        additional_data=additional_data, oncoprints_link=oncoprints_link)
+        additional_data=additional_data, oncoprints_link=oncoprints_link, circos_link=circos_link)
 
     metadata_fpath = join(bcbio_structure.work_dir, 'az_multiqc_metadata.yaml')
     import yaml
@@ -241,6 +241,22 @@ def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
     # recs.append(Record(metric=m, value=m.name, url=get_exac_us_url(cnf.genome.name, bcbio_structure.project_name)))
 
     return recs
+
+
+def make_circos_plot(cnf, bcbio_structure):
+    circos_fpath = join(bcbio_structure.date_dirpath, 'circos.html')
+    mutations_fpaths = get_mutations_fpaths(bcbio_structure)
+    if not mutations_fpaths:
+        err('File with Vardict results does not exist. Circos plot cannot be created.')
+        return
+    if not bcbio_structure.seq2c_fpath:
+        err('File with Seq2C results does not exist. Circos plot cannot be created.')
+        return
+    cmdl = 'circos  --genome ' + cnf.genome.name + ' -o ' + bcbio_structure.date_dirpath + \
+           ' --mutations ' + ','.join(mutations_fpaths) + ' --seq2c ' + bcbio_structure.seq2c_fpath + ' ' + bcbio_structure.bcbio_project_dirpath
+    call(cnf, cmdl, exit_on_error=False, silent=False)
+    if verify_file(circos_fpath):
+        return circos_fpath
 
 
 def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
@@ -416,7 +432,7 @@ def _add_per_sample_reports(cnf, individual_reports_section, bcbio_structure):
 
 
 def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbio_structure,
-                                additional_data=None, oncoprints_link=None):
+                                additional_data=None, oncoprints_link=None, circos_link=None):
     def __process_record(rec, short=False):
         d = dict()
         d['metric_name'] = rec.metric.name
@@ -447,6 +463,8 @@ def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbi
     if oncoprints_link:
         mutations_links.append(('<a href="{oncoprints_link}" target="_blank">oncoprints</a> ' +
                              '(loading may take 5-10 seconds)').format(**locals()))
+    if circos_link:
+        mutations_links.append(('<a href="{circos_link}" target="_blank">Circos</a> ').format(**locals()))
     if mutations_links:
         metadata_dict["mutations_links"] = mutations_links
     if expression_links:
@@ -581,7 +599,7 @@ def get_run_info(cnf, bcbio_structure):
     return run_info_dict
 
 
-def get_oncoprints_link(cnf, bcbio_structure, project_name):
+def get_mutations_fpaths(bcbio_structure):
     caller = bcbio_structure.variant_callers.get('vardict') or \
              bcbio_structure.variant_callers.get('vardict-java')
 
@@ -594,10 +612,21 @@ def get_oncoprints_link(cnf, bcbio_structure, project_name):
     single_mut_fpath = verify_file(single_mut_fpath, silent=True)
     paired_mut_fpath = verify_file(paired_mut_fpath, silent=True)
     mutations_fpaths = [f for f in [mut_fpath, single_mut_fpath, paired_mut_fpath] if f]
+    return mutations_fpaths
+
+
+def get_oncoprints_link(cnf, bcbio_structure, project_name):
+    mutations_fpaths = get_mutations_fpaths(bcbio_structure)
 
     return create_oncoprints_link(
         cnf.work_dir, cnf.genome.name, bcbio_structure.final_dirpath, project_name,
         mutations_fpaths, bcbio_structure.seq2c_fpath, bcbio_structure.bed)
+
+
+def get_circos_link(bcbio_structure):
+    base_dirpath = dirname(bcbio_structure.multiqc_fpath)
+    url = relpath(bcbio_structure.circos_fpath, base_dirpath) if verify_file(bcbio_structure.circos_fpath) else None
+    return url
 
 
 def _make_relative_link_record(name, match_name, metric):

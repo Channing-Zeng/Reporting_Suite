@@ -748,6 +748,7 @@ class BCBioStructure(BaseProjectStructure):
         info('-' * 70)
 
         self.multiqc_fpath = join(self.date_dirpath, 'report.html')
+        self.circos_fpath = join(self.date_dirpath, 'circos.html')
 
         # setting bed files for samples
         if cnf.bed:

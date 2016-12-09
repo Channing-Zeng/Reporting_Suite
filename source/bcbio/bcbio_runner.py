@@ -24,7 +24,8 @@ from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path, \
     file_transaction
-from source.bcbio.project_level_report import make_report_metadata, get_oncoprints_link, make_multiqc_report
+from source.bcbio.project_level_report import make_report_metadata, get_oncoprints_link, make_multiqc_report, \
+    make_circos_plot, get_circos_link
 from source.qsub_utils import del_jobs
 from source.targetcov.summarize_targetcov import get_bed_targqc_inputs
 from source.tools_from_cnf import get_system_path
@@ -820,11 +821,18 @@ class BCBioRunner:
                 oncoprints_link = get_oncoprints_link(self.cnf,
                     self.bcbio_structure, self.bcbio_structure.project_name)
 
+            circos_link = None
+            if not self.bcbio_structure.is_rnaseq:
+                info()
+                info('Creating linear Circos plot for all samples')
+                self.bcbio_structure.circos_fpath = make_circos_plot(self.cnf, self.bcbio_structure)
+                circos_link = get_circos_link(self.bcbio_structure)
+
             info()
             info('Preparing AZ specific metadata for MultiQC')
             metadata_fpath = make_report_metadata(self.cnf,
                 bcbio_structure=self.bcbio_structure,
-                oncoprints_link=oncoprints_link)
+                oncoprints_link=oncoprints_link, circos_link=circos_link)
             self.bcbio_structure.multiqc_fpath = make_multiqc_report(self.cnf, self.bcbio_structure, metadata_fpath)
 
             html_report_fpath = self.bcbio_structure.multiqc_fpath
