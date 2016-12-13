@@ -604,6 +604,7 @@ class BCBioRunner:
     #         return bed_fpath
 
 
+
     def post_jobs(self):
         self._symlink_cnv()
         info()
@@ -739,7 +740,7 @@ class BCBioRunner:
                     wait_for_steps = []
                     wait_for_steps += [self.targqc.job_name()] if self.targqc in self.steps else []
 
-                    if not sample.phenotype or sample.phenotype != 'normal':
+                    if not sample.phenotype or sample.phenotype != 'normal' or isfile(add_suffix(sample.get_vcf2txt_by_callername(clinical_report_caller.name), source.mut_pass_suffix)):
                         match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
                         if clinical_report_caller:
                             wait_for_steps += [self.varannotate.job_name(sample.name, caller=clinical_report_caller.name)] if self.varannotate in self.steps else []
