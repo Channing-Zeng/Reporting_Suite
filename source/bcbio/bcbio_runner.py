@@ -741,7 +741,8 @@ class BCBioRunner:
                     wait_for_steps = []
                     wait_for_steps += [self.targqc.job_name()] if self.targqc in self.steps else []
 
-                    if not sample.phenotype or sample.phenotype != 'normal' or isfile(add_suffix(sample.get_vcf2txt_by_callername(clinical_report_caller.name), source.mut_pass_suffix)):
+                    if not sample.phenotype or sample.phenotype != 'normal' or isfile(add_suffix(
+                            sample.get_vcf2txt_by_callername(clinical_report_caller.name), variant_filtering.mut_pass_suffix)):
                         match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
                         if clinical_report_caller:
                             wait_for_steps += [self.varannotate.job_name(sample.name, caller=clinical_report_caller.name)] if self.varannotate in self.steps else []
@@ -989,9 +990,11 @@ class BCBioRunner:
                     if cnv_caller in fname:
                         # Copy to <sample>/cnv
                         try:
-                            safe_mkdir(cnv_summary_dirpath)
+                            safe_mkdir(sample_cnv_dirpath)
                             os.rename(join(sample_dirpath, fname), join(sample_cnv_dirpath, fname))
                         except OSError:
+                            verify_file(sample_cnv_dirpath)
+                            verify_dir(sample_cnv_dirpath)
                             err(format_exc())
                             info()
 
@@ -1010,7 +1013,8 @@ class BCBioRunner:
                                     os.unlink(dst_fpath)
                                 symlink_plus(join(sample_cnv_dirpath, fname), dst_fpath)
                             except OSError:
-                                pass
+                                err(format_exc())
+                                info()
 
         for sample in self.bcbio_structure.samples:
             seq2c_fpath = join(cnv_summary_dirpath, sample.name + '-seq2c.tsv')
