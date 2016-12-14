@@ -22,7 +22,6 @@ from scripts.post.qualimap import get_qualimap_max_mem
 from source.bcbio.bcbio_filtering import finish_filtering_for_bcbio
 from source.bcbio.bcbio_structure import BCBioStructure
 from source.calling_process import call
-from source.fastqc.summarize_fastqc import write_fastqc_combo_report
 from source.file_utils import verify_file, add_suffix, symlink_plus, remove_quotes, verify_dir, adjust_path, \
     file_transaction
 from source.bcbio.project_level_report import make_report_metadata, get_oncoprints_link, make_multiqc_report
@@ -740,7 +739,8 @@ class BCBioRunner:
                     wait_for_steps = []
                     wait_for_steps += [self.targqc.job_name()] if self.targqc in self.steps else []
 
-                    if not sample.phenotype or sample.phenotype != 'normal' or isfile(add_suffix(sample.get_vcf2txt_by_callername(clinical_report_caller.name), source.mut_pass_suffix)):
+                    if not sample.phenotype or sample.phenotype != 'normal' or isfile(add_suffix(
+                            sample.get_vcf2txt_by_callername(clinical_report_caller.name), variant_filtering.mut_pass_suffix)):
                         match_cmdl = ' --match ' + sample.normal_match.name if sample.normal_match else ''
                         if clinical_report_caller:
                             wait_for_steps += [self.varannotate.job_name(sample.name, caller=clinical_report_caller.name)] if self.varannotate in self.steps else []
@@ -844,7 +844,8 @@ class BCBioRunner:
                             if '/' + key + '/' in html_report_fpath:
                                 rel_url = html_report_fpath.split('/' + key + '/')[1]
                                 html_report_url = join('http://blue.usbod.astrazeneca.net/~klpf990/' + key + '/' + rel_url)
-            _final_email_notification(self.cnf, html_report_url, self.cnf.jira, self.bcbio_structure)
+            _final_email_notification(self.cnf, html_report_url or html_report_fpath,
+                                      self.cnf.jira, self.bcbio_structure)
             if html_report_url:
                 info()
                 info('HTML report url: ' + html_report_url)
@@ -987,6 +988,8 @@ class BCBioRunner:
                         try:
                             os.rename(join(sample_dirpath, fname), join(sample_cnv_dirpath, fname))
                         except OSError:
+                            verify_file(join(sample_dirpath, fname))
+                            verify_dir(sample_cnv_dirpath)
                             err(format_exc())
                             info()
 
@@ -994,7 +997,7 @@ class BCBioRunner:
                     for fname in os.listdir(sample_cnv_dirpath):
                         if cnv_caller in fname:
                             # Symlink to <datestamp>/cnv/<cnvcaller>
-                            dst_dirpath = join(cnv_summary_dirpath)
+                            dst_dirpath = cnv_summary_dirpath
                             dst_fname = fname
                             if sample.name not in fname:
                                 dst_fname = sample.name + '.' + dst_fname
@@ -1005,25 +1008,27 @@ class BCBioRunner:
                                     os.unlink(dst_fpath)
                                 symlink_plus(join(sample_cnv_dirpath, fname), dst_fpath)
                             except OSError:
-                                pass
+                                err(format_exc())
+                                info()
 
         for sample in self.bcbio_structure.samples:
-            seq2c_fpath = join(sample.dirpath, BCBioStructure.cnv_dir, sample.name + '-seq2c.tsv')
+            seq2c_fpath = join(cnv_summary_dirpath, sample.name + '-seq2c.tsv')
             if isfile(seq2c_fpath):
                 sample.seq2c_fpath = seq2c_fpath
 
         # Merging all Seq2C into one
-        merged_seq2c_fpath = join(self.bcbio_structure.date_dirpath, BCBioStructure.cnv_dir, BCBioStructure.seq2c_name + '.tsv')
-        if not (isfile(merged_seq2c_fpath) and self.cnf.reuse_intermediate):
-            with file_transaction(None, merged_seq2c_fpath) as tx:
-                with open(tx, 'w') as out:
-                    for file_index, sample in enumerate(self.bcbio_structure.samples):
-                        if sample.seq2c_fpath and isfile(sample.seq2c_fpath):
-                            with open(sample.seq2c_fpath) as inp:
-                                for line_index, l in enumerate(inp):
-                                    if file_index == 0 or line_index > 0:
-                                        out.write(l)
-        self.bcbio_structure.seq2c_fpath = merged_seq2c_fpath
+        if any(s.seq2c_fpath for s in self.bcbio_structure.samples):
+            merged_seq2c_fpath = join(safe_mkdir(cnv_summary_dirpath), BCBioStructure.seq2c_name + '.tsv')
+            if not (isfile(merged_seq2c_fpath) and self.cnf.reuse_intermediate):
+                with file_transaction(None, merged_seq2c_fpath) as tx:
+                    with open(tx, 'w') as out:
+                        for file_index, sample in enumerate(self.bcbio_structure.samples):
+                            if sample.seq2c_fpath and isfile(sample.seq2c_fpath):
+                                with open(sample.seq2c_fpath) as inp:
+                                    for line_index, l in enumerate(inp):
+                                        if file_index == 0 or line_index > 0:
+                                            out.write(l)
+            self.bcbio_structure.seq2c_fpath = merged_seq2c_fpath
 
 
 def _final_email_notification(cnf, html_report_url, jira_url, bs):
@@ -1032,7 +1037,7 @@ def _final_email_notification(cnf, html_report_url, jira_url, bs):
     txt += '\n'
     txt += 'Path: ' + bs.final_dirpath + '\n'
     txt += 'URL: ' + convert_gpfs_path_to_url(bs.final_dirpath) + '\n'
-    txt += 'Report: ' + (html_report_url or bs.project_report_html_fpath) + '\n'
+    txt += 'Report: ' + html_report_url + '\n'
     if jira_url:
         txt += 'Jira: ' + jira_url
     send_email(cnf, txt, subj)
