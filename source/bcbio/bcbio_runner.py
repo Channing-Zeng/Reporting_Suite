@@ -989,11 +989,11 @@ class BCBioRunner:
                 for fname in os.listdir(sample_dirpath):
                     if cnv_caller in fname:
                         # Copy to <sample>/cnv
+                        safe_mkdir(sample_cnv_dirpath)
                         try:
-                            safe_mkdir(sample_cnv_dirpath)
                             os.rename(join(sample_dirpath, fname), join(sample_cnv_dirpath, fname))
                         except OSError:
-                            verify_file(sample_cnv_dirpath)
+                            verify_file(join(sample_dirpath, fname))
                             verify_dir(sample_cnv_dirpath)
                             err(format_exc())
                             info()

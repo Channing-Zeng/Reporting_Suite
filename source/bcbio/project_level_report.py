@@ -339,6 +339,12 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                         shutil.copy(snpeff_log_fpath, snpeff_log_multiqc_fpath)
                         out.write(snpeff_log_multiqc_fpath + '\n')
 
+                    bcftools_stats_fpath = glob.glob(join(s.dirpath, 'qc', 'variants', '*-bcfstats.tsv'))
+                    if len(bcftools_stats_fpath) > 0:
+                        if len(bcftools_stats_fpath) > 1:
+                            err('More than one bcftools stats found for a sample: ' + str(bcftools_stats_fpath))
+                        out.write(bcftools_stats_fpath[0] + '\n')
+
     if verify_file(input_list_fpath, silent=True):
         cmdl += ' -l ' + input_list_fpath
     else:
@@ -464,7 +470,7 @@ def _report_to_multiqc_metadata(cnf, full_report, html_fpath, project_name, bcbi
         mutations_links.append(('<a href="{oncoprints_link}" target="_blank">oncoprints</a> ' +
                              '(loading may take 5-10 seconds)').format(**locals()))
     if circos_link:
-        mutations_links.append(('<a href="{circos_link}" target="_blank">Circos</a> ').format(**locals()))
+        mutations_links.append(('<a href="{circos_link}" target="_blank">circos</a>').format(**locals()))
     if mutations_links:
         metadata_dict["mutations_links"] = mutations_links
     if expression_links:
