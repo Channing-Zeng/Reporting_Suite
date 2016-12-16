@@ -236,6 +236,8 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
             depth_thresholds = None
             with open(tsv_fpath) as f_inp:
                 for l in f_inp:
+                    if l.startswith('##'):
+                        continue
                     if l.startswith('#'):
                         def filter_digits(s):
                             return ''.join(c for c in s if c.isdigit())
@@ -247,12 +249,9 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                         gene_col = fs.index('Gene')
                         strand_col = fs.index('Strand')
                         feature_col = fs.index('Feature')
-                        biotype_col = fs.index('Biotype')
-                        tx_col = fs.index('Transcript')
-                        ave_depth_col = fs.index('Avg depth')
-                        med_depth_col = fs.index('Median depth')
+                        ave_depth_col = fs.index('Avg depth') if 'Avg depth' in fs else fs.index('Ave depth')
                         stddev_depth_col = fs.index('Std dev')
-                        wn20pcnt_col = fs.index('W/n 20% of median')
+                        wn20pcnt_col = fs.index('W/n 20% of median') if 'W/n 20% of median' in fs else fs.index('W/n 20% of ave depth')
                         depth_thresholds = [int(filter_digits(d)) for d in fs if d.endswith('x') and filter_digits(d)]
                         if depth_threshold not in depth_thresholds:
                             err('Depth ' + str(depth_threshold) + 'x is not used in ' + tsv_fpath)
@@ -266,9 +265,6 @@ def check_regions_depth(cnf, bcbio_structures, min_samples):
                     symbol = fs[gene_col]
                     strand = fs[strand_col]
                     feature = fs[feature_col]
-                    biotype = fs[biotype_col]
-                    transcript_id = fs[tx_col]
-                    med_depth = fs[med_depth_col]
                     stddev_depth = fs[stddev_depth_col]
                     wn20pcnt = fs[wn20pcnt_col]
                     pcnt_val_by_thresh = fs[wn20pcnt_col + 1:]

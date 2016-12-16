@@ -158,6 +158,20 @@ def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
     return done_samples
 
 
+def evaluate_capture(cnf, project_dirpaths):
+    cmdline = get_script_cmdline(cnf, 'python', join('tools', 'evaluate_capture_target.py'), is_critical=True)
+    project_dirpaths = ' '.join(project_dirpaths)
+    cmdline += ' --genome {cnf.genome.name} --project-name {cnf.project_name} {project_dirpaths} '.format(**locals())
+    cmdline += ' --exac-only-filtering --tricky-regions '
+    if cnf.bed:
+        cmdline += ' --bed ' + cnf.bed
+
+    depth_thresholds = [10, 25, 50, 100]
+    for min_depth in depth_thresholds:
+        cmdline += ' --min-depth {min_depth}'.format(**locals())
+        call(cnf, cmdline)
+
+
 def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath):
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False)
     samples = dedup_and_sort_bams_use_grid(cnf, samples, do_sort=True)
@@ -252,19 +266,20 @@ def main():
 
     parser.add_option('--log-dir', dest='log_dir', default='-')
     parser.add_option('--bed', dest='bed', help='BED file.')
+    parser.add_option('--evaluate-capture-target', dest='do_evaluate_capture', action='store_true', help='Evaluate capture target.')
     parser.add_option('-o', dest='output_dir', help='Output directory with ExAC data.')
 
     cnf, bcbio_project_dirpaths, bcbio_cnfs, final_dirpaths, tags, is_wgs_in_bcbio, is_rnaseq \
         = process_post_bcbio_args(parser)
 
     if not cnf.genome:
-        critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
+        critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir] [--evaluate-capture-target]')
     cnf.output_dir = get_exac_dir(cnf)
     # if not cnf.output_dir:
     #     critical('Error! Please specify ExAC browser data directory')
 
     if len(bcbio_project_dirpaths) < 1:
-        critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir]')
+        critical('Usage: ' + __file__ + ' -g hg19 project_bcbio_path [project_bcbio_path] [--bed bed_fpath] [-o output_dir] [--evaluate-capture-target]')
 
     info()
     info('*' * 70)
@@ -333,6 +348,8 @@ def main():
     project_cov_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
     safe_mkdir(project_cov_dirpath)
     calculate_coverage_use_grid(cnf, samples, project_cov_dirpath)
+    if cnf.do_evaluate_capture:
+        evaluate_capture(cnf, bcbio_project_dirpaths)
 
     info()
     add_project_to_exac(cnf)
