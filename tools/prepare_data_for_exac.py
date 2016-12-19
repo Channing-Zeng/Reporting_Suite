@@ -2,6 +2,7 @@
 import bcbio_postproc
 import os
 import sys
+import shutil
 from optparse import OptionParser
 
 from os.path import join, basename
@@ -324,9 +325,9 @@ def main():
             vcf_fpath, pass_vcf_fpath = convert_vardict_txts_to_bcbio_vcfs(
                     cnf.work_dir, cnf.genome.name, bs, sample, cnf.caller_name,
                     output_dirpath=cnf.work_dir, pass_only=False)
-            if vcf_fpath:
+            if vcf_fpath and verify_file(vcf_fpath):
                 vcf_fpath_by_sname[sample.name] = vcf_fpath
-            elif pass_vcf_fpath:
+            elif pass_vcf_fpath and verify_file(pass_vcf_fpath):
                 vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
 
     if not vcf_fpath_by_sname:
@@ -334,7 +335,12 @@ def main():
     else:
         info()
         variants_dirpath = join(cnf.output_dir, 'vardict')
+        project_dirpath = join(variants_dirpath, cnf.project_name)
         safe_mkdir(variants_dirpath)
+        for sample_name, vcf_fpath in vcf_fpath_by_sname.items():
+            shutil.move(vcf_fpath, project_dirpath)
+            shutil.move(vcf_fpath + '.tbi', project_dirpath)
+
         combined_vcf_fpath = join(variants_dirpath, cnf.project_name + '.vcf')
         combined_vcf_fpath = combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
 
