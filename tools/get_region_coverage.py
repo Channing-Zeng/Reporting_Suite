@@ -40,29 +40,26 @@ def write_coverage(cnf, output_dir, chrom, depths_by_pos, cov_thresholds, sample
 def get_regions_coverage(cnf, samples):
     cov_thresholds = [1, 5, 10, 15, 20, 25, 30, 50, 100]
     depths_by_pos = defaultdict(lambda : [0] * len(samples))
-    cov_by_sample = dict()
     info()
-    info('Coverage to bedgrapth for ' + cnf.chrom)
-    for s in samples:
-        coverage_fpath = join(cnf.work_dir, s.name + '_' + cnf.chrom + '.bedgraph')
-        coverage_fpath = get_bedgraph_coverage(cnf, s.bam, chr_len_fpath=cnf.chr_len_fpath, bed_fpath=cnf.bed, output_fpath=coverage_fpath, exit_on_error=False)
+    info('Coverage to bedgraph for ' + cnf.chrom)
+    coverage_fpaths = []
+    for index, sample in enumerate(samples):
+        coverage_fpath = join(cnf.work_dir, sample.name + '_' + cnf.chrom + '.bedgraph')
+        coverage_fpath = get_bedgraph_coverage(cnf, sample.bam, chr_len_fpath=cnf.chr_len_fpath, bed_fpath=cnf.bed, output_fpath=coverage_fpath, exit_on_error=False)
         if coverage_fpath and verify_file(coverage_fpath):
-            cov_by_sample[s.name] = coverage_fpath
-    info()
-    if not cov_by_sample:
-        warn(cnf.chrom + ' is not covered in all samples')
-        return None
+            coverage_fpaths.append(coverage_fpath)
+            for line in open(coverage_fpath):
+                if line.startswith('#'):
+                    continue
+                chrom, start, end, depth = line.split('\t')
+                start, end, depth = map(int, (start, end, depth))
+                for pos in xrange(start, end):
+                    depths_by_pos[pos][index] = depth
 
     info()
-    info('Parsing bedtools output...')
-    for i, (sample, coverage_fpath) in enumerate(cov_by_sample.iteritems()):
-        for line in open(coverage_fpath):
-            if line.startswith('#'):
-                continue
-            chrom, start, end, depth = line.split('\t')
-            start, end, depth = map(int, (start, end, depth))
-            for pos in xrange(start, end):
-                depths_by_pos[pos][i] = depth
+    if not coverage_fpaths:
+        warn(cnf.chrom + ' is not covered in all samples')
+        return None
 
     info()
     info('Writing coverage for ' + cnf.chrom)
