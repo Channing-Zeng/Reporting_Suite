@@ -268,7 +268,11 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                 shutil.rmtree(new_multiqc_bcbio_dirpath)
             except OSError:
                 os.rename(new_multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath + '.' + timestamp().replace(':', '_').replace(' ', '_'))
-        os.rename(multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath)
+        try:
+            os.rename(multiqc_bcbio_dirpath, new_multiqc_bcbio_dirpath)
+        except OSError:
+            err('Cannot move ' + multiqc_bcbio_dirpath + ' to ' + new_multiqc_bcbio_dirpath)
+            raise
 
     multiqc_postproc_dirpath = safe_mkdir(dirname(bcbio_structure.multiqc_fpath))
     cmdl = 'multiqc -f -o ' + multiqc_postproc_dirpath + ' -t az ' + \
@@ -365,7 +369,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
         cmdl += ' -e bcbio'
     else:
         config_fname = 'multiqc_config_dna.yaml'
-        cmdl += ' -e qualimap -e bcbio'
+        cmdl += ' -e qualimap -e bcbio -e bcftools'
     config_fpath = join(dirname(dirname(__file__)), config_fname)
     cmdl += ' -c ' + config_fpath
     res = call(cnf, cmdl, exit_on_error=False, silent=False)

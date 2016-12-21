@@ -6,9 +6,9 @@ import shutil
 import traceback
 from collections import defaultdict
 from os.path import join, exists, dirname, abspath, expanduser, pardir, isfile, isdir, islink, getsize, basename
-import datetime
 from time import sleep
 from traceback import format_exc
+import datetime
 
 import variant_filtering
 from yaml import dump
@@ -421,7 +421,7 @@ class BCBioRunner:
                 paramln=targqc_params
             )
 
-            bcbio_summary = verify_file(join(self.bcbio_structure.date_dirpath, 'project-summary.txt'), is_critical=True)
+            bcbio_summary = verify_file(join(self.bcbio_structure.date_dirpath, 'log', 'project-summary.yaml'), is_critical=True)
             clinreport_paramline = ('' +
                 ' --sample {sample}' +
                 ' -o {output_dir}' +
@@ -637,29 +637,13 @@ class BCBioRunner:
                     if sample.phenotype != 'normal':
                         info('  sample ' + sample.name)
                         for caller in self.bcbio_structure.variant_callers.values():
-                            # if not sample.vcf_by_callername.get(caller.name):
-                            #     info('    no VCF found for ' + sample.name + ' in ' + str(sample.vcf_by_callername))
-                            # else:
                             anno_vcf_fpath = sample.get_anno_vcf_fpath_by_callername(caller.name, gz=True)
                             vcf2txt_cmdl = ''
-                            # if self.cohort_mode:
-                            #     if sample.normal_match:
-                            #         vcf2txt_fpath = caller.paired_vcf2txt_res_fpath
-                            #     else:
-                            #         vcf2txt_fpath = caller.single_vcf2txt_res_fpath
-                            #     vcf2txt_cmdl = ' --vcf2txt ' + vcf2txt_fpath  #sample.get_vcf2txt_by_callername(caller_name)
-                            # else:
                             if self.varannotate not in self.steps:
                                 if not verify_vcf(anno_vcf_fpath):
                                     critical('Error: VarAnnotate is not in steps, and annotated VCF does not exist: ' + anno_vcf_fpath)
 
                             wait_for_steps = []
-                            # if self.cohort_mode:
-                            #     if caller.paired_anno_vcf_by_sample:
-                            #         wait_for_steps.append(self.vcf2txt_paired.job_name(caller=caller.name))
-                            #     if caller.single_anno_vcf_by_sample:
-                            #         wait_for_steps.append(self.vcf2txt_single.job_name(caller=caller.name))
-                            # else:
                             wait_for_steps.append(self.varannotate.job_name(sample=sample.name, caller=caller.name))
 
                             self._submit_job(
@@ -882,7 +866,7 @@ class BCBioRunner:
                 err(error_msg)
             else:
                 info('Done post-processing.')
-                bcbio_work_dirpath = dirname(self.bcbio_structure.work_dir)
+                bcbio_work_dirpath = dirname(self.bcbio_structure.work_dir).lower()
 
                 scratch_root_dirpath = None
                 analysis_root_dirpath = None
@@ -892,18 +876,24 @@ class BCBioRunner:
                 elif is_local() and '/Users/vlad/googledrive/az/analysis/' in bcbio_work_dirpath.lower():
                     scratch_root_dirpath = '/Users/vlad/scratch/'
                     analysis_root_dirpath = '/Users/vlad/googledrive/az/analysis/'
-                if scratch_root_dirpath:
+                if scratch_root_dirpath and isdir(bcbio_work_dirpath):
                     info()
                     work_scratch_dirpath = bcbio_work_dirpath.replace(analysis_root_dirpath, scratch_root_dirpath)
-                    if not exists(work_scratch_dirpath):
-                        assert work_scratch_dirpath != bcbio_work_dirpath, (work_scratch_dirpath, bcbio_work_dirpath)
-                        safe_mkdir(dirname(work_scratch_dirpath))
-                        info('Moving work directory to scratch: ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
-                        shutil.move(bcbio_work_dirpath, work_scratch_dirpath)
-                        os.symlink(work_scratch_dirpath, bcbio_work_dirpath)
-                        info('Symlinked work directory ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
-                    else:
-                        warn('Not moving work to scratch.')
+                    if isdir(work_scratch_dirpath):
+                        move_existing_work_dir_to = work_scratch_dirpath + '-' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+                        info('Work dir ' + bcbio_work_dirpath + ' in scratch already exists, backing it up into ' + move_existing_work_dir_to)
+                        try:
+                            safe_mkdir(dirname(move_existing_work_dir_to))
+                            os.rename(work_scratch_dirpath, move_existing_work_dir_to)
+                        except OSError:
+                            err('Cannot move "work" into scratch: it exists and cannot backup the existing one')
+                            raise
+                    assert work_scratch_dirpath != bcbio_work_dirpath, (work_scratch_dirpath, bcbio_work_dirpath)
+                    safe_mkdir(dirname(work_scratch_dirpath))
+                    info('Moving work directory to scratch: ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
+                    shutil.move(bcbio_work_dirpath, work_scratch_dirpath)
+                    os.symlink(work_scratch_dirpath, bcbio_work_dirpath)
+                    info('Symlinked work directory ' + bcbio_work_dirpath + ' -> ' + work_scratch_dirpath)
 
     def wait_for_jobs(self, number_of_jobs_allowed_to_left_running=0):
         info()
