@@ -168,7 +168,7 @@ def _mutations_records(general_section, bcbio_structure, base_dirpath):
             general_section.add_metric(metric)
             records.append(rec)
 
-    if isfile(bcbio_structure.seq2c_fpath):
+    if bcbio_structure.seq2c_fpath and isfile(bcbio_structure.seq2c_fpath):
         metric = Metric(CNV_NAME, common=True)
         fpath = bcbio_structure.seq2c_fpath
         rec = Record(
