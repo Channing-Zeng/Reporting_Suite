@@ -237,7 +237,8 @@ def add_dna_summary_records(cnf, recs, general_section, bcbio_structure, base_di
 
 def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'multiqc')
-    new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'qc', 'multiqc_bcbio')
+    new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'log', 'multiqc_bcbio')
+    safe_mkdir(dirname(new_multiqc_bcbio_dirpath))
     if isdir(multiqc_bcbio_dirpath):
         if isdir(new_multiqc_bcbio_dirpath):
             try:
