@@ -259,7 +259,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     if cnf.debug:
         cmdl += ' -v'
 
-    input_list_fpath = join(bcbio_structure.date_dirpath, 'qc', 'list_files.txt')
+    input_list_fpath = join(bcbio_structure.date_dirpath, 'log', 'list_files.txt')
     if not verify_file(input_list_fpath, silent=True):
         work_input_list_fpath = abspath(join(bcbio_structure.work_dir, pardir, basename(input_list_fpath)))
         if not verify_file(work_input_list_fpath, silent=True):
