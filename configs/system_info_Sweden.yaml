@@ -157,6 +157,13 @@ genomes:
     bed_annotation_features:  /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq.all_features.hg38.bed
     cds:                      /ngs/reference_data/genomes/Hsapiens/hg38/bed/Exons/RefSeq/RefSeq_CDS.hg38.bed
 
+  rn6:
+    all_transcripts: /ngs/reference_data/genomes/Rnorvegicus/rn6/rnaseq/ref-transcripts.gtf
+    seq: /ngs/reference_data/genomes/Rnorvegicus/rn6/seq/rn6.fa
+    bwa: /ngs/reference_data/genomes/Rnorvegicus/rn6/bwa/rn6.fa
+    snpeff:
+      reference: Rnor_6.0.86
+
 #queue: ngs.q
 
 qsub_runner: scripts/runner_sequencial.sh
