@@ -1,11 +1,10 @@
 #!/usr/bin/env python
 # noinspection PyUnresolvedReferences
+import bcbio_postproc
+
 from collections import OrderedDict
 from shutil import copyfile
 from traceback import format_exc
-
-import bcbio_postproc
-
 
 import sys
 import os
@@ -23,7 +22,8 @@ from source.prepare_args_and_cnf import add_cnf_t_reuse_prjname_donemarker_workd
     determine_sys_cnf, set_up_dirs, check_genome_resources
 from source.targetcov.bam_and_bed_utils import verify_bam, verify_bed, count_bed_cols, prepare_beds
 from source.tools_from_cnf import get_system_path
-from targqc import find_bams
+
+from ngs_utils.proc_args import find_bams
 
 '''
 cd /Users/vlad/Dropbox/az/analysis/Seq2C
