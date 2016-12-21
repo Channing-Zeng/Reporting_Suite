@@ -866,24 +866,25 @@ class BCBioRunner:
                 err(error_msg)
             else:
                 info('Done post-processing.')
-                bcbio_work_dirpath = dirname(self.bcbio_structure.work_dir).lower()
+                bcbio_work_dirpath = dirname(self.bcbio_structure.work_dir).replace('/Analysis/', '/analysis/')
 
                 scratch_root_dirpath = None
                 analysis_root_dirpath = None
-                if is_us() and '/ngs/oncology/analysis/' in bcbio_work_dirpath.lower():
+                if is_us() and '/ngs/oncology/analysis/' in bcbio_work_dirpath:
                     scratch_root_dirpath = '/ngs/scratch/'
                     analysis_root_dirpath = '/ngs/oncology/analysis/'
-                elif is_local() and '/Users/vlad/googledrive/az/analysis/' in bcbio_work_dirpath.lower():
+                elif is_local() and '/Users/vlad/googledrive/az/analysis/' in bcbio_work_dirpath:
                     scratch_root_dirpath = '/Users/vlad/scratch/'
                     analysis_root_dirpath = '/Users/vlad/googledrive/az/analysis/'
-                if scratch_root_dirpath and isdir(bcbio_work_dirpath):
+                if scratch_root_dirpath and isdir(bcbio_work_dirpath) and not islink(bcbio_work_dirpath):
                     info()
                     work_scratch_dirpath = bcbio_work_dirpath.replace(analysis_root_dirpath, scratch_root_dirpath)
+                    assert work_scratch_dirpath != bcbio_work_dirpath, (work_scratch_dirpath, bcbio_work_dirpath)
+                    safe_mkdir(dirname(work_scratch_dirpath))
                     if isdir(work_scratch_dirpath):
                         move_existing_work_dir_to = work_scratch_dirpath + '-' + datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
-                        info('Work dir ' + bcbio_work_dirpath + ' in scratch already exists, backing it up into ' + move_existing_work_dir_to)
+                        info('Work dir ' + work_scratch_dirpath + ' in scratch already exists, backing it up into ' + move_existing_work_dir_to)
                         try:
-                            safe_mkdir(dirname(move_existing_work_dir_to))
                             os.rename(work_scratch_dirpath, move_existing_work_dir_to)
                         except OSError:
                             err('Cannot move "work" into scratch: it exists and cannot backup the existing one')
