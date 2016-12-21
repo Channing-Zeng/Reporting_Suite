@@ -262,6 +262,7 @@ def make_circos_plot(cnf, bcbio_structure):
 def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'multiqc')
     new_multiqc_bcbio_dirpath = join(bcbio_structure.date_dirpath, 'log', 'multiqc_bcbio')
+    safe_mkdir(dirname(new_multiqc_bcbio_dirpath))
     if isdir(multiqc_bcbio_dirpath):
         if isdir(new_multiqc_bcbio_dirpath):
             try:
