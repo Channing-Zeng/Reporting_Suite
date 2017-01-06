@@ -261,11 +261,18 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
 
     input_list_fpath = join(bcbio_structure.date_dirpath, 'log', 'list_files.txt')
     if not verify_file(input_list_fpath, silent=True):
-        work_input_list_fpath = abspath(join(bcbio_structure.work_dir, pardir, 'qc', 'multiqc', 'list_files.txt'))  # 1.0.1+
-        if not verify_file(work_input_list_fpath, silent=True):
-            work_input_list_fpath = abspath(join(bcbio_structure.work_dir, pardir, 'list_files.txt'))  # 1.0.0 ?
-            if not verify_file(work_input_list_fpath, silent=True):
-                critical('File list for MultiQC ' + work_input_list_fpath + ' not found. Please make sure you are using bcbio 1.0.* or higher')
+        options = [
+            abspath(join(bcbio_structure.work_dir, pardir, 'qc', 'multiqc', 'list_files.txt')),  # 1.0.1+
+            abspath(join(bcbio_structure.work_dir, pardir, 'qc', 'mulitqc', 'list_files.txt')),  # 1.0.1a
+            abspath(join(bcbio_structure.work_dir, pardir, 'list_files.txt')),  # 1.0.0 ?
+        ]
+        work_input_list_fpath = None
+        for opt in options:
+            if verify_file(opt, silent=True):
+                work_input_list_fpath = opt
+                break
+        if not work_input_list_fpath:
+            critical('File list for MultiQC not found as ' + ', '.join(options) + '. Please make sure you are using bcbio 1.0.* or higher')
         with open(work_input_list_fpath) as inp, open(input_list_fpath, 'w') as out:
             qc_files_not_found = []
             for l in inp:
