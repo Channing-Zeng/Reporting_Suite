@@ -301,12 +301,18 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                                     # QualiMap needs to be located in a directory named after the sample name:
                                     if not islink(join(s.dirpath, 'qc', 'qualimap_rnaseq', s.name)):
                                         os.symlink(join(s.dirpath, 'qc', 'qualimap_rnaseq'), join(s.dirpath, 'qc', 'qualimap_rnaseq', s.name))
-                            else:
+                            elif '/multiqc/report/metrics/' + s.name + '_bcbio.txt' in fpath:  # 1.0.0
                                 correct_fpath = correct_fpath.replace('/multiqc/report/metrics/' + s.name + '_bcbio.txt',
                                                                       '/' + s.name + '/qc/bcbio/' + s.name + '_bcbio.txt')
-                                if not isfile(correct_fpath):
-                                    correct_fpath = correct_fpath.replace('/qc/multiqc/report/metrics/' + s.name + '_bcbio.txt',
-                                                                          basename(bcbio_structure.date_dirpath), 'log/multiqc_bcbio/report/metrics/' + s.name + '_bcbio.txt')
+                                info('Found 1.0.0 ' + fpath + ', saving as ' + correct_fpath)
+                            elif '/qc/mulitqc/report/metrics/' + s.name + '_bcbio.txt' in fpath:  # 1.0.1a (with bugs)
+                                correct_fpath = correct_fpath.replace('/qc/mulitqc/report/metrics/' + s.name + '_bcbio.txt',
+                                    '/' + basename(bcbio_structure.date_dirpath) + '/log/multiqc_bcbio/report/metrics/' + s.name + '_bcbio.txt')
+                                info('Found 1.0.1a ' + fpath + ', saving as ' + correct_fpath)
+                            elif '/qc/multiqc/report/metrics/' + s.name + '_bcbio.txt' in fpath:  # 1.0.1+
+                                correct_fpath = correct_fpath.replace('/qc/multiqc/report/metrics/' + s.name + '_bcbio.txt',
+                                    '/' + basename(bcbio_structure.date_dirpath) + '/log/multiqc_bcbio/report/metrics/' + s.name + '_bcbio.txt')
+                                info('Found 1.0.1+ ' + fpath + ', saving as ' + correct_fpath)
 
                         if not verify_file(correct_fpath):
                             qc_files_not_found.append(correct_fpath)
@@ -320,6 +326,8 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
             if qc_files_not_found:
                 warn('-')
                 warn('Some QC files from list ' + work_input_list_fpath + ' were not found. Please check if work directory exists.')
+                for fpath in qc_files_not_found:
+                    warn('  ' + fpath)
             if bcbio_structure.is_rnaseq:
                 pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
                 info()
