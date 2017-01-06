@@ -279,7 +279,7 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                 fpath = l.strip()
                 if '/work/' in fpath:
                     if fpath.endswith('target_info.yaml'):
-                        correct_fpath = join(bcbio_structure.date_dirpath, 'qc', basename(fpath))
+                        correct_fpath = join(safe_mkdir(join(bcbio_structure.date_dirpath, 'qc')), basename(fpath))
                         if verify_file(fpath):
                             shutil.copy(fpath, correct_fpath)
                             out.write(correct_fpath + '\n')
@@ -304,6 +304,10 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                             else:
                                 correct_fpath = correct_fpath.replace('/multiqc/report/metrics/' + s.name + '_bcbio.txt',
                                                                       '/' + s.name + '/qc/bcbio/' + s.name + '_bcbio.txt')
+                                if not isfile(correct_fpath):
+                                    correct_fpath = correct_fpath.replace('/qc/multiqc/report/metrics/' + s.name + '_bcbio.txt',
+                                                                          basename(bcbio_structure.date_dirpath), 'log/multiqc_bcbio/report/metrics/' + s.name + '_bcbio.txt')
+
                         if not verify_file(correct_fpath):
                             qc_files_not_found.append(correct_fpath)
                             continue
@@ -314,8 +318,8 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
                         continue
                     out.write(fpath + '\n')
             if qc_files_not_found:
-                err('-')
-                critical('Some QC files from list ' + work_input_list_fpath + ' were not found. Please check if work directory exists.')
+                warn('-')
+                warn('Some QC files from list ' + work_input_list_fpath + ' were not found. Please check if work directory exists.')
             if bcbio_structure.is_rnaseq:
                 pca_plot_fpath = create_rnaseq_pca_plot(cnf, bcbio_structure)
                 info()
