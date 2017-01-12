@@ -385,14 +385,6 @@ def main():
                     shutil.move(vcf_fpath, project_vcf_dirpath)
                     shutil.move(vcf_fpath + '.tbi', project_vcf_dirpath)
 
-    if combined_vcf_fpath:
-        info()
-        info('Creating BAM files for IGV')
-        exac_features_fpath = os.path.join(exac_data_dir, cnf.genome.name, 'all_features.bed.gz')
-        split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath)
-    else:
-        warn('Combined VCF file does not exist. BAM files for IGV cannot be created')
-
     info()
     info('Saving coverage')
     project_cov_dirpath = join(cnf.output_dir, 'coverage', cnf.project_name)
@@ -400,6 +392,14 @@ def main():
     calculate_coverage_use_grid(cnf, samples, project_cov_dirpath)
     if cnf.do_evaluate_capture:
         evaluate_capture(cnf, bcbio_project_dirpaths)
+
+    if combined_vcf_fpath:
+        info()
+        info('Creating BAM files for IGV')
+        exac_features_fpath = os.path.join(exac_data_dir, cnf.genome.name, 'all_features.bed.gz')
+        split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath)
+    else:
+        warn('Combined VCF file does not exist. BAM files for IGV cannot be created')
 
     info()
     add_project_to_exac(cnf)

@@ -87,7 +87,8 @@ def split_bams(cnf, samples, vcf_fpath):
             combined_bam_fpath = join(cnf.output_dir, bam_fname)
             generate_combined_bam(cnf, bam_fpaths, temp_combined_bam_fpath, combined_bam_fpath)
             info()
-    shutil.rmtree(temp_output_dirpath)
+    info('Removing BAM files...')
+    shutil.rmtree(temp_output_dirpath, ignore_errors=True)
 
 
 def get_minimal_representation(pos, ref, alt):
