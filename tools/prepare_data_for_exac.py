@@ -364,8 +364,7 @@ def main():
                                                                              bs.samples, cnf.caller_name, output_dirpath=cnf.work_dir,
                                                                              pass_only=False, bed_fpath=bs.sv_bed,
                                                                              min_freq=bs.cnf.variant_filtering['min_freq'],
-                                                                             act_min_freq=bs.cnf.variant_filtering['act_min_freq'],
-                                                                             reuse=cnf.reuse_intermediate)
+                                                                             act_min_freq=bs.cnf.variant_filtering['act_min_freq'])
             if not vcf_fpaths and not pass_vcf_fpaths:
                 continue
             for sample, vcf_fpath, pass_vcf_fpath in zip(bs.samples, vcf_fpaths, pass_vcf_fpaths):
