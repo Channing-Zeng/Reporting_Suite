@@ -5,9 +5,10 @@ import sys
 import shutil
 from optparse import OptionParser
 
-from os.path import join, basename
+from os.path import join, basename, isfile
 
 from source.bcbio.bcbio_structure import BCBioStructure, process_post_bcbio_args
+from source.bcbio.project_level_report import get_mutations_fpaths
 from source.calling_process import call
 from source.file_utils import safe_mkdir, adjust_path, verify_file
 from source.logger import critical, info, is_local, warn, err
@@ -16,10 +17,9 @@ from source.qsub_utils import wait_for_jobs, submit_job
 from source.targetcov.bam_and_bed_utils import call_sambamba, verify_bam
 from source.tools_from_cnf import get_script_cmdline, get_system_path
 from source.utils import get_chr_len_fpath, is_us, get_ext_tools_dirname
-from source.variants.filtering import combine_vcfs
 
 from variant_filtering.txt2vcf_conversion import convert_vardict_txts_to_bcbio_vcfs
-
+from variant_filtering.vcf import verify_vcf, bgzip_and_tabix
 
 chromosomes = ['chr%s' % x for x in range(1, 23)]
 chromosomes.extend(['chrX', 'chrY', 'chrM'])
@@ -106,6 +106,8 @@ def calculate_coverage_use_grid(cnf, samples, output_dirpath):
             jobs_to_wait = []
         elif not jobs_to_wait:
             info('No jobs to submit.')
+    if jobs_to_wait:
+        wait_for_jobs(cnf, jobs_to_wait)
 
 
 def dedup_and_sort_bams_use_grid(cnf, samples, do_sort=False):
@@ -236,6 +238,36 @@ def split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpa
                                           chrom not in reused_chroms]
 
 
+def merge_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath):
+    if cnf.reuse_intermediate and isfile(combined_vcf_fpath + '.gz') and verify_vcf(combined_vcf_fpath + '.gz'):
+        info(combined_vcf_fpath + '.gz exists, reusing')
+        return combined_vcf_fpath + '.gz'
+
+    bcftools = get_system_path(cnf, 'bcftools')
+    if not bcftools:
+        info('bcftools is not found, skipping merging VCFs')
+        return None
+
+    cmdl = '{bcftools} merge --force-samples '.format(**locals())
+    for sample, vcf_fpath in vcf_fpath_by_sname.iteritems():
+        if vcf_fpath:
+            cmdl += ' ' + vcf_fpath + ' '
+    cmdl += ' -o ' + combined_vcf_fpath
+
+    res = call(cnf, cmdl, output_fpath=combined_vcf_fpath, stdout_to_outputfile=False, exit_on_error=False)
+    if res:
+        info('Joined VCFs, saved into ' + combined_vcf_fpath)
+        if isfile(combined_vcf_fpath + '.tx.idx'):
+            try:
+                os.remove(combined_vcf_fpath + '.tx.idx')
+            except OSError:
+                info()
+        return bgzip_and_tabix(combined_vcf_fpath)
+    else:
+        warn('Could not join VCFs')
+        return None
+
+
 def get_exac_dir(cnf):
     if cnf.genome.name.startswith('hg19'):
         cnf.genome.name = 'hg19'
@@ -312,42 +344,55 @@ def main():
     cnf.work_dir = cnf.work_dir or adjust_path(join(cnf.output_dir, 'work', cnf.project_name))
     safe_mkdir(cnf.work_dir)
 
-    sample_names = [s.name for bs in bcbio_structures for s in bs.samples]
     samples = []
-
-    info()
-    info('Preparing variants data')
-    vcf_fpath_by_sname = dict()
     for bs in bcbio_structures:
         for sample in bs.samples:
             sample.name = get_uniq_sample_key(bs.project_name, sample)
             samples.append(sample)
-            vcf_fpath, pass_vcf_fpath = convert_vardict_txts_to_bcbio_vcfs(
-                    cnf.work_dir, cnf.genome.name, bs, sample, cnf.caller_name,
-                    output_dirpath=cnf.work_dir, pass_only=False)
-            if vcf_fpath and verify_file(vcf_fpath):
-                vcf_fpath_by_sname[sample.name] = vcf_fpath
-            elif pass_vcf_fpath and verify_file(pass_vcf_fpath):
-                vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
 
-    if not vcf_fpath_by_sname:
-        info('No VCFs found, skipping preparing variants')
-    else:
-        info()
-        variants_dirpath = join(cnf.output_dir, 'vardict')
-        project_dirpath = join(variants_dirpath, cnf.project_name)
-        safe_mkdir(variants_dirpath)
-        for sample_name, vcf_fpath in vcf_fpath_by_sname.items():
-            shutil.move(vcf_fpath, project_dirpath)
-            shutil.move(vcf_fpath + '.tbi', project_dirpath)
+    info()
+    info('Preparing variants data')
+    variants_dirpath = join(cnf.output_dir, 'vardict')
+    safe_mkdir(variants_dirpath)
+    combined_vcf_raw_fpath = join(variants_dirpath, cnf.project_name + '.vcf')
+    combined_vcf_fpath = combined_vcf_raw_fpath + '.gz'
+    if not cnf.reuse_intermediate or not verify_file(combined_vcf_fpath):
+        vcf_fpath_by_sname = dict()
+        for bs in bcbio_structures:
+            pass_mut_fpaths = get_mutations_fpaths(bs)
+            vcf_fpaths, pass_vcf_fpaths = convert_vardict_txts_to_bcbio_vcfs(cnf.work_dir, cnf.genome.name, pass_mut_fpaths,
+                                                                             bs.samples, cnf.caller_name, output_dirpath=cnf.work_dir,
+                                                                             pass_only=False, bed_fpath=bs.sv_bed,
+                                                                             min_freq=bs.cnf.variant_filtering['min_freq'],
+                                                                             act_min_freq=bs.cnf.variant_filtering['act_min_freq'],
+                                                                             reuse=cnf.reuse_intermediate)
+            if not vcf_fpaths and not pass_vcf_fpaths:
+                continue
+            for sample, vcf_fpath, pass_vcf_fpath in zip(bs.samples, vcf_fpaths, pass_vcf_fpaths):
+                if vcf_fpath and verify_file(vcf_fpath):
+                    vcf_fpath_by_sname[sample.name] = vcf_fpath
+                elif pass_vcf_fpath and verify_file(pass_vcf_fpath):
+                    vcf_fpath_by_sname[sample.name] = pass_vcf_fpath
 
-        combined_vcf_fpath = join(variants_dirpath, cnf.project_name + '.vcf')
-        combined_vcf_fpath = combine_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_fpath, additional_parameters='--genotypemergeoption UNSORTED')
+        if not vcf_fpath_by_sname:
+            info('No VCFs found, skipping preparing variants')
+        else:
+            info()
+            combined_vcf_fpath = merge_vcfs(cnf, vcf_fpath_by_sname, combined_vcf_raw_fpath)
+            project_vcf_dirpath = join(variants_dirpath, cnf.project_name)
+            safe_mkdir(project_vcf_dirpath)
+            for sample_name, vcf_fpath in vcf_fpath_by_sname.items():
+                if verify_file(vcf_fpath) and not verify_file(join(project_vcf_dirpath, basename(vcf_fpath)), silent=True):
+                    shutil.move(vcf_fpath, project_vcf_dirpath)
+                    shutil.move(vcf_fpath + '.tbi', project_vcf_dirpath)
 
+    if combined_vcf_fpath:
         info()
         info('Creating BAM files for IGV')
         exac_features_fpath = os.path.join(exac_data_dir, cnf.genome.name, 'all_features.bed.gz')
         split_bam_files_use_grid(cnf, samples, combined_vcf_fpath, exac_features_fpath)
+    else:
+        warn('Combined VCF file does not exist. BAM files for IGV cannot be created')
 
     info()
     info('Saving coverage')

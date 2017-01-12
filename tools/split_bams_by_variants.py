@@ -4,6 +4,7 @@ import bcbio_postproc
 import os
 import re
 import sys
+import shutil
 import pysam
 from optparse import OptionParser
 from os.path import basename, join
@@ -86,6 +87,7 @@ def split_bams(cnf, samples, vcf_fpath):
             combined_bam_fpath = join(cnf.output_dir, bam_fname)
             generate_combined_bam(cnf, bam_fpaths, temp_combined_bam_fpath, combined_bam_fpath)
             info()
+    shutil.rmtree(temp_output_dirpath)
 
 
 def get_minimal_representation(pos, ref, alt):
