@@ -259,8 +259,8 @@ def make_multiqc_report(cnf, bcbio_structure, metadata_fpath=None):
     if cnf.debug:
         cmdl += ' -v'
 
-    input_list_fpath = join(bcbio_structure.date_dirpath, 'log', 'list_files.txt')
-    if not verify_file(input_list_fpath, silent=True):
+    input_list_fpath = join(bcbio_structure.date_dirpath, 'log', 'multiqc_list_files.txt')
+    if not cnf.reuse_intermediate or not verify_file(input_list_fpath, silent=True):
         options = [
             abspath(join(bcbio_structure.work_dir, pardir, 'qc', 'multiqc', 'list_files.txt')),  # 1.0.1+
             abspath(join(bcbio_structure.work_dir, pardir, 'qc', 'mulitqc', 'list_files.txt')),  # 1.0.1a
