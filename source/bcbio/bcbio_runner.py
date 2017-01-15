@@ -419,7 +419,7 @@ class BCBioRunner:
                 paramln=targqc_params
             )
 
-            bcbio_summary = verify_file(join(self.bcbio_structure.date_dirpath, 'project-summary.txt'), is_critical=True)
+            bcbio_summary = verify_file(join(self.bcbio_structure.date_dirpath, 'project-summary.yaml'), is_critical=True)
             clinreport_paramline = ('' +
                 ' --sample {sample}' +
                 ' -o {output_dir}' +
